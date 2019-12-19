@@ -13,18 +13,16 @@ import org.junit.jupiter.params.provider.MethodSource;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonCreator.Mode;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
 import de.cxp.ocs.api.indexer.ImportSession;
-import de.cxp.ocs.model.index.Category;
-import de.cxp.ocs.model.index.CategoryPath;
 import de.cxp.ocs.model.index.Document;
-import de.cxp.ocs.model.index.MasterProduct;
-import de.cxp.ocs.model.index.VariantProduct;
+import de.cxp.ocs.model.index.Hierarchy;
+import de.cxp.ocs.model.index.HierarchyLevel;
+import de.cxp.ocs.model.index.Product;
 import de.cxp.ocs.model.params.NumberResultFilter;
 import de.cxp.ocs.model.params.PathResultFilter;
 import de.cxp.ocs.model.params.ResultFilter;
@@ -40,43 +38,46 @@ import de.cxp.ocs.model.result.SearchResult;
 
 public class SerializationTest {
 
-	final ObjectMapper objectMapper = new ObjectMapper();
+	// we don't have control over serialization, so we just can assume standard
+	// serialization
+	final ObjectMapper serializer = new ObjectMapper();
+
+	final ObjectMapper deserializer = new ObjectMapper();
 
 	/**
 	 * special configuration for jackson object mapper to work with the
 	 * defined models.
 	 */
 	@BeforeEach
-	public void optimizeSerialization() {
-		objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-		objectMapper.setSerializationInclusion(Include.NON_NULL);
-		objectMapper.setSerializationInclusion(Include.NON_EMPTY);
+	public void configureDeserialization() {
+		deserializer.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
-		objectMapper.registerModule(new ParameterNamesModule(Mode.PROPERTIES));
+		deserializer.registerModule(new ParameterNamesModule(Mode.PROPERTIES));
 
-		objectMapper.addMixIn(Category.class, SingleStringArgsCreator.class);
-		objectMapper.addMixIn(CategoryPath.class, CategoryPathCreator.class);
-		objectMapper.addMixIn(VariantProduct.class, SingleStringArgsCreator.class);
-		objectMapper.addMixIn(Facet.class, FacetMixin.class);
+		deserializer.addMixIn(HierarchyLevel.class, SingleStringArgsCreator.class);
+		deserializer.addMixIn(Hierarchy.class, CategoryPathCreator.class);
+		deserializer.addMixIn(Facet.class, FacetMixin.class);
 
-		objectMapper.addMixIn(ResultFilter.class, WithTypeInfo.class);
-		objectMapper.registerSubtypes(NumberResultFilter.class, TermResultFilter.class, PathResultFilter.class);
+		deserializer.addMixIn(ResultFilter.class, WithTypeInfo.class);
+		deserializer.registerSubtypes(NumberResultFilter.class, TermResultFilter.class, PathResultFilter.class);
 
-		objectMapper.addMixIn(FacetEntry.class, WithTypeInfo.class);
-		objectMapper.registerSubtypes(HierarchialFacetEntry.class);
+		deserializer.addMixIn(FacetEntry.class, WithTypeInfo.class);
+		deserializer.registerSubtypes(HierarchialFacetEntry.class);
 	}
-	
-	@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@type")
+
+	@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "_type")
 	public static abstract class WithTypeInfo {}
 
 	public static abstract class SingleStringArgsCreator {
+
 		@JsonCreator
 		SingleStringArgsCreator(String name) {}
 	}
 
 	public static abstract class CategoryPathCreator {
+
 		@JsonCreator
-		CategoryPathCreator(Category[] categories) {}
+		CategoryPathCreator(HierarchyLevel[] categories) {}
 	}
 
 	public static abstract class FacetMixin {
@@ -91,38 +92,40 @@ public class SerializationTest {
 		abstract String getType();
 	}
 
-
 	@ParameterizedTest
 	@MethodSource("getSerializableObjects")
 	public void testRoundTrip(Object serializable) throws IOException {
-		String serialized = objectMapper.writeValueAsString(serializable);
+		String serialized = serializer.writeValueAsString(serializable);
 		System.out.println(serialized);
-		Object deserialized = objectMapper.readValue(serialized, serializable.getClass());
+		Object deserialized = deserializer.readValue(serialized, serializable.getClass());
 		assertEquals(serializable, deserialized);
 	}
 
 	public static Stream<Object> getSerializableObjects() {
 		return Stream.of(
-				new Category("cat only"),
-				new Category("a1", "with id"),
+				new HierarchyLevel("cat only"),
+				new HierarchyLevel("a1", "with id"),
 
-				CategoryPath.simplePath("single level"),
-				CategoryPath.simplePath("many", "level", "category"),
-				new CategoryPath(new Category[] { new Category("1", "fruits"), new Category("2", "apples") }),
+				Hierarchy.simplePath("single level"),
+				Hierarchy.simplePath("many", "level", "category"),
+				new Hierarchy(new HierarchyLevel[] { new HierarchyLevel("1", "fruits"), new HierarchyLevel("2", "apples") }),
 
-				new MasterProduct("1", "master test"),
-				new MasterProduct("2", "master 2").addData("foo", "bar").addData("number", 12.5),
-				new MasterProduct("3", "master category test").setCategoryPaths(new CategoryPath[] { CategoryPath.simplePath("a", "b") }),
+				new Product("1").putData("title", "master test"),
 
-				new VariantProduct("1"),
-				new VariantProduct("201").setPrice(99.9).setPrices(Collections.singletonMap("discount", 78.9)),
-				new VariantProduct("3001").setPrice(45.6).addData("type", "var1"),
+				new Product("2").putData("title", "master 2")
+						.putData("string", "foo bar")
+						.putData("number", 12.5),
+
+				// FIXME
+				// new Product("3")
+				// .putData("title", "master category test")
+				// .putData("category", Hierarchy.simplePath("a", "b")),
 
 				masterWithVariants(
-						new MasterProduct("3", "master 2"),
-						new VariantProduct("31"),
-						new VariantProduct("32").setPrice(99.9).setPrices(Collections.singletonMap("discount", 78.9)),
-						(VariantProduct) new VariantProduct("33").setPrice(45.6).addData("type", "var1")),
+						(Product) new Product("3").putData("title", "master 2"),
+						new Document("31"),
+						new Document("32").putData("price", 99.9).putData("price.discount", 78.9),
+						new Document("33").putData("price", 45.6).putData("type", "var1")),
 
 				new ImportSession(System.currentTimeMillis(), "foo-bar", "foo-bar-20191203"),
 
@@ -161,7 +164,7 @@ public class SerializationTest {
 		);
 	}
 
-	private static MasterProduct masterWithVariants(MasterProduct masterProduct, VariantProduct... variantProducts) {
+	private static Product masterWithVariants(Product masterProduct, Document... variantProducts) {
 		masterProduct.setVariants(variantProducts);
 		return masterProduct;
 	}

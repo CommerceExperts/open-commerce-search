@@ -8,6 +8,8 @@ import lombok.Data;
 @Data
 public class TermResultFilter implements ResultFilter {
 
+	final String _type = "TermResultFilter";
+
 	private final String field;
 
 	private final String[] values;

@@ -7,7 +7,8 @@ import lombok.Data;
 @AllArgsConstructor
 public class FacetEntry {
 
-	String	key;
-	long	docCount;
+	public final String	_type	= "FacetEntry";
+	String				key;
+	long				docCount;
 
 }

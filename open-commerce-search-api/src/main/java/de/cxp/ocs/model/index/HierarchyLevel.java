@@ -7,9 +7,9 @@ import lombok.Data;
  * a filtering based on Strings. The names are used to produce nice facets.
  */
 @Data
-public class Category {
+public class HierarchyLevel {
 
-	public Category(String name) {
+	public HierarchyLevel(String name) {
 		if (name == null || name.isEmpty()) {
 			throw new NullPointerException("name can't be null or empty!");
 		}
@@ -25,7 +25,7 @@ public class Category {
 	 * @param id
 	 * @param name
 	 */
-	public Category(String id, String name) {
+	public HierarchyLevel(String id, String name) {
 		if (name == null || name.isEmpty()) {
 			throw new NullPointerException("name can't be null or empty!");
 		}

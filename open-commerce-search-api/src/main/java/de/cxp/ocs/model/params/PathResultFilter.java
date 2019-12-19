@@ -8,6 +8,8 @@ import lombok.NonNull;
 @AllArgsConstructor
 public class PathResultFilter implements ResultFilter {
 
+	final String _type = "PathResultFilter";
+
 	@NonNull
 	private String field;
 

@@ -23,7 +23,8 @@ public interface FullIndexer {
 
 	/**
 	 * Helper method that should be used to get unified index names that contain
-	 * required locale information.
+	 * required locale information. This should be used to avoid duplicate index
+	 * names and to guarantee language settings are applied correctly.
 	 * 
 	 * @param basename
 	 *        should contain alphanumeric chars only

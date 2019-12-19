@@ -18,7 +18,9 @@ public class Document {
 
 	Map<String, Object> data = new HashMap<>();
 
-	public Document addData(String name, Object value) {
+	public Document() {}
+
+	public Document putData(String name, Object value) {
 		data.put(name, value);
 		return this;
 	}

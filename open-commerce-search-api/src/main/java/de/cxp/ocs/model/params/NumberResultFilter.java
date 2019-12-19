@@ -5,6 +5,8 @@ import lombok.Data;
 @Data
 public class NumberResultFilter implements ResultFilter {
 
+	final String _type = "NumberResultFilter";
+
 	private final String field;
 
 	private final Number lowerBound;

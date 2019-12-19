@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,7 +13,10 @@ import lombok.experimental.Accessors;
 
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = true)
+@Data
 public class HierarchialFacetEntry extends FacetEntry {
+
+	public final String _type = "HierarchialFacetEntry";
 
 	@Getter
 	private List<FacetEntry> children = new ArrayList<>();
