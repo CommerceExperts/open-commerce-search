@@ -17,7 +17,7 @@ public class Hierarchy {
 	}
 
 	@NonNull
-	final HierarchyLevel[] levels;
+	HierarchyLevel[] levels;
 
 	/**
 	 * Creates a simple path using hierarchy levels without IDs.

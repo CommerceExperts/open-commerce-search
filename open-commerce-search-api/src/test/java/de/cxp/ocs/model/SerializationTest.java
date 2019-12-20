@@ -116,10 +116,13 @@ public class SerializationTest {
 						.putData("string", "foo bar")
 						.putData("number", 12.5),
 
-				// FIXME
-				// new Product("3")
-				// .putData("title", "master category test")
-				// .putData("category", Hierarchy.simplePath("a", "b")),
+				new Product("3")
+						.putData("title", "master category test")
+						.putData("category", Hierarchy.simplePath("a", "b")),
+
+				new Product("4")
+						.putData("title", "master category test ")
+						.putData("category", new HierarchyLevel[] { new HierarchyLevel("fruit"), new HierarchyLevel("apple") }),
 
 				masterWithVariants(
 						(Product) new Product("3").putData("title", "master 2"),
@@ -127,7 +130,7 @@ public class SerializationTest {
 						new Document("32").putData("price", 99.9).putData("price.discount", 78.9),
 						new Document("33").putData("price", 45.6).putData("type", "var1")),
 
-				new ImportSession(System.currentTimeMillis(), "foo-bar", "foo-bar-20191203"),
+				new ImportSession("foo-bar", "foo-bar-20191203"),
 
 				new NumberResultFilter("price", 10.1, 99.9),
 				new PathResultFilter("category", new String[] { "a", "b", "c" }),

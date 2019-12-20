@@ -7,8 +7,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class ImportSession {
 
-	final public long startTimestampMs;
-
 	final public String finalIndexName;
 
 	final public String temporaryIndexName;

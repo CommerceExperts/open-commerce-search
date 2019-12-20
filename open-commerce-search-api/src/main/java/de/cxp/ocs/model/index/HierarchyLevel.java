@@ -9,6 +9,8 @@ import lombok.Data;
 @Data
 public class HierarchyLevel {
 
+	public final String _type = "HierarchyLevel";
+
 	public HierarchyLevel(String name) {
 		if (name == null || name.isEmpty()) {
 			throw new NullPointerException("name can't be null or empty!");

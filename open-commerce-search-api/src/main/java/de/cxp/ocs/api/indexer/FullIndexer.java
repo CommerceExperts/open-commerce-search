@@ -22,18 +22,6 @@ import de.cxp.ocs.model.index.Document;
 public interface FullIndexer {
 
 	/**
-	 * Helper method that should be used to get unified index names that contain
-	 * required locale information. This should be used to avoid duplicate index
-	 * names and to guarantee language settings are applied correctly.
-	 * 
-	 * @param basename
-	 *        should contain alphanumeric chars only
-	 * @param locale
-	 * @return
-	 */
-	String getIndexName(String basename, Locale locale);
-
-	/**
 	 * Start a new full import. Returns a handle containing meta data, that has
 	 * to be passed to all following calls.
 	 * 
@@ -42,7 +30,7 @@ public interface FullIndexer {
 	 * @throws IllegalStateException
 	 *         in case there is already a full-import running for that index.
 	 */
-	ImportSession startImport(String indexName) throws IllegalStateException;
+	ImportSession startImport(String indexName, Locale locale) throws IllegalStateException;
 
 	/**
 	 * Add one or more products to import session.
@@ -50,7 +38,7 @@ public interface FullIndexer {
 	 * @param session
 	 * @param p
 	 */
-	void addProducts(ImportSession session, Document[] doc);
+	void addProducts(ImportSession session, Document[] doc) throws Exception;
 
 	/**
 	 * Finishes the import, flushing the new index and (in case there is
@@ -58,7 +46,7 @@ public interface FullIndexer {
 	 * 
 	 * @return
 	 */
-	boolean done(ImportSession session);
+	boolean done(ImportSession session) throws Exception;
 
 	/**
 	 * cancels import which results in a deletion of the temporary index.
