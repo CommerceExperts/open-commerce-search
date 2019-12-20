@@ -6,12 +6,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.1</version>
+		<version>0.2</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>open-commerce-search-api</artifactId>
-	<version>0.1</version>
+	<version>${ocs-api.version}</version>
 	<packaging>jar</packaging>
 
 	<description>An open and abstract search API that covers minimal search functionality</description>

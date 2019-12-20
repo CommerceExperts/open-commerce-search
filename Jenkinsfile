@@ -26,6 +26,9 @@ pipeline {
 		} // end build packages
 
 		stage('deploy') {
+			when {
+				branch 'master'
+			}
 			steps {
 				withMaven(mavenSettingsConfig: '67c40a88-505a-4f78-94a3-d879cc1a29f6') {
 					sh "mvn $MAVEN_CLI_OPTS deploy -DskipTests=true"
