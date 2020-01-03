@@ -23,6 +23,30 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>io.swagger.core.v3</groupId>
+			<artifactId>swagger-jaxrs2</artifactId>
+			<version>2.1.0</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.swagger.core.v3</groupId>
+			<artifactId>swagger-core</artifactId>
+			<version>2.1.0</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>javax.ws.rs</groupId>
+			<artifactId>javax.ws.rs-api</artifactId>
+			<version>2.1</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 			<scope>test</scope>
@@ -61,7 +85,40 @@
 					<fork>true</fork>
 				</configuration>
 			</plugin>
+
+			<plugin>
+				<groupId>io.swagger.core.v3</groupId>
+				<artifactId>swagger-maven-plugin</artifactId>
+				<version>2.1.0</version>
+				<configuration>
+					<outputFileName>openapi</outputFileName>
+					<outputPath>${project.basedir}/src/main/resources</outputPath>
+					<outputFormat>JSONANDYAML</outputFormat>
+					<prettyPrint>TRUE</prettyPrint>
+				</configuration>
+				<executions>
+					<execution>
+						<phase>compile</phase>
+						<goals>
+							<goal>resolve</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- <plugin> <groupId>io.swagger.codegen.v3</groupId> <artifactId>swagger-codegen-maven-plugin</artifactId> <version>3.0.14</version> 
+				<configuration> <inputSpec>${project.basedir}/src/main/resources/openapi.yaml</inputSpec> <configOptions> <sourceFolder>main/java</sourceFolder> 
+				</configOptions> <output>${project.build.directory}/swagger/generated-client</output> </configuration> <executions> <execution> 
+				<id>generate-swagger-code</id> <phase>generate-sources</phase> <goals> <goal>generate</goal> </goals> <configuration> <language>java</language> 
+				<modelPackage>${project.groupId}.swagger.model</modelPackage> <apiPackage>${project.groupId}.swagger.api</apiPackage> <invokerPackage>${project.groupId}.swagger.invoker</invokerPackage> 
+				</configuration> </execution> </executions> </plugin> -->
 		</plugins>
+
+		<!-- <pluginManagement> <plugins> <plugin> <groupId>org.eclipse.m2e</groupId> <artifactId>lifecycle-mapping</artifactId> 
+			<version>1.0.0</version> <configuration> <lifecycleMappingMetadata> <pluginExecutions> <pluginExecution> <pluginExecutionFilter> 
+			<groupId>io.swagger.codegen.v3</groupId> <artifactId>swagger-codegen-maven-plugin</artifactId> <versionRange>[3.0.14,)</versionRange> 
+			<goals> <goal>generate</goal> </goals> </pluginExecutionFilter> <action> <execute /> </action> </pluginExecution> </pluginExecutions> 
+			</lifecycleMappingMetadata> </configuration> </plugin> </plugins> </pluginManagement> -->
 	</build>
 
 </project>

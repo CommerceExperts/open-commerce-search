@@ -1,0 +1,300 @@
+openapi: 3.0.1
+servers:
+- url: http://searcher
+  variables: {}
+tags:
+- name: index
+- name: search
+paths:
+  /full/cancel:
+    post:
+      operationId: cancel
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*':
+              schema:
+                type: boolean
+  /full/done:
+    post:
+      operationId: done
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*':
+              schema:
+                type: boolean
+  /full/start/{indexName}:
+    get:
+      summary: Starts a new full import
+      description: Starts a new full import. Returns a handle containing meta data,
+        that has to be passed to all following calls.
+      operationId: startImport
+      parameters:
+      - name: indexName
+        in: path
+        description: index name, that should match the regular expression '[a-z0-9_-]+'
+        required: true
+        schema:
+          type: string
+      - name: locale
+        in: query
+        description: used for language dependent settings
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        "200":
+          $ref: '#/components/responses/ImportSession'
+        "409":
+          description: there is already an import running for that index
+  /full/add:
+    post:
+      summary: Add documents to a running import session
+      description: Add one or more documents to a running import session.
+      operationId: add
+      requestBody:
+        $ref: '#/components/requestBodies/BulkImportData'
+      responses:
+        "204":
+          description: products successfuly added
+        "404":
+          description: according import session does not exist
+  /update/{indexName}:
+    post:
+      operationId: putProduct
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*':
+              schema:
+                type: boolean
+    delete:
+      operationId: deleteProduct
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*':
+              schema:
+                type: boolean
+    patch:
+      operationId: patchDocument
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*':
+              schema:
+                type: boolean
+  /search/tenants:
+    get:
+      operationId: getTenants
+      responses:
+        "200":
+          description: a list of available tenants
+  /search/{tenant}:
+    get:
+      summary: Search for documents
+      description: Runs a search request for a certain tenant. The tenant should exist
+        at the service and linked to a certain index in the backend. Different tenants
+        may use the same index.
+      operationId: find
+      parameters:
+      - name: tenant
+        in: path
+        description: tenant name
+        required: true
+        schema:
+          type: string
+      - name: searchQuery
+        in: query
+        description: the query that describes the wished result
+        required: true
+        style: form
+        schema:
+          type: string
+      - name: searchParams
+        in: query
+        description: parameters that describe the subset of the requested result
+        style: form
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        "200":
+          $ref: '#/components/responses/SearchResult'
+        "403":
+          description: tenant can't be accessed or does not exist
+        "404":
+          $ref: '#/components/responses/SearchResult'
+components:
+  schemas:
+    ImportSession:
+      type: object
+      properties:
+        finalIndexName:
+          type: string
+        temporaryIndexName:
+          type: string
+      readOnly: true
+    BulkImportData:
+      type: object
+      properties:
+        session:
+          $ref: '#/components/schemas/ImportSession'
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+        data:
+          type: object
+          additionalProperties:
+            type: object
+    Facet:
+      type: object
+      properties:
+        fieldName:
+          type: string
+        absoluteFacetCoverage:
+          type: integer
+          format: int64
+        order:
+          type: string
+          format: byte
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacetEntry'
+        meta:
+          type: object
+          additionalProperties:
+            type: object
+        type:
+          $ref: '#/components/schemas/Facet'
+        label:
+          type: string
+        filtered:
+          type: boolean
+    FacetEntry:
+      type: object
+      properties:
+        key:
+          type: string
+        docCount:
+          type: integer
+          format: int64
+        get_type:
+          type: string
+      discriminator:
+        propertyName: _type
+        mapping:
+          hierarchical: '#/components/schemas/HierarchialFacetEntry'
+          simple: '#/components/schemas/FacetEntry'
+    HierarchialFacetEntry:
+      type: object
+      properties:
+        get_type:
+          type: string
+        key:
+          type: string
+        docCount:
+          type: integer
+          format: int64
+        path:
+          type: string
+        childIndex:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/FacetEntry'
+    ResultHit:
+      type: object
+      properties:
+        index:
+          type: string
+        document:
+          $ref: '#/components/schemas/Document'
+        matchedQueries:
+          type: array
+          items:
+            type: string
+    SearchParams:
+      type: object
+      properties:
+        limit:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        hasFacets:
+          type: boolean
+        sort:
+          type: array
+          items:
+            type: string
+    SearchResult:
+      type: object
+      properties:
+        tookInMillis:
+          type: integer
+          format: int64
+        matchCount:
+          type: integer
+          format: int64
+        nextOffset:
+          type: integer
+          format: int64
+        searchQuery:
+          type: string
+        params:
+          $ref: '#/components/schemas/SearchParams'
+        hits:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResultHit'
+        facets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Facet'
+    Query:
+      type: object
+      properties:
+        userQuery:
+          type: string
+        filters:
+          type: array
+          items:
+            type: string

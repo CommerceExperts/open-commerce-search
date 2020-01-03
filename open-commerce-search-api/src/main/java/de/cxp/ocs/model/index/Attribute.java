@@ -3,20 +3,18 @@ package de.cxp.ocs.model.index;
 import lombok.Data;
 
 /**
- * Category may contain an ID, which can be used for filtering without requiring
- * a filtering based on Strings. The names are used to produce nice facets.
+ * Attribute with ID, which can be used for filtering without requiring
+ * a filtering based on Strings. The labels are used to produce nice facets.
  */
 @Data
-public class HierarchyLevel {
+public class Attribute {
 
-	public final String _type = "HierarchyLevel";
-
-	public HierarchyLevel(String name) {
-		if (name == null || name.isEmpty()) {
-			throw new NullPointerException("name can't be null or empty!");
+	public Attribute(String label) {
+		if (label == null || label.isEmpty()) {
+			throw new NullPointerException("label can't be null or empty!");
 		}
 		this.id = null;
-		this.name = name;
+		this.label = label;
 	}
 
 	/**
@@ -25,18 +23,18 @@ public class HierarchyLevel {
 	 * only.
 	 * 
 	 * @param id
-	 * @param name
+	 * @param label
 	 */
-	public HierarchyLevel(String id, String name) {
-		if (name == null || name.isEmpty()) {
+	public Attribute(String id, String label) {
+		if (label == null || label.isEmpty()) {
 			throw new NullPointerException("name can't be null or empty!");
 		}
 		this.id = id;
-		this.name = name;
+		this.label = label;
 	}
 
 	final String id;
 
-	final String name;
+	final String label;
 
 }

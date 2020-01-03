@@ -1,0 +1,25 @@
+{
+    "resourcePackages": [
+        "io.cxp.ocs.api.indexer",
+        "io.cxp.ocs.api.search",
+        "io.cxp.ocs.model.index",
+        "io.cxp.ocs.model.params",
+        "io.cxp.ocs.model.result"
+    ],
+    "prettyPrint" : true,
+    "cacheTTL": 0,
+    "openAPI": {
+        "info": {
+            "version": "0.2",
+            "title": "Open Commerce Search API",
+            "description": "todo",
+            "contact": {
+                "email": "info@commerce-experts.com"
+            },
+            "license": {
+                "name": "Apache 2.0",
+                "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+            }
+        }
+    }
+}

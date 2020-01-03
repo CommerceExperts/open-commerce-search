@@ -3,6 +3,7 @@ package de.cxp.ocs.model;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.stream.Stream;
 
@@ -19,22 +20,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
 import de.cxp.ocs.api.indexer.ImportSession;
+import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Document;
-import de.cxp.ocs.model.index.Hierarchy;
-import de.cxp.ocs.model.index.HierarchyLevel;
 import de.cxp.ocs.model.index.Product;
-import de.cxp.ocs.model.params.NumberResultFilter;
-import de.cxp.ocs.model.params.PathResultFilter;
-import de.cxp.ocs.model.params.ResultFilter;
 import de.cxp.ocs.model.params.SearchParams;
-import de.cxp.ocs.model.params.SortOrder;
-import de.cxp.ocs.model.params.Sorting;
-import de.cxp.ocs.model.params.TermResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
 import de.cxp.ocs.model.result.ResultHit;
 import de.cxp.ocs.model.result.SearchResult;
+import de.cxp.ocs.util.SortOrder;
+import de.cxp.ocs.util.Sorting;
 
 public class SerializationTest {
 
@@ -54,12 +50,12 @@ public class SerializationTest {
 
 		deserializer.registerModule(new ParameterNamesModule(Mode.PROPERTIES));
 
-		deserializer.addMixIn(HierarchyLevel.class, SingleStringArgsCreator.class);
-		deserializer.addMixIn(Hierarchy.class, CategoryPathCreator.class);
+		deserializer.addMixIn(Attribute.class, SingleStringArgsCreator.class);
 		deserializer.addMixIn(Facet.class, FacetMixin.class);
 
-		deserializer.addMixIn(ResultFilter.class, WithTypeInfo.class);
-		deserializer.registerSubtypes(NumberResultFilter.class, TermResultFilter.class, PathResultFilter.class);
+		// deserializer.addMixIn(ResultFilter.class, WithTypeInfo.class);
+		// deserializer.registerSubtypes(NumberResultFilter.class,
+		// TermResultFilter.class, PathResultFilter.class);
 
 		deserializer.addMixIn(FacetEntry.class, WithTypeInfo.class);
 		deserializer.registerSubtypes(HierarchialFacetEntry.class);
@@ -71,14 +67,9 @@ public class SerializationTest {
 	public static abstract class SingleStringArgsCreator {
 
 		@JsonCreator
-		SingleStringArgsCreator(String name) {}
+		SingleStringArgsCreator(String label) {}
 	}
 
-	public static abstract class CategoryPathCreator {
-
-		@JsonCreator
-		CategoryPathCreator(HierarchyLevel[] categories) {}
-	}
 
 	public static abstract class FacetMixin {
 
@@ -103,12 +94,10 @@ public class SerializationTest {
 
 	public static Stream<Object> getSerializableObjects() {
 		return Stream.of(
-				new HierarchyLevel("cat only"),
-				new HierarchyLevel("a1", "with id"),
+				new Attribute("cat only"),
+				new Attribute("a1", "with id"),
 
-				Hierarchy.simplePath("single level"),
-				Hierarchy.simplePath("many", "level", "category"),
-				new Hierarchy(new HierarchyLevel[] { new HierarchyLevel("1", "fruits"), new HierarchyLevel("2", "apples") }),
+				new Attribute[] { new Attribute("1", "fruits"), new Attribute("2", "apples") },
 
 				new Product("1").putData("title", "master test"),
 
@@ -118,11 +107,11 @@ public class SerializationTest {
 
 				new Product("3")
 						.putData("title", "master category test")
-						.putData("category", Hierarchy.simplePath("a", "b")),
+						.putData("category", Arrays.asList(new Attribute("c1", "a"), new Attribute("c2", "b"))),
 
 				new Product("4")
 						.putData("title", "master category test ")
-						.putData("category", new HierarchyLevel[] { new HierarchyLevel("fruit"), new HierarchyLevel("apple") }),
+						.putData("category", new Attribute[] { new Attribute("fruit"), new Attribute("apple") }),
 
 				masterWithVariants(
 						(Product) new Product("3").putData("title", "master 2"),
@@ -132,19 +121,20 @@ public class SerializationTest {
 
 				new ImportSession("foo-bar", "foo-bar-20191203"),
 
-				new NumberResultFilter("price", 10.1, 99.9),
-				new PathResultFilter("category", new String[] { "a", "b", "c" }),
-				new TermResultFilter("color", "blue"),
-				new TermResultFilter("color", "red", "black"),
+				// new NumberResultFilter("price", 10.1, 99.9),
+				// new PathResultFilter("category", new String[] { "a", "b", "c"
+				// }),
+				// new TermResultFilter("color", "blue"),
+				// new TermResultFilter("color", "red", "black"),
 
 				new Sorting("title", SortOrder.ASC),
 
 				new SearchParams()
 						.setLimit(8)
 						.setOffset(42)
-						.withFilter(new NumberResultFilter("price", 10.1, 99.9))
-						.withFilter(new PathResultFilter("category", new String[] { "a", "b", "c" }))
-						.withFilter(new TermResultFilter("color", "red", "black"))
+//						.withFilter(new NumberResultFilter("price", 10.1, 99.9))
+//						.withFilter(new PathResultFilter("category", new String[] { "a", "b", "c" }))
+//						.withFilter(new TermResultFilter("color", "red", "black"))
 						.withSorting(new Sorting("margin", SortOrder.DESC)),
 
 				new Facet("brand").addEntry("nike", 13),

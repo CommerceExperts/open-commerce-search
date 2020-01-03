@@ -1,8 +1,18 @@
 package de.cxp.ocs.api.indexer;
 
-import java.util.Locale;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
 
-import de.cxp.ocs.model.index.Document;
+import de.cxp.ocs.model.index.BulkImportData;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.servers.Server;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Run a full import into a new index.
@@ -19,7 +29,11 @@ import de.cxp.ocs.model.index.Document;
  * be used for product facets (e.g. book authors) but not for faceting the
  * content documents (e.g. blog post authors).
  */
-public interface FullIndexer {
+@OpenAPIDefinition(
+		servers = @Server(url = "http://indexer"),
+		tags = { @Tag(name = "index") })
+@Path("full")
+public interface FullIndexationService {
 
 	/**
 	 * Start a new full import. Returns a handle containing meta data, that has
@@ -30,15 +44,51 @@ public interface FullIndexer {
 	 * @throws IllegalStateException
 	 *         in case there is already a full-import running for that index.
 	 */
-	ImportSession startImport(String indexName, Locale locale) throws IllegalStateException;
+	@GET
+	@Path("start/{indexName}")
+	@Operation(
+			summary = "Starts a new full import",
+			description = "Starts a new full import. Returns a handle containing meta data, that has "
+					+ "to be passed to all following calls.",
+			parameters = {
+					@Parameter(
+							in = ParameterIn.PATH,
+							name = "indexName",
+							description = "index name, that should match the regular expression '[a-z0-9_-]+'",
+							required = true),
+					@Parameter(
+							in = ParameterIn.QUERY,
+							name = "locale",
+							description = "used for language dependent settings",
+							required = true)
+			},
+			responses = {
+					@ApiResponse(responseCode = "200", description = "import session started", ref = "ImportSession"),
+					@ApiResponse(responseCode = "409", description = "there is already an import running for that index")
+			})
+	ImportSession startImport(String indexName, String locale)
+			throws IllegalStateException;
 
 	/**
-	 * Add one or more products to import session.
+	 * Add one or more documents to a running import session.
 	 * 
 	 * @param session
 	 * @param p
 	 */
-	void addProducts(ImportSession session, Document[] doc) throws Exception;
+	@POST
+	@Path("add")
+	@Operation(
+			summary = "Add documents to a running import session",
+			description = "Add one or more documents to a running import session.",
+			requestBody = @RequestBody(
+					description = "Data that contains the import session reference and one or more documents that should be added to that session.",
+					ref = "BulkImportData",
+					required = true),
+			responses = {
+					@ApiResponse(responseCode = "204", description = "products successfuly added"),
+					@ApiResponse(responseCode = "404", description = "according import session does not exist")
+			})
+	void add(BulkImportData data) throws Exception;
 
 	/**
 	 * Finishes the import, flushing the new index and (in case there is
@@ -46,7 +96,9 @@ public interface FullIndexer {
 	 * 
 	 * @return
 	 */
-	boolean done(ImportSession session) throws Exception;
+	@POST
+	@Path("done")
+	boolean done(@RequestBody ImportSession session) throws Exception;
 
 	/**
 	 * cancels import which results in a deletion of the temporary index.
@@ -54,6 +106,8 @@ public interface FullIndexer {
 	 * @param session
 	 * @return
 	 */
-	boolean cancel(ImportSession session);
+	@POST
+	@Path("cancel")
+	boolean cancel(@RequestBody ImportSession session);
 
 }

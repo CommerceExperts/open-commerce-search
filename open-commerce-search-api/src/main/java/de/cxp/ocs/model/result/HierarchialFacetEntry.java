@@ -16,7 +16,7 @@ import lombok.experimental.Accessors;
 @Data
 public class HierarchialFacetEntry extends FacetEntry {
 
-	public final String _type = "HierarchialFacetEntry";
+	public final String _type = "hierarchical";
 
 	@Getter
 	private List<FacetEntry> children = new ArrayList<>();

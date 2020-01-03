@@ -1,8 +1,20 @@
 package de.cxp.ocs.api.indexer;
 
-import de.cxp.ocs.model.index.Document;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.PATCH;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
 
-public interface PartialIndexer {
+import de.cxp.ocs.model.index.Document;
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
+import io.swagger.v3.oas.annotations.servers.Server;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@OpenAPIDefinition(
+		servers = @Server(url = "http://indexer"),
+		tags = { @Tag(name = "index") })
+@Path("update/{indexName}")
+public interface UpdateIndexService {
 
 	/**
 	 * <p>
@@ -21,30 +33,27 @@ public interface PartialIndexer {
 	 * @param p
 	 * @return
 	 */
-	boolean updateDocument(String indexName, Document doc);
+	@PATCH
+	boolean patchDocument(String indexName, Document doc);
 
 	/**
-	 * Complete replacement of an existing document. If document does not exist,
-	 * it will be added.
+	 * Puts a document to the index. If document does not exist, it will be
+	 * added.
+	 * 
+	 * An existing product will be overwritten unless the parameter
+	 * "replaceExisting" is set to "false".
 	 * 
 	 * Provided document should be a complete object, partial updates should be
 	 * done using the updateDocument method.
 	 * 
 	 * @param indexName
-	 * @param p
+	 * @param doc
+	 * @param replaceExisting
 	 * @return true, if product was replaced or added.
 	 */
-	boolean replaceProduct(String indexName, Document doc);
+	@POST
+	boolean putProduct(String indexName, Document doc, boolean replaceExisting);
 
-	/**
-	 * Add non existing document. If document does exist, this request fails and
-	 * returns false.
-	 * 
-	 * @param indexName
-	 * @param p
-	 * @return
-	 */
-	boolean addProduct(String indexName, Document doc);
 
 	/**
 	 * Delete existing document. If document does not exist, it returns false.
@@ -53,6 +62,7 @@ public interface PartialIndexer {
 	 * @param p
 	 * @return
 	 */
+	@DELETE
 	boolean deleteProduct(String indexName, String id);
 
 }
