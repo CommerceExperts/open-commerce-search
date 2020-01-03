@@ -1,7 +1,6 @@
 package de.cxp.ocs;
 
 import java.io.IOException;
-import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -22,17 +21,17 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
-import de.cxp.ocs.api.indexer.FullIndexer;
+import de.cxp.ocs.api.indexer.FullIndexationService;
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.conf.ApplicationProperties;
 import de.cxp.ocs.conf.IndexConfiguration;
-import de.cxp.ocs.model.index.Document;
+import de.cxp.ocs.model.index.BulkImportData;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping(path = "/indexer/v1")
 @Slf4j
-public class IndexerController implements FullIndexer {
+public class IndexerController implements FullIndexationService {
 
 	@Autowired
 	private IndexerFactory indexerFactory;
@@ -66,7 +65,7 @@ public class IndexerController implements FullIndexer {
 
 	@GetMapping("/start/{indexName}")
 	@Override
-	public ImportSession startImport(@PathVariable("indexName") String indexName, @RequestParam("locale") Locale locale)
+	public ImportSession startImport(@PathVariable("indexName") String indexName, @RequestParam("locale") String locale)
 			throws IllegalStateException {
 		try {
 			return actualIndexers.get(indexName).startImport(indexName, locale);
@@ -86,18 +85,11 @@ public class IndexerController implements FullIndexer {
 	 * @param documents
 	 * @throws Exception
 	 */
-	@PostMapping("/add/{indexName}")
-	public void addProducts(
-			@PathVariable("indexName") String indexName,
-			@RequestParam("tempIndexName") String temporaryIndexName,
-			@RequestBody Document[] documents) throws Exception {
-		addProducts(new ImportSession(indexName, temporaryIndexName), documents);
-	}
-
+	@PostMapping("/add")
 	@Override
-	public void addProducts(ImportSession session, Document[] documents) throws Exception {
-		actualIndexers.get(session.getFinalIndexName())
-				.addProducts(session, documents);
+	public void add(@RequestBody BulkImportData data) throws Exception {
+		actualIndexers.get(data.getSession().getFinalIndexName())
+				.add(data);
 	}
 
 	@PostMapping("/done")

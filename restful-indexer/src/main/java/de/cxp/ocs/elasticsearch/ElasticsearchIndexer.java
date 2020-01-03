@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.LocaleUtils;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
 
@@ -58,8 +59,8 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	 * Expects a indexName ending with a number and will return a new index name
 	 */
 	@Override
-	protected String initNewIndex(final String indexName, Locale locale) {
-		String finalIndexName = getLocalizedIndexName(indexName, locale);
+	protected String initNewIndex(final String indexName, String locale) {
+		String finalIndexName = getLocalizedIndexName(indexName, LocaleUtils.toLocale(locale));
 		finalIndexName = getNumberedIndexName(finalIndexName);
 
 		client.createFreshIndex(finalIndexName);

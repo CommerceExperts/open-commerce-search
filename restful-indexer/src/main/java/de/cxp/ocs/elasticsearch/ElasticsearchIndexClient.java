@@ -10,6 +10,7 @@ import java.util.Set;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
+import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest.AliasActions;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
@@ -77,8 +78,10 @@ class ElasticsearchIndexClient {
 
 	public boolean updateAlias(String aliasName, String oldIndexName, String newIndexName) {
 		IndicesAliasesRequest aliasRequest = new IndicesAliasesRequest();
-		if (oldIndexName != null) aliasRequest.removeAlias(oldIndexName, aliasName);
-		aliasRequest.addAlias(aliasName, newIndexName);
+		if (oldIndexName != null) {
+			aliasRequest.addAliasAction(AliasActions.remove().alias(aliasName).index(oldIndexName));
+		}
+		aliasRequest.addAliasAction(AliasActions.add().alias(aliasName).index(newIndexName));
 
 		try {
 			AcknowledgedResponse updateAliases = highLevelClient.indices()
