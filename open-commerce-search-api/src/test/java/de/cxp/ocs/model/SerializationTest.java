@@ -19,22 +19,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
 import de.cxp.ocs.api.indexer.ImportSession;
+import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Document;
-import de.cxp.ocs.model.index.Hierarchy;
-import de.cxp.ocs.model.index.HierarchyLevel;
 import de.cxp.ocs.model.index.Product;
-import de.cxp.ocs.model.params.NumberResultFilter;
-import de.cxp.ocs.model.params.PathResultFilter;
-import de.cxp.ocs.model.params.ResultFilter;
 import de.cxp.ocs.model.params.SearchParams;
 import de.cxp.ocs.model.params.SortOrder;
 import de.cxp.ocs.model.params.Sorting;
-import de.cxp.ocs.model.params.TermResultFilter;
+import de.cxp.ocs.model.query.Query;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
 import de.cxp.ocs.model.result.ResultHit;
 import de.cxp.ocs.model.result.SearchResult;
+import de.cxp.ocs.model.result.SearchResultSlice;
 
 public class SerializationTest {
 
@@ -53,13 +50,9 @@ public class SerializationTest {
 		deserializer.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
 		deserializer.registerModule(new ParameterNamesModule(Mode.PROPERTIES));
-
-		deserializer.addMixIn(HierarchyLevel.class, SingleStringArgsCreator.class);
-		deserializer.addMixIn(Hierarchy.class, CategoryPathCreator.class);
 		deserializer.addMixIn(Facet.class, FacetMixin.class);
-
-		deserializer.addMixIn(ResultFilter.class, WithTypeInfo.class);
-		deserializer.registerSubtypes(NumberResultFilter.class, TermResultFilter.class, PathResultFilter.class);
+		deserializer.addMixIn(Attribute.class, WithTypeInfo.class);
+		deserializer.addMixIn(Query.class, SingleStringArgsCreator.class);
 
 		deserializer.addMixIn(FacetEntry.class, WithTypeInfo.class);
 		deserializer.registerSubtypes(HierarchialFacetEntry.class);
@@ -74,12 +67,12 @@ public class SerializationTest {
 		SingleStringArgsCreator(String name) {}
 	}
 
-	public static abstract class CategoryPathCreator {
+	public static abstract class DoubleStringArgsCreator {
 
 		@JsonCreator
-		CategoryPathCreator(HierarchyLevel[] categories) {}
+		DoubleStringArgsCreator(String name, String id) {}
 	}
-
+	
 	public static abstract class FacetMixin {
 
 		@JsonCreator
@@ -103,67 +96,79 @@ public class SerializationTest {
 
 	public static Stream<Object> getSerializableObjects() {
 		return Stream.of(
-				new HierarchyLevel("cat only"),
-				new HierarchyLevel("a1", "with id"),
 
-				Hierarchy.simplePath("single level"),
-				Hierarchy.simplePath("many", "level", "category"),
-				new Hierarchy(new HierarchyLevel[] { new HierarchyLevel("1", "fruits"), new HierarchyLevel("2", "apples") }),
+				new Product("1").set("title", "master test"),
 
-				new Product("1").putData("title", "master test"),
-
-				new Product("2").putData("title", "master 2")
-						.putData("string", "foo bar")
-						.putData("number", 12.5),
+				new Product("2").set("title", "master 2")
+						.set("string", "foo bar")
+						.set("number", 12.5)
+						.set("color", Attribute.of("blue"), Attribute.of("red"))
+						.set("category", Attribute.of("Men", "_cat1"), Attribute.of("Shoes", "_cat1_1")),
 
 				new Product("3")
-						.putData("title", "master category test")
-						.putData("category", Hierarchy.simplePath("a", "b")),
+						.set("title", "master category test")
+						.set("category", Attribute.of("a"), Attribute.of("b")),
 
 				new Product("4")
-						.putData("title", "master category test ")
-						.putData("category", new HierarchyLevel[] { new HierarchyLevel("fruit"), new HierarchyLevel("apple") }),
+						.set("title", "master category test ")
+						.set("category", Attribute.of("Fruit"), Attribute.of("Apple")),
 
 				masterWithVariants(
-						(Product) new Product("3").putData("title", "master 2"),
+						(Product) new Product("3").set("title", "master 2"),
 						new Document("31"),
-						new Document("32").putData("price", 99.9).putData("price.discount", 78.9),
-						new Document("33").putData("price", 45.6).putData("type", "var1")),
+						new Document("32").set("price", 99.9).set("price.discount", 78.9),
+						new Document("33").set("price", 45.6).set("type", "var1")),
 
 				new ImportSession("foo-bar", "foo-bar-20191203"),
-
-				new NumberResultFilter("price", 10.1, 99.9),
-				new PathResultFilter("category", new String[] { "a", "b", "c" }),
-				new TermResultFilter("color", "blue"),
-				new TermResultFilter("color", "red", "black"),
 
 				new Sorting("title", SortOrder.ASC),
 
 				new SearchParams()
 						.setLimit(8)
 						.setOffset(42)
-						.withFilter(new NumberResultFilter("price", 10.1, 99.9))
-						.withFilter(new PathResultFilter("category", new String[] { "a", "b", "c" }))
-						.withFilter(new TermResultFilter("color", "red", "black"))
 						.withSorting(new Sorting("margin", SortOrder.DESC)),
 
-				new Facet("brand").addEntry("nike", 13),
+							
+				// color={red,black}/10<price<99&category={id1, id2}
+				// param1=value1&color={red,black}&category...
+				// param1=value&fh_location=//catalog/locale/$s=dress&
+						
+				// color=red,black/category=cat1/price=10.1,
+						
+				/*
+				 Query - param=value&_s=shoes&_brand=adidas
+				 Links - param=value&_s=shoes&_brand=adidas&_price=10,20
+				 State - _category=cat1&_brand=adidas
+				 
+				 Query - param=value&q=/$s=shoes/brand=adidas
+				 Links - param=value&q=/$s=shoes/brand=adidas/price=10,20
+				 State - /category=cat1/brand=adidas
+
+
+				 Query - param=value&q=shoes:brand
+				 Links - param=value&q=/$s=shoes/brand=adidas/price=10,20
+				 State - /category=cat1/brand=adidas
+				 $s=dress/brand=adidas&fh_sort_by=-price,size
+				 */
+						
+				new Facet("brand").addEntry("nike", 13, "brand=nike"),
 				new Facet("categories")
-						.addEntry(new HierarchialFacetEntry("a", 50).addChild(new FacetEntry("aa", 23))),
+						.addEntry(new HierarchialFacetEntry("a", 50, "categories=a").addChild(new FacetEntry("aa", 23, "categories=aa"))),
 
 				new ResultHit()
 						.setDocument(new Document("12").setData(Collections.singletonMap("title", "nice stuff")))
 						.setIndex("de-de")
 						.setMatchedQueries(new String[] { "nice" }),
 
+				new SearchResultSlice()
+						.setMatchCount(42)
+						.setNextOffset(8),
+
 				new SearchResult(),
 
 				new SearchResult()
 						.setSearchQuery("the answer")
-						.setMatchCount(42)
-						.setNextOffset(8)
 						.setTookInMillis(400000000000L)
-
 		);
 	}
 

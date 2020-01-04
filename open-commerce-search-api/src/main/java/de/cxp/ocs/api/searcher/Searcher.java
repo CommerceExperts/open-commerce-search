@@ -3,6 +3,7 @@ package de.cxp.ocs.api.searcher;
 import java.io.IOException;
 
 import de.cxp.ocs.model.params.SearchParams;
+import de.cxp.ocs.model.query.Query;
 import de.cxp.ocs.model.result.SearchResult;
 
 public interface Searcher {
@@ -19,6 +20,6 @@ public interface Searcher {
 	 * @return
 	 * @throws IOException
 	 */
-	public SearchResult find(String tenant, String searchQuery, SearchParams parameters) throws IOException;
+	public SearchResult find(String tenant, Query query, SearchParams parameters) throws IOException;
 
 }

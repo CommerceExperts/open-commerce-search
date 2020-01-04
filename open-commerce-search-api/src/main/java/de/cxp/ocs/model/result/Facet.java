@@ -32,8 +32,8 @@ public class Facet {
 
 	private final Map<String, Object> meta = new HashMap<>();
 
-	public Facet addEntry(String key, long docCount) {
-		entries.add(new FacetEntry(key, docCount));
+	public Facet addEntry(String key, long docCount, String link) {
+		entries.add(new FacetEntry(key, docCount, link));
 		return this;
 	}
 

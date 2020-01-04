@@ -22,17 +22,7 @@ public class SearchParams {
 	 */
 	public boolean calculateFacet = true;
 
-	/**
-	 * Filters to restrict the result.
-	 */
-	public final List<ResultFilter> filters = new ArrayList<>();
-
 	public final List<Sorting> sortings = new ArrayList<>();
-
-	public SearchParams withFilter(ResultFilter filter) {
-		filters.add(filter);
-		return this;
-	}
 
 	public SearchParams withSorting(Sorting sorting) {
 		sortings.add(sorting);

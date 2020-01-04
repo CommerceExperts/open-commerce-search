@@ -10,5 +10,5 @@ public class FacetEntry {
 	public final String	_type	= "FacetEntry";
 	String				key;
 	long				docCount;
-
+	String				link;
 }

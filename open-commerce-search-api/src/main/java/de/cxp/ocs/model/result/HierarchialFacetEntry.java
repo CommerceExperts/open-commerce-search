@@ -27,8 +27,8 @@ public class HierarchialFacetEntry extends FacetEntry {
 
 	private final Map<String, FacetEntry> childIndex = new HashMap<>();
 
-	public HierarchialFacetEntry(String key, long docCount) {
-		super(key, docCount);
+	public HierarchialFacetEntry(String key, long docCount, String link) {
+		super(key, docCount, link);
 	}
 
 	public HierarchialFacetEntry setChildren(FacetEntry[] children) {
