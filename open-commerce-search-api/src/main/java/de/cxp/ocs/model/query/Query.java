@@ -25,9 +25,29 @@ public class Query {
 
 	private String searchPhrase;
 	private List<Refinement> refinements = new ArrayList<Query.Refinement>();
+	private final Style style;
 	
-	public Query(String query) {
-	    String[] pairs = query.split("&");
+	// Annoyingly, Jax-rs or Jersey automatically resolve $ as sort of a template parameter
+	// thus $s=dress is not possible out of the box.
+	private static final String SEARCH = "_s";
+	
+	public static enum Style { 
+		DSL("/"), URL("&");
+
+		private final String separator;
+
+		Style(String separator) {
+			this.separator = separator;
+		}
+		
+		public String getSeparator() {
+			return separator;
+		}
+	};
+	
+	public Query(String query, Style style) {
+		this.style = style;
+	    String[] pairs = query.split(style.separator);
 	    
 	    for (String pair : pairs) {
 	        int index = pair.indexOf("=");
@@ -35,7 +55,7 @@ public class Query {
 				String attribute = URLDecoder.decode(pair.substring(0, index), "UTF-8");
 				String values = URLDecoder.decode(pair.substring(index + 1), "UTF-8");
 				
-				if (attribute.equals("_s")) {
+				if (attribute.equals(SEARCH)) {
 					searchPhrase = values;
 				} else {
 					refinements.add(new Refinement(attribute, values.split(",")));
@@ -47,7 +67,15 @@ public class Query {
 	}
 	
 	public Query() {
-		// TODO Auto-generated constructor stub
+		this.style = Style.URL;
+	}
+
+	public Query(Query query) {
+		this.style = query.style;
+		this.searchPhrase = query.searchPhrase;
+		for (Refinement r : query.refinements) {
+			this.refinements.add(new Refinement(r.attribute, r.values));
+		}
 	}
 
 	public Query setSearch(String searchPhrase) {
@@ -64,15 +92,15 @@ public class Query {
 	public String toString() {
 		StringBuilder result = new StringBuilder();
 		if (searchPhrase != null) {
-			result.append("_s=").append(searchPhrase);
+			result.append(SEARCH).append(searchPhrase);
 		}
 		
 		for (Refinement r : refinements) {
 			if (result.length() > 0) {
-				result.append("&");
+				result.append(style.separator);
 			}
 
-			result.append("_").append(r.attribute).append("=").append(String.join(",", r.values));
+			result.append(r.attribute).append("=").append(String.join(",", r.values));
 		}
 		
 		return result.toString();

@@ -19,7 +19,7 @@ import lombok.experimental.Accessors;
 @EqualsAndHashCode(callSuper = true)
 public class Product extends Document {
 
-	private Product() {}
+	public Product() {}
 
 	public Product(String id) {
 		super(id);

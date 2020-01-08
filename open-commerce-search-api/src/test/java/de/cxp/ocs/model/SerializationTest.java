@@ -52,6 +52,7 @@ public class SerializationTest {
 		deserializer.registerModule(new ParameterNamesModule(Mode.PROPERTIES));
 		deserializer.addMixIn(Facet.class, FacetMixin.class);
 		deserializer.addMixIn(Attribute.class, WithTypeInfo.class);
+		deserializer.addMixIn(Attribute.class, DoubleStringArgsCreator.class);
 		deserializer.addMixIn(Query.class, SingleStringArgsCreator.class);
 
 		deserializer.addMixIn(FacetEntry.class, WithTypeInfo.class);

@@ -14,6 +14,8 @@ public class Attribute {
 	@Setter
 	private String name;
 	
+	public Attribute() {}
+	
 	public Attribute(String name, String id) {
 		this.name = name;
 		this.id = id;
@@ -26,6 +28,4 @@ public class Attribute {
 	public static Attribute of(String name, String id) {
 		return new Attribute(name, id);
 	}
-	
-	
 }
