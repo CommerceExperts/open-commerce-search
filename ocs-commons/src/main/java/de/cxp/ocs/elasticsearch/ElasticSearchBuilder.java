@@ -33,7 +33,7 @@ public class ElasticSearchBuilder implements AutoCloseable {
 	}
 
 
-	private RestHighLevelClient getRestHLClient() {
+	public RestHighLevelClient getRestHLClient() {
 		if (highLevelClient == null) {
 			synchronized (this) {
 				if (highLevelClient == null) {
