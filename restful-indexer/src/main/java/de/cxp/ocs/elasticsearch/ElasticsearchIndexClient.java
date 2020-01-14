@@ -223,17 +223,20 @@ class ElasticsearchIndexClient {
 	 */
 	public BulkResponse indexRecords(String indexName, Iterator<MasterItem> records) throws IOException {
 		BulkRequest bulkIndexRequest = new BulkRequest();
+		int docCount = 0;
 		while (records.hasNext()) {
 			IndexRequest indexRequest;
 			try {
 				indexRequest = asIndexRequest(indexName, records.next());
 				bulkIndexRequest.add(indexRequest);
+				docCount++;
 			}
 			catch (JsonProcessingException e) {
 				log.warn("failed to add record to bulk request", e);
 			}
 		}
-		return highLevelClient.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
+		if (docCount > 0) return highLevelClient.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
+		else return null;
 	}
 
 	private IndexRequest asIndexRequest(String indexName, final MasterItem record)

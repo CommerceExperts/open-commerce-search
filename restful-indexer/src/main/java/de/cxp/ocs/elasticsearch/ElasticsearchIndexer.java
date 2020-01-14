@@ -1,12 +1,10 @@
 package de.cxp.ocs.elasticsearch;
 
 import java.io.IOException;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,7 +24,6 @@ import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
 import de.cxp.ocs.preprocessor.CombiFieldBuilder;
 import de.cxp.ocs.preprocessor.DataPreProcessor;
-import de.cxp.ocs.util.OnceInAWhileRunner;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -37,15 +34,14 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 
 	private static String[] TEMPLATES = { "german_structured_search", "structured_search" };
 
-	private final IndexConfiguration		properties;
 	private final ElasticsearchIndexClient	client;
 
 	private Map<String, Field> fields;
 
 	public ElasticsearchIndexer(IndexConfiguration indexConf, RestHighLevelClient restClient, List<DataPreProcessor> dataProcessors) {
 		super(dataProcessors, new CombiFieldBuilder(indexConf.getFieldConfiguration().getFields()));
-		this.properties = indexConf;
-		this.client = new ElasticsearchIndexClient(restClient);
+		fields = indexConf.getFieldConfiguration().getFields();
+		client = new ElasticsearchIndexClient(restClient);
 	}
 
 	@Override
@@ -115,29 +111,18 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 
 	private MasterItem toMasterItem(Document doc) {
 		final Map<String, Object> sourceMasterData = doc.getData();
-		final Optional<Field> idField = properties.getFieldConfiguration().getIdField();
-		if (idField.isPresent() && sourceMasterData.containsKey(idField.get().getName())) {
-			final MasterItem targetMaster = new MasterItem(sourceMasterData.get(idField.get().getName())
-					.toString());
-			extractSourceValues(sourceMasterData, targetMaster);
+		final MasterItem targetMaster = new MasterItem(doc.getId());
+		extractSourceValues(sourceMasterData, targetMaster);
 
-			if (doc instanceof Product) {
-				for (final Document variantProduct : ((Product) doc).getVariants()) {
-					final Map<String, Object> sourceVariantData = variantProduct.getData();
-					final VariantItem targetVariant = new VariantItem(targetMaster);
-					extractSourceValues(sourceVariantData, targetVariant);
-					targetMaster.getVariants().add(targetVariant);
-				}
+		if (doc instanceof Product) {
+			for (final Document variantProduct : ((Product) doc).getVariants()) {
+				final Map<String, Object> sourceVariantData = variantProduct.getData();
+				final VariantItem targetVariant = new VariantItem(targetMaster);
+				extractSourceValues(sourceVariantData, targetVariant);
+				targetMaster.getVariants().add(targetVariant);
 			}
-			return targetMaster;
 		}
-		else {
-			// TODO throw exception to cancel indexing?
-			OnceInAWhileRunner.runAgainAfter(() -> log.error(
-					"Can't create index as the ID field is missing in the configuration."), "ID_FIELD_MISSING",
-					ChronoUnit.SECONDS, 30);
-			return null;
-		}
+		return targetMaster;
 	}
 
 	private void extractSourceValues(final Map<String, Object> sourceData, final IndexableItem targetItem) {

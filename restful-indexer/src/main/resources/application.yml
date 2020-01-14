@@ -12,6 +12,11 @@ endpoints:
   prometheus:
     sensitive: true
 
+spring:
+  jackson:
+    deserialization:
+      fail_on_unknown_properties: false
+
 ocs:
   connection-configuration:
     hosts: ${ES_HOSTS:http://localhost:9200}
