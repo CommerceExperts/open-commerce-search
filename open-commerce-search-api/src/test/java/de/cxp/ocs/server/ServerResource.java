@@ -21,11 +21,7 @@ import de.cxp.ocs.api.searcher.Searcher;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
-import de.cxp.ocs.model.params.SearchParams;
-import de.cxp.ocs.model.params.SortOrder;
-import de.cxp.ocs.model.params.Sorting;
-import de.cxp.ocs.model.query.Query;
-import de.cxp.ocs.model.query.Query.Style;
+import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.ResultHit;
@@ -68,15 +64,17 @@ public class ServerResource {
 		
 		// How do we handle custom/additional parameters, do we just keep them inside Query
 		// What about sorting, we have to carry it over to facet links, probably makes sense to handle as part of Query?
-		Query q = query != null 
-				? new Query(query, Style.DSL) 
-				: new Query(uriInfo.getRequestUri().getQuery(), Style.URL);
+		// Query q = query != null
+		// ? new Query(query, Style.DSL)
+		// : new Query(uriInfo.getRequestUri().getQuery(), Style.URL);
 				
 		// What would be the purpose of SearchParams if we handle sorting inside Query
 		// How do we call the offset and result size parameters in the query? We have to carry them over to facet links as well
-		SearchParams params = new SearchParams().withSorting(new Sorting("price", SortOrder.ASC));
+		SearchQuery params = new SearchQuery()
+				.setUserQuery(queryParams.getFirst("userQuery"))
+				.setSort(queryParams.getFirst("sort"));
 		
-		SearchResult result = searcher.find("catalog01.de", q, params);
+		SearchResult result = searcher.find("catalog01.de", params);
 		JSONObject r = new JSONObject(result);
 		
 		return Response.ok(r.toString(2)).build();
@@ -86,23 +84,18 @@ public class ServerResource {
 		return new Searcher() {
 			
 			@Override
-			public SearchResult find(String tenant, Query query, SearchParams parameters) throws IOException {
-				SearchResult res = new SearchResult().setParams(parameters).setTookInMillis(1);
+			public SearchResult find(String tenant, SearchQuery searchQuery) throws IOException {
+				SearchResult res = new SearchResult().setInputQuery(searchQuery).setTookInMillis(1);
 				
 				List<ResultHit> hits = new ArrayList<ResultHit>();
 				for (Document doc : storage) {
-					hits.add(new ResultHit().setDocument(doc).setMatchedQueries(new String[] {query.toString()}));
+					hits.add(new ResultHit().setDocument(doc).setMatchedQueries(new String[] { searchQuery.userQuery }));
 				}
 				
-				Query f1 = new Query(query);
-				f1.addRefinement("color", "red");
-				
-				Query f2 = new Query(query);
-				f2.addRefinement("color", "blue");
 
 				Facet facet = new Facet("color")
-						.addEntry(new FacetEntry("red", 1, f1.toString()))
-						.addEntry(new FacetEntry("blue", 1, f2.toString()));
+						.addEntry(new FacetEntry("red", 1, "color=red"))
+						.addEntry(new FacetEntry("blue", 1, "color=blue"));
 				
 				SearchResultSlice slice = new SearchResultSlice()
 											.setHits(hits)

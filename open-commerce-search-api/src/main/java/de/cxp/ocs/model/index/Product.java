@@ -2,6 +2,7 @@ package de.cxp.ocs.model.index;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.Accessors;
 
@@ -14,12 +15,11 @@ import lombok.experimental.Accessors;
  * variants is set at master level.
  */
 @Data
+@NoArgsConstructor
 @ToString(callSuper = true)
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = true)
 public class Product extends Document {
-
-	public Product() {}
 
 	public Product(String id) {
 		super(id);

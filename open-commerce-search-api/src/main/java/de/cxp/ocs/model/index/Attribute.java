@@ -1,20 +1,17 @@
 package de.cxp.ocs.model.index;
 
 import lombok.Data;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 @Accessors(chain = true)
 @Data
+@NoArgsConstructor
 public class Attribute {
 	
-	@Setter
-	private String id;
+	public String id;
 
-	@Setter
-	private String name;
-	
-	public Attribute() {}
+	public String name;
 	
 	public Attribute(String name, String id) {
 		this.name = name;

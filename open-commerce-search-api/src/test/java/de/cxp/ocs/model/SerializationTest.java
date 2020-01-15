@@ -22,16 +22,15 @@ import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
-import de.cxp.ocs.model.params.SearchParams;
-import de.cxp.ocs.model.params.SortOrder;
-import de.cxp.ocs.model.params.Sorting;
-import de.cxp.ocs.model.query.Query;
+import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
 import de.cxp.ocs.model.result.ResultHit;
 import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.model.result.SearchResultSlice;
+import de.cxp.ocs.model.result.SortOption;
+import de.cxp.ocs.model.result.SortOrder;
 
 public class SerializationTest {
 
@@ -53,7 +52,7 @@ public class SerializationTest {
 		deserializer.addMixIn(Facet.class, FacetMixin.class);
 		deserializer.addMixIn(Attribute.class, WithTypeInfo.class);
 		deserializer.addMixIn(Attribute.class, DoubleStringArgsCreator.class);
-		deserializer.addMixIn(Query.class, SingleStringArgsCreator.class);
+		deserializer.addMixIn(SearchQuery.class, SingleStringArgsCreator.class);
 
 		deserializer.addMixIn(FacetEntry.class, WithTypeInfo.class);
 		deserializer.registerSubtypes(HierarchialFacetEntry.class);
@@ -98,36 +97,50 @@ public class SerializationTest {
 	public static Stream<Object> getSerializableObjects() {
 		return Stream.of(
 
-				new Product("1").set("title", "master test"),
+				new Product("1")
+						.set("title", "string values test"),
 
-				new Product("2").set("title", "master 2")
+				new Product("2")
+						.set("title", "number values test")
+						.set("number", 12.5),
+
+				new Product("3")
+						.set("title", "attribute with id test")
+						.set("color", Attribute.of("Fruit", "12")),
+
+				new Product("4.1")
+						.set("title", "number array test")
+						.set("sizes", 38, 39, 40, 41, 42, 42.5),
+
+				new Product("4.2")
+						.set("title", "string array test")
+						.set("category", "foo", "bar"),
+
+				new Product("4.3")
+						.set("title", "attribute array test")
+						.set("category", Attribute.of("a"), Attribute.of("b")),
+
+				new Product("5")
+						.set("title", "all types test")
 						.set("string", "foo bar")
 						.set("number", 12.5)
 						.set("color", Attribute.of("blue"), Attribute.of("red"))
 						.set("category", Attribute.of("Men", "_cat1"), Attribute.of("Shoes", "_cat1_1")),
 
-				new Product("3")
-						.set("title", "master category test")
-						.set("category", Attribute.of("a"), Attribute.of("b")),
-
-				new Product("4")
-						.set("title", "master category test ")
-						.set("category", Attribute.of("Fruit"), Attribute.of("Apple")),
-
 				masterWithVariants(
 						(Product) new Product("3").set("title", "master 2"),
 						new Document("31"),
 						new Document("32").set("price", 99.9).set("price.discount", 78.9),
-						new Document("33").set("price", 45.6).set("type", "var1")),
+						new Document("33").set("price", 45.6).set("discountPercentage", "30%")),
 
 				new ImportSession("foo-bar", "foo-bar-20191203"),
 
-				new Sorting("title", SortOrder.ASC),
+				new SortOption("title", SortOrder.ASC, "sort=title"),
 
-				new SearchParams()
+				new SearchQuery()
 						.setLimit(8)
 						.setOffset(42)
-						.withSorting(new Sorting("margin", SortOrder.DESC)),
+						.setSort("sort=margin"),
 
 							
 				// color={red,black}/10<price<99&category={id1, id2}
@@ -168,8 +181,8 @@ public class SerializationTest {
 				new SearchResult(),
 
 				new SearchResult()
-						.setSearchQuery("the answer")
-						.setTookInMillis(400000000000L)
+						.setInputQuery(new SearchQuery().setUserQuery("the answer").setSort("wisdom").setLimit(1))
+						.setTookInMillis(42L)
 		);
 	}
 

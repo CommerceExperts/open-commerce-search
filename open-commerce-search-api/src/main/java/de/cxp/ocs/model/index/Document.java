@@ -1,5 +1,6 @@
 package de.cxp.ocs.model.index;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,7 +23,6 @@ public class Document {
 	 * anyOf:
 	 * - type: string
 	 * - type: number
-	 * - type: integer
 	 * - type: boolean
 	 * - $ref: '#/components/schemas/Attribute'
 	 * - type: array
@@ -30,32 +30,31 @@ public class Document {
 	 * ___ oneOf:
 	 * _____ - type: string
 	 * _____ - type: number
-	 * _____ - type: integer
 	 * _____ - type: boolean
 	 * _____ - $ref: '#/components/schemas/Attribute'
 	 * </pre>
 	 */
-	Map<String, Object> data = new HashMap<>();
+	private Map<String, Object> data = new HashMap<>();
 
 	public Document() {}
 
 	public Document set(String name, String... values) {
-		data.put(name, values.length == 1 ? values[0] : values);
+		data.put(name, values.length == 1 ? values[0] : Arrays.asList(values));
 		return this;
 	}
 
 	public Document set(String name, int... values) {
-		data.put(name, values.length == 1 ? values[0] : values);
+		data.put(name, values.length == 1 ? values[0] : Arrays.asList(values));
 		return this;
 	}
 
 	public Document set(String name, double... values) {
-		data.put(name, values.length == 1 ? values[0] : values);
+		data.put(name, values.length == 1 ? values[0] : Arrays.asList(values));
 		return this;
 	}
 
 	public Document set(String name, Attribute... values) {
-		data.put(name, values.length == 1 ? values[0] : values);
+		data.put(name, values.length == 1 ? values[0] : Arrays.asList(values));
 		return this;
 	}
 }

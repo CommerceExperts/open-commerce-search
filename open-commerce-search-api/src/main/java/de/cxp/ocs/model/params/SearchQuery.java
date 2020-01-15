@@ -9,7 +9,7 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor
 @Accessors(chain = true)
 @Data
-public class SearchParams2 {
+public class SearchQuery {
 
 	public String userQuery;
 
@@ -60,7 +60,7 @@ public class SearchParams2 {
 	 * flag to specify if facets are necessary. Should be set to false in case
 	 * only the next batch of hits is requests (e.g. for endless scrolling).
 	 */
-	public boolean calculateFacet = true;
+	public boolean withFacets = true;
 
 
 }

@@ -7,7 +7,6 @@ import java.util.Map;
 
 import lombok.Data;
 import lombok.NonNull;
-import lombok.Setter;
 import lombok.experimental.Accessors;
 
 @Accessors(chain = true)
@@ -18,19 +17,29 @@ public class Facet {
 	 * this is the name coming from the data. If a separate label should be
 	 * used, put that into meta data.
 	 */
-	@Setter
 	@NonNull
-	private String fieldName;
+	public String fieldName;
 
-	private long absoluteFacetCoverage = 0;
+	/**
+	 * This is the amount of matched documents that are covered by that facet.
+	 */
+	public long absoluteFacetCoverage = 0;
 
-	private byte order = Byte.MAX_VALUE;
+	/**
+	 * Is set to true if there an active filter from that facet.
+	 */
+	public boolean isFiltered = false;
 
-	private boolean isFiltered = false;
+	/**
+	 * The entries of that facet.
+	 */
+	public List<FacetEntry> entries = new ArrayList<>();
 
-	private List<FacetEntry> entries = new ArrayList<>();
-
-	private final Map<String, Object> meta = new HashMap<>();
+	/**
+	 * Optional meta data for that facet, e.g. display hints like a label or a
+	 * facet-type.
+	 */
+	public Map<String, Object> meta = new HashMap<>();
 
 	public Facet addEntry(String key, long docCount, String link) {
 		entries.add(new FacetEntry(key, docCount, link));
@@ -41,38 +50,4 @@ public class Facet {
 		entries.add(entry);
 		return this;
 	}
-
-	/**
-	 * Convenient method to add a label as meta data.
-	 * 
-	 * @param label
-	 * @return
-	 */
-	public Facet setLabel(String label) {
-		meta.put("label", label);
-		return this;
-	}
-
-	/**
-	 * Convenient method to retrieve a label as meta data. If none is set, it
-	 * returns this facet's fieldName.
-	 * 
-	 * @return
-	 */
-	public String getLabel() {
-		return (String) meta.getOrDefault("label", fieldName);
-	}
-
-	/**
-	 * Convenient method to set a type for that fact. The type can be some kind
-	 * of visualization hint (e.g. "numeric" for some kind of range
-	 * visualization).
-	 * 
-	 * @param type
-	 */
-	public Facet setType(String type) {
-		meta.put("type", type);
-		return this;
-	}
-
 }
