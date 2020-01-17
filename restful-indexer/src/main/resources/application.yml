@@ -1,0 +1,82 @@
+server:
+  port: 8535
+  compression:
+    enabled: true
+    mime-types:
+      - text/html
+      - text/css
+      - application/javascript
+      - application/json
+    
+endpoints:
+  prometheus:
+    sensitive: true
+
+spring:
+  jackson:
+    deserialization:
+      fail_on_unknown_properties: false
+
+ocs:
+  connection-configuration:
+    hosts: ${ES_HOSTS:http://localhost:9200}
+    
+  # default minimal configuration
+  default-index-config:
+    field-configuration:
+      fields:
+        id:
+          name: id
+          type: id
+          usage:
+            - result
+          field-level: both
+        title:
+          name: title
+          type: string
+          source-names: 
+            - Title
+            - product_name
+            - ProductName
+          usage:
+            - search
+            - result
+            - sort
+        brand:
+          name: brand
+          type: string
+          source-names:
+            - Brand
+          value-delimiter: "|"
+          usage:
+            - search
+            - facet
+            - result
+        price:
+          name: price
+          type: number
+          source-names:
+            - Price
+          usage:
+            - sort
+            - result
+            - facet
+          field-level: both
+        category:
+          name: category
+          type: category
+          source-names:
+            - Categories
+            - CategoryPath
+          usage:
+            - result
+            - facet
+        description:
+          name: description
+          source-names:
+            - Description
+            - ShortDescription
+            - Text
+          usage:
+            - search
+            - result

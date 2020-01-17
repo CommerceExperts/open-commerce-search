@@ -22,6 +22,7 @@
 		<ocs-api.version>0.2</ocs-api.version>
 		<ocs-lib.version>0.1</ocs-lib.version>
 
+		<elasticsearch.version>7.5.0</elasticsearch.version>
 		<spring-boot.version>1.5.22.RELEASE</spring-boot.version>
 		<spring-cloud.version>Dalston.SR5</spring-cloud.version>
 		<micrometer.version>1.0.6</micrometer.version>
@@ -62,26 +63,16 @@
 				<version>2.9.9</version>
 			</dependency>
 
-			<!-- Import dependency management from Spring Boot -->
 			<dependency>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-dependencies</artifactId>
-				<version>${spring-boot.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
+				<groupId>org.elasticsearch</groupId>
+				<artifactId>elasticsearch</artifactId>
+				<version>${elasticsearch.version}</version>
+				<scope>compile</scope>
 			</dependency>
-			<dependency>
-				<groupId>org.springframework.cloud</groupId>
-				<artifactId>spring-cloud-dependencies</artifactId>
-				<version>${spring-cloud.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-
 			<dependency>
 				<groupId>org.elasticsearch.client</groupId>
 				<artifactId>elasticsearch-rest-high-level-client</artifactId>
-				<version>7.5.0</version>
+				<version>${elasticsearch.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>fr.pilato.elasticsearch</groupId>
@@ -158,6 +149,21 @@
 				<scope>test</scope>
 			</dependency>
 
+			<!-- Import dependency management from Spring Boot -->
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-dependencies</artifactId>
+				<version>${spring-boot.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 

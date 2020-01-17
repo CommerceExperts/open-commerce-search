@@ -156,136 +156,134 @@
     }
   },
   "mappings": {
-    "product": {
-      "dynamic_templates": [
-        {
-          "result_data": {
-            "path_match": "*resultData.*",
-            "mapping": {
-              "index": false,
-              "type": "text",
-              "doc_values": false
-            }
+    "dynamic_templates": [
+      {
+        "result_data": {
+          "path_match": "*resultData.*",
+          "mapping": {
+            "index": false,
+            "type": "text",
+            "doc_values": false
           }
-        },
-        {
-          "scores": {
-            "path_match": "*scores.*",
-            "mapping": {
-              "type": "float"
-            }
+        }
+      },
+      {
+        "scores": {
+          "path_match": "*scores.*",
+          "mapping": {
+            "type": "float"
           }
-        },
-        {
-          "string_sort_data": {
-            "path_match": "*sortData.*",
-            "match_mapping_type": "string",
-            "mapping": {
-              "type": "keyword"
-            }
+        }
+      },
+      {
+        "string_sort_data": {
+          "path_match": "*sortData.*",
+          "match_mapping_type": "string",
+          "mapping": {
+            "type": "keyword"
           }
-        },
-        {
-          "search_data": {
-            "path_match": "*searchData.*",
-            "mapping": {
-              "norms": false,
-              "fielddata": true,
-              "type": "text",
-              "copy_to": "searchable_numeric_patterns",
-              "analyzer": "minimal",
-              "fields": {
-                "standard": {
-                  "norms": false,
-                  "analyzer": "standard",
-                  "type": "text"
-                },
-                "shingles": {
-                  "norms": false,
-                  "analyzer": "shingles",
-                  "type": "text"
-                },
-                "ngram": {
-                  "norms": false,
-                  "analyzer": "ngram",
-                  "type": "text"
-                }
+        }
+      },
+      {
+        "search_data": {
+          "path_match": "*searchData.*",
+          "mapping": {
+            "norms": false,
+            "fielddata": true,
+            "type": "text",
+            "copy_to": "searchable_numeric_patterns",
+            "analyzer": "minimal",
+            "fields": {
+              "standard": {
+                "norms": false,
+                "analyzer": "standard",
+                "type": "text"
+              },
+              "shingles": {
+                "norms": false,
+                "analyzer": "shingles",
+                "type": "text"
+              },
+              "ngram": {
+                "norms": false,
+                "analyzer": "ngram",
+                "type": "text"
               }
             }
           }
         }
-      ],
-      "properties": {
-        "searchable_numeric_patterns": {
-            "type": "text",
-            "analyzer": "num_attributes"
-        },
-        "searchData": {"type": "object"},
-        "resultData": {"type": "object"},
-        "sortData": {"type": "object"},
-        "scores": {"type": "object"},
-        "categories": {
-            "type": "text",
-            "analyzer": "category_analyzer",
-            "fielddata": "true",
-            "norms": "true"
-        },
-        "termFacetData": {
-          "type": "nested",
-          "properties": {
-            "name": {
-              "type": "keyword"
-            },
-            "value": {
-              "type": "keyword"
-            }
+      }
+    ],
+    "properties": {
+      "searchable_numeric_patterns": {
+          "type": "text",
+          "analyzer": "num_attributes"
+      },
+      "searchData": {"type": "object"},
+      "resultData": {"type": "object"},
+      "sortData": {"type": "object"},
+      "scores": {"type": "object"},
+      "categories": {
+          "type": "text",
+          "analyzer": "category_analyzer",
+          "fielddata": "true",
+          "norms": "true"
+      },
+      "termFacetData": {
+        "type": "nested",
+        "properties": {
+          "name": {
+            "type": "keyword"
+          },
+          "value": {
+            "type": "keyword"
           }
-        },
-        "numberFacetData": {
-          "type": "nested",
-          "properties": {
-            "name": {
-              "type": "keyword"
-            },
-            "value": {
-              "type": "float"
-            }
-          }
-        },
-        "variants": {
-          "type": "nested",
-          "properties": {
-            "termFacetData": {
-              "type": "nested",
-              "properties": {
-                "name": {
-                  "type": "keyword"
-                },
-                "value": {
-                  "type": "keyword"
-                }
-              }
-            },
-            "numberFacetData": {
-              "type": "nested",
-              "properties": {
-                "name": {
-                  "type": "keyword"
-                },
-                "value": {
-                  "type": "float"
-                }
-              }
-            }
-          }
-        },
-        "suggest": {
-          "type": "completion",
-          "analyzer": "suggest",
-          "preserve_separators": true,
-          "preserve_position_increments": true,
-          "max_input_length": 50
         }
+      },
+      "numberFacetData": {
+        "type": "nested",
+        "properties": {
+          "name": {
+            "type": "keyword"
+          },
+          "value": {
+            "type": "float"
+          }
+        }
+      },
+      "variants": {
+        "type": "nested",
+        "properties": {
+          "termFacetData": {
+            "type": "nested",
+            "properties": {
+              "name": {
+                "type": "keyword"
+              },
+              "value": {
+                "type": "keyword"
+              }
+            }
+          },
+          "numberFacetData": {
+            "type": "nested",
+            "properties": {
+              "name": {
+                "type": "keyword"
+              },
+              "value": {
+                "type": "float"
+              }
+            }
+          }
+        }
+      },
+      "suggest": {
+        "type": "completion",
+        "analyzer": "suggest",
+        "preserve_separators": true,
+        "preserve_position_increments": true,
+        "max_input_length": 50
       }
     }
   }

@@ -19,7 +19,7 @@ public class IndexerFactory {
 
 	private static final String dataPreProcessorImplPackage = "de.cxp.ocs.preprocessor.impl.";
 
-	private final RestHighLevelClient highLevelClient;
+	private final RestHighLevelClient elasticsearchClient;
 
 	public AbstractIndexer create(IndexConfiguration indexConfiguration) {
 		List<DataPreProcessor> dataProcessors = new ArrayList<>();
@@ -42,7 +42,7 @@ public class IndexerFactory {
 			}
 		}
 
-		return new ElasticsearchIndexer(indexConfiguration, highLevelClient, dataProcessors);
+		return new ElasticsearchIndexer(indexConfiguration, elasticsearchClient, dataProcessors);
 	}
 
 }

@@ -16,15 +16,19 @@ import lombok.experimental.Accessors;
 @EqualsAndHashCode(callSuper = true)
 public class HierarchialFacetEntry extends FacetEntry {
 
-	public HierarchialFacetEntry(String key, long docCount, String link) {
-		super(key, docCount, link);
-	}
+	public final String _type = "hierarchical";
 
 	/**
 	 * Child facet entries to that particular facet. The child facets again
 	 * could be HierarchialFacetEntries.
 	 */
 	public List<FacetEntry> children = new ArrayList<>();
+
+	public String path;
+
+	public HierarchialFacetEntry(String key, long docCount, String link) {
+		super(key, docCount, link);
+	}
 
 	public HierarchialFacetEntry addChild(final FacetEntry child) {
 		children.add(child);

@@ -3,11 +3,17 @@ package de.cxp.ocs.model.index;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 
+/**
+ * A simple 'data record' similar to a row inside a CSV file that contains any
+ * data relevant for search. The single field types and conversions are part of
+ * the according service configuration.
+ */
 @Data
 @Accessors(chain = true)
 @RequiredArgsConstructor
@@ -16,24 +22,20 @@ public class Document {
 	@NonNull
 	String id;
 
-	/**
-	 * <pre>
-	 * type: object
-	 * anyOf:
-	 * - type: string
-	 * - type: number
-	 * - type: boolean
-	 * - $ref: '#/components/schemas/Attribute'
-	 * - type: array
-	 * _ items:
-	 * ___ oneOf:
-	 * _____ - type: string
-	 * _____ - type: number
-	 * _____ - type: boolean
-	 * _____ - $ref: '#/components/schemas/Attribute'
-	 * </pre>
-	 */
-	private Map<String, Object> data = new HashMap<>();
+	@Schema(
+			anyOf = {
+					Integer.class,
+					Long.class,
+					Double.class,
+					String.class,
+					Attribute.class,
+					Integer[].class,
+					Long[].class,
+					Double[].class,
+					String[].class,
+					Attribute[].class
+			})
+	Map<String, Object> data = new HashMap<>();
 
 	public Document() {}
 

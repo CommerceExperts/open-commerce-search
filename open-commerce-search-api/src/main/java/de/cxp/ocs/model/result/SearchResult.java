@@ -44,7 +44,7 @@ public class SearchResult {
 	 */
 	public List<SearchResultSlice> slices;
 
-	public List<SortOption> sortOptions;
+	public List<Sorting> sortOptions;
 
 	/**
 	 * Additional optional payload, e.g. spell-correction information (aka

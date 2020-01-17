@@ -17,7 +17,7 @@ import javax.ws.rs.core.UriInfo;
 
 import org.json.JSONObject;
 
-import de.cxp.ocs.api.searcher.Searcher;
+import de.cxp.ocs.api.searcher.SearchService;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
@@ -60,7 +60,7 @@ public class ServerResource {
 	public Response search(@QueryParam("query") String query, @Context UriInfo uriInfo) throws IOException {
 		MultivaluedMap<String, String> queryParams = uriInfo.getQueryParameters();
 
-		Searcher searcher = getSearcher();
+		SearchService searcher = getSearchService();
 		
 		// How do we handle custom/additional parameters, do we just keep them inside Query
 		// What about sorting, we have to carry it over to facet links, probably makes sense to handle as part of Query?
@@ -74,17 +74,17 @@ public class ServerResource {
 				.setUserQuery(queryParams.getFirst("userQuery"))
 				.setSort(queryParams.getFirst("sort"));
 		
-		SearchResult result = searcher.find("catalog01.de", params);
+		SearchResult result = searcher.search("catalog01.de", params);
 		JSONObject r = new JSONObject(result);
 		
 		return Response.ok(r.toString(2)).build();
 	}
 
-	private Searcher getSearcher() {
-		return new Searcher() {
+	private SearchService getSearchService() {
+		return new SearchService() {
 			
 			@Override
-			public SearchResult find(String tenant, SearchQuery searchQuery) throws IOException {
+			public SearchResult search(String tenant, SearchQuery searchQuery) throws IOException {
 				SearchResult res = new SearchResult().setInputQuery(searchQuery).setTookInMillis(1);
 				
 				List<ResultHit> hits = new ArrayList<ResultHit>();
@@ -106,6 +106,11 @@ public class ServerResource {
 				res.setSlices(Collections.singletonList(slice));
 				
 				return res;
+			}
+
+			@Override
+			public String[] getTenants() {
+				return new String[] { "catalog01.de" };
 			}
 		};
 	}

@@ -129,14 +129,14 @@ public class DocumentDeserializer extends JsonDeserializer<Document> {
 
 	private static Optional<Attribute> extractAttribute(JsonNode treeNode) {
 		JsonNode idNode = treeNode.get("id");
-		JsonNode nameNode = treeNode.get("name");
+		JsonNode labelNode = treeNode.get("label");
 
-		if (nameNode == null || nameNode.isMissingNode() || !nameNode.isValueNode()
+		if (labelNode == null || labelNode.isMissingNode() || !labelNode.isValueNode()
 				|| idNode == null || idNode.isMissingNode() || !idNode.isValueNode()) {
 			return Optional.empty();
 		}
 
-		return Optional.of(new Attribute(nameNode.asText(), idNode.asText()));
+		return Optional.of(new Attribute(idNode.textValue(), labelNode.textValue()));
 	}
 
 	private static Object extractValue(ValueNode valueNode) {

@@ -1,0 +1,155 @@
+package de.cxp.ocs.elasticsearch.query;
+
+import static de.cxp.ocs.config.FieldConstants.*;
+import static de.cxp.ocs.util.QueryUtils.mergeQueries;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.function.Predicate;
+
+import org.apache.lucene.search.join.ScoreMode;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+
+import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
+import de.cxp.ocs.config.Field;
+import de.cxp.ocs.config.SearchConfiguration;
+import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
+import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilterAdapter;
+import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
+import de.cxp.ocs.elasticsearch.query.filter.PathResultFilterAdapter;
+import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilterAdapter;
+import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
+import de.cxp.ocs.elasticsearch.query.filter.TermResultFilterAdapter;
+
+public class FiltersBuilder {
+
+	private final Set<String>	multiSelectFacets	= new HashSet<>();
+	private final Set<String>	variantFields		= new HashSet<>();
+
+	private Map<String, QueryBuilder> filterQueries = new HashMap<>();
+
+	private MasterVariantQuery	basicFilters;
+	private QueryBuilder		postFilters;
+
+	private static Map<Class<? extends InternalResultFilter>, InternalResultFilterAdapter<? extends InternalResultFilter>> filterAdapters = new HashMap<>(3);
+	static {
+		filterAdapters.put(NumberResultFilter.class, new NumberResultFilterAdapter());
+		filterAdapters.put(PathResultFilter.class, new PathResultFilterAdapter());
+		filterAdapters.put(TermResultFilter.class, new TermResultFilterAdapter());
+	}
+
+	public FiltersBuilder(SearchConfiguration searchConfig, List<InternalResultFilter> filters) {
+		for (FacetConfig facet : searchConfig.getFacetConfiguration().getFacets()) {
+			if (facet.isMultiSelect()) multiSelectFacets.add(facet.getSourceField());
+		}
+		for (Field field : searchConfig.getFieldConfiguration().getFields().values()) {
+			if (field.isVariantLevel()) variantFields.add(field.getName());
+		}
+		prepareFilters(filters);
+	}
+
+	public QueryBuilder buildAggregationFilter(String facetName) {
+		// TODO: build filter for multi-select facet aggregation
+		// => (all filters combined without the specified one)
+		return null;
+	}
+
+	public MasterVariantQuery buildBasicFilters() {
+		if (basicFilters == null) {
+			basicFilters = buildFilters(this::isBasicQuery);
+		}
+		return basicFilters;
+	}
+
+	public QueryBuilder buildPostFilters() {
+		if (postFilters == null) {
+			MasterVariantQuery separatedPostFilters = buildFilters(this::isMultiSelectQuery);
+			postFilters = mergeQueries(separatedPostFilters.getMasterLevelQuery(), separatedPostFilters
+					.getVariantLevelQuery());
+		}
+		return postFilters;
+	}
+
+	private MasterVariantQuery buildFilters(Predicate<String> includeFields) {
+		// collect filters and combine into master and variant filters
+		QueryBuilder variantFilters = null;
+		QueryBuilder masterFilters = null;
+		for (Entry<String, QueryBuilder> nestedFieldFilters : filterQueries.entrySet()) {
+			if (!includeFields.test(nestedFieldFilters.getKey())) continue;
+
+			if (isVariantField(nestedFieldFilters.getKey())) {
+				variantFilters = mergeQueries(variantFilters, nestedFieldFilters.getValue());
+			}
+			else {
+				masterFilters = mergeQueries(masterFilters, nestedFieldFilters.getValue());
+			}
+		}
+
+		return new MasterVariantQuery(masterFilters, variantFilters, false, true);
+	}
+
+	private boolean isBasicQuery(String fieldName) {
+		return !multiSelectFacets.contains(fieldName);
+	}
+
+	private boolean isMultiSelectQuery(String fieldName) {
+		return multiSelectFacets.contains(fieldName);
+	}
+
+	private void prepareFilters(List<InternalResultFilter> filters) {
+		if (filters.isEmpty()) return;
+
+		// collect filter queries on master and variant level
+		boolean buildVariantQueryAfterwards = false;
+		for (InternalResultFilter filter : filters) {
+			String fieldPrefix;
+			switch (filter.getClass().getSimpleName()) {
+				case "TermResultFilter":
+					fieldPrefix = TERM_FACET_DATA;
+					break;
+				case "NumberResultFilter":
+					fieldPrefix = NUMBER_FACET_DATA;
+					break;
+				default:
+					fieldPrefix = "";
+			}
+
+			if (isVariantField(filter.getField())) {
+				fieldPrefix = VARIANTS + "." + fieldPrefix;
+				if (isBasicQuery(filter.getField())) {
+					buildVariantQueryAfterwards = true;
+				}
+			}
+			@SuppressWarnings("unchecked")
+			InternalResultFilterAdapter<? super InternalResultFilter> filterAdapter = (InternalResultFilterAdapter<? super InternalResultFilter>) filterAdapters
+					.get(filter.getClass());
+
+			if (fieldPrefix.isEmpty()) {
+				filterQueries.put(filter.getField(), filterAdapter.getAsQuery(fieldPrefix, filter));
+			}
+			else {
+				filterQueries.put(filter.getField(),
+						QueryBuilders.nestedQuery(
+								fieldPrefix,
+								filterAdapter.getAsQuery(fieldPrefix + ".", filter),
+								ScoreMode.None));
+			}
+		}
+
+		// call buildBasicFilters() to generate variant query
+		if (buildVariantQueryAfterwards) {
+			buildBasicFilters();
+		}
+	}
+
+	private boolean isVariantField(String field) {
+		return variantFields.contains(field);
+	}
+
+}

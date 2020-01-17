@@ -32,7 +32,7 @@ import de.cxp.ocs.model.result.HierarchialFacetEntry;
 import de.cxp.ocs.model.result.ResultHit;
 import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.model.result.SearchResultSlice;
-import de.cxp.ocs.model.result.SortOption;
+import de.cxp.ocs.model.result.Sorting;
 import de.cxp.ocs.model.result.SortOrder;
 
 public class SerializationTest {
@@ -69,7 +69,7 @@ public class SerializationTest {
 	public static abstract class SingleStringArgsCreator {
 
 		@JsonCreator
-		SingleStringArgsCreator(String name) {}
+		SingleStringArgsCreator(String label) {}
 	}
 
 	public static abstract class DoubleStringArgsCreator {
@@ -110,9 +110,12 @@ public class SerializationTest {
 
 	public static Stream<Object> getSerializableObjects() {
 		return Stream.of(
-
 				new Product("1")
 						.set("title", "string values test"),
+				Attribute.of("cat only"),
+				Attribute.of("a1", "with id"),
+
+				new Attribute[] { Attribute.of("1", "fruits"), Attribute.of("2", "apples") },
 
 				new Product("2")
 						.set("title", "number values test")
@@ -120,7 +123,7 @@ public class SerializationTest {
 
 				new Product("3")
 						.set("title", "attribute with id test")
-						.set("color", Attribute.of("Fruit", "12")),
+						.set("color", Attribute.of("12", "Fruit")),
 
 				new Product("4.1")
 						.set("title", "number array test")
@@ -139,7 +142,7 @@ public class SerializationTest {
 						.set("string", "foo bar")
 						.set("number", 12.5)
 						.set("color", Attribute.of("blue"), Attribute.of("red"))
-						.set("category", Attribute.of("Men", "_cat1"), Attribute.of("Shoes", "_cat1_1")),
+						.set("category", Attribute.of("_cat1", "Men"), Attribute.of("_cat1_1", "Shoes")),
 
 				masterWithVariants(
 						(Product) new Product("3").set("title", "master 2"),
@@ -149,7 +152,7 @@ public class SerializationTest {
 
 				new ImportSession("foo-bar", "foo-bar-20191203"),
 
-				new SortOption("title", SortOrder.ASC, "sort=title"),
+				new Sorting("title", SortOrder.ASC, "sort=title"),
 
 				new SearchQuery()
 						.setLimit(8)
