@@ -25,4 +25,5 @@ public class FacetEntry {
 	 * filter the result.
 	 */
 	public String link;
+
 }

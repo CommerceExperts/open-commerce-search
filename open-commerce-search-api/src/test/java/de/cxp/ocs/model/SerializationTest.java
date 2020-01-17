@@ -1,6 +1,8 @@
 package de.cxp.ocs.model;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -16,6 +18,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
 import de.cxp.ocs.api.indexer.ImportSession;
@@ -50,12 +53,14 @@ public class SerializationTest {
 
 		deserializer.registerModule(new ParameterNamesModule(Mode.PROPERTIES));
 		deserializer.addMixIn(Facet.class, FacetMixin.class);
-		deserializer.addMixIn(Attribute.class, WithTypeInfo.class);
 		deserializer.addMixIn(Attribute.class, DoubleStringArgsCreator.class);
 		deserializer.addMixIn(SearchQuery.class, SingleStringArgsCreator.class);
 
-		deserializer.addMixIn(FacetEntry.class, WithTypeInfo.class);
-		deserializer.registerSubtypes(HierarchialFacetEntry.class);
+		SimpleModule deserializerModule = new SimpleModule();
+		deserializerModule.addDeserializer(Document.class, new DocumentDeserializer());
+		deserializerModule.addDeserializer(Product.class, new ProductDeserializer());
+		deserializerModule.addDeserializer(FacetEntry.class, new FacetEntryDeserializer());
+		deserializer.registerModule(deserializerModule);
 	}
 
 	@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "_type")
@@ -72,7 +77,7 @@ public class SerializationTest {
 		@JsonCreator
 		DoubleStringArgsCreator(String name, String id) {}
 	}
-	
+
 	public static abstract class FacetMixin {
 
 		@JsonCreator
@@ -91,7 +96,16 @@ public class SerializationTest {
 		String serialized = serializer.writeValueAsString(serializable);
 		System.out.println(serialized);
 		Object deserialized = deserializer.readValue(serialized, serializable.getClass());
-		assertEquals(serializable, deserialized);
+
+		if (serializable instanceof Document) {
+			assertEqualDocuments((Document) serializable, (Document) deserialized, "");
+		}
+		else if (serializable instanceof Product) {
+			assertEqualDocuments((Product) serializable, (Product) deserialized, "");
+		}
+		else {
+			assertEquals(serializable, deserialized);
+		}
 	}
 
 	public static Stream<Object> getSerializableObjects() {
@@ -110,7 +124,7 @@ public class SerializationTest {
 
 				new Product("4.1")
 						.set("title", "number array test")
-						.set("sizes", 38, 39, 40, 41, 42, 42.5),
+						.set("sizes", 38, 39, 40, 41, 42, 42),
 
 				new Product("4.2")
 						.set("title", "string array test")
@@ -142,29 +156,8 @@ public class SerializationTest {
 						.setOffset(42)
 						.setSort("sort=margin"),
 
-							
-				// color={red,black}/10<price<99&category={id1, id2}
-				// param1=value1&color={red,black}&category...
-				// param1=value&fh_location=//catalog/locale/$s=dress&
-						
-				// color=red,black/category=cat1/price=10.1,
-						
-				/*
-				 Query - param=value&_s=shoes&_brand=adidas
-				 Links - param=value&_s=shoes&_brand=adidas&_price=10,20
-				 State - _category=cat1&_brand=adidas
-				 
-				 Query - param=value&q=/$s=shoes/brand=adidas
-				 Links - param=value&q=/$s=shoes/brand=adidas/price=10,20
-				 State - /category=cat1/brand=adidas
+				new FacetEntry("red", 2, null),
 
-
-				 Query - param=value&q=shoes:brand
-				 Links - param=value&q=/$s=shoes/brand=adidas/price=10,20
-				 State - /category=cat1/brand=adidas
-				 $s=dress/brand=adidas&fh_sort_by=-price,size
-				 */
-						
 				new Facet("brand").addEntry("nike", 13, "brand=nike"),
 				new Facet("categories")
 						.addEntry(new HierarchialFacetEntry("a", 50, "categories=a").addChild(new FacetEntry("aa", 23, "categories=aa"))),
@@ -182,8 +175,7 @@ public class SerializationTest {
 
 				new SearchResult()
 						.setInputQuery(new SearchQuery().setUserQuery("the answer").setSort("wisdom").setLimit(1))
-						.setTookInMillis(42L)
-		);
+						.setTookInMillis(42L));
 	}
 
 	private static Product masterWithVariants(Product masterProduct, Document... variantProducts) {
@@ -191,4 +183,42 @@ public class SerializationTest {
 		return masterProduct;
 	}
 
+	private void assertEqualDocuments(Document expected, Document actual, final String msgPrefix) {
+		assertEquals(expected.getId(), actual.getId(), msgPrefix + "IDs not equals");
+		expected.getData().forEach((k, v) -> {
+			if (v == null) {
+				assertNull(actual.getData().get(k));
+			}
+			else if (v.getClass().isArray()) {
+				if (v instanceof int[]) {
+					assertArrayEquals((int[]) v, (int[]) actual.getData().get(k), msgPrefix + "value for key '" + k + "' not equals");
+				}
+				else if (v instanceof double[]) {
+					assertArrayEquals((double[]) v, (double[]) actual.getData().get(k), msgPrefix + "value for key '" + k + "' not equals");
+				}
+				else if (v instanceof long[]) {
+					assertArrayEquals((long[]) v, (long[]) actual.getData().get(k), msgPrefix + "value for key '" + k + "' not equals");
+				}
+				else {
+					assertArrayEquals((Object[]) v, (Object[]) actual.getData().get(k), msgPrefix + "value for key '" + k + "' not equals");
+				}
+			}
+			else {
+				assertEquals(v, actual.getData().get(k), msgPrefix + "value for key '" + k + "' not equals");
+			}
+		});
+
+		if (expected instanceof Product) {
+			assertThat(actual, instanceOf(Product.class));
+			if (((Product) expected).getVariants() == null) {
+				assertNull(((Product) actual).getVariants());
+			}
+			else {
+				assertEquals(((Product) expected).getVariants().length, ((Product) actual).getVariants().length, "amount of variants not equal");
+				for (int i = 0; i < ((Product) expected).getVariants().length; i++) {
+					assertEqualDocuments(((Product) expected).getVariants()[i], ((Product) actual).getVariants()[i], "variant " + i + " not equals");
+				}
+			}
+		}
+	}
 }

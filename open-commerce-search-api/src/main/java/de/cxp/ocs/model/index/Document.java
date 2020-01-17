@@ -1,6 +1,5 @@
 package de.cxp.ocs.model.index;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,22 +38,27 @@ public class Document {
 	public Document() {}
 
 	public Document set(String name, String... values) {
-		data.put(name, values.length == 1 ? values[0] : Arrays.asList(values));
+		data.put(name, values.length == 1 ? values[0] : values);
+		return this;
+	}
+
+	public Document set(String name, long... values) {
+		data.put(name, values.length == 1 ? values[0] : values);
 		return this;
 	}
 
 	public Document set(String name, int... values) {
-		data.put(name, values.length == 1 ? values[0] : Arrays.asList(values));
+		data.put(name, values.length == 1 ? values[0] : values);
 		return this;
 	}
 
 	public Document set(String name, double... values) {
-		data.put(name, values.length == 1 ? values[0] : Arrays.asList(values));
+		data.put(name, values.length == 1 ? values[0] : values);
 		return this;
 	}
 
 	public Document set(String name, Attribute... values) {
-		data.put(name, values.length == 1 ? values[0] : Arrays.asList(values));
+		data.put(name, values.length == 1 ? values[0] : values);
 		return this;
 	}
 }
