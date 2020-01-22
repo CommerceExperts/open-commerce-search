@@ -32,8 +32,8 @@ import de.cxp.ocs.model.result.HierarchialFacetEntry;
 import de.cxp.ocs.model.result.ResultHit;
 import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.model.result.SearchResultSlice;
-import de.cxp.ocs.model.result.Sorting;
 import de.cxp.ocs.model.result.SortOrder;
+import de.cxp.ocs.model.result.Sorting;
 
 public class SerializationTest {
 
@@ -112,8 +112,9 @@ public class SerializationTest {
 		return Stream.of(
 				new Product("1")
 						.set("title", "string values test"),
-				Attribute.of("cat only"),
 				Attribute.of("a1", "with id"),
+
+				new Attribute("1", "color", "ff0000", "red"),
 
 				new Attribute[] { Attribute.of("1", "fruits"), Attribute.of("2", "apples") },
 
@@ -123,7 +124,7 @@ public class SerializationTest {
 
 				new Product("3")
 						.set("title", "attribute with id test")
-						.set("color", Attribute.of("12", "Fruit")),
+						.set("color", Attribute.of("12", "red")),
 
 				new Product("4.1")
 						.set("title", "number array test")
@@ -135,13 +136,13 @@ public class SerializationTest {
 
 				new Product("4.3")
 						.set("title", "attribute array test")
-						.set("category", Attribute.of("a"), Attribute.of("b")),
+						.set("category", Attribute.of("a", "Aha"), Attribute.of("b", "Boha")),
 
 				new Product("5")
 						.set("title", "all types test")
 						.set("string", "foo bar")
 						.set("number", 12.5)
-						.set("color", Attribute.of("blue"), Attribute.of("red"))
+						.set("color", Attribute.of("1", "blue"), Attribute.of("2", "red"))
 						.set("category", Attribute.of("_cat1", "Men"), Attribute.of("_cat1_1", "Shoes")),
 
 				masterWithVariants(

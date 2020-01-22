@@ -38,14 +38,14 @@ public class ServerResource {
 		Document p = new Product("1")
 				.set("title", "Incredible shoes")
 				.set("size", 43)
-				.set("color", Attribute.of("blue"), Attribute.of("red"))
+				.set("Attributes", Attribute.of("Color", "blue"), Attribute.of("Color", "red"))
 				.set("category", Attribute.of("Men", "_cat1"), Attribute.of("Shoes", "_cat1_1"));
 		storage.add(p);
 
 		Document s = new Product("2")
 				.set("title", "Magnificent dress")
 				.set("size", "L")
-				.set("color", Attribute.of("blue"), Attribute.of("red"))
+				.set("Attributes", Attribute.of("Color", "blue"), Attribute.of("Color", "red"))
 				.set("category", Attribute.of("Women", "_cat2"), Attribute.of("Dresses", "_cat2_1"));
 
 	

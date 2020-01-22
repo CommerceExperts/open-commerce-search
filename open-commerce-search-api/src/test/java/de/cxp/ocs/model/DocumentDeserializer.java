@@ -130,13 +130,22 @@ public class DocumentDeserializer extends JsonDeserializer<Document> {
 	private static Optional<Attribute> extractAttribute(JsonNode treeNode) {
 		JsonNode idNode = treeNode.get("id");
 		JsonNode labelNode = treeNode.get("label");
+		JsonNode codeNode = treeNode.get("code");
+		JsonNode valueNode = treeNode.get("value");
 
 		if (labelNode == null || labelNode.isMissingNode() || !labelNode.isValueNode()
-				|| idNode == null || idNode.isMissingNode() || !idNode.isValueNode()) {
+				|| valueNode == null || valueNode.isMissingNode() || !valueNode.isValueNode()
+				|| (idNode != null && !idNode.isValueNode())
+				|| (codeNode != null && !codeNode.isValueNode())) {
 			return Optional.empty();
 		}
 
-		return Optional.of(new Attribute(idNode.textValue(), labelNode.textValue()));
+		return Optional.of(
+				new Attribute(
+						idNode == null ? null : idNode.textValue(),
+						labelNode.textValue(),
+						codeNode == null ? null : codeNode.textValue(),
+						valueNode.textValue()));
 	}
 
 	private static Object extractValue(ValueNode valueNode) {
