@@ -1,5 +1,6 @@
 package de.cxp.ocs.model.index;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -9,11 +10,18 @@ import lombok.experimental.Accessors;
 /**
  * Main product containing the data that is common for all variants.
  * 
- * A product may be represented in a master-variant relation ship.
- * A variant is associated to a single {@link Product}. It should
- * only contain data special to that variant. Data that is common to all
- * variants is set at master level.
+ * A product may represent a master-variant relation ship.
+ * A variant is associated to a single {@link Product} and cannot have variants
+ * again - those will be ignored.
+ * It should only contain data special to that variant. 
+ * Data that is common to all variants should be set at master level.
  */
+
+@Schema(
+		description = "Main product containing the data that is common for all variants."
+				+ " A product may represent a master-variant relation ship."
+				+ " A variant should be associated to a single and cannot have variants again - those will be ignored."
+				+ " It should only contain data special to that variant. Data that is common to all variants should be set at master level.")
 @Data
 @NoArgsConstructor
 @ToString(callSuper = true)

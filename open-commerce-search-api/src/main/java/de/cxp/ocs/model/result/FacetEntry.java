@@ -20,7 +20,7 @@ public class FacetEntry {
 	public final String _type = "simple";
 
 	/**
-	 * Associated filter key.
+	 * Associated filter value.
 	 */
 	public String key;
 
@@ -28,12 +28,14 @@ public class FacetEntry {
 	 * Estimated amount of documents that will be returned, if this facet entry
 	 * is picked as filter.
 	 */
+	@Schema(description = "Estimated amount of documents that will be returned, if this facet entry is picked as filter.")
 	public long docCount;
 
 	/**
 	 * URL conform query parameters, that has to be used to
 	 * filter the result.
 	 */
+	@Schema(format = "URI")
 	public String link;
 
 }

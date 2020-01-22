@@ -19,6 +19,7 @@ import org.json.JSONObject;
 
 import de.cxp.ocs.api.searcher.SearchService;
 import de.cxp.ocs.model.index.Attribute;
+import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
 import de.cxp.ocs.model.params.SearchQuery;
@@ -38,16 +39,15 @@ public class ServerResource {
 		Document p = new Product("1")
 				.set("title", "Incredible shoes")
 				.set("size", 43)
-				.set("Attributes", Attribute.of("Color", "blue"), Attribute.of("Color", "red"))
-				.set("category", Attribute.of("Men", "_cat1"), Attribute.of("Shoes", "_cat1_1"));
+				.setAttributes(Attribute.of("Color", "blue"), Attribute.of("Color", "red"))
+				.addCategory(new Category("_cat1", "Men"), new Category("_cat1_1", "Shoes"));
 		storage.add(p);
 
 		Document s = new Product("2")
 				.set("title", "Magnificent dress")
 				.set("size", "L")
-				.set("Attributes", Attribute.of("Color", "blue"), Attribute.of("Color", "red"))
-				.set("category", Attribute.of("Women", "_cat2"), Attribute.of("Dresses", "_cat2_1"));
-
+				.setAttributes(Attribute.of("Color", "blue"), Attribute.of("Color", "red"))
+				.addCategory(new Category("_cat2", "Women"), new Category("_cat2_1", "Dresses"));
 	
 		masterWithVariants((Product) s, 
 				new Document("32").set("price", 99.9).set("price.discount", 78.9),

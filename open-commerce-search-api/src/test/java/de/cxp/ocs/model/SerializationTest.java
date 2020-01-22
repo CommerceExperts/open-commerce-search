@@ -23,6 +23,7 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.model.index.Attribute;
+import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
 import de.cxp.ocs.model.params.SearchQuery;
@@ -53,8 +54,8 @@ public class SerializationTest {
 
 		deserializer.registerModule(new ParameterNamesModule(Mode.PROPERTIES));
 		deserializer.addMixIn(Facet.class, FacetMixin.class);
-		deserializer.addMixIn(Attribute.class, DoubleStringArgsCreator.class);
-		deserializer.addMixIn(SearchQuery.class, SingleStringArgsCreator.class);
+		// deserializer.addMixIn(Attribute.class, AttributeCreator.class);
+		deserializer.addMixIn(SearchQuery.class, SearchQueryCreator.class);
 
 		SimpleModule deserializerModule = new SimpleModule();
 		deserializerModule.addDeserializer(Document.class, new DocumentDeserializer());
@@ -66,16 +67,16 @@ public class SerializationTest {
 	@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "_type")
 	public static abstract class WithTypeInfo {}
 
-	public static abstract class SingleStringArgsCreator {
+	public static abstract class SearchQueryCreator {
 
 		@JsonCreator
-		SingleStringArgsCreator(String label) {}
+		SearchQueryCreator(String label) {}
 	}
 
-	public static abstract class DoubleStringArgsCreator {
+	public static abstract class AttributeCreator {
 
 		@JsonCreator
-		DoubleStringArgsCreator(String name, String id) {}
+		AttributeCreator(String id, String label, String code, String value) {}
 	}
 
 	public static abstract class FacetMixin {
@@ -118,13 +119,15 @@ public class SerializationTest {
 
 				new Attribute[] { Attribute.of("1", "fruits"), Attribute.of("2", "apples") },
 
+				new Category("123", "Shoes"),
+
 				new Product("2")
 						.set("title", "number values test")
 						.set("number", 12.5),
 
 				new Product("3")
 						.set("title", "attribute with id test")
-						.set("color", Attribute.of("12", "red")),
+						.setAttributes(new Attribute("1", "color", "ff0000", "red")),
 
 				new Product("4.1")
 						.set("title", "number array test")
@@ -132,18 +135,19 @@ public class SerializationTest {
 
 				new Product("4.2")
 						.set("title", "string array test")
-						.set("category", "foo", "bar"),
+						.addCategory(Category.of("foo"), Category.of("bar")),
 
 				new Product("4.3")
 						.set("title", "attribute array test")
-						.set("category", Attribute.of("a", "Aha"), Attribute.of("b", "Boha")),
+						.setAttributes(Attribute.of("a", "Aha"), Attribute.of("b", "Boha")),
 
 				new Product("5")
 						.set("title", "all types test")
 						.set("string", "foo bar")
 						.set("number", 12.5)
-						.set("color", Attribute.of("1", "blue"), Attribute.of("2", "red"))
-						.set("category", Attribute.of("_cat1", "Men"), Attribute.of("_cat1_1", "Shoes")),
+						.setAttributes(Attribute.of("color", "blue"), Attribute.of("color", "red"))
+						.addCategory(new Category("1", "Men"), new Category("2", "Shoes"))
+						.addCategory(new Category("100", "Sale"), new Category("1", "Men"), new Category("2", "Shoes")),
 
 				masterWithVariants(
 						(Product) new Product("3").set("title", "master 2"),

@@ -85,7 +85,7 @@ public interface FullIndexationService {
 					ref = "BulkImportData",
 					required = true),
 			responses = {
-					@ApiResponse(responseCode = "204", description = "products successfuly added"),
+					@ApiResponse(responseCode = "204", description = "products successfully added"),
 					@ApiResponse(responseCode = "404", description = "according import session does not exist")
 			})
 	void add(BulkImportData data) throws Exception;

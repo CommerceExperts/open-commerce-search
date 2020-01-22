@@ -5,10 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 
 @Schema(
+		name = "Attribute",
 		description = "Rich model that can be used to represent a document or product attribute."
 				+ " If 'id' and/or 'code' are provieded, these can be used for consistent filtering, even if the label and values are changing."
 				+ " The label and the values will be used used to produce nice facets or if used for search, they will be added to the searchable content.",
@@ -16,7 +16,6 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 @Data
 @NoArgsConstructor
-@RequiredArgsConstructor
 @AllArgsConstructor
 public class Attribute {
 	
@@ -27,7 +26,7 @@ public class Attribute {
 			pattern = "[A-Za-z0-9\\-_.]")
 	public String id;
 
-	@Schema(description = "Human readable name of the attribute, e.g. 'Color' or 'Max. Speed in km/h'")
+	@Schema(description = "Human readable name of the attribute, e.g. 'Color' or 'Max. Speed in km/h'", required = true)
 	@NonNull
 	public String label;
 	
@@ -36,12 +35,12 @@ public class Attribute {
 			pattern = "[A-Za-z0-9\\-_.]")
 	public String code;
 
-	@Schema(description = "Human readable representation of that attribute, e.g. 'Red' for the attribute 'Color'")
+	@Schema(description = "Human readable representation of that attribute, e.g. 'Red' for the attribute 'Color'", required = true)
 	@NonNull
 	public String value;
 
 	public static Attribute of(String label, String value) {
-		return new Attribute(label, value);
+		return new Attribute(null, label, null, value);
 	}
 
 }

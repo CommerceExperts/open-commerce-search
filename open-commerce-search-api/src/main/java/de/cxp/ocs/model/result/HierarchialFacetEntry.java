@@ -3,6 +3,7 @@ package de.cxp.ocs.model.result;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -22,6 +23,7 @@ public class HierarchialFacetEntry extends FacetEntry {
 	 * Child facet entries to that particular facet. The child facets again
 	 * could be HierarchialFacetEntries.
 	 */
+	@Schema(description = "Child facet entries to that particular facet. The child facets again could be HierarchialFacetEntries.")
 	public List<FacetEntry> children = new ArrayList<>();
 
 	public String path;
