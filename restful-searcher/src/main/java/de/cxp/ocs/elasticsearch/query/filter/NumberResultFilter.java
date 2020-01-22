@@ -18,8 +18,16 @@ public class NumberResultFilter implements InternalResultFilter {
 		if (lowerBound == null && upperBound == null) {
 			throw new IllegalArgumentException("number result filter without lower and upper bound not allowed!");
 		}
-		if (upperBound != null && lowerBound != null && lowerBound.doubleValue() > upperBound.doubleValue()) {
+		if (lowerBound == null) lowerBound = upperBound;
+		else if (upperBound == null) upperBound = lowerBound;
+		else if (lowerBound.doubleValue() > upperBound.doubleValue()) {
 			throw new IllegalArgumentException("lower bound can't be greater than upper bound!");
 		}
+	}
+
+	@Override
+	public String[] getValues() {
+		if (lowerBound.equals(upperBound)) return new String[] { lowerBound.toString()};
+		else return new String[] { lowerBound.toString(), upperBound.toString() };
 	}
 }

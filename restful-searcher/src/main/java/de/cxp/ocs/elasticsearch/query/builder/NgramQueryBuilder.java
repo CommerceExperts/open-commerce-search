@@ -20,7 +20,7 @@ import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
-import de.cxp.ocs.util.QueryUtils;
+import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.Util;
 import lombok.Getter;
 import lombok.Setter;
@@ -105,7 +105,7 @@ public class NgramQueryBuilder implements ESQueryBuilder {
 		if (name == null) {
 			name = "ngram-" + getMinShouldMatch();
 		}
-		return name + "(" + QueryUtils.getQueryLabel(searchTerms) + ")";
+		return name + "(" + ESQueryUtils.getQueryLabel(searchTerms) + ")";
 	}
 
 	private MultiMatchQueryBuilder buildEsQuery(String ngramPhrase) {

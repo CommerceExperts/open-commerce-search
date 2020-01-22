@@ -1,8 +1,5 @@
 package de.cxp.ocs.elasticsearch.query.filter;
 
-import java.util.Arrays;
-import java.util.List;
-
 import lombok.Data;
 
 /**
@@ -13,25 +10,20 @@ public class TermResultFilter implements InternalResultFilter {
 
 	private final String field;
 
-	private final List<String> values;
+	private final String[] values;
 
 	public TermResultFilter(String name, String... inputValues) {
-		field = name;
-		values = Arrays.asList(inputValues);
-	}
-
-	public TermResultFilter(String name, List<String> inputValues) {
 		field = name;
 		values = inputValues;
 	}
 
-	public Object getSingleValue() {
-		if (values.size() > 0) return values.get(0);
+	public String getSingleValue() {
+		if (values.length > 0) return values[0];
 		return null;
 	}
 
-	public Object getValue(int index) {
-		if (values.size() > index) return values.get(index);
+	public String getValue(int index) {
+		if (values.length > index) return values[index];
 		return null;
 	}
 

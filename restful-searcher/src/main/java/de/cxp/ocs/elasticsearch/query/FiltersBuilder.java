@@ -1,7 +1,7 @@
 package de.cxp.ocs.elasticsearch.query;
 
 import static de.cxp.ocs.config.FieldConstants.*;
-import static de.cxp.ocs.util.QueryUtils.mergeQueries;
+import static de.cxp.ocs.util.ESQueryUtils.mergeQueries;
 
 import java.util.HashMap;
 import java.util.HashSet;

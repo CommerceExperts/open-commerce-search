@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.model.result.Sorting;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
@@ -17,11 +18,13 @@ public class InternalSearchParams {
 
 	public int offset = 0;
 
+	public String userQuery;
+
 	/**
 	 * flag to specify if facets are necessary. Should be set to false in case
 	 * only the next batch of hits is requests (e.g. for endless scrolling).
 	 */
-	public boolean hasFacets = true;
+	public boolean withFacets = true;
 
 	public final List<Sorting> sortings = new ArrayList<>();
 

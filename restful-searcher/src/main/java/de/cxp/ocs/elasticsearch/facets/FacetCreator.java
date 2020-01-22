@@ -9,11 +9,12 @@ import org.elasticsearch.search.aggregations.Aggregations;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.util.InternalSearchParams;
+import de.cxp.ocs.util.SearchQueryBuilder;
 
 public interface FacetCreator {
 
 	AbstractAggregationBuilder<?> buildAggregation(InternalSearchParams parameters);
 
-	Collection<Facet> createFacets(List<InternalResultFilter> filters, Aggregations aggregationResult);
+	Collection<Facet> createFacets(List<InternalResultFilter> filters, Aggregations aggregationResult, SearchQueryBuilder linkBuilder);
 
 }

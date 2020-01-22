@@ -71,10 +71,10 @@ public class SearchController {
 		log.debug("Using index {} for tenant {}", searchConfig.getIndexName(), tenant);
 
 		final InternalSearchParams parameters = parseParams(params, searchConfig.getFieldConfiguration().getFields());
+		parameters.userQuery = query;
 
 		final Searcher searcher = searchClientCache.get(tenant, () -> new Searcher(esBuilder.getRestHLClient(), searchConfig, registry));
 		SearchResult result = searcher.find(query, parameters);
-		result.setSearchQuery(query);
 
 		return result;
 	}

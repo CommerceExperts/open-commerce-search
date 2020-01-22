@@ -61,7 +61,7 @@ public class CombiFieldBuilder {
 			if (combiFieldPredicate.test(field)) {
 				String joinedValue = joinCombiFieldValues(document.getData(), field);
 				List<String> deduplicateTokens = deduplicateAdjoinedTokens(joinedValue.trim().split(WHITESPACE_REGEX));
-				document.putData(field.getName(), StringUtils.join(deduplicateTokens, WHITESPACE));
+				document.set(field.getName(), StringUtils.join(deduplicateTokens, WHITESPACE));
 			}
 		});
 	}

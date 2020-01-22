@@ -14,6 +14,7 @@ import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.util.InternalSearchParams;
+import de.cxp.ocs.util.SearchQueryBuilder;
 
 public class VariantFacetCreator implements FacetCreator {
 
@@ -40,11 +41,11 @@ public class VariantFacetCreator implements FacetCreator {
 	}
 
 	@Override
-	public Collection<Facet> createFacets(List<InternalResultFilter> filters, Aggregations aggregationResult) {
+	public Collection<Facet> createFacets(List<InternalResultFilter> filters, Aggregations aggregationResult, SearchQueryBuilder linkBuilder) {
 		List<Facet> facets = new ArrayList<>();
 		Nested nestedAgg = (Nested) aggregationResult.get("_variants");
 		for (FacetCreator creator : innerCreators) {
-			facets.addAll(creator.createFacets(filters, nestedAgg.getAggregations()));
+			facets.addAll(creator.createFacets(filters, nestedAgg.getAggregations(), linkBuilder));
 		}
 		return facets;
 	}

@@ -42,7 +42,7 @@ public class AsciiFoldingDataProcessor implements DataPreProcessor {
 		searchableFields.forEach(fieldName -> {
 			Object value = sourceData.get(fieldName);
 			if (value instanceof String) {
-				sourceDocument.putData(fieldName, asciify((String) value));
+				sourceDocument.set(fieldName, asciify((String) value));
 			}
 			else if (Util.isStringCollection(value)) {
 				@SuppressWarnings("unchecked")

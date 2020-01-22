@@ -94,7 +94,9 @@ public class RemoveValuesDataProcessor extends ConfigureableDataprocessor<Patter
 						cleandValues.add(StringUtils.join(cleanedTokens, pc.getWordJoinSeparator()));
 					}
 				});
-				sourceData.putData(pc.getDestinationFieldName(), cleandValues.isEmpty() ? null : cleandValues);
+				if (!cleandValues.isEmpty()) {
+					sourceData.set(pc.getDestinationFieldName(), cleandValues.toArray(new String[cleandValues.size()]));
+				}
 			}
 			else {
 				OnceInAWhileRunner.runAgainAfter(() -> log.warn(

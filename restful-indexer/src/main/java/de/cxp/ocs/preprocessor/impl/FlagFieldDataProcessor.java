@@ -107,11 +107,11 @@ public class FlagFieldDataProcessor implements DataPreProcessor {
 			flagFieldConf.forEach(ffc -> {
 				MatchResult matchRes = getMatchResult(document, ffc);
 				if (matchRes.value != null) {
-					document.putData(ffc.getDestinationFieldName(), matchRes.value);
+					document.set(ffc.getDestinationFieldName(), matchRes.value);
 				}
 				else {
 					if (matchRes.validField) {
-						document.putData(ffc.getDestinationFieldName(), ffc.getNoMatch());
+						document.set(ffc.getDestinationFieldName(), ffc.getNoMatch());
 					}
 				}
 			});
