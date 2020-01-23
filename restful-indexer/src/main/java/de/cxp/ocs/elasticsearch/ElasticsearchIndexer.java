@@ -170,8 +170,8 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	@Override
-	public boolean cancel(ImportSession session) {
-		return client.deleteIndex(session.temporaryIndexName, true);
+	public void cancel(ImportSession session) {
+		client.deleteIndex(session.temporaryIndexName, false);
 	}
 
 }

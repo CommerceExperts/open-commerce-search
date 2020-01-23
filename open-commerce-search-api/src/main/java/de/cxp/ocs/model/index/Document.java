@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NonNull;
@@ -31,7 +32,8 @@ public class Document {
 	public String id;
 
 	@Schema(
-			description = "Only values of the following types are accepted - others will be dropped silently:"
+			description = "The data property should be used for standard fields, such as title, description, price."
+					+ " Only values of the following types are accepted (others will be dropped silently):"
 					+ " Standard primitive types (String, Integer, Double) and arrays of these types."
 					+ " Attributes (key-value objects with ID) should be passed to the attributes property.",
 			anyOf = {
@@ -46,12 +48,14 @@ public class Document {
 			})
 	public Map<String, Object> data = new HashMap<>();
 
+	@Schema(description = "multiple attributes can be delivered separately from standard data fields")
 	public Attribute[] attributes;
 
-	@Schema(
+	@ArraySchema(
+			schema = @Schema(
 			description = "categories are treated in a parent-child relationship,"
 					+ " so a product can be placed into a path within a category tree."
-					+ " Multiple category paths can be defined per document.")
+							+ " Multiple category paths can be defined per document."))
 	public List<Category[]> categories;
 
 	public Document() {}

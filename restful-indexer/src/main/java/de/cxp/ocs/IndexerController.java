@@ -21,7 +21,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
-import de.cxp.ocs.api.indexer.FullIndexationService;
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.conf.ApplicationProperties;
 import de.cxp.ocs.conf.IndexConfiguration;
@@ -31,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping(path = "/indexer/v1")
 @Slf4j
-public class IndexerController implements FullIndexationService {
+public class IndexerController {
 
 	@Autowired
 	private IndexerFactory indexerFactory;
@@ -64,14 +63,15 @@ public class IndexerController implements FullIndexationService {
 	}
 
 	@GetMapping("/start/{indexName}")
-	@Override
-	public ImportSession startImport(@PathVariable("indexName") String indexName, @RequestParam("locale") String locale)
-			throws IllegalStateException {
+	public ResponseEntity<ImportSession> startImport(@PathVariable("indexName") String indexName, @RequestParam("locale") String locale) {
 		try {
-			return actualIndexers.get(indexName).startImport(indexName, locale);
+			return ResponseEntity.ok(actualIndexers.get(indexName).startImport(indexName, locale));
+		}
+		catch (IllegalStateException ise) {
+			return ResponseEntity.status(HttpStatus.CONFLICT).build();
 		}
 		catch (ExecutionException e) {
-			throw new RuntimeException(e);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}
 	}
 
@@ -86,29 +86,34 @@ public class IndexerController implements FullIndexationService {
 	 * @throws Exception
 	 */
 	@PostMapping("/add")
-	@Override
-	public void add(@RequestBody BulkImportData data) throws Exception {
-		actualIndexers.get(data.getSession().getFinalIndexName())
-				.add(data);
+	public ResponseEntity<Void> add(@RequestBody BulkImportData data) throws Exception {
+		AbstractIndexer indexer = actualIndexers.get(data.getSession().getFinalIndexName());
+		if (!indexer.isImportRunning(data.session.temporaryIndexName)) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		}
+		indexer.add(data);
+		return ResponseEntity.ok().build();
 	}
 
 	@PostMapping("/done")
-	@Override
-	public boolean done(@RequestBody ImportSession session) throws Exception {
-		return actualIndexers.get(session.getFinalIndexName())
-				.done(session);
+	public ResponseEntity<Boolean> done(@RequestBody ImportSession session) throws Exception {
+		AbstractIndexer indexer = actualIndexers.get(session.getFinalIndexName());
+		if (!indexer.isImportRunning(session.temporaryIndexName)) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+		}
+		boolean ok = indexer.done(session);
+		return ok ? ResponseEntity.ok(true) : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(false);
 	}
 
 	@PostMapping("/cancel")
-	@Override
-	public boolean cancel(@RequestBody ImportSession session) {
+	public ResponseEntity<Void> cancel(@RequestBody ImportSession session) {
 		try {
-			return actualIndexers.get(session.getFinalIndexName())
-					.cancel(session);
+			actualIndexers.get(session.getFinalIndexName()).cancel(session);
+			return ResponseEntity.accepted().build();
 		}
 		catch (ExecutionException e) {
 			log.error("exception while canceling import: ", e);
-			return false;
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
 		}
 	}
 

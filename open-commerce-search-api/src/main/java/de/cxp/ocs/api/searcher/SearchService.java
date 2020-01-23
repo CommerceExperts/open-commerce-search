@@ -7,7 +7,6 @@ import javax.ws.rs.Path;
 
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
-import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.Explode;
@@ -17,9 +16,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@OpenAPIDefinition(
-		servers = @Server(url = "http://searcher"),
-		tags = { @Tag(name = "search") })
+@Server(url = "http://searcher")
+@Tag(name = "search")
 @Path("search")
 public interface SearchService {
 

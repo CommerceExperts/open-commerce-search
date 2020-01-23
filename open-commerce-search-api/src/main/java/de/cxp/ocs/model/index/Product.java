@@ -37,6 +37,7 @@ public class Product extends Document {
 	 * for products without variants, it can be null or rather us a document
 	 * directly.
 	 */
-	Document[] variants;
+	@Schema(description = "for products without variants, it can be null or rather us a document directly.")
+	public Document[] variants;
 
 }
