@@ -54,7 +54,6 @@ public class SerializationTest {
 
 		deserializer.registerModule(new ParameterNamesModule(Mode.PROPERTIES));
 		deserializer.addMixIn(Facet.class, FacetMixin.class);
-		// deserializer.addMixIn(Attribute.class, AttributeCreator.class);
 		deserializer.addMixIn(SearchQuery.class, SearchQueryCreator.class);
 
 		SimpleModule deserializerModule = new SimpleModule();
@@ -192,7 +191,21 @@ public class SerializationTest {
 	}
 
 	private void assertEqualDocuments(Document expected, Document actual, final String msgPrefix) {
-		assertEquals(expected.getId(), actual.getId(), msgPrefix + "IDs not equals");
+		assertEquals(expected.getId(), actual.getId(), msgPrefix + "IDs not equal");
+
+		assertArrayEquals(expected.getAttributes(), actual.getAttributes(), msgPrefix + "Attributes not equal");
+
+		if (expected.getCategories() == null) {
+			assertNull(actual.getCategories());
+		}
+		else {
+			assertEquals(expected.getCategories().size(), actual.getCategories().size(), msgPrefix + "Categories not equal in size");
+			for (int i = 0; i < expected.getCategories().size(); i++) {
+				assertArrayEquals(expected.getCategories().get(i), actual.getCategories().get(i),
+						msgPrefix + "Category at index " + i + " not equal");
+			}
+		}
+
 		expected.getData().forEach((k, v) -> {
 			if (v == null) {
 				assertNull(actual.getData().get(k));

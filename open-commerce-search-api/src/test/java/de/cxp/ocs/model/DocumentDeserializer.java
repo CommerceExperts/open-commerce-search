@@ -3,6 +3,7 @@ package de.cxp.ocs.model;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -15,11 +16,13 @@ import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.NumericNode;
 import com.fasterxml.jackson.databind.node.ValueNode;
 
 import de.cxp.ocs.model.index.Attribute;
+import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
 
@@ -34,12 +37,10 @@ public class DocumentDeserializer extends JsonDeserializer<Document> {
 			return p.getCodec().treeToValue(docNode, Product.class);
 		}
 
-		return extractDocument(docNode);
+		return extractDocument(new Document(), docNode, p);
 	}
 
-	static Document extractDocument(TreeNode docNode) {
-		Document doc = new Document();
-
+	static Document extractDocument(Document doc, TreeNode docNode, JsonParser p) throws JsonProcessingException {
 		JsonNode idNode = (JsonNode) docNode.get("id");
 		if (idNode != null && idNode.isValueNode()) doc.setId(idNode.asText());
 
@@ -47,6 +48,17 @@ public class DocumentDeserializer extends JsonDeserializer<Document> {
 		if (dataNode != null && dataNode.isObject()) {
 			doc.setData(extractValidData(dataNode));
 		}
+
+		JsonNode attributesNode = (JsonNode) docNode.get("attributes");
+		if (attributesNode != null && attributesNode.isArray()) {
+			doc.setAttributes(p.getCodec().treeToValue(attributesNode, Attribute[].class));
+		}
+		
+		JsonNode categoriesNode = (JsonNode) docNode.get("categories");
+		if (categoriesNode != null && categoriesNode.isArray() && ((ArrayNode)categoriesNode).size() > 0) {
+			doc.setCategories(Arrays.asList(p.getCodec().treeToValue(categoriesNode, Category[][].class)));
+		}
+		
 		return doc;
 	}
 
@@ -79,14 +91,8 @@ public class DocumentDeserializer extends JsonDeserializer<Document> {
 						}
 						values.add(extractedValue);
 					}
-					else if (arrayValueNode.isArray()) continue;
-					else if (arrayValueNode.isObject()) {
-						if (type != null && !type.isAssignableFrom(Attribute.class)) continue;
-
-						Optional<Attribute> extractedAttribute = extractAttribute((JsonNode) arrayValueNode);
-						extractedAttribute.ifPresent(values::add);
-
-						if (type == null && extractedAttribute.isPresent()) type = Attribute.class;
+					else {
+						// log error? throw exception? ignore?!
 					}
 				}
 				if (type != null && values.size() > 0) {

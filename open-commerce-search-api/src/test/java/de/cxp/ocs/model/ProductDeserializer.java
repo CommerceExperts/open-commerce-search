@@ -9,7 +9,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import de.cxp.ocs.model.index.Document;
@@ -22,6 +21,7 @@ public class ProductDeserializer extends JsonDeserializer<Product> {
 		TreeNode docNode = p.readValueAsTree();
 
 		Product product = new Product();
+		DocumentDeserializer.extractDocument(product, docNode, p);
 
 		TreeNode variantsNode = docNode.get("variants");
 		if (variantsNode != null && variantsNode.isArray()) {
@@ -30,19 +30,11 @@ public class ProductDeserializer extends JsonDeserializer<Product> {
 				if (variantsNode.get(i) != null
 						&& variantsNode.get(i).isObject()
 						&& variantsNode.get(i).get("data") != null) {
-					Document extractedDocument = DocumentDeserializer.extractDocument(variantsNode.get(i));
+					Document extractedDocument = DocumentDeserializer.extractDocument(new Document(), variantsNode.get(i), p);
 					variants.add(extractedDocument);
 				}
 			}
 			product.setVariants(variants.toArray(new Document[variants.size()]));
-		}
-
-		TreeNode idNode = docNode.get("id");
-		if (idNode != null && idNode.isValueNode()) product.setId(((JsonNode) idNode).asText());
-
-		JsonNode dataNode = (JsonNode) docNode.get("data");
-		if (dataNode != null && dataNode.isObject()) {
-			product.setData(DocumentDeserializer.extractValidData(dataNode));
 		}
 
 		return product;
