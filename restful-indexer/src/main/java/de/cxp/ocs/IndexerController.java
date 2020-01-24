@@ -30,8 +30,16 @@ import de.cxp.ocs.model.index.BulkImportData;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping(path = "/indexer/v1")
+@RequestMapping(path = "/indexer-api/v1/full")
 @Slf4j
+/**
+ * Controller that implements the FullIndexationService
+ * 
+ * TODO: implement UpdateIndexService
+ */
+// unfortunately it's not possible to use 'implements FullIndexationService'
+// properly, because the http-code statuses need ResponseEntity as return type
+// in Spring Boot.
 public class IndexerController {
 
 	@Autowired

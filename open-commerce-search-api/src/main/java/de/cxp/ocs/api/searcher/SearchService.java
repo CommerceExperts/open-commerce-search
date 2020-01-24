@@ -16,9 +16,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Server(url = "http://searcher")
+@Server(url = "http://search-service")
 @Tag(name = "search")
-@Path("search")
+@Path("search-api/v1")
 public interface SearchService {
 
 	/**

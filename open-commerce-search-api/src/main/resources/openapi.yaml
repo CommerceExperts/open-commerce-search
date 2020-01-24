@@ -10,7 +10,7 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: "0.2"
 paths:
-  /full/cancel:
+  /indexer-api/v1/full/cancel:
     post:
       description: Cancels the import and in case there was an index created, it will
         be deleted.
@@ -18,12 +18,10 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/ImportSession'
       responses:
-        default:
-          description: default response
-          content:
-            '*/*': {}
+        "400":
+          description: indexation was already confirmed or import session is invalid
       servers:
-      - url: http://indexer
+      - url: http://indexer-service
         description: Service to run a full import into a new index. To do so, start
           a indexation session with a request to 'start' and use the returned ImportSession
           object to 'add' products bulkwise. If all documents where added, use the
@@ -38,35 +36,7 @@ paths:
           facets (e.g. book authors) but not for faceting the content documents (e.g.
           blog post authors).
         variables: {}
-  /full/add:
-    post:
-      summary: Add documents to a running import session
-      description: Add one or more documents to a running import session.
-      operationId: add
-      requestBody:
-        $ref: '#/components/requestBodies/BulkImportData'
-      responses:
-        "200":
-          description: documents successfully added
-        "404":
-          description: according import session does not exist
-      servers:
-      - url: http://indexer
-        description: Service to run a full import into a new index. To do so, start
-          a indexation session with a request to 'start' and use the returned ImportSession
-          object to 'add' products bulkwise. If all documents where added, use the
-          'done' request to deploy that index. In case there were failures (or more
-          failures then tollerated), the 'cancel' request can be used to stop the
-          process and cleanup the incomplete index. Depending on the document size,
-          an amount of 500-2000 documents per bulk is sufficient. If product and content
-          data should be indexed, its recommended to use different indexes. Otherwise
-          make sure to use the same fields for the same content type, e.g. both kind
-          of documents can have a textual 'title' field, but both kind of documents
-          shouldn't have for example an 'author' field, which could be used for product
-          facets (e.g. book authors) but not for faceting the content documents (e.g.
-          blog post authors).
-        variables: {}
-  /full/done:
+  /indexer-api/v1/full/done:
     post:
       description: Finishes the import, flushing the new index and (in case there
         is already an index with the initialized name) replacing the old one.
@@ -76,10 +46,10 @@ paths:
       responses:
         "200":
           description: successfully done
-        "404":
-          description: index not found
+        "400":
+          description: indexation was already confirmed or import session is invalid
       servers:
-      - url: http://indexer
+      - url: http://indexer-service
         description: Service to run a full import into a new index. To do so, start
           a indexation session with a request to 'start' and use the returned ImportSession
           object to 'add' products bulkwise. If all documents where added, use the
@@ -94,7 +64,7 @@ paths:
           facets (e.g. book authors) but not for faceting the content documents (e.g.
           blog post authors).
         variables: {}
-  /full/start/{indexName}:
+  /indexer-api/v1/full/start/{indexName}:
     get:
       summary: Starts a new full import
       description: Starts a new full import. Returns a handle containing meta data,
@@ -124,7 +94,7 @@ paths:
         "409":
           description: there is already an import running for that index
       servers:
-      - url: http://indexer
+      - url: http://indexer-service
         description: Service to run a full import into a new index. To do so, start
           a indexation session with a request to 'start' and use the returned ImportSession
           object to 'add' products bulkwise. If all documents where added, use the
@@ -139,7 +109,35 @@ paths:
           facets (e.g. book authors) but not for faceting the content documents (e.g.
           blog post authors).
         variables: {}
-  /update/{indexName}:
+  /indexer-api/v1/full/add:
+    post:
+      summary: Add documents to a running import session
+      description: Add one or more documents to a running import session.
+      operationId: add
+      requestBody:
+        $ref: '#/components/requestBodies/BulkImportData'
+      responses:
+        "200":
+          description: documents successfully added
+        "400":
+          description: import session is invalid
+      servers:
+      - url: http://indexer-service
+        description: Service to run a full import into a new index. To do so, start
+          a indexation session with a request to 'start' and use the returned ImportSession
+          object to 'add' products bulkwise. If all documents where added, use the
+          'done' request to deploy that index. In case there were failures (or more
+          failures then tollerated), the 'cancel' request can be used to stop the
+          process and cleanup the incomplete index. Depending on the document size,
+          an amount of 500-2000 documents per bulk is sufficient. If product and content
+          data should be indexed, its recommended to use different indexes. Otherwise
+          make sure to use the same fields for the same content type, e.g. both kind
+          of documents can have a textual 'title' field, but both kind of documents
+          shouldn't have for example an 'author' field, which could be used for product
+          facets (e.g. book authors) but not for faceting the content documents (e.g.
+          blog post authors).
+        variables: {}
+  /indexer-api/v1/update/{indexName}:
     put:
       tags:
       - index
@@ -177,7 +175,7 @@ paths:
         "409":
           description: Document already exists but replaceExisting is set to false
       servers:
-      - url: http://indexer
+      - url: http://indexer-service
         variables: {}
     delete:
       tags:
@@ -203,7 +201,7 @@ paths:
         "304":
           description: document not found
       servers:
-      - url: http://indexer
+      - url: http://indexer-service
         variables: {}
     patch:
       tags:
@@ -228,9 +226,20 @@ paths:
         "404":
           description: document not found
       servers:
-      - url: http://indexer
+      - url: http://indexer-service
         variables: {}
-  /search/{tenant}:
+  /search-api/v1/tenants:
+    get:
+      tags:
+      - search
+      operationId: getTenants
+      responses:
+        "200":
+          description: a list of available tenants
+      servers:
+      - url: http://search-service
+        variables: {}
+  /search-api/v1/{tenant}:
     get:
       tags:
       - search
@@ -266,18 +275,7 @@ paths:
         "404":
           $ref: '#/components/responses/SearchResult'
       servers:
-      - url: http://searcher
-        variables: {}
-  /search/tenants:
-    get:
-      tags:
-      - search
-      operationId: getTenants
-      responses:
-        "200":
-          description: a list of available tenants
-      servers:
-      - url: http://searcher
+      - url: http://search-service
         variables: {}
 components:
   schemas:
@@ -365,13 +363,13 @@ components:
             description: 'The data property should be used for standard fields, such
               as title, description, price. Only values of the following types are
               accepted (others will be dropped silently): Standard primitive types
-              (String, Integer, Double) and arrays of these types. Attributes (key-value
-              objects with ID) should be passed to the attributes property.'
+              (Boolean, String, Integer, Double) and arrays of these types. Attributes
+              (key-value objects with ID) should be passed to the attributes property.'
           description: 'The data property should be used for standard fields, such
             as title, description, price. Only values of the following types are accepted
-            (others will be dropped silently): Standard primitive types (String, Integer,
-            Double) and arrays of these types. Attributes (key-value objects with
-            ID) should be passed to the attributes property.'
+            (others will be dropped silently): Standard primitive types (Boolean,
+            String, Integer, Double) and arrays of these types. Attributes (key-value
+            objects with ID) should be passed to the attributes property.'
         attributes:
           type: array
           description: multiple attributes can be delivered separately from standard
@@ -441,8 +439,6 @@ components:
     FacetEntry:
       type: object
       properties:
-        get_type:
-          type: string
         key:
           type: string
         docCount:
@@ -453,6 +449,8 @@ components:
         link:
           type: string
           format: URI
+        get_type:
+          type: string
       description: The entries of that facet.
       discriminator:
         propertyName: _type
@@ -462,6 +460,14 @@ components:
     HierarchialFacetEntry:
       type: object
       properties:
+        children:
+          type: array
+          description: Child facet entries to that particular facet. The child facets
+            again could be HierarchialFacetEntries.
+          items:
+            $ref: '#/components/schemas/FacetEntry'
+        path:
+          type: string
         get_type:
           type: string
         key:
@@ -474,14 +480,6 @@ components:
         link:
           type: string
           format: URI
-        children:
-          type: array
-          description: Child facet entries to that particular facet. The child facets
-            again could be HierarchialFacetEntries.
-          items:
-            $ref: '#/components/schemas/FacetEntry'
-        path:
-          type: string
     ResultHit:
       type: object
       properties:

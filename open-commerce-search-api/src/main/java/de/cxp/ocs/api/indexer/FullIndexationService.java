@@ -28,7 +28,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
  * content documents (e.g. blog post authors).
  */
 @Server(
-		url = "http://indexer",
+		url = "http://indexer-service",
 		description = "Service to run a full import into a new index." +
 				" To do so, start a indexation session with a request to 'start' and use the" +
 				" returned ImportSession object to 'add' products bulkwise." +
@@ -43,7 +43,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
 				" kind of documents shouldn't have for example an 'author' field, which could" +
 				" be used for product facets (e.g. book authors) but not for faceting the" +
 				" content documents (e.g. blog post authors).")
-@Path("full")
+@Path("indexer-api/v1/full")
 public interface FullIndexationService {
 
 	/**

@@ -16,9 +16,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Server(url = "http://indexer")
+@Server(url = "http://indexer-service")
 @Tag(name = "index")
-@Path("update/{indexName}")
+@Path("indexer-api/v1/update/{indexName}")
 public interface UpdateIndexService {
 
 	/**
