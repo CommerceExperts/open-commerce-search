@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest.AliasActions;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
@@ -299,7 +300,8 @@ class ElasticsearchIndexClient {
 			settings = highLevelClient.indices()
 					.getSettings(new GetSettingsRequest().indices(indexName), RequestOptions.DEFAULT);
 		}
-		catch (IOException e) {
+		// TODO: other methods catching exceptions should use Optional response
+		catch (ElasticsearchStatusException | IOException e) {
 			log.warn("couldn't get settings for index {}: IOException: {}", indexName, e.getMessage());
 			return Optional.empty();
 		}

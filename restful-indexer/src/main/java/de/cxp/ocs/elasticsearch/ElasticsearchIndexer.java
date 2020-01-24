@@ -106,11 +106,6 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		Map<String, Set<AliasMetaData>> aliases = client.getAliases(indexName);
 		if (aliases.size() == 0) return getNumberedIndexName(localizedIndexName, 1);
 
-//		Optional<Settings> settings = client.getSettings(nextIndexName);
-//		if (settings.isPresent()) {
-//			
-//		}
-
 		String oldIndexName = aliases.keySet().iterator().next();
 		Matcher indexNameMatcher = INDEX_NAME_PATTERN.matcher(oldIndexName);
 		if (indexNameMatcher.find()) {
@@ -138,6 +133,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	private MasterItem toMasterItem(Document doc) {
+		// TODO: validate document (e.g. require IDs etc.)
 		final Map<String, Object> sourceMasterData = doc.getData();
 		final MasterItem targetMaster = new MasterItem(doc.getId());
 		extractSourceValues(sourceMasterData, targetMaster);
