@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,6 +14,7 @@ import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
+import org.elasticsearch.common.settings.Settings;
 
 import de.cxp.ocs.AbstractIndexer;
 import de.cxp.ocs.api.indexer.ImportSession;
@@ -31,7 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 public class ElasticsearchIndexer extends AbstractIndexer {
 
 	private final String	INDEX_DELIMITER		= "-";
-	private final Pattern	INDEX_NAME_PATTERN	= Pattern.compile("\\" + INDEX_DELIMITER + "(\\d+)$");
+	private final String	INDEX_PREFIX		= "ocs" + INDEX_DELIMITER;
+	private final Pattern	INDEX_NAME_PATTERN	= Pattern.compile(Pattern.quote(INDEX_PREFIX) + "(\\d+)\\" + INDEX_DELIMITER);
 
 	private final ElasticsearchIndexClient client;
 
@@ -45,8 +48,14 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 
 	@Override
 	protected boolean isImportRunning(String indexName) {
-		Map<String, Set<AliasMetaData>> aliases = client.getAliases(indexName + INDEX_DELIMITER + "*");
-		return (aliases.size() > 1);
+		if (indexName.startsWith(INDEX_PREFIX)) {
+			Optional<Settings> settings = client.getSettings(indexName);
+			return settings.map(s -> "-1".equals(s.get("index.refresh_interval"))).orElse(false);
+		}
+		else {
+			Map<String, Set<AliasMetaData>> aliases = client.getAliases(INDEX_PREFIX + "*" + INDEX_DELIMITER + indexName + "*");
+			return (aliases.size() > 1);
+		}
 	}
 
 	/**
@@ -55,12 +64,22 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	 */
 	@Override
 	protected String initNewIndex(final String indexName, String locale) {
-		String finalIndexName = getLocalizedIndexName(indexName, LocaleUtils.toLocale(locale));
-		finalIndexName = getNumberedIndexName(finalIndexName);
+		String localizedIndexName = getLocalizedIndexName(indexName, LocaleUtils.toLocale(locale));
+		String finalIndexName = getNextIndexName(indexName, localizedIndexName);
 
 		client.createFreshIndex(finalIndexName);
 
 		return finalIndexName;
+	}
+
+	@Override
+	protected void validateSession(ImportSession session) throws IllegalArgumentException {
+		if (session.finalIndexName == null || session.temporaryIndexName == null) {
+			throw new IllegalArgumentException("invalid session: values missing");
+		}
+		if (!session.temporaryIndexName.contains(session.finalIndexName)) {
+			throw new IllegalArgumentException("invalid session: names missmatch");
+		}
 	}
 
 	private String getLocalizedIndexName(String basename, Locale locale) {
@@ -83,26 +102,35 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		}
 	}
 
-	private String getNumberedIndexName(String indexName) {
-		Map<String, Set<AliasMetaData>> aliases = client.getAliases(indexName + "*");
-		if (aliases.isEmpty()) return indexName + INDEX_DELIMITER + "1";
+	private String getNextIndexName(String indexName, String localizedIndexName) {
+		Map<String, Set<AliasMetaData>> aliases = client.getAliases(indexName);
+		if (aliases.size() == 0) return getNumberedIndexName(localizedIndexName, 1);
+
+//		Optional<Settings> settings = client.getSettings(nextIndexName);
+//		if (settings.isPresent()) {
+//			
+//		}
 
 		String oldIndexName = aliases.keySet().iterator().next();
 		Matcher indexNameMatcher = INDEX_NAME_PATTERN.matcher(oldIndexName);
 		if (indexNameMatcher.find()) {
 			int oldIndexNumber = Integer.parseInt(indexNameMatcher.group(1));
-			return indexName + INDEX_DELIMITER + String.valueOf(oldIndexNumber + 1);
+			return getNumberedIndexName(localizedIndexName, oldIndexNumber + 1);
 		}
 		else {
 			log.warn("initilized first numbered index, although index already exists! {}");
-			return indexName + INDEX_DELIMITER + "1";
+			return getNumberedIndexName(localizedIndexName, 1);
 		}
+	}
+
+	private String getNumberedIndexName(String localizedIndexName, int number) {
+		return INDEX_PREFIX + String.valueOf(number) + INDEX_DELIMITER + localizedIndexName;
 	}
 
 	@Override
 	protected void addToIndex(ImportSession session, List<Document> bulk) throws Exception {
 		client.indexRecords(
-				session.finalIndexName,
+				session.temporaryIndexName,
 				bulk.stream()
 						.map(this::toMasterItem)
 						.filter(Objects::nonNull)
@@ -138,7 +166,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	@Override
-	public boolean done(ImportSession session) {
+	public boolean deploy(ImportSession session) {
 		try {
 			// TODO: move those values into configuration
 			client.finalizeIndex(session.temporaryIndexName, 1, "5s");
@@ -156,6 +184,8 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 			if (currentAliasState.size() > 1) {
 				log.warn("found more than one index pointing to alias {}", session.finalIndexName);
 			}
+
+			if (oldIndexName.equals(session.temporaryIndexName)) return false;
 		}
 
 		try {
@@ -171,9 +201,8 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		}
 	}
 
-	@Override
-	public void cancel(ImportSession session) {
-		client.deleteIndex(session.temporaryIndexName, false);
+	public void deleteIndex(String indexName) {
+		client.deleteIndex(indexName, false);
 	}
 
 }

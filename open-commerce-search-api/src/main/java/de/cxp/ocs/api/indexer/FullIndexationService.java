@@ -97,7 +97,7 @@ public interface FullIndexationService {
 					required = true),
 			responses = {
 					@ApiResponse(responseCode = "200", description = "documents successfully added"),
-					@ApiResponse(responseCode = "404", description = "according import session does not exist")
+					@ApiResponse(responseCode = "400", description = "import session is invalid")
 			})
 	void add(BulkImportData data) throws Exception;
 
@@ -117,7 +117,7 @@ public interface FullIndexationService {
 					required = true),
 			responses = {
 					@ApiResponse(responseCode = "200", description = "successfully done"),
-					@ApiResponse(responseCode = "404", description = "index not found")
+					@ApiResponse(responseCode = "400", description = "indexation was already confirmed or import session is invalid")
 			})
 	boolean done(@RequestBody ImportSession session) throws Exception;
 
@@ -135,7 +135,8 @@ public interface FullIndexationService {
 					ref = "ImportSession",
 					required = true),
 			responses = {
-					@ApiResponse(responseCode = "202")
+					@ApiResponse(responseCode = "202"),
+					@ApiResponse(responseCode = "400", description = "indexation was already confirmed or import session is invalid")
 			})
 	void cancel(@RequestBody ImportSession session);
 

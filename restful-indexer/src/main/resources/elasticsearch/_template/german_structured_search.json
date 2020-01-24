@@ -1,5 +1,5 @@
 {
-  "index_patterns": "*-de",
+  "index_patterns": "ocs-*-de",
   "order": 100,
   "settings": {
     "index": {

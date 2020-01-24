@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.elasticsearch.ElasticsearchException;
@@ -15,6 +16,8 @@ import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushRequest;
 import org.elasticsearch.action.admin.indices.flush.FlushResponse;
+import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
+import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -63,7 +66,7 @@ class ElasticsearchIndexClient {
 	 */
 	public Map<String, Set<AliasMetaData>> getAliases(String indexName) {
 		try {
-			GetAliasesRequest getAliasesRequest = new GetAliasesRequest(indexName);
+			GetAliasesRequest getAliasesRequest = new GetAliasesRequest().indices(indexName);
 			GetAliasesResponse response = highLevelClient
 					.indices()
 					.getAlias(getAliasesRequest, RequestOptions.DEFAULT);
@@ -141,7 +144,7 @@ class ElasticsearchIndexClient {
 					flushResponse.getFailedShards(), flushResponse.getTotalShards());
 			return false;
 		}
-		return true;
+		return success;
 	}
 
 	private boolean applyIndexSettings(String indexName, int numberOfReplicas, String refreshInterval) {
@@ -288,5 +291,18 @@ class ElasticsearchIndexClient {
 			responses.add(highLevelClient.bulk(bulkIndexRequest, RequestOptions.DEFAULT));
 		}
 		return responses;
+	}
+
+	public Optional<Settings> getSettings(String indexName) {
+		GetSettingsResponse settings;
+		try {
+			settings = highLevelClient.indices()
+					.getSettings(new GetSettingsRequest().indices(indexName), RequestOptions.DEFAULT);
+		}
+		catch (IOException e) {
+			log.warn("couldn't get settings for index {}: IOException: {}", indexName, e.getMessage());
+			return Optional.empty();
+		}
+		return Optional.ofNullable(settings.getIndexToSettings().get(indexName));
 	}
 }

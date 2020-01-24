@@ -37,6 +37,7 @@ public abstract class AbstractIndexer implements FullIndexationService {
 
 	@Override
 	public void add(BulkImportData data) throws Exception {
+		validateSession(data.session);
 		List<Document> bulk = new ArrayList<>();
 		for (Document doc : data.getDocuments()) {
 			boolean isIndexable = preProcess(doc);
@@ -51,11 +52,30 @@ public abstract class AbstractIndexer implements FullIndexationService {
 
 	private boolean preProcess(Document doc) {
 		boolean isIndexable = true;
+
 		combiFieldBuilder.build(doc);
 		for (DataPreProcessor preProcessor : dataPreProcessors) {
 			isIndexable = preProcessor.process(doc, isIndexable);
 		}
 		return isIndexable;
 	}
+
+	protected abstract void validateSession(ImportSession session) throws IllegalArgumentException;
+
+	@Override
+	public boolean done(ImportSession session) throws Exception {
+		validateSession(session);
+		return deploy(session);
+	}
+
+	protected abstract boolean deploy(ImportSession session);
+
+	@Override
+	public void cancel(ImportSession session) {
+		validateSession(session);
+		deleteIndex(session.temporaryIndexName);
+	}
+
+	protected abstract void deleteIndex(String indexName);
 
 }

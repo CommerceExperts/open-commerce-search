@@ -89,7 +89,7 @@ public class IndexerController {
 	public ResponseEntity<Void> add(@RequestBody BulkImportData data) throws Exception {
 		AbstractIndexer indexer = actualIndexers.get(data.getSession().getFinalIndexName());
 		if (!indexer.isImportRunning(data.session.temporaryIndexName)) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		}
 		indexer.add(data);
 		return ResponseEntity.ok().build();
@@ -99,16 +99,25 @@ public class IndexerController {
 	public ResponseEntity<Boolean> done(@RequestBody ImportSession session) throws Exception {
 		AbstractIndexer indexer = actualIndexers.get(session.getFinalIndexName());
 		if (!indexer.isImportRunning(session.temporaryIndexName)) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		}
+		try {
 		boolean ok = indexer.done(session);
-		return ok ? ResponseEntity.ok(true) : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(false);
+			return ok ? ResponseEntity.ok(true) : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+		}
+		catch (IllegalArgumentException iae) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
+		}
 	}
 
 	@PostMapping("/cancel")
 	public ResponseEntity<Void> cancel(@RequestBody ImportSession session) {
 		try {
-			actualIndexers.get(session.getFinalIndexName()).cancel(session);
+			AbstractIndexer indexer = actualIndexers.get(session.getFinalIndexName());
+			if (!indexer.isImportRunning(session.temporaryIndexName)) {
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			}
+			indexer.cancel(session);
 			return ResponseEntity.accepted().build();
 		}
 		catch (ExecutionException e) {
