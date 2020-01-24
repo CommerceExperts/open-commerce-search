@@ -52,7 +52,7 @@ public abstract class AbstractIndexer implements FullIndexationService {
 				initNewIndex(indexName, locale));
 	}
 
-	protected abstract boolean isImportRunning(String indexName);
+	public abstract boolean isImportRunning(String indexName);
 
 	protected abstract String initNewIndex(String indexName, String locale);
 

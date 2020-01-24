@@ -37,7 +37,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	@Override
-	protected boolean isImportRunning(String indexName) {
+	public boolean isImportRunning(String indexName) {
 		if (indexName.startsWith(INDEX_PREFIX)) {
 			Optional<Settings> settings = client.getSettings(indexName);
 			return settings.map(s -> "-1".equals(s.get("index.refresh_interval"))).orElse(false);

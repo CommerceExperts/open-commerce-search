@@ -1,4 +1,4 @@
-package de.cxp.ocs.indexer;
+package de.cxp.ocs;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -24,6 +24,8 @@ import com.google.common.cache.LoadingCache;
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.conf.ApplicationProperties;
 import de.cxp.ocs.conf.IndexConfiguration;
+import de.cxp.ocs.indexer.AbstractIndexer;
+import de.cxp.ocs.indexer.IndexerFactory;
 import de.cxp.ocs.model.index.BulkImportData;
 import lombok.extern.slf4j.Slf4j;
 
