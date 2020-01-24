@@ -10,6 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.LocaleUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
 
@@ -32,7 +33,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	private final String	INDEX_DELIMITER		= "-";
 	private final Pattern	INDEX_NAME_PATTERN	= Pattern.compile("\\" + INDEX_DELIMITER + "(\\d+)$");
 
-	private final ElasticsearchIndexClient	client;
+	private final ElasticsearchIndexClient client;
 
 	private Map<String, Field> fields;
 
@@ -69,11 +70,12 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 
 		String lang = locale.getLanguage().toLowerCase();
 
-		String normalizedBasename = basename.trim()
-				.toLowerCase(locale)
-				.replaceAll("[^a-z0-9_-]", "-");
+		String normalizedBasename = StringUtils.strip(
+				basename.toLowerCase(locale)
+						.replaceAll("[^a-z0-9_\\-\\.]+", INDEX_DELIMITER),
+				INDEX_DELIMITER);
 
-		if (lang.isEmpty() || normalizedBasename.endsWith("-" + lang)) {
+		if (lang.isEmpty() || normalizedBasename.endsWith(INDEX_DELIMITER + lang)) {
 			return normalizedBasename;
 		}
 		else {
