@@ -1,4 +1,4 @@
-package de.cxp.ocs.elasticsearch.model;
+package de.cxp.ocs.indexer.model;
 
 import java.util.Collection;
 

@@ -1,4 +1,4 @@
-package de.cxp.ocs.elasticsearch.model;
+package de.cxp.ocs.indexer.model;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,12 +11,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 /**
- * Base class which holds common data structure of either a master or a variant
- * item.
+ * Base class which holds common data structure of either simple first level
+ * items or for master and variant items.
  */
 @AllArgsConstructor
 @Data
-public abstract class IndexableItem {
+public abstract class DataItem {
 
 	/**
 	 * single fields that should be part of the result response

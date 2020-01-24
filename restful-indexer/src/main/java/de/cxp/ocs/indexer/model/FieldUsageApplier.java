@@ -1,4 +1,4 @@
-package de.cxp.ocs.elasticsearch.model;
+package de.cxp.ocs.indexer.model;
 
 import static de.cxp.ocs.util.Util.*;
 
@@ -16,7 +16,7 @@ import de.cxp.ocs.util.MinMaxSet;
  */
 public class FieldUsageApplier {
 
-	public static void handleSearchField(final IndexableItem record, final Field field, Object value) {
+	public static void handleSearchField(final DataItem record, final Field field, Object value) {
 		if (value == null || value instanceof String && ((String) value).isEmpty()) {
 			return;
 		}
@@ -52,11 +52,11 @@ public class FieldUsageApplier {
 		}
 	};
 
-	public static void handleResultField(final IndexableItem record, final Field field, final Object value) {
+	public static void handleResultField(final DataItem record, final Field field, final Object value) {
 		record.getResultData().compute(field.getName(), computeSearchDataValue(value));
 	};
 
-	public static void handleSortField(final IndexableItem record, final Field field, Object value) {
+	public static void handleSortField(final DataItem record, final Field field, Object value) {
 		if (value == null || value instanceof String && ((String) value).isEmpty()) {
 			return;
 		}
@@ -100,7 +100,7 @@ public class FieldUsageApplier {
 	 * Otherwise it will be indexed as String, even if the string contains a
 	 * number.
 	 */
-	public static void handleFacetField(final IndexableItem record, final Field field, Object value) {
+	public static void handleFacetField(final DataItem record, final Field field, Object value) {
 		if (value == null || value instanceof String && ((String) value).isEmpty() || value instanceof Collection
 				&& ((Collection<?>) value).isEmpty() || value.getClass().isArray()
 						&& ((Object[]) value).length == 0) {
@@ -136,7 +136,7 @@ public class FieldUsageApplier {
 
 	};
 
-	public static void handleScoreField(final IndexableItem record, final Field field, final Object value) {
+	public static void handleScoreField(final DataItem record, final Field field, final Object value) {
 		final Optional<Number> numValue;
 		if (value instanceof Number) {
 			numValue = Optional.of((Number) value);
@@ -176,7 +176,7 @@ public class FieldUsageApplier {
 		};
 	}
 
-	public static void apply(FieldUsage fieldUsage, IndexableItem indexableItem, Field field, Object value) {
+	public static void apply(FieldUsage fieldUsage, DataItem indexableItem, Field field, Object value) {
 		switch (fieldUsage) {
 			case Facet:
 				handleFacetField(indexableItem, field, value);

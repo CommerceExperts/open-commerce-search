@@ -39,7 +39,8 @@ import org.elasticsearch.common.xcontent.XContentType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import de.cxp.ocs.elasticsearch.model.MasterItem;
+import de.cxp.ocs.indexer.model.IndexableItem;
+import de.cxp.ocs.indexer.model.MasterItem;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -225,7 +226,7 @@ class ElasticsearchIndexClient {
 	 * @return
 	 * @throws IOException
 	 */
-	public BulkResponse indexRecords(String indexName, Iterator<MasterItem> records) throws IOException {
+	public BulkResponse indexRecords(String indexName, Iterator<IndexableItem> records) throws IOException {
 		BulkRequest bulkIndexRequest = new BulkRequest();
 		int docCount = 0;
 		while (records.hasNext()) {
@@ -244,7 +245,7 @@ class ElasticsearchIndexClient {
 		else return null;
 	}
 
-	private IndexRequest asIndexRequest(String indexName, final MasterItem record)
+	private IndexRequest asIndexRequest(String indexName, final IndexableItem record)
 			throws JsonProcessingException {
 		IndexRequest indexRequest = new IndexRequest(indexName, RECORD_TYPE, record.getId());
 		indexRequest.source(mapper.writeValueAsBytes(record), XContentType.JSON);
@@ -261,7 +262,7 @@ class ElasticsearchIndexClient {
 	 * @return
 	 * @throws IOException
 	 */
-	public List<BulkResponse> indexRecordsChunkwise(String indexName, Iterator<MasterItem> records, int maxBulkSize)
+	public List<BulkResponse> indexRecordsChunkwise(String indexName, Iterator<IndexableItem> records, int maxBulkSize)
 			throws IOException {
 		List<BulkResponse> responses = new ArrayList<>();
 		BulkRequest bulkIndexRequest = new BulkRequest();
@@ -270,7 +271,7 @@ class ElasticsearchIndexClient {
 		while (records.hasNext()) {
 			IndexRequest indexRequest;
 			try {
-				MasterItem nextRecord = records.next();
+				IndexableItem nextRecord = records.next();
 				if (nextRecord != null) {
 					indexRequest = asIndexRequest(indexName, nextRecord);
 					bulkIndexRequest.add(indexRequest);

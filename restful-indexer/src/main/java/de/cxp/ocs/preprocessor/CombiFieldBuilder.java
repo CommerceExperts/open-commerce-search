@@ -12,7 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldType;
-import de.cxp.ocs.elasticsearch.model.IndexableItem;
+import de.cxp.ocs.indexer.model.DataItem;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
 
@@ -40,7 +40,7 @@ public class CombiFieldBuilder {
 
 	/**
 	 * Builds the combi field and writes it's value into the
-	 * {@link IndexableItem}.
+	 * {@link DataItem}.
 	 * 
 	 * @param targetItem
 	 *        the item to index.

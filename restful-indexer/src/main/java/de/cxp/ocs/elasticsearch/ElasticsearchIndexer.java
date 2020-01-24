@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -16,16 +15,10 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
 import org.elasticsearch.common.settings.Settings;
 
-import de.cxp.ocs.AbstractIndexer;
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.conf.IndexConfiguration;
-import de.cxp.ocs.config.Field;
-import de.cxp.ocs.elasticsearch.model.IndexableItem;
-import de.cxp.ocs.elasticsearch.model.MasterItem;
-import de.cxp.ocs.elasticsearch.model.VariantItem;
-import de.cxp.ocs.model.index.Document;
-import de.cxp.ocs.model.index.Product;
-import de.cxp.ocs.preprocessor.CombiFieldBuilder;
+import de.cxp.ocs.indexer.AbstractIndexer;
+import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.preprocessor.DataPreProcessor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,11 +31,8 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 
 	private final ElasticsearchIndexClient client;
 
-	private Map<String, Field> fields;
-
 	public ElasticsearchIndexer(IndexConfiguration indexConf, RestHighLevelClient restClient, List<DataPreProcessor> dataProcessors) {
-		super(dataProcessors, new CombiFieldBuilder(indexConf.getFieldConfiguration().getFields()));
-		fields = indexConf.getFieldConfiguration().getFields();
+		super(dataProcessors, indexConf);
 		client = new ElasticsearchIndexClient(restClient);
 	}
 
@@ -123,42 +113,14 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	@Override
-	protected void addToIndex(ImportSession session, List<Document> bulk) throws Exception {
-		client.indexRecords(
-				session.temporaryIndexName,
-				bulk.stream()
-						.map(this::toMasterItem)
-						.filter(Objects::nonNull)
-						.iterator());
-	}
-
-	private MasterItem toMasterItem(Document doc) {
-		// TODO: validate document (e.g. require IDs etc.)
-		final Map<String, Object> sourceMasterData = doc.getData();
-		final MasterItem targetMaster = new MasterItem(doc.getId());
-		extractSourceValues(sourceMasterData, targetMaster);
-
-		if (doc instanceof Product) {
-			for (final Document variantProduct : ((Product) doc).getVariants()) {
-				final Map<String, Object> sourceVariantData = variantProduct.getData();
-				final VariantItem targetVariant = new VariantItem(targetMaster);
-				extractSourceValues(sourceVariantData, targetVariant);
-				targetMaster.getVariants().add(targetVariant);
-			}
+	protected void addToIndex(ImportSession session, List<IndexableItem> bulk) throws Exception {
+		if (bulk.size() > 1000) {
+			client.indexRecordsChunkwise(session.temporaryIndexName, bulk.iterator(), 1000);
 		}
-		return targetMaster;
-	}
-
-	private void extractSourceValues(final Map<String, Object> sourceData, final IndexableItem targetItem) {
-		boolean isVariant = (targetItem instanceof VariantItem);
-		for (final Field field : fields.values()) {
-			if ((isVariant && field.isVariantLevel() || !isVariant && field.isMasterLevel())) {
-				Object value = sourceData.get(field.getName());
-				if (value != null) {
-					targetItem.setValue(field, value);
-				}
-			}
+		else {
+			client.indexRecords(session.temporaryIndexName, bulk.iterator());
 		}
+
 	}
 
 	@Override

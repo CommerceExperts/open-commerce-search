@@ -1,4 +1,4 @@
-package de.cxp.ocs;
+package de.cxp.ocs.indexer;
 
 import java.util.ArrayList;
 import java.util.List;
