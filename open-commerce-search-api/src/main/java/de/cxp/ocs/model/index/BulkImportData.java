@@ -4,10 +4,10 @@ import de.cxp.ocs.api.indexer.ImportSession;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-@Schema
+@Schema(description = "composite object that is used to add documents to the index.", requiredProperties = { "session", "documents" })
 @Data
 public class BulkImportData {
 
-	ImportSession	session;
-	Document[]		documents;
+	public ImportSession	session;
+	public Document[]		documents;
 }

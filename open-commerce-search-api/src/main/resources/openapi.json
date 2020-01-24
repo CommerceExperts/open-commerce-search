@@ -1,47 +1,83 @@
 {
   "openapi" : "3.0.1",
-  "servers" : [ {
-    "url" : "http://searcher",
-    "variables" : { }
-  } ],
-  "tags" : [ {
-    "name" : "index"
-  }, {
-    "name" : "search"
-  } ],
+  "info" : {
+    "title" : "Open Commerce Search API",
+    "description" : "A common product search API that separates its usage from required search expertise",
+    "contact" : {
+      "email" : "info@commerce-experts.com"
+    },
+    "license" : {
+      "name" : "Apache 2.0",
+      "url" : "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version" : "0.2"
+  },
   "paths" : {
     "/full/cancel" : {
       "post" : {
+        "description" : "Cancels the import and in case there was an index created, it will be deleted.",
         "operationId" : "cancel",
+        "requestBody" : {
+          "$ref" : "#/components/requestBodies/ImportSession"
+        },
         "responses" : {
           "default" : {
             "description" : "default response",
             "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "boolean"
-                }
-              }
+              "*/*" : { }
             }
           }
-        }
+        },
+        "servers" : [ {
+          "url" : "http://indexer",
+          "description" : "Service to run a full import into a new index. To do so, start a indexation session with a request to 'start' and use the returned ImportSession object to 'add' products bulkwise. If all documents where added, use the 'done' request to deploy that index. In case there were failures (or more failures then tollerated), the 'cancel' request can be used to stop the process and cleanup the incomplete index. Depending on the document size, an amount of 500-2000 documents per bulk is sufficient. If product and content data should be indexed, its recommended to use different indexes. Otherwise make sure to use the same fields for the same content type, e.g. both kind of documents can have a textual 'title' field, but both kind of documents shouldn't have for example an 'author' field, which could be used for product facets (e.g. book authors) but not for faceting the content documents (e.g. blog post authors).",
+          "variables" : { }
+        } ]
+      }
+    },
+    "/full/add" : {
+      "post" : {
+        "summary" : "Add documents to a running import session",
+        "description" : "Add one or more documents to a running import session.",
+        "operationId" : "add",
+        "requestBody" : {
+          "$ref" : "#/components/requestBodies/BulkImportData"
+        },
+        "responses" : {
+          "200" : {
+            "description" : "documents successfully added"
+          },
+          "404" : {
+            "description" : "according import session does not exist"
+          }
+        },
+        "servers" : [ {
+          "url" : "http://indexer",
+          "description" : "Service to run a full import into a new index. To do so, start a indexation session with a request to 'start' and use the returned ImportSession object to 'add' products bulkwise. If all documents where added, use the 'done' request to deploy that index. In case there were failures (or more failures then tollerated), the 'cancel' request can be used to stop the process and cleanup the incomplete index. Depending on the document size, an amount of 500-2000 documents per bulk is sufficient. If product and content data should be indexed, its recommended to use different indexes. Otherwise make sure to use the same fields for the same content type, e.g. both kind of documents can have a textual 'title' field, but both kind of documents shouldn't have for example an 'author' field, which could be used for product facets (e.g. book authors) but not for faceting the content documents (e.g. blog post authors).",
+          "variables" : { }
+        } ]
       }
     },
     "/full/done" : {
       "post" : {
+        "description" : "Finishes the import, flushing the new index and (in case there is already an index with the initialized name) replacing the old one.",
         "operationId" : "done",
+        "requestBody" : {
+          "$ref" : "#/components/requestBodies/ImportSession"
+        },
         "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "boolean"
-                }
-              }
-            }
+          "200" : {
+            "description" : "successfully done"
+          },
+          "404" : {
+            "description" : "index not found"
           }
-        }
+        },
+        "servers" : [ {
+          "url" : "http://indexer",
+          "description" : "Service to run a full import into a new index. To do so, start a indexation session with a request to 'start' and use the returned ImportSession object to 'add' products bulkwise. If all documents where added, use the 'done' request to deploy that index. In case there were failures (or more failures then tollerated), the 'cancel' request can be used to stop the process and cleanup the incomplete index. Depending on the document size, an amount of 500-2000 documents per bulk is sufficient. If product and content data should be indexed, its recommended to use different indexes. Otherwise make sure to use the same fields for the same content type, e.g. both kind of documents can have a textual 'title' field, but both kind of documents shouldn't have for example an 'author' field, which could be used for product facets (e.g. book authors) but not for faceting the content documents (e.g. blog post authors).",
+          "variables" : { }
+        } ]
       }
     },
     "/full/start/{indexName}" : {
@@ -82,116 +118,129 @@
           "409" : {
             "description" : "there is already an import running for that index"
           }
-        }
-      }
-    },
-    "/full/add" : {
-      "post" : {
-        "summary" : "Add documents to a running import session",
-        "description" : "Add one or more documents to a running import session.",
-        "operationId" : "add",
-        "requestBody" : {
-          "$ref" : "#/components/requestBodies/BulkImportData"
         },
-        "responses" : {
-          "204" : {
-            "description" : "products successfuly added"
-          },
-          "404" : {
-            "description" : "according import session does not exist"
-          }
-        }
+        "servers" : [ {
+          "url" : "http://indexer",
+          "description" : "Service to run a full import into a new index. To do so, start a indexation session with a request to 'start' and use the returned ImportSession object to 'add' products bulkwise. If all documents where added, use the 'done' request to deploy that index. In case there were failures (or more failures then tollerated), the 'cancel' request can be used to stop the process and cleanup the incomplete index. Depending on the document size, an amount of 500-2000 documents per bulk is sufficient. If product and content data should be indexed, its recommended to use different indexes. Otherwise make sure to use the same fields for the same content type, e.g. both kind of documents can have a textual 'title' field, but both kind of documents shouldn't have for example an 'author' field, which could be used for product facets (e.g. book authors) but not for faceting the content documents (e.g. blog post authors).",
+          "variables" : { }
+        } ]
       }
     },
     "/update/{indexName}" : {
-      "post" : {
+      "put" : {
+        "tags" : [ "index" ],
+        "description" : "Puts a document to the index. If document does not exist, it will be added. An existing product will be overwritten unless the parameter 'replaceExisting\" is set to \"false\". Provided document should be a complete object, partial updates should be  done using the updateDocument method.",
         "operationId" : "putProduct",
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "type" : "string"
-              }
-            }
+        "parameters" : [ {
+          "name" : "indexName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
           }
+        }, {
+          "name" : "replaceExisting",
+          "in" : "query",
+          "description" : "set to false to avoid overriding a document with that ID. Defaults to 'true'",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "indexName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "replaceExisting",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        } ],
+        "requestBody" : {
+          "$ref" : "#/components/requestBodies/Document"
         },
         "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "boolean"
-                }
-              }
-            }
+          "201" : {
+            "description" : "Document created"
+          },
+          "409" : {
+            "description" : "Document already exists but replaceExisting is set to false"
           }
-        }
+        },
+        "servers" : [ {
+          "url" : "http://indexer",
+          "variables" : { }
+        } ]
       },
       "delete" : {
+        "tags" : [ "index" ],
+        "description" : "Delete existing document. If document does not exist, it returns code 304.",
         "operationId" : "deleteProduct",
+        "parameters" : [ {
+          "name" : "indexName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "id",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "type" : "string"
-              }
-            }
-          }
+          "$ref" : "#/components/requestBodies/ImportSession"
         },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "boolean"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch" : {
-        "operationId" : "patchDocument",
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "type" : "string"
-              }
-            }
-          }
-        },
-        "responses" : {
-          "default" : {
-            "description" : "default response",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "boolean"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/search/tenants" : {
-      "get" : {
-        "operationId" : "getTenants",
         "responses" : {
           "200" : {
-            "description" : "a list of available tenants"
+            "description" : "document deleted"
+          },
+          "304" : {
+            "description" : "document not found"
           }
-        }
+        },
+        "servers" : [ {
+          "url" : "http://indexer",
+          "variables" : { }
+        } ]
+      },
+      "patch" : {
+        "tags" : [ "index" ],
+        "description" : "Partial update of an existing document. If the document does not exist, no update will be performed and status code 404 is returned. In case the document is a master product with variants, the provided master product may only contain the changed values. However if some data at the product variants are updated, all data from all variant products are required, otherwise missing variants won't be there after the update! This is how single variants can be deleted.",
+        "operationId" : "patchDocument",
+        "parameters" : [ {
+          "name" : "indexName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "document successfuly patched"
+          },
+          "404" : {
+            "description" : "document not found"
+          }
+        },
+        "servers" : [ {
+          "url" : "http://indexer",
+          "variables" : { }
+        } ]
       }
     },
     "/search/{tenant}" : {
       "get" : {
+        "tags" : [ "search" ],
         "summary" : "Search for documents",
         "description" : "Runs a search request for a certain tenant. The tenant should exist at the service and linked to a certain index in the backend. Different tenants may use the same index.",
-        "operationId" : "find",
+        "operationId" : "search",
         "parameters" : [ {
           "name" : "tenant",
           "in" : "path",
@@ -205,14 +254,6 @@
           "in" : "query",
           "description" : "the query that describes the wished result",
           "required" : true,
-          "style" : "form",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "searchParams",
-          "in" : "query",
-          "description" : "parameters that describe the subset of the requested result",
           "style" : "form",
           "schema" : {
             "type" : "string"
@@ -237,7 +278,26 @@
           "404" : {
             "$ref" : "#/components/responses/SearchResult"
           }
-        }
+        },
+        "servers" : [ {
+          "url" : "http://searcher",
+          "variables" : { }
+        } ]
+      }
+    },
+    "/search/tenants" : {
+      "get" : {
+        "tags" : [ "search" ],
+        "operationId" : "getTenants",
+        "responses" : {
+          "200" : {
+            "description" : "a list of available tenants"
+          }
+        },
+        "servers" : [ {
+          "url" : "http://searcher",
+          "variables" : { }
+        } ]
       }
     }
   },
@@ -255,7 +315,39 @@
         },
         "readOnly" : true
       },
+      "Attribute" : {
+        "required" : [ "label", "value" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "pattern" : "[A-Za-z0-9\\-_.]",
+            "type" : "string",
+            "description" : "Optional: Static ID of that attribute. The id SHOULD be URL friendly, since it could be used to build according filter parameters. If not set, the label could be used for parameter building."
+          },
+          "label" : {
+            "type" : "string",
+            "description" : "Human readable name of the attribute, e.g. 'Color' or 'Max. Speed in km/h'"
+          },
+          "code" : {
+            "pattern" : "[A-Za-z0-9\\-_.]",
+            "type" : "string",
+            "description" : "Optional: code that represents that attribute value, e.g. \"FF0000\" for color"
+          },
+          "value" : {
+            "type" : "string",
+            "description" : "Human readable representation of that attribute, e.g. 'Red' for the attribute 'Color'"
+          }
+        },
+        "description" : "Rich model that can be used to represent a document or product attribute. If 'id' and/or 'code' are provieded, these can be used for consistent filtering, even if the label and values are changing. The label and the values will be used used to produce nice facets or if used for search, they will be added to the searchable content.",
+        "example" : {
+          "id" : "a.maxSpeed",
+          "label" : "Max Speed",
+          "value" : "230 km/h",
+          "code" : 230
+        }
+      },
       "BulkImportData" : {
+        "required" : [ "documents", "session" ],
         "type" : "object",
         "properties" : {
           "session" : {
@@ -267,9 +359,25 @@
               "$ref" : "#/components/schemas/Document"
             }
           }
-        }
+        },
+        "description" : "composite object that is used to add documents to the index."
+      },
+      "Category" : {
+        "required" : [ "name" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "description" : "Optional ID for a consistent filtering"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "description" : "categories are treated in a parent-child relationship, so a product can be placed into a path within a category tree. Multiple category paths can be defined per document."
       },
       "Document" : {
+        "required" : [ "data", "id" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -278,27 +386,68 @@
           "data" : {
             "type" : "object",
             "additionalProperties" : {
-              "type" : "object"
+              "type" : "object",
+              "description" : "The data property should be used for standard fields, such as title, description, price. Only values of the following types are accepted (others will be dropped silently): Standard primitive types (String, Integer, Double) and arrays of these types. Attributes (key-value objects with ID) should be passed to the attributes property."
+            },
+            "description" : "The data property should be used for standard fields, such as title, description, price. Only values of the following types are accepted (others will be dropped silently): Standard primitive types (String, Integer, Double) and arrays of these types. Attributes (key-value objects with ID) should be passed to the attributes property."
+          },
+          "attributes" : {
+            "type" : "array",
+            "description" : "multiple attributes can be delivered separately from standard data fields",
+            "items" : {
+              "$ref" : "#/components/schemas/Attribute"
+            }
+          },
+          "categories" : {
+            "type" : "array",
+            "items" : {
+              "type" : "array",
+              "description" : "categories are treated in a parent-child relationship, so a product can be placed into a path within a category tree. Multiple category paths can be defined per document.",
+              "items" : {
+                "$ref" : "#/components/schemas/Category"
+              }
             }
           }
-        }
+        },
+        "description" : "A data record that contains any data relevant for search. The single field types and conversions are part of the according service configuration."
+      },
+      "Product" : {
+        "type" : "object",
+        "description" : "Main product containing the data that is common for all variants. A product may represent a master-variant relation ship. A variant should be associated to a single Product and cannot have variants again - those will be ignored. It should only contain data special to that variant. Data that is common to all variants should be set at master level.",
+        "allOf" : [ {
+          "$ref" : "#/components/schemas/Document"
+        }, {
+          "type" : "object",
+          "properties" : {
+            "variants" : {
+              "type" : "array",
+              "description" : "for products without variants, it can be null or rather us a document directly.",
+              "items" : {
+                "$ref" : "#/components/schemas/Document"
+              }
+            }
+          }
+        } ]
       },
       "Facet" : {
         "type" : "object",
         "properties" : {
           "fieldName" : {
-            "type" : "string"
+            "type" : "string",
+            "description" : "This is the name coming from the data. Separate label information should be available in the meta data."
           },
           "absoluteFacetCoverage" : {
             "type" : "integer",
+            "description" : "This is the amount of matched documents that are covered by that facet.",
             "format" : "int64"
           },
-          "order" : {
-            "type" : "string",
-            "format" : "byte"
+          "isFiltered" : {
+            "type" : "boolean",
+            "description" : "Is set to true if there an active filter from that facet."
           },
           "entries" : {
             "type" : "array",
+            "description" : "The entries of that facet.",
             "items" : {
               "$ref" : "#/components/schemas/FacetEntry"
             }
@@ -306,34 +455,37 @@
           "meta" : {
             "type" : "object",
             "additionalProperties" : {
-              "type" : "object"
-            }
-          },
-          "type" : {
-            "$ref" : "#/components/schemas/Facet"
-          },
-          "label" : {
-            "type" : "string"
+              "type" : "object",
+              "description" : "Optional meta data for that facet, e.g. display hints like a label or a facet-type."
+            },
+            "description" : "Optional meta data for that facet, e.g. display hints like a label or a facet-type."
           },
           "filtered" : {
             "type" : "boolean"
           }
-        }
+        },
+        "description" : "If facets are part of this slice, they are placed here. By default only one slice SHOULD contain facets."
       },
       "FacetEntry" : {
         "type" : "object",
         "properties" : {
+          "get_type" : {
+            "type" : "string"
+          },
           "key" : {
             "type" : "string"
           },
           "docCount" : {
             "type" : "integer",
+            "description" : "Estimated amount of documents that will be returned, if this facet entry is picked as filter.",
             "format" : "int64"
           },
-          "get_type" : {
-            "type" : "string"
+          "link" : {
+            "type" : "string",
+            "format" : "URI"
           }
         },
+        "description" : "The entries of that facet.",
         "discriminator" : {
           "propertyName" : "_type",
           "mapping" : {
@@ -353,16 +505,22 @@
           },
           "docCount" : {
             "type" : "integer",
+            "description" : "Estimated amount of documents that will be returned, if this facet entry is picked as filter.",
             "format" : "int64"
+          },
+          "link" : {
+            "type" : "string",
+            "format" : "URI"
+          },
+          "children" : {
+            "type" : "array",
+            "description" : "Child facet entries to that particular facet. The child facets again could be HierarchialFacetEntries.",
+            "items" : {
+              "$ref" : "#/components/schemas/FacetEntry"
+            }
           },
           "path" : {
             "type" : "string"
-          },
-          "childIndex" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "$ref" : "#/components/schemas/FacetEntry"
-            }
           }
         }
       },
@@ -381,11 +539,24 @@
               "type" : "string"
             }
           }
-        }
+        },
+        "description" : "the list of actual hits for that result view."
       },
-      "SearchParams" : {
+      "SearchQuery" : {
         "type" : "object",
         "properties" : {
+          "userQuery" : {
+            "type" : "string"
+          },
+          "filters" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          },
+          "sort" : {
+            "type" : "string"
+          },
           "limit" : {
             "type" : "integer",
             "format" : "int32"
@@ -394,14 +565,8 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "hasFacets" : {
+          "withFacets" : {
             "type" : "boolean"
-          },
-          "sort" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
           }
         }
       },
@@ -410,47 +575,88 @@
         "properties" : {
           "tookInMillis" : {
             "type" : "integer",
+            "description" : "amount of time the internal search needed to compute that result",
             "format" : "int64"
+          },
+          "inputQuery" : {
+            "$ref" : "#/components/schemas/SearchQuery"
+          },
+          "slices" : {
+            "type" : "array",
+            "description" : "The result may consist of several slices, for example if a search request couldn't be answered matching all words (e.g. \"striped nike shirt\") then one slice could be the result for one part of the query (e.g. \"striped shirt\") and the other could be for another part of the query (e.g. \"nike shirt\"). This can also be used to deliver some special advertised products or to split the result in different ranked slices (e.g. the first 3 results are ranked by popularity, the next 3 are sorted by price and the rest is ranked by 'default' relevance). Each slice contains the {@link SearchQuery} that represent that exact slice. At least 1 slice should be expected. If there is no slice, no results were found.",
+            "items" : {
+              "$ref" : "#/components/schemas/SearchResultSlice"
+            }
+          },
+          "sortOptions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Sorting"
+            }
+          },
+          "meta" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "object"
+            }
+          }
+        }
+      },
+      "SearchResultSlice" : {
+        "type" : "object",
+        "properties" : {
+          "label" : {
+            "type" : "string",
+            "description" : "An identifier for that result slice. Can be used to differentiate different slices. Values depend on the implementation."
           },
           "matchCount" : {
             "type" : "integer",
+            "description" : "the absolute number of matches in this result.",
             "format" : "int64"
           },
           "nextOffset" : {
             "type" : "integer",
+            "description" : "the offset value to use to get the next result batch",
             "format" : "int64"
           },
-          "searchQuery" : {
-            "type" : "string"
+          "nextLink" : {
+            "type" : "string",
+            "description" : "URL conform query parameters, that has to be used to get the next bunch of results. Is null if there are no more results.",
+            "format" : "URI"
           },
-          "params" : {
-            "$ref" : "#/components/schemas/SearchParams"
+          "resultQuery" : {
+            "$ref" : "#/components/schemas/SearchQuery"
           },
           "hits" : {
             "type" : "array",
+            "description" : "the list of actual hits for that result view.",
             "items" : {
               "$ref" : "#/components/schemas/ResultHit"
             }
           },
           "facets" : {
             "type" : "array",
+            "description" : "If facets are part of this slice, they are placed here. By default only one slice SHOULD contain facets.",
             "items" : {
               "$ref" : "#/components/schemas/Facet"
             }
           }
-        }
+        },
+        "description" : "The result may consist of several slices, for example if a search request couldn't be answered matching all words (e.g. \"striped nike shirt\") then one slice could be the result for one part of the query (e.g. \"striped shirt\") and the other could be for another part of the query (e.g. \"nike shirt\"). This can also be used to deliver some special advertised products or to split the result in different ranked slices (e.g. the first 3 results are ranked by popularity, the next 3 are sorted by price and the rest is ranked by 'default' relevance). Each slice contains the {@link SearchQuery} that represent that exact slice. At least 1 slice should be expected. If there is no slice, no results were found."
       },
-      "Query" : {
+      "Sorting" : {
         "type" : "object",
         "properties" : {
-          "userQuery" : {
+          "field" : {
             "type" : "string"
           },
-          "filters" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
+          "sortOrder" : {
+            "type" : "string",
+            "enum" : [ "asc", "desc" ]
+          },
+          "link" : {
+            "type" : "string",
+            "format" : "URI"
           }
         }
       }

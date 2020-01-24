@@ -1,5 +1,7 @@
 package de.cxp.ocs.elasticsearch.facets;
 
+import static de.cxp.ocs.elasticsearch.facets.FacetFactory.getLabel;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -18,6 +20,7 @@ import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.model.result.Facet;
+import de.cxp.ocs.util.SearchQueryBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -58,7 +61,7 @@ public class FacetConfigurationApplyer {
 	}
 
 	public List<Facet> getFacets(Aggregations aggregations, List<FacetCreator> facetCreators, long matchCount,
-			List<InternalResultFilter> filters) {
+			List<InternalResultFilter> filters, SearchQueryBuilder linkBuilder) {
 		List<Facet> facets = new ArrayList<>();
 		int actualMaxFacets = maxFacets;
 		Set<String> duplicateFacets = new HashSet<>();
@@ -68,11 +71,11 @@ public class FacetConfigurationApplyer {
 		filters.forEach(rf -> appliedFilters.add(rf.getField()));
 
 		for (FacetCreator fc : facetCreators) {
-			Collection<Facet> createdFacets = fc.createFacets(filters, aggregations);
+			Collection<Facet> createdFacets = fc.createFacets(filters, aggregations, linkBuilder);
 			for (Facet f : createdFacets) {
 				// skip facets with the identical name
-				if (!duplicateFacets.add(f.getLabel())) {
-					log.warn("duplicate facet with label " + f.getLabel());
+				if (!duplicateFacets.add(getLabel(f))) {
+					log.warn("duplicate facet with label " + getLabel(f));
 					continue;
 				}
 				if (appliedFilters.contains(f.getFieldName())) {
@@ -80,17 +83,13 @@ public class FacetConfigurationApplyer {
 				}
 				else if (f.getEntries().size() == 1
 						&& f.getAbsoluteFacetCoverage() == matchCount) {
-					log.debug("removed facet with label {} because its only element covered the whole result", f
-							.getLabel());
-					continue;
-				}
+							log.debug("removed facet with label {} because its only element covered the whole result", getLabel(f));
+							continue;
+						}
 
 				FacetConfig facetConfig = facetsBySourceField.get(f.getFieldName());
 				if (facetConfig != null) {
 					if (facetConfig.isExcludeFromFacetLimit()) actualMaxFacets++;
-					f.setLabel(facetConfig.getLabel());
-					f.setOrder(facetConfig.getOrder());
-					f.getMeta().putAll(facetConfig.getMetaData());
 				}
 				facets.add(f);
 			}
@@ -102,7 +101,7 @@ public class FacetConfigurationApplyer {
 			@Override
 			public int compare(Facet o1, Facet o2) {
 				// prio 1: configured order
-				int compare = Byte.compare(o1.getOrder(), o2.getOrder());
+				int compare = Byte.compare(FacetFactory.getOrder(o1), FacetFactory.getOrder(o2));
 				// prio 2: prefer facets with filtered value
 				if (compare == 0) {
 					compare = Boolean.compare(o2.isFiltered(), o1.isFiltered());

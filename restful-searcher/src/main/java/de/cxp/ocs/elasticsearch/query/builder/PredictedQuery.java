@@ -7,7 +7,7 @@ import java.util.Set;
 
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
-import de.cxp.ocs.util.QueryUtils;
+import de.cxp.ocs.util.ESQueryUtils;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -25,7 +25,7 @@ class PredictedQuery {
 
 	public String getQueryString() {
 		if (queryString == null) {
-			queryString = QueryUtils.buildQueryString(termsUnique.values(), " ");
+			queryString = ESQueryUtils.buildQueryString(termsUnique.values(), " ");
 		}
 		return queryString;
 	}

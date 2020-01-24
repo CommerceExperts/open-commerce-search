@@ -3,8 +3,6 @@ package de.cxp.ocs;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
 import de.cxp.ocs.api.indexer.FullIndexationService;
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.model.index.BulkImportData;
@@ -14,7 +12,7 @@ import de.cxp.ocs.preprocessor.DataPreProcessor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor(onConstructor = @__({ @Autowired }))
+@RequiredArgsConstructor
 public abstract class AbstractIndexer implements FullIndexationService {
 
 	@NonNull

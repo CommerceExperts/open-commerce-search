@@ -4,8 +4,8 @@ import static de.cxp.ocs.conf.converter.PatternConfiguration.FIELD_REPLACEMENT_D
 import static de.cxp.ocs.conf.converter.PatternWithReplacementConfiguration.FIELD_REPLACEMENT_SUFFIX;
 
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.regex.Pattern;
@@ -65,13 +65,12 @@ public class ReplacePatternInValuesDataProcessor extends
 			if (value instanceof String) {
 				String strValue = (String) value;
 				String replacedValue = pc.getPattern().matcher(strValue).replaceAll(pc.getReplacement());
-				doc.putData(pc.getDestinationFieldName(), StringUtils.isEmpty(replacedValue) ? null : replacedValue);
+				doc.set(pc.getDestinationFieldName(), StringUtils.isEmpty(replacedValue) ? null : replacedValue);
 			}
 			else if (Util.isStringCollection(value)) {
 				@SuppressWarnings("unchecked")
 				final Collection<String> valueCollection = (Collection<String>) value;
-				// TODO: Use HashSet to deduplicate?
-				final Collection<String> cleandValues = new ArrayList<>(valueCollection.size());
+				final Collection<String> cleandValues = new HashSet<>(valueCollection.size());
 				valueCollection.forEach(collectionValue -> {
 					String replacedValue = pc.getPattern().matcher(collectionValue).replaceAll(pc
 							.getReplacement());
@@ -79,7 +78,9 @@ public class ReplacePatternInValuesDataProcessor extends
 						cleandValues.add(replacedValue);
 					}
 				});
-				doc.putData(pc.getDestinationFieldName(), cleandValues.isEmpty() ? null : cleandValues);
+				if (!cleandValues.isEmpty()) {
+					doc.set(pc.getDestinationFieldName(), cleandValues.toArray(new String[cleandValues.size()]));
+				}
 			}
 			else {
 				OnceInAWhileRunner.runAgainAfter(() -> log.warn(

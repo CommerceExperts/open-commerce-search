@@ -19,7 +19,7 @@ import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.query.model.WeightedWord;
-import de.cxp.ocs.util.QueryUtils;
+import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.Util;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -99,7 +99,7 @@ public class ConfigurableQueryBuilder implements ESQueryBuilder {
 			StringBuilder queryStringBuilder = new StringBuilder();
 			queryStringBuilder
 					.append('(')
-					.append(QueryUtils.buildQueryString(searchTerms, " "))
+					.append(ESQueryUtils.buildQueryString(searchTerms, " "))
 					.append(')');
 			for (int i = 0; i < searchTerms.size() - 1; i++) {
 				List<QueryStringTerm> shingledSearchTerms = new ArrayList<>(searchTerms);
@@ -111,13 +111,13 @@ public class ConfigurableQueryBuilder implements ESQueryBuilder {
 				shingledSearchTerms.set(i, shingleWord);
 				queryStringBuilder.append(" OR ")
 						.append('(')
-						.append(QueryUtils.buildQueryString(shingledSearchTerms, " "))
+						.append(ESQueryUtils.buildQueryString(shingledSearchTerms, " "))
 						.append(")^0.9");
 			}
 			queryString = queryStringBuilder.toString();
 		}
 		else {
-			queryString = QueryUtils.buildQueryString(searchTerms, " ");
+			queryString = ESQueryUtils.buildQueryString(searchTerms, " ");
 		}
 		return queryString;
 	}

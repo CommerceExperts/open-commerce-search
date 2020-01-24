@@ -10,7 +10,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
 
-public class QueryUtils {
+public class ESQueryUtils {
 
 	public static String buildQueryString(Collection<QueryStringTerm> searchTerms, String joinToken) {
 		StringBuilder queryString = new StringBuilder();

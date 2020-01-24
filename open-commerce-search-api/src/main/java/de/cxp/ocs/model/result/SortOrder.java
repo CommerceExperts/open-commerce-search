@@ -1,4 +1,4 @@
-package de.cxp.ocs.util;
+package de.cxp.ocs.model.result;
 
 
 public enum SortOrder {

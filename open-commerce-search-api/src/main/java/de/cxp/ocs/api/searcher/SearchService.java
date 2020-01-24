@@ -5,10 +5,8 @@ import java.io.IOException;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 
-import de.cxp.ocs.model.params.Query;
-import de.cxp.ocs.model.params.SearchParams;
+import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
-import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.Explode;
@@ -18,9 +16,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@OpenAPIDefinition(
-		servers = @Server(url = "http://searcher"),
-		tags = { @Tag(name = "search") })
+@Server(url = "http://searcher")
+@Tag(name = "search")
 @Path("search")
 public interface SearchService {
 
@@ -33,6 +30,12 @@ public interface SearchService {
 	 * @param tenant
 	 * @param searchQuery
 	 * @param parameters
+	 * @return
+	 * @throws IOException
+	 */
+	/**
+	 * @param tenant
+	 * @param searchQuery
 	 * @return
 	 * @throws IOException
 	 */
@@ -56,20 +59,13 @@ public interface SearchService {
 							style = ParameterStyle.FORM,
 							description = "the query that describes the wished result",
 							required = true),
-					@Parameter(
-							in = ParameterIn.QUERY,
-							name = "searchParams",
-							explode = Explode.TRUE,
-							style = ParameterStyle.FORM,
-							description = "parameters that describe the subset of the requested result",
-							required = false)
 			},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "successful found results", ref = "SearchResult"),
 					@ApiResponse(responseCode = "403", description = "tenant can't be accessed or does not exist"),
 					@ApiResponse(responseCode = "404", description = "no result", ref = "SearchResult")
 			})
-	public SearchResult find(String tenant, Query searchQuery, SearchParams searchParams) throws IOException;
+	public SearchResult search(String tenant, SearchQuery searchQuery) throws IOException;
 
 	@GET
 	@Path("tenants")

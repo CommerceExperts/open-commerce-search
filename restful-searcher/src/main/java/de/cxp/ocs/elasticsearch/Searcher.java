@@ -40,6 +40,7 @@ import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 
 import de.cxp.ocs.config.FacetConfiguration;
+import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldType;
@@ -61,9 +62,11 @@ import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.result.ResultHit;
 import de.cxp.ocs.model.result.SearchResult;
+import de.cxp.ocs.model.result.SearchResultSlice;
+import de.cxp.ocs.model.result.Sorting;
+import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.InternalSearchParams;
-import de.cxp.ocs.util.QueryUtils;
-import de.cxp.ocs.util.Sorting;
+import de.cxp.ocs.util.SearchQueryBuilder;
 import de.cxp.ocs.util.StringUtils;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -183,15 +186,17 @@ public class Searcher {
 		// facetCreators.add(new
 		// VariantFacetCreator(variantFacetCreatorsMap.values()));
 
-		FacetConfiguration facetConf = config.getFacetConfiguration();
+		for (FacetConfig fc : config.getFacetConfiguration().getFacets()) {
+			Field facetField = config.getFieldConfiguration().getFields().get(fc.getSourceField());
+			if (facetField != null && FieldType.category.equals(facetField.getType())) {
+				facetCreators.add(new CategoryFacetCreator(fc));
+				break;
+			}
+		}
 
-		facetCreators.add(new CategoryFacetCreator());
-		facetCreators.add(new TermFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets())
-		// .setExcludedFacets(explicitMasterTermFacets)
-		);
-		facetCreators.add(new NumberFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets())
-		// .setExcludedFacets(explicitMasterNumberFacets)
-		);
+		FacetConfiguration facetConf = config.getFacetConfiguration();
+		facetCreators.add(new TermFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()));
+		facetCreators.add(new NumberFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()));
 		facetCreators.add(new VariantFacetCreator(Arrays.asList(
 				new TermFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()),
 				new NumberFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()))));
@@ -316,7 +321,7 @@ public class Searcher {
 		sqbSample.stop(sqbTimer);
 		summary.record(i);
 
-		SearchResult searchResult = buildResult(parameters, searchResponse);
+		SearchResult searchResult = buildResult(parameters, searchResponse, new SearchQueryBuilder(parameters));
 		searchResult.tookInMillis = System.currentTimeMillis() - start;
 
 		findTimer.record(searchResult.tookInMillis, TimeUnit.MILLISECONDS);
@@ -337,23 +342,25 @@ public class Searcher {
 		return searchResponse;
 	}
 
-	private SearchResult buildResult(InternalSearchParams parameters, SearchResponse searchResponse) {
-		return resultTimer.record(() -> {
-			SearchResult searchResult;
-			if (searchResponse == null) {
-				searchResult = new SearchResult();
-				searchResult.setMatchCount(0);
-			}
-			else {
-				searchResult = toSearchResult(searchResponse, parameters);
-				searchResult.facets = facetApplier.getFacets(
+	private SearchResult buildResult(InternalSearchParams parameters, SearchResponse searchResponse, SearchQueryBuilder linkBuilder) {
+		SearchResult searchResult = new SearchResult();
+		searchResult.inputQuery = new SearchQueryBuilder(parameters).buildSearchQuery();
+		searchResult.slices = new ArrayList<>(1);
+
+		resultTimer.record(() -> {
+			if (searchResponse != null) {
+				SearchResultSlice searchResultSlice = toSearchResult(searchResponse, parameters);
+				searchResultSlice.facets = facetApplier.getFacets(
 						searchResponse.getAggregations(),
 						facetCreators,
-						searchResult.matchCount,
-						parameters.filters);
+						searchResultSlice.matchCount,
+						parameters.filters,
+						linkBuilder);
+				searchResult.slices.add(searchResultSlice);
 			}
-			return searchResult;
 		});
+
+		return searchResult;
 	}
 
 	private void setFetchSources(SearchSourceBuilder searchSourceBuilder, List<SortBuilder<?>> variantSortings) {
@@ -404,7 +411,7 @@ public class Searcher {
 
 	private QueryBuilder buildFinalQuery(MasterVariantQuery searchQuery, MasterVariantQuery basicFilters,
 			List<SortBuilder<?>> variantSortings) {
-		QueryBuilder masterLevelQuery = QueryUtils.mergeQueries(
+		QueryBuilder masterLevelQuery = ESQueryUtils.mergeQueries(
 				searchQuery.getMasterLevelQuery(),
 				basicFilters.getMasterLevelQuery());
 
@@ -448,7 +455,7 @@ public class Searcher {
 				.innerHit(getVariantInnerHits(variantSortings));
 
 		if (variantQueryMustMatch) {
-			return QueryUtils.mergeQueries(masterLevelQuery, variantLevelQuery);
+			return ESQueryUtils.mergeQueries(masterLevelQuery, variantLevelQuery);
 		}
 
 		// in case the variant query has no required filter, we only use it in a
@@ -475,10 +482,13 @@ public class Searcher {
 		return variantInnerHits;
 	}
 
-	private SearchResult toSearchResult(SearchResponse search, InternalSearchParams parameters) {
+	private SearchResultSlice toSearchResult(SearchResponse search, InternalSearchParams parameters) {
 		SearchHits searchHits = search.getHits();
-		SearchResult searchResult = new SearchResult();
-		searchResult.matchCount = searchHits.getTotalHits().value;
+		SearchResultSlice srSlice = new SearchResultSlice();
+		// XXX think about building parameters according to the actual performed
+		// search (e.g. with relaxed query or with implicit set filters)
+		srSlice.resultQuery = new SearchQueryBuilder(parameters).buildSearchQuery();
+		srSlice.matchCount = searchHits.getTotalHits().value;
 
 		Map<String, SortOrder> sortedFields = getSortedNumericFields(parameters);
 
@@ -499,9 +509,9 @@ public class Searcher {
 
 			resultHits.add(resultHit);
 		}
-		searchResult.hits = resultHits;
-		searchResult.nextOffset = parameters.offset + searchHits.getHits().length;
-		return searchResult;
+		srSlice.hits = resultHits;
+		srSlice.nextOffset = parameters.offset + searchHits.getHits().length;
+		return srSlice;
 	}
 
 	private Map<String, SortOrder> getSortedNumericFields(InternalSearchParams parameters) {
@@ -537,7 +547,7 @@ public class Searcher {
 					Object fieldSortData = ((Map<String, Object>) sortData).get(fn);
 					if (fieldSortData != null && fieldSortData instanceof Collection && ((Collection<?>) fieldSortData)
 							.size() > 1) {
-						resultHit.document.putData(fn + "_prefix", SortOrder.ASC.equals(order) ? "{from}" : "{to}");
+						resultHit.document.set(fn + "_prefix", SortOrder.ASC.equals(order) ? "{from}" : "{to}");
 						// collection is already sorted asc/desc: first value is
 						// the relevant one
 						return ((Collection<?>) fieldSortData).iterator().next();

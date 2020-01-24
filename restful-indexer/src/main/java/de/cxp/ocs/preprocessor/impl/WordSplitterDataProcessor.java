@@ -74,7 +74,7 @@ public class WordSplitterDataProcessor implements DataPreProcessor {
 		final StringBuilder builder = new StringBuilder();
 		words.forEach(w -> builder.append(w).append(" "));
 
-		sourceDocument.putData(fieldName, builder.toString());
+		sourceDocument.set(fieldName, builder.toString());
 
 		return true;
 	}

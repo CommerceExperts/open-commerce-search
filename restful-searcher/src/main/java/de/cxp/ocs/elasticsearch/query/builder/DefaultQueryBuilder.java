@@ -11,7 +11,7 @@ import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
-import de.cxp.ocs.util.QueryUtils;
+import de.cxp.ocs.util.ESQueryUtils;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -30,7 +30,7 @@ public class DefaultQueryBuilder implements ESQueryBuilder {
 	@Override
 	public MasterVariantQuery buildQuery(List<QueryStringTerm> searchTerms) {
 		QueryStringQueryBuilder mainQuery = QueryBuilders
-				.queryStringQuery(QueryUtils.buildQueryString(searchTerms, Operator.AND.name()))
+				.queryStringQuery(ESQueryUtils.buildQueryString(searchTerms, Operator.AND.name()))
 				.defaultField(FieldConstants.SEARCH_DATA + ".*")
 				.analyzer("split")
 				.fuzziness(Fuzziness.AUTO)
@@ -40,7 +40,7 @@ public class DefaultQueryBuilder implements ESQueryBuilder {
 		mainQuery.type(searchTerms.size() == 1 ? Type.BEST_FIELDS : Type.CROSS_FIELDS);
 		mainQuery.queryName(name == null ? "defaultQuery" : name);
 
-		QueryStringQueryBuilder variantQuery = QueryBuilders.queryStringQuery(QueryUtils.buildQueryString(searchTerms, " "))
+		QueryStringQueryBuilder variantQuery = QueryBuilders.queryStringQuery(ESQueryUtils.buildQueryString(searchTerms, " "))
 				.minimumShouldMatch("1")
 				.analyzer("split");
 		variantQuery.type(Type.MOST_FIELDS);

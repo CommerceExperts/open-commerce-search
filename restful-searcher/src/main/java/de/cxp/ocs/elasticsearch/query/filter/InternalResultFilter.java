@@ -4,4 +4,5 @@ public interface InternalResultFilter {
 
 	String getField();
 
+	String[] getValues();
 }

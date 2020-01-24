@@ -17,11 +17,12 @@ import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilde
 import de.cxp.ocs.config.FacetConfiguration;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.result.Facet;
+import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.util.InternalSearchParams;
+import de.cxp.ocs.util.SearchQueryBuilder;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
@@ -68,7 +69,7 @@ public class TermFacetCreator implements NestedFacetCreator {
 	}
 
 	@Override
-	public Collection<Facet> createFacets(List<InternalResultFilter> filters, Aggregations aggResult) {
+	public Collection<Facet> createFacets(List<InternalResultFilter> filters, Aggregations aggResult, SearchQueryBuilder linkBuilder) {
 		Terms facetNames = ((Nested) aggResult.get(GENERAL_TERM_FACET_AGG))
 				.getAggregations().get(FACET_NAMES_AGG);
 
@@ -78,25 +79,28 @@ public class TermFacetCreator implements NestedFacetCreator {
 
 		List<Facet> termFacets = new ArrayList<>();
 		for (Bucket facetNameBucket : facetNames.getBuckets()) {
-			Facet facet = new Facet(facetNameBucket.getKeyAsString());
-			facet.setType(FieldType.string.name());
+			String facetName = facetNameBucket.getKeyAsString();
+
+			FacetConfig facetConfig = facetsBySourceField.get(facetName);
+			if (facetConfig == null) facetConfig = new FacetConfig(facetName, facetName);
+
+			Facet facet = FacetFactory.create(facetConfig);
 
 			// TODO: this code chunk could be abstracted together with
 			// NumberFacetCreator
-			InternalResultFilter facetFilter = filtersByName.get(facetNameBucket.getKeyAsString());
+			InternalResultFilter facetFilter = filtersByName.get(facetName);
 			if (facetFilter != null && facetFilter instanceof TermResultFilter) {
-				FacetConfig facetConfig = facetsBySourceField.get(facetNameBucket.getKeyAsString());
-				if (facetConfig == null || !facetConfig.isMultiSelect()) {
-					fillSingleSelectFacet(facetNameBucket, facet, (TermResultFilter) facetFilter);
+				facet.setFiltered(true);
+				if (facetConfig.isMultiSelect()) {
+					fillFacet(facet, facetNameBucket, facetConfig, linkBuilder);
 				}
 				else {
-					// multiselect facet
-					fillFacet(facet, facetNameBucket);
+					fillSingleSelectFacet(facetNameBucket, facet, (TermResultFilter) facetFilter, facetConfig, linkBuilder);
 				}
 			}
 			else {
 				// unfiltered facet
-				fillFacet(facet, facetNameBucket);
+				fillFacet(facet, facetNameBucket, facetConfig, linkBuilder);
 			}
 
 			termFacets.add(facet);
@@ -105,29 +109,34 @@ public class TermFacetCreator implements NestedFacetCreator {
 		return termFacets;
 	}
 
-	private void fillSingleSelectFacet(Bucket facetNameBucket, Facet facet, TermResultFilter facetFilter) {
+	private void fillSingleSelectFacet(Bucket facetNameBucket, Facet facet, TermResultFilter facetFilter, FacetConfig facetConfig,
+			SearchQueryBuilder linkBuilder) {
 		Terms facetValues = ((Terms) facetNameBucket.getAggregations().get(FACET_VALUES_AGG));
 		long absDocCount = 0;
 		for (String filterValue : facetFilter.getValues()) {
 			Bucket elementBucket = facetValues.getBucketByKey(filterValue);
 			if (elementBucket != null) {
 				long docCount = getDocumentCount(elementBucket);
-				facet.addEntry(filterValue, docCount);
+				facet.addEntry(buildFacetEntry(facetConfig, filterValue, docCount, linkBuilder));
 				absDocCount += docCount;
 			}
 		}
 		facet.setAbsoluteFacetCoverage(absDocCount);
 	}
 
-	private void fillFacet(Facet facet, Bucket facetNameBucket) {
+	private void fillFacet(Facet facet, Bucket facetNameBucket, FacetConfig facetConfig, SearchQueryBuilder linkBuilder) {
 		Terms facetValues = ((Terms) facetNameBucket.getAggregations().get(FACET_VALUES_AGG));
 		long absDocCount = 0;
 		for (Bucket valueBucket : facetValues.getBuckets()) {
 			long docCount = getDocumentCount(valueBucket);
-			facet.addEntry(valueBucket.getKeyAsString(), docCount);
+			facet.addEntry(buildFacetEntry(facetConfig, valueBucket.getKeyAsString(), docCount, linkBuilder));
 			absDocCount += docCount;
 		}
 		facet.setAbsoluteFacetCoverage(absDocCount);
+	}
+
+	private FacetEntry buildFacetEntry(FacetConfig facetConfig, String filterValue, long docCount, SearchQueryBuilder linkBuilder) {
+		return new FacetEntry(filterValue, docCount, linkBuilder.withFilterAsLink(facetConfig, filterValue));
 	}
 
 	private long getDocumentCount(Bucket valueBucket) {

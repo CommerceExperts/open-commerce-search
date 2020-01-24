@@ -19,11 +19,11 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import de.cxp.ocs.config.FacetConfiguration;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.util.InternalSearchParams;
+import de.cxp.ocs.util.SearchQueryBuilder;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -79,7 +79,7 @@ public class NumberFacetCreator implements NestedFacetCreator {
 	}
 
 	@Override
-	public Collection<Facet> createFacets(List<InternalResultFilter> filters, Aggregations aggResult) {
+	public Collection<Facet> createFacets(List<InternalResultFilter> filters, Aggregations aggResult, SearchQueryBuilder linkBuilder) {
 		Terms facetNames = ((Nested) aggResult.get(GENERAL_NUMBER_FACET_AGG))
 				.getAggregations().get(FACET_NAMES_AGG);
 
@@ -89,28 +89,37 @@ public class NumberFacetCreator implements NestedFacetCreator {
 
 		List<Facet> termFacets = new ArrayList<>();
 		for (Terms.Bucket facetNameBucket : facetNames.getBuckets()) {
-			Facet facet = new Facet(facetNameBucket.getKeyAsString());
-			facet.setType(FieldType.number.name());
+			String facetName = facetNameBucket.getKeyAsString();
 
-			InternalResultFilter facetFilter = filtersByName.get(facetNameBucket.getKeyAsString());
+			// XXX: using a dynamic string as source field might be a bad
+			// idea for link creation
+			// either log warnings when indexing such attributes or map them to
+			// some internal URL friendly name
+			FacetConfig facetConfig = facetsBySourceField.get(facetName);
+			if (facetConfig == null) facetConfig = new FacetConfig(facetName, facetName);
+
+			Facet facet = FacetFactory.create(facetConfig);
+
+			InternalResultFilter facetFilter = filtersByName.get(facetName);
 			if (facetFilter != null && facetFilter instanceof NumberResultFilter) {
-				FacetConfig facetConfig = facetsBySourceField.get(facetNameBucket.getKeyAsString());
-				if (facetConfig == null || !facetConfig.isMultiSelect()) {
+				if (!facetConfig.isMultiSelect()) {
 					// filtered single select facet
 					long docCount = getDocCount(facetNameBucket);
+					String facetEntryLabel = new NumericFacetEntryBuilder((NumberResultFilter) facetFilter).getEntry();
 					facet.addEntry(
-							new NumericFacetEntryBuilder((NumberResultFilter) facetFilter).getEntry(),
-							docCount);
+							facetEntryLabel,
+							docCount,
+							linkBuilder.withFilterAsLink(facetConfig, facetEntryLabel));
 					facet.setAbsoluteFacetCoverage(docCount);
 				}
 				else {
 					// multiselect facet
-					fillFacet(facetNameBucket, facet);
+					fillFacet(facetNameBucket, facet, facetConfig, linkBuilder);
 				}
 			}
 			else {
 				// unfiltered facet
-				fillFacet(facetNameBucket, facet);
+				fillFacet(facetNameBucket, facet, facetConfig, linkBuilder);
 			}
 			termFacets.add(facet);
 		}
@@ -132,7 +141,7 @@ public class NumberFacetCreator implements NestedFacetCreator {
 		return absFacetCoverage;
 	}
 
-	private void fillFacet(Terms.Bucket facetNameBucket, Facet facet) {
+	private void fillFacet(Terms.Bucket facetNameBucket, Facet facet, FacetConfig facetConfig, SearchQueryBuilder linkBuilder) {
 		Histogram facetValues = ((Histogram) facetNameBucket.getAggregations().get(FACET_VALUES_AGG));
 		List<? extends Bucket> valueBuckets = facetValues.getBuckets();
 
@@ -157,7 +166,10 @@ public class NumberFacetCreator implements NestedFacetCreator {
 
 			if (currentVariantCount >= variantCountPerBucket) {
 				currentValueInterval.upperBound = (Double) valueBucket.getKey() + interval - 0.01;
-				facet.addEntry(currentValueInterval.getEntry(), currentDocumentCount);
+				facet.addEntry(
+						currentValueInterval.getEntry(),
+						currentDocumentCount,
+						linkBuilder.withFilterAsLink(facetConfig, currentValueInterval.getEntry()));
 
 				currentDocumentCount = 0;
 				currentVariantCount = 0;

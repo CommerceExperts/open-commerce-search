@@ -16,4 +16,10 @@ public class PathResultFilter implements InternalResultFilter {
 	@NonNull
 	private List<String> path;
 
+	@Override
+	public String[] getValues() {
+		return path.toArray(new String[path.size()]);
+	}
+
+
 }

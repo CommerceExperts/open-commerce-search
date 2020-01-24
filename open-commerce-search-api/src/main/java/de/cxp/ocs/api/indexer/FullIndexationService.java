@@ -5,14 +5,12 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 
 import de.cxp.ocs.model.index.BulkImportData;
-import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.servers.Server;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Run a full import into a new index.
@@ -29,9 +27,22 @@ import io.swagger.v3.oas.annotations.tags.Tag;
  * be used for product facets (e.g. book authors) but not for faceting the
  * content documents (e.g. blog post authors).
  */
-@OpenAPIDefinition(
-		servers = @Server(url = "http://indexer"),
-		tags = { @Tag(name = "index") })
+@Server(
+		url = "http://indexer",
+		description = "Service to run a full import into a new index." +
+				" To do so, start a indexation session with a request to 'start' and use the" +
+				" returned ImportSession object to 'add' products bulkwise." +
+				" If all documents where added, use the 'done' request to deploy that index." +
+				" In case there were failures (or more failures then tollerated), the 'cancel' request" +
+				" can be used to stop the process and cleanup the incomplete index." +
+				" Depending on the document size, an amount of 500-2000 documents per bulk is sufficient." +
+				" If product and content data should be indexed, its recommended to use different" +
+				" indexes." +
+				" Otherwise make sure to use the same fields for the same content type," +
+				" e.g. both kind of documents can have a textual 'title' field, but both" +
+				" kind of documents shouldn't have for example an 'author' field, which could" +
+				" be used for product facets (e.g. book authors) but not for faceting the" +
+				" content documents (e.g. blog post authors).")
 @Path("full")
 public interface FullIndexationService {
 
@@ -85,7 +96,7 @@ public interface FullIndexationService {
 					ref = "BulkImportData",
 					required = true),
 			responses = {
-					@ApiResponse(responseCode = "204", description = "products successfuly added"),
+					@ApiResponse(responseCode = "200", description = "documents successfully added"),
 					@ApiResponse(responseCode = "404", description = "according import session does not exist")
 			})
 	void add(BulkImportData data) throws Exception;
@@ -98,6 +109,16 @@ public interface FullIndexationService {
 	 */
 	@POST
 	@Path("done")
+	@Operation(
+			description = "Finishes the import, flushing the new index and (in case there is"
+					+ " already an index with the initialized name) replacing the old one.",
+			requestBody = @RequestBody(
+					ref = "ImportSession",
+					required = true),
+			responses = {
+					@ApiResponse(responseCode = "200", description = "successfully done"),
+					@ApiResponse(responseCode = "404", description = "index not found")
+			})
 	boolean done(@RequestBody ImportSession session) throws Exception;
 
 	/**
@@ -108,6 +129,14 @@ public interface FullIndexationService {
 	 */
 	@POST
 	@Path("cancel")
-	boolean cancel(@RequestBody ImportSession session);
+	@Operation(
+			description = "Cancels the import and in case there was an index created, it will be deleted.",
+			requestBody = @RequestBody(
+					ref = "ImportSession",
+					required = true),
+			responses = {
+					@ApiResponse(responseCode = "202")
+			})
+	void cancel(@RequestBody ImportSession session);
 
 }

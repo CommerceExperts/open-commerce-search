@@ -235,6 +235,7 @@ class ElasticsearchIndexClient {
 				log.warn("failed to add record to bulk request", e);
 			}
 		}
+		// TODO use BulkProcessor
 		if (docCount > 0) return highLevelClient.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
 		else return null;
 	}

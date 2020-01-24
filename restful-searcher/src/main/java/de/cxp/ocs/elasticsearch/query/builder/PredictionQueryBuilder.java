@@ -29,7 +29,7 @@ import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.query.model.WeightedWord;
 import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
-import de.cxp.ocs.util.QueryUtils;
+import de.cxp.ocs.util.ESQueryUtils;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -107,7 +107,7 @@ public class PredictionQueryBuilder implements ESQueryBuilder {
 				pQuery.unknownTerms.forEach(term -> unmatchedTerms.put(term.getWord(), term));
 			}
 
-			String queryLabel = QueryUtils.getQueryLabel(pQuery.getTermsUnique().values());
+			String queryLabel = ESQueryUtils.getQueryLabel(pQuery.getTermsUnique().values());
 			// the label represents the complete query! if the label already
 			// exists, the query also already exists
 			if (mainQuery != null && createdQueries.add(queryLabel)) continue;
@@ -161,7 +161,7 @@ public class PredictionQueryBuilder implements ESQueryBuilder {
 			mainQuery = QueryBuilders.boolQuery()
 					.must(mainQuery)
 					.should(boostQuery.getMasterLevelQuery())
-					.queryName("boost(" + QueryUtils.getQueryLabel(unmatchedTerms.values()) + ")");
+					.queryName("boost(" + ESQueryUtils.getQueryLabel(unmatchedTerms.values()) + ")");
 		}
 
 		/**
@@ -171,9 +171,9 @@ public class PredictionQueryBuilder implements ESQueryBuilder {
 		 * Now prefer variants with more matching terms
 		 */
 		final QueryStringQueryBuilder variantScoreQuery = QueryBuilders.queryStringQuery(
-				QueryUtils.buildQueryString(searchWords, " "))
+				ESQueryUtils.buildQueryString(searchWords, " "))
 				.defaultField(FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + ".*.standard")
-				.queryName("variants.boost(" + QueryUtils.getQueryLabel(searchWords) + ")");
+				.queryName("variants.boost(" + ESQueryUtils.getQueryLabel(searchWords) + ")");
 		variantScoreQuery.type(Type.MOST_FIELDS);
 
 		return new MasterVariantQuery(mainQuery, variantScoreQuery, true, unmatchedTerms.size() == 0);

@@ -32,8 +32,6 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	private final String	INDEX_DELIMITER		= "-";
 	private final Pattern	INDEX_NAME_PATTERN	= Pattern.compile("\\" + INDEX_DELIMITER + "(\\d+)$");
 
-	private static String[] TEMPLATES = { "german_structured_search", "structured_search" };
-
 	private final ElasticsearchIndexClient	client;
 
 	private Map<String, Field> fields;
@@ -172,8 +170,8 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	@Override
-	public boolean cancel(ImportSession session) {
-		return client.deleteIndex(session.temporaryIndexName, true);
+	public void cancel(ImportSession session) {
+		client.deleteIndex(session.temporaryIndexName, false);
 	}
 
 }
