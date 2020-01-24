@@ -34,13 +34,15 @@ public class Document {
 	@Schema(
 			description = "The data property should be used for standard fields, such as title, description, price."
 					+ " Only values of the following types are accepted (others will be dropped silently):"
-					+ " Standard primitive types (String, Integer, Double) and arrays of these types."
+					+ " Standard primitive types (Boolean, String, Integer, Double) and arrays of these types."
 					+ " Attributes (key-value objects with ID) should be passed to the attributes property.",
 			anyOf = {
+					Boolean.class,
 					Integer.class,
 					Long.class,
 					Double.class,
 					String.class,
+					Boolean[].class,
 					Integer[].class,
 					Long[].class,
 					Double[].class,
