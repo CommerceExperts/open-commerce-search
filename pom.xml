@@ -19,6 +19,10 @@
 	<properties>
 		<java.version>1.8</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		
+		<docker.repository>commerceexperts</docker.repository>
+		<docker.prefix>ocs-</docker.prefix>
+		<dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
 
 		<ocs-api.version>0.2</ocs-api.version>
 		<ocs-lib.version>0.1</ocs-lib.version>
@@ -245,7 +249,7 @@
 						</execution>
 					</executions>
 					<configuration>
-						<repository>${docker.repository}/${project.artifactId}</repository>
+						<repository>${docker.repository}/${docker.prefix}${project.artifactId}</repository>
 
 						<!-- <tag>${git.commit.id.abbrev}-${git.branch}</tag> -->
 						<tag>${project.version}</tag>

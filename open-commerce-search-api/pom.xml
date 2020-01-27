@@ -11,7 +11,7 @@
 	</parent>
 
 	<artifactId>open-commerce-search-api</artifactId>
-	<version>${ocs-api.version}</version>
+	<version>0.2</version>
 	<packaging>jar</packaging>
 
 	<description>An open and abstract search API that covers minimal search functionality</description>
