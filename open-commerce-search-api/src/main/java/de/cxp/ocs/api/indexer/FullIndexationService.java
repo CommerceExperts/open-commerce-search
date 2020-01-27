@@ -8,6 +8,8 @@ import de.cxp.ocs.model.index.BulkImportData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.servers.Server;
@@ -61,23 +63,24 @@ public interface FullIndexationService {
 			summary = "Starts a new full import",
 			description = "Starts a new full import. Returns a handle containing meta data, that has "
 					+ "to be passed to all following calls.",
-			parameters = {
-					@Parameter(
-							in = ParameterIn.PATH,
-							name = "indexName",
-							description = "index name, that should match the regular expression '[a-z0-9_-]+'",
-							required = true),
-					@Parameter(
-							in = ParameterIn.QUERY,
-							name = "locale",
-							description = "used for language dependent settings",
-							required = true)
-			},
 			responses = {
-					@ApiResponse(responseCode = "200", description = "import session started", ref = "ImportSession"),
+					@ApiResponse(
+							responseCode = "200",
+							description = "import session started",
+							content = @Content(schema = @Schema(ref = "ImportSession"))),
 					@ApiResponse(responseCode = "409", description = "there is already an import running for that index")
 			})
-	ImportSession startImport(String indexName, String locale)
+	ImportSession startImport(
+			@Parameter(
+					in = ParameterIn.PATH,
+					name = "indexName",
+					description = "index name, that should match the regular expression '[a-z0-9_-]+'",
+					required = true) String indexName,
+			@Parameter(
+					in = ParameterIn.QUERY,
+					name = "locale",
+					description = "used for language dependent settings",
+					required = true) String locale)
 			throws IllegalStateException;
 
 	/**
@@ -93,7 +96,7 @@ public interface FullIndexationService {
 			description = "Add one or more documents to a running import session.",
 			requestBody = @RequestBody(
 					description = "Data that contains the import session reference and one or more documents that should be added to that session.",
-					ref = "BulkImportData",
+					content = { @Content(schema = @Schema(ref = "BulkImportData")) },
 					required = true),
 			responses = {
 					@ApiResponse(responseCode = "200", description = "documents successfully added"),
@@ -113,7 +116,7 @@ public interface FullIndexationService {
 			description = "Finishes the import, flushing the new index and (in case there is"
 					+ " already an index with the initialized name) replacing the old one.",
 			requestBody = @RequestBody(
-					ref = "ImportSession",
+					content = { @Content(schema = @Schema(ref = "ImportSession")) },
 					required = true),
 			responses = {
 					@ApiResponse(responseCode = "200", description = "successfully done"),
@@ -132,7 +135,7 @@ public interface FullIndexationService {
 	@Operation(
 			description = "Cancels the import and in case there was an index created, it will be deleted.",
 			requestBody = @RequestBody(
-					ref = "ImportSession",
+					content = { @Content(schema = @Schema(ref = "ImportSession")) },
 					required = true),
 			responses = {
 					@ApiResponse(responseCode = "202"),

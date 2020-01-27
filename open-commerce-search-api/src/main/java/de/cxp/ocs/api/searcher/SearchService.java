@@ -12,6 +12,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.Explode;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.enums.ParameterStyle;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -46,26 +48,31 @@ public interface SearchService {
 			description = "Runs a search request for a certain tenant."
 					+ " The tenant should exist at the service and linked to a certain index in the backend."
 					+ " Different tenants may use the same index.",
-			parameters = {
-					@Parameter(
-							in = ParameterIn.PATH,
-							name = "tenant",
-							description = "tenant name",
-							required = true),
-					@Parameter(
-							in = ParameterIn.QUERY,
-							name = "searchQuery",
-							explode = Explode.TRUE,
-							style = ParameterStyle.FORM,
-							description = "the query that describes the wished result",
-							required = true),
-			},
 			responses = {
-					@ApiResponse(responseCode = "200", description = "successful found results", ref = "SearchResult"),
 					@ApiResponse(responseCode = "403", description = "tenant can't be accessed or does not exist"),
-					@ApiResponse(responseCode = "404", description = "no result", ref = "SearchResult")
+					@ApiResponse(
+							responseCode = "200",
+							description = "successful found results",
+							content = @Content(schema = @Schema(ref = "SearchResult"))),
+					@ApiResponse(
+							responseCode = "404",
+							description = "Optional response code that represents 'no result'",
+							content = @Content(schema = @Schema(ref = "SearchResult")))
 			})
-	public SearchResult search(String tenant, SearchQuery searchQuery) throws IOException;
+	public SearchResult search(
+			@Parameter(
+					in = ParameterIn.PATH,
+					name = "tenant",
+					description = "tenant name",
+					required = true) String tenant,
+			@Parameter(
+					in = ParameterIn.QUERY,
+					name = "searchQuery",
+					explode = Explode.TRUE,
+					style = ParameterStyle.FORM,
+					description = "the query that describes the wished result",
+					required = true) SearchQuery searchQuery)
+			throws IOException;
 
 	@GET
 	@Path("tenants")

@@ -70,25 +70,21 @@ public interface UpdateIndexService {
 			description = "Puts a document to the index. If document does not exist, it will be added."
 					+ " An existing product will be overwritten unless the parameter 'replaceExisting\" is set to \"false\"."
 					+ " Provided document should be a complete object, partial updates should be  done using the updateDocument method.",
-			requestBody = @RequestBody(
-					ref = "Document",
-					required = true),
-			parameters = {
-					@Parameter(
-							in = ParameterIn.PATH,
-							name = "indexName",
-							required = true),
-					@Parameter(
-							in = ParameterIn.QUERY,
-							name = "replaceExisting",
-							description = "set to false to avoid overriding a document with that ID. Defaults to 'true'",
-							required = false),
-			},
 			responses = {
 					@ApiResponse(responseCode = "201", description = "Document created"),
 					@ApiResponse(responseCode = "409", description = "Document already exists but replaceExisting is set to false")
 			})
-	void putProduct(@PathParam("indexName") String indexName, @QueryParam("replaceExisting") Boolean replaceExisting, @RequestBody Document doc);
+	void putProduct(
+			@Parameter(
+					in = ParameterIn.PATH,
+					name = "indexName",
+					required = true) String indexName,
+			@Parameter(
+					in = ParameterIn.QUERY,
+					name = "replaceExisting",
+					description = "set to false to avoid overriding a document with that ID. Defaults to 'true'",
+					required = false) Boolean replaceExisting,
+			@RequestBody Document doc);
 
 
 	/**
@@ -102,9 +98,6 @@ public interface UpdateIndexService {
 	@DELETE
 	@Operation(
 			description = "Delete existing document. If document does not exist, it returns code 304.",
-			requestBody = @RequestBody(
-					ref = "ImportSession",
-					required = true),
 			responses = {
 					@ApiResponse(responseCode = "200", description = "document deleted"),
 					@ApiResponse(responseCode = "304", description = "document not found")

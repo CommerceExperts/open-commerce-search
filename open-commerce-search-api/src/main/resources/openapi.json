@@ -13,14 +13,24 @@
     "version" : "0.2"
   },
   "paths" : {
-    "/indexer-api/v1/full/cancel" : {
+    "/indexer-api/v1/full/done" : {
       "post" : {
-        "description" : "Cancels the import and in case there was an index created, it will be deleted.",
-        "operationId" : "cancel",
+        "description" : "Finishes the import, flushing the new index and (in case there is already an index with the initialized name) replacing the old one.",
+        "operationId" : "done",
         "requestBody" : {
-          "$ref" : "#/components/requestBodies/ImportSession"
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ImportSession"
+              }
+            }
+          },
+          "required" : true
         },
         "responses" : {
+          "200" : {
+            "description" : "successfully done"
+          },
           "400" : {
             "description" : "indexation was already confirmed or import session is invalid"
           }
@@ -32,40 +42,21 @@
         } ]
       }
     },
-    "/indexer-api/v1/full/add" : {
+    "/indexer-api/v1/full/cancel" : {
       "post" : {
-        "summary" : "Add documents to a running import session",
-        "description" : "Add one or more documents to a running import session.",
-        "operationId" : "add",
+        "description" : "Cancels the import and in case there was an index created, it will be deleted.",
+        "operationId" : "cancel",
         "requestBody" : {
-          "$ref" : "#/components/requestBodies/BulkImportData"
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ImportSession"
+              }
+            }
+          },
+          "required" : true
         },
         "responses" : {
-          "200" : {
-            "description" : "documents successfully added"
-          },
-          "400" : {
-            "description" : "import session is invalid"
-          }
-        },
-        "servers" : [ {
-          "url" : "http://indexer-service",
-          "description" : "Service to run a full import into a new index. To do so, start a indexation session with a request to 'start' and use the returned ImportSession object to 'add' products bulkwise. If all documents where added, use the 'done' request to deploy that index. In case there were failures (or more failures then tollerated), the 'cancel' request can be used to stop the process and cleanup the incomplete index. Depending on the document size, an amount of 500-2000 documents per bulk is sufficient. If product and content data should be indexed, its recommended to use different indexes. Otherwise make sure to use the same fields for the same content type, e.g. both kind of documents can have a textual 'title' field, but both kind of documents shouldn't have for example an 'author' field, which could be used for product facets (e.g. book authors) but not for faceting the content documents (e.g. blog post authors).",
-          "variables" : { }
-        } ]
-      }
-    },
-    "/indexer-api/v1/full/done" : {
-      "post" : {
-        "description" : "Finishes the import, flushing the new index and (in case there is already an index with the initialized name) replacing the old one.",
-        "operationId" : "done",
-        "requestBody" : {
-          "$ref" : "#/components/requestBodies/ImportSession"
-        },
-        "responses" : {
-          "200" : {
-            "description" : "successfully done"
-          },
           "400" : {
             "description" : "indexation was already confirmed or import session is invalid"
           }
@@ -99,21 +90,50 @@
             "type" : "string"
           }
         } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "type" : "string"
-              }
-            }
-          }
-        },
         "responses" : {
           "200" : {
-            "$ref" : "#/components/responses/ImportSession"
+            "description" : "import session started",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ImportSession"
+                }
+              }
+            }
           },
           "409" : {
             "description" : "there is already an import running for that index"
+          }
+        },
+        "servers" : [ {
+          "url" : "http://indexer-service",
+          "description" : "Service to run a full import into a new index. To do so, start a indexation session with a request to 'start' and use the returned ImportSession object to 'add' products bulkwise. If all documents where added, use the 'done' request to deploy that index. In case there were failures (or more failures then tollerated), the 'cancel' request can be used to stop the process and cleanup the incomplete index. Depending on the document size, an amount of 500-2000 documents per bulk is sufficient. If product and content data should be indexed, its recommended to use different indexes. Otherwise make sure to use the same fields for the same content type, e.g. both kind of documents can have a textual 'title' field, but both kind of documents shouldn't have for example an 'author' field, which could be used for product facets (e.g. book authors) but not for faceting the content documents (e.g. blog post authors).",
+          "variables" : { }
+        } ]
+      }
+    },
+    "/indexer-api/v1/full/add" : {
+      "post" : {
+        "summary" : "Add documents to a running import session",
+        "description" : "Add one or more documents to a running import session.",
+        "operationId" : "add",
+        "requestBody" : {
+          "description" : "Data that contains the import session reference and one or more documents that should be added to that session.",
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BulkImportData"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "documents successfully added"
+          },
+          "400" : {
+            "description" : "import session is invalid"
           }
         },
         "servers" : [ {
@@ -140,25 +160,9 @@
           "in" : "query",
           "description" : "set to false to avoid overriding a document with that ID. Defaults to 'true'",
           "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "indexName",
-          "in" : "path",
-          "required" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "replaceExisting",
-          "in" : "query",
-          "schema" : {
             "type" : "boolean"
           }
         } ],
-        "requestBody" : {
-          "$ref" : "#/components/requestBodies/Document"
-        },
         "responses" : {
           "201" : {
             "description" : "Document created"
@@ -190,9 +194,6 @@
             "type" : "string"
           }
         } ],
-        "requestBody" : {
-          "$ref" : "#/components/requestBodies/ImportSession"
-        },
         "responses" : {
           "200" : {
             "description" : "document deleted"
@@ -232,7 +233,22 @@
         } ]
       }
     },
-    "/search-api/v1/{tenant}" : {
+    "/search-api/v1/tenants" : {
+      "get" : {
+        "tags" : [ "search" ],
+        "operationId" : "getTenants",
+        "responses" : {
+          "200" : {
+            "description" : "a list of available tenants"
+          }
+        },
+        "servers" : [ {
+          "url" : "http://search-service",
+          "variables" : { }
+        } ]
+      }
+    },
+    "/search-api/v1/search/{tenant}" : {
       "get" : {
         "tags" : [ "search" ],
         "summary" : "Search for documents",
@@ -253,42 +269,32 @@
           "required" : true,
           "style" : "form",
           "schema" : {
-            "type" : "string"
+            "$ref" : "#/components/schemas/SearchQuery"
           }
         } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "type" : "string"
-              }
-            }
-          }
-        },
         "responses" : {
-          "200" : {
-            "$ref" : "#/components/responses/SearchResult"
-          },
           "403" : {
             "description" : "tenant can't be accessed or does not exist"
           },
-          "404" : {
-            "$ref" : "#/components/responses/SearchResult"
-          }
-        },
-        "servers" : [ {
-          "url" : "http://search-service",
-          "variables" : { }
-        } ]
-      }
-    },
-    "/search-api/v1/tenants" : {
-      "get" : {
-        "tags" : [ "search" ],
-        "operationId" : "getTenants",
-        "responses" : {
           "200" : {
-            "description" : "a list of available tenants"
+            "description" : "successful found results",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SearchResult"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Optional response code that represents 'no result'",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SearchResult"
+                }
+              }
+            }
           }
         },
         "servers" : [ {
