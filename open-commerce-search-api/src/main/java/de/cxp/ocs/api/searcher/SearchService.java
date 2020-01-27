@@ -40,7 +40,7 @@ public interface SearchService {
 	 * @throws IOException
 	 */
 	@GET
-	@Path("{tenant}")
+	@Path("search/{tenant}")
 	@Operation(
 			summary = "Search for documents",
 			description = "Runs a search request for a certain tenant."

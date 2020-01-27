@@ -61,7 +61,7 @@ public class SearchController {
 			.maximumSize(10)
 			.build();
 
-	@GetMapping("/{tenant}")
+	@GetMapping("/search/{tenant}")
 	public SearchResult get(
 			@PathVariable("tenant") String tenant,
 			@RequestParam("q") String query,
