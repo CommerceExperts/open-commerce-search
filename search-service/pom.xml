@@ -10,7 +10,7 @@
 		<relativePath>../</relativePath>
 	</parent>
 
-	<artifactId>restful-indexer</artifactId>
+	<artifactId>search-service</artifactId>
 	<version>${ocs-lib.version}</version>
 	<packaging>jar</packaging>
 
@@ -48,10 +48,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.fasterxml.jackson.module</groupId>
-			<artifactId>jackson-module-parameter-names</artifactId>
+			<groupId>org.elasticsearch.client</groupId>
+			<artifactId>elasticsearch-rest-high-level-client</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>fr.pilato.elasticsearch</groupId>
 			<artifactId>elasticsearch-beyonder</artifactId>
@@ -66,12 +65,7 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>de.danielnaber</groupId>
-			<artifactId>jwordsplitter</artifactId>
-			<version>4.4</version>
-		</dependency>
-
+		
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>

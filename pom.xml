@@ -12,7 +12,8 @@
 	<modules>
 		<module>open-commerce-search-api</module>
 		<module>ocs-commons</module>
-		<module>restful-indexer</module>
+		<module>indexer-service</module>
+		<module>search-service</module>
 	</modules>
 
 	<properties>
