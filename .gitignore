@@ -26,6 +26,7 @@ hs_err_pid*
 .project
 .settings
 .classpath
+**/.classpath
 
 # maven
 target
