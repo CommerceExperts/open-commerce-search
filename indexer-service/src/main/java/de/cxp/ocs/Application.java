@@ -47,8 +47,7 @@ public class Application {
 			fixFieldConfiguration(indexerProps);
 		}
 
-		RestClientBuilder restClientBuilder = RestClientBuilderFactory
-				.createRestClientBuilder(properties.getConnectionConfiguration().getHosts());
+		RestClientBuilder restClientBuilder = RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
 		RestHighLevelClient highLevelClient = new RestHighLevelClient(restClientBuilder);
 		ElasticsearchBeyonder.start(highLevelClient.getLowLevelClient(), Defaults.ConfigDir, Defaults.MergeMappings, true);
 		return highLevelClient;

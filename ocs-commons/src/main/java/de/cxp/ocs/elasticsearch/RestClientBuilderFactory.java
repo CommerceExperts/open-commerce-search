@@ -2,12 +2,16 @@ package de.cxp.ocs.elasticsearch;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
+import org.apache.http.Header;
 import org.apache.http.HttpHost;
+import org.apache.http.message.BasicHeader;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 
+import de.cxp.ocs.config.ConnectionConfiguration;
 import lombok.NonNull;
 
 public final class RestClientBuilderFactory {
@@ -15,9 +19,9 @@ public final class RestClientBuilderFactory {
 	private RestClientBuilderFactory() {}
 
 	public static RestClientBuilder createRestClientBuilder(@NonNull
-	final String hostsString) {
+	final ConnectionConfiguration connectionConf) {
 		List<HttpHost> hostsList = new ArrayList<>();
-		for (String hostString : hostsString.split(",")) {
+		for (String hostString : connectionConf.getHosts().split(",")) {
 			if (hostString != null && !hostString.isEmpty()) {
 				if (hostString.contains("://")) {
 					URI hostUri = URI.create(hostString);
@@ -33,6 +37,11 @@ public final class RestClientBuilderFactory {
 
 			}
 		}
-		return RestClient.builder(hostsList.toArray(new HttpHost[hostsList.size()]));
+		RestClientBuilder restClientBuilder = RestClient.builder(hostsList.toArray(new HttpHost[hostsList.size()]));
+		if (connectionConf.getAuth() != null && !connectionConf.getAuth().isEmpty()) {
+			byte[] authEncoded = Base64.getEncoder().encode(connectionConf.getAuth().getBytes());
+			restClientBuilder.setDefaultHeaders(new Header[] { new BasicHeader("Authorization", "Basic " + new String(authEncoded)) });
+		}
+		return restClientBuilder;
 	}
 }

@@ -32,8 +32,7 @@ public class Application {
 			fixFieldConfiguration(indexConfig);
 		}
 
-		RestClientBuilder restClientBuilder = RestClientBuilderFactory
-				.createRestClientBuilder(properties.getConnectionConfiguration().getHosts());
+		RestClientBuilder restClientBuilder = RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
 		return new ElasticSearchBuilder(restClientBuilder);
 	}
 

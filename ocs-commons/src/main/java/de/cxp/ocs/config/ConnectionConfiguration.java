@@ -16,4 +16,10 @@ public class ConnectionConfiguration {
 	 */
 	@NonNull
 	private String hosts;
+
+	/**
+	 * If required, username + password are expected, separated by colon.
+	 * Example: "elastic:my$ecretPassw0rd"
+	 */
+	private String auth;
 }
