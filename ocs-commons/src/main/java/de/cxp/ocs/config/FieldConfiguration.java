@@ -1,6 +1,6 @@
 package de.cxp.ocs.config;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 public class FieldConfiguration {
 
 	@NonNull
-	private final Map<String, Field> fields = new HashMap<>();
+	private final Map<String, Field> fields = new LinkedHashMap<>();
 
 	public FieldConfiguration addField(Field field) {
 		if (fields.put(field.getName(), field) != null) {
