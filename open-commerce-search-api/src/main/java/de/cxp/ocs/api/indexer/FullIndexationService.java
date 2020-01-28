@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.servers.Server;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Run a full import into a new index.
@@ -45,6 +46,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
 				" kind of documents shouldn't have for example an 'author' field, which could" +
 				" be used for product facets (e.g. book authors) but not for faceting the" +
 				" content documents (e.g. blog post authors).")
+@Tag(name = "indexer")
 @Path("indexer-api/v1/full")
 public interface FullIndexationService {
 
@@ -60,7 +62,6 @@ public interface FullIndexationService {
 	@GET
 	@Path("start/{indexName}")
 	@Operation(
-			summary = "Starts a new full import",
 			description = "Starts a new full import. Returns a handle containing meta data, that has "
 					+ "to be passed to all following calls.",
 			responses = {
@@ -92,7 +93,6 @@ public interface FullIndexationService {
 	@POST
 	@Path("add")
 	@Operation(
-			summary = "Add documents to a running import session",
 			description = "Add one or more documents to a running import session.",
 			requestBody = @RequestBody(
 					description = "Data that contains the import session reference and one or more documents that should be added to that session.",

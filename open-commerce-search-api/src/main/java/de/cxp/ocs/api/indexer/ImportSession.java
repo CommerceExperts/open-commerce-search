@@ -10,7 +10,9 @@ import lombok.Data;
 @AllArgsConstructor
 public class ImportSession {
 
+	@Schema(required = true)
 	final public String finalIndexName;
 
+	@Schema(required = true)
 	final public String temporaryIndexName;
 }

@@ -17,7 +17,7 @@ import lombok.experimental.Accessors;
 @EqualsAndHashCode(callSuper = true)
 public class HierarchialFacetEntry extends FacetEntry {
 
-	public final String _type = "hierarchical";
+	public final String type = "hierarchical";
 
 	/**
 	 * Child facet entries to that particular facet. The child facets again

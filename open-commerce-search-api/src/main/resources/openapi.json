@@ -13,8 +13,36 @@
     "version" : "0.2"
   },
   "paths" : {
+    "/indexer-api/v1/full/cancel" : {
+      "post" : {
+        "tags" : [ "indexer" ],
+        "description" : "Cancels the import and in case there was an index created, it will be deleted.",
+        "operationId" : "cancel",
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ImportSession"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "400" : {
+            "description" : "indexation was already confirmed or import session is invalid"
+          }
+        },
+        "servers" : [ {
+          "url" : "http://indexer-service",
+          "description" : "Service to run a full import into a new index. To do so, start a indexation session with a request to 'start' and use the returned ImportSession object to 'add' products bulkwise. If all documents where added, use the 'done' request to deploy that index. In case there were failures (or more failures then tollerated), the 'cancel' request can be used to stop the process and cleanup the incomplete index. Depending on the document size, an amount of 500-2000 documents per bulk is sufficient. If product and content data should be indexed, its recommended to use different indexes. Otherwise make sure to use the same fields for the same content type, e.g. both kind of documents can have a textual 'title' field, but both kind of documents shouldn't have for example an 'author' field, which could be used for product facets (e.g. book authors) but not for faceting the content documents (e.g. blog post authors).",
+          "variables" : { }
+        } ]
+      }
+    },
     "/indexer-api/v1/full/done" : {
       "post" : {
+        "tags" : [ "indexer" ],
         "description" : "Finishes the import, flushing the new index and (in case there is already an index with the initialized name) replacing the old one.",
         "operationId" : "done",
         "requestBody" : {
@@ -42,35 +70,9 @@
         } ]
       }
     },
-    "/indexer-api/v1/full/cancel" : {
-      "post" : {
-        "description" : "Cancels the import and in case there was an index created, it will be deleted.",
-        "operationId" : "cancel",
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/ImportSession"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "400" : {
-            "description" : "indexation was already confirmed or import session is invalid"
-          }
-        },
-        "servers" : [ {
-          "url" : "http://indexer-service",
-          "description" : "Service to run a full import into a new index. To do so, start a indexation session with a request to 'start' and use the returned ImportSession object to 'add' products bulkwise. If all documents where added, use the 'done' request to deploy that index. In case there were failures (or more failures then tollerated), the 'cancel' request can be used to stop the process and cleanup the incomplete index. Depending on the document size, an amount of 500-2000 documents per bulk is sufficient. If product and content data should be indexed, its recommended to use different indexes. Otherwise make sure to use the same fields for the same content type, e.g. both kind of documents can have a textual 'title' field, but both kind of documents shouldn't have for example an 'author' field, which could be used for product facets (e.g. book authors) but not for faceting the content documents (e.g. blog post authors).",
-          "variables" : { }
-        } ]
-      }
-    },
     "/indexer-api/v1/full/start/{indexName}" : {
       "get" : {
-        "summary" : "Starts a new full import",
+        "tags" : [ "indexer" ],
         "description" : "Starts a new full import. Returns a handle containing meta data, that has to be passed to all following calls.",
         "operationId" : "startImport",
         "parameters" : [ {
@@ -114,7 +116,7 @@
     },
     "/indexer-api/v1/full/add" : {
       "post" : {
-        "summary" : "Add documents to a running import session",
+        "tags" : [ "indexer" ],
         "description" : "Add one or more documents to a running import session.",
         "operationId" : "add",
         "requestBody" : {
@@ -145,7 +147,7 @@
     },
     "/indexer-api/v1/update/{indexName}" : {
       "put" : {
-        "tags" : [ "index" ],
+        "tags" : [ "update" ],
         "description" : "Puts a document to the index. If document does not exist, it will be added. An existing product will be overwritten unless the parameter 'replaceExisting\" is set to \"false\". Provided document should be a complete object, partial updates should be  done using the updateDocument method.",
         "operationId" : "putProduct",
         "parameters" : [ {
@@ -167,6 +169,9 @@
           "201" : {
             "description" : "Document created"
           },
+          "404" : {
+            "description" : "index does not exist"
+          },
           "409" : {
             "description" : "Document already exists but replaceExisting is set to false"
           }
@@ -177,7 +182,7 @@
         } ]
       },
       "delete" : {
-        "tags" : [ "index" ],
+        "tags" : [ "update" ],
         "description" : "Delete existing document. If document does not exist, it returns code 304.",
         "operationId" : "deleteProduct",
         "parameters" : [ {
@@ -200,6 +205,9 @@
           },
           "304" : {
             "description" : "document not found"
+          },
+          "404" : {
+            "description" : "index does not exist"
           }
         },
         "servers" : [ {
@@ -208,7 +216,7 @@
         } ]
       },
       "patch" : {
-        "tags" : [ "index" ],
+        "tags" : [ "update" ],
         "description" : "Partial update of an existing document. If the document does not exist, no update will be performed and status code 404 is returned. In case the document is a master product with variants, the provided master product may only contain the changed values. However if some data at the product variants are updated, all data from all variant products are required, otherwise missing variants won't be there after the update! This is how single variants can be deleted.",
         "operationId" : "patchDocument",
         "parameters" : [ {
@@ -224,7 +232,7 @@
             "description" : "document successfuly patched"
           },
           "404" : {
-            "description" : "document not found"
+            "description" : "index does not exist or document not found"
           }
         },
         "servers" : [ {
@@ -307,6 +315,7 @@
   "components" : {
     "schemas" : {
       "ImportSession" : {
+        "required" : [ "finalIndexName", "temporaryIndexName" ],
         "type" : "object",
         "properties" : {
           "finalIndexName" : {
@@ -350,7 +359,7 @@
         }
       },
       "BulkImportData" : {
-        "required" : [ "documents", "session" ],
+        "required" : [ "documents" ],
         "type" : "object",
         "properties" : {
           "session" : {
@@ -472,6 +481,9 @@
       "FacetEntry" : {
         "type" : "object",
         "properties" : {
+          "type" : {
+            "type" : "string"
+          },
           "key" : {
             "type" : "string"
           },
@@ -483,14 +495,11 @@
           "link" : {
             "type" : "string",
             "format" : "URI"
-          },
-          "get_type" : {
-            "type" : "string"
           }
         },
         "description" : "The entries of that facet.",
         "discriminator" : {
-          "propertyName" : "_type",
+          "propertyName" : "type",
           "mapping" : {
             "hierarchical" : "#/components/schemas/HierarchialFacetEntry",
             "simple" : "#/components/schemas/FacetEntry"
@@ -500,17 +509,7 @@
       "HierarchialFacetEntry" : {
         "type" : "object",
         "properties" : {
-          "children" : {
-            "type" : "array",
-            "description" : "Child facet entries to that particular facet. The child facets again could be HierarchialFacetEntries.",
-            "items" : {
-              "$ref" : "#/components/schemas/FacetEntry"
-            }
-          },
-          "path" : {
-            "type" : "string"
-          },
-          "get_type" : {
+          "type" : {
             "type" : "string"
           },
           "key" : {
@@ -524,6 +523,16 @@
           "link" : {
             "type" : "string",
             "format" : "URI"
+          },
+          "children" : {
+            "type" : "array",
+            "description" : "Child facet entries to that particular facet. The child facets again could be HierarchialFacetEntries.",
+            "items" : {
+              "$ref" : "#/components/schemas/FacetEntry"
+            }
+          },
+          "path" : {
+            "type" : "string"
           }
         }
       },

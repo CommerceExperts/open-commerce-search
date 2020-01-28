@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Schema(
-		discriminatorProperty = "_type",
+		discriminatorProperty = "type",
 		discriminatorMapping = {
 				@DiscriminatorMapping(value = "hierarchical", schema = HierarchialFacetEntry.class),
 				@DiscriminatorMapping(value = "simple", schema = FacetEntry.class)
@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class FacetEntry {
 
-	public final String _type = "simple";
+	public final String type = "simple";
 
 	/**
 	 * Associated filter value.

@@ -17,7 +17,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Server(url = "http://indexer-service")
-@Tag(name = "index")
+@Tag(name = "update")
 @Path("indexer-api/v1/update/{indexName}")
 public interface UpdateIndexService {
 
@@ -46,7 +46,7 @@ public interface UpdateIndexService {
 					+ " otherwise missing variants won't be there after the update! This is how single variants can be deleted.",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "document successfuly patched"),
-					@ApiResponse(responseCode = "404", description = "document not found")
+					@ApiResponse(responseCode = "404", description = "index does not exist or document not found")
 			})
 	void patchDocument(@PathParam("indexName") String indexName, @RequestBody Document doc);
 
@@ -72,6 +72,7 @@ public interface UpdateIndexService {
 					+ " Provided document should be a complete object, partial updates should be  done using the updateDocument method.",
 			responses = {
 					@ApiResponse(responseCode = "201", description = "Document created"),
+					@ApiResponse(responseCode = "404", description = "index does not exist"),
 					@ApiResponse(responseCode = "409", description = "Document already exists but replaceExisting is set to false")
 			})
 	void putProduct(
@@ -100,7 +101,8 @@ public interface UpdateIndexService {
 			description = "Delete existing document. If document does not exist, it returns code 304.",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "document deleted"),
-					@ApiResponse(responseCode = "304", description = "document not found")
+					@ApiResponse(responseCode = "304", description = "document not found"),
+					@ApiResponse(responseCode = "404", description = "index does not exist")
 			})
 	void deleteProduct(@PathParam("indexName") String indexName, @QueryParam("id") String id);
 
