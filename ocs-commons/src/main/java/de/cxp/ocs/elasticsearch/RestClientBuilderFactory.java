@@ -13,7 +13,9 @@ import org.elasticsearch.client.RestClientBuilder;
 
 import de.cxp.ocs.config.ConnectionConfiguration;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public final class RestClientBuilderFactory {
 
 	private RestClientBuilderFactory() {}
@@ -39,8 +41,12 @@ public final class RestClientBuilderFactory {
 		}
 		RestClientBuilder restClientBuilder = RestClient.builder(hostsList.toArray(new HttpHost[hostsList.size()]));
 		if (connectionConf.getAuth() != null && !connectionConf.getAuth().isEmpty()) {
+			log.info("enabled authentication for elasticsearch client");
 			byte[] authEncoded = Base64.getEncoder().encode(connectionConf.getAuth().getBytes());
 			restClientBuilder.setDefaultHeaders(new Header[] { new BasicHeader("Authorization", "Basic " + new String(authEncoded)) });
+		}
+		else {
+			log.info("no authentication for elasticsearch client enabled");
 		}
 		return restClientBuilder;
 	}

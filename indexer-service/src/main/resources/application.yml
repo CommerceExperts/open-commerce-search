@@ -20,6 +20,7 @@ spring:
 ocs:
   connection-configuration:
     hosts: ${ES_HOSTS:http://localhost:9200}
+    auth: ${ES_AUTH}
     
   # default minimal configuration
   default-index-config:
