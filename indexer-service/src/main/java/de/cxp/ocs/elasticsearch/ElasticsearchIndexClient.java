@@ -118,7 +118,7 @@ class ElasticsearchIndexClient {
 			return true;
 		}
 		catch (IOException e) {
-			log.error("");
+			log.error("creating index {} failed: {}", indexName, e.getMessage());
 			return false;
 		}
 	}

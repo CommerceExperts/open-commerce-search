@@ -73,6 +73,7 @@ public abstract class AbstractIndexer implements FullIndexationService {
 			boolean isIndexable = preProcess(doc);
 			if (isIndexable) bulk.add(indexItemConverter.toIndexableItem(doc));
 		}
+		log.info("converted {} of {} documents", bulk.size(), data.documents.length);
 		if (bulk.size() > 0) {
 			addToIndex(data.getSession(), bulk);
 		}

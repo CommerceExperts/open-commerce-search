@@ -62,6 +62,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		String localizedIndexName = getLocalizedIndexName(indexName, LocaleUtils.toLocale(locale));
 		String finalIndexName = getNextIndexName(indexName, localizedIndexName);
 
+		log.info("trying to create index {}", finalIndexName);
 		indexClient.createFreshIndex(finalIndexName);
 
 		return finalIndexName;
@@ -103,14 +104,17 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 
 		String oldIndexName = aliases.keySet().iterator().next();
 		Matcher indexNameMatcher = INDEX_NAME_PATTERN.matcher(oldIndexName);
+		String numberedIndexName;
 		if (indexNameMatcher.find()) {
 			int oldIndexNumber = Integer.parseInt(indexNameMatcher.group(1));
-			return getNumberedIndexName(localizedIndexName, oldIndexNumber + 1);
+			numberedIndexName = getNumberedIndexName(localizedIndexName, oldIndexNumber + 1);
 		}
 		else {
-			log.warn("initilized first numbered index, although index already exists! {}");
-			return getNumberedIndexName(localizedIndexName, 1);
+			numberedIndexName = getNumberedIndexName(localizedIndexName, 1);
+			log.warn("initilized first numbered index {}, although final index already exists! {}", numberedIndexName, oldIndexName);
 		}
+
+		return numberedIndexName;
 	}
 
 	private String getNumberedIndexName(String localizedIndexName, int number) {
@@ -120,19 +124,21 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	@Override
 	protected void addToIndex(ImportSession session, List<IndexableItem> bulk) throws Exception {
 		if (bulk.size() > 1000) {
+			log.info("Adding {} documents in 1000 chunks to index {}", bulk.size(), session.finalIndexName);
 			indexClient.indexRecordsChunkwise(session.temporaryIndexName, bulk.iterator(), 1000);
 		}
 		else {
+			log.info("Adding {} documents to index {}", bulk.size(), session.finalIndexName);
 			indexClient.indexRecords(session.temporaryIndexName, bulk.iterator());
 		}
-
 	}
 
 	@Override
 	public boolean deploy(ImportSession session) {
 		try {
 			// TODO: move those values into configuration
-			indexClient.finalizeIndex(session.temporaryIndexName, 1, "5s");
+			boolean success = indexClient.finalizeIndex(session.temporaryIndexName, 1, "5s");
+			log.info("applying live settings to index {} was {}successful", session.temporaryIndexName, success ? "" : "not ");
 		}
 		catch (IOException e) {
 			log.error("can't finish import because index couldn't be flushed");
@@ -148,18 +154,24 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 				log.warn("found more than one index pointing to alias {}", session.finalIndexName);
 			}
 
-			if (oldIndexName.equals(session.temporaryIndexName)) return false;
+			if (oldIndexName.equals(session.temporaryIndexName)) {
+				log.info("tried to deploy index {} that is already deployed at name {}", session.temporaryIndexName, session.finalIndexName);
+				return false;
+			}
 		}
 
 		try {
 			indexClient.updateAlias(session.finalIndexName, oldIndexName, session.temporaryIndexName);
+			log.info("successful deployed index {} to internal index {}", session.finalIndexName, session.temporaryIndexName);
 
 			if (oldIndexName != null) {
+				log.info("deleting old index {}", oldIndexName);
 				indexClient.deleteIndex(oldIndexName, false);
 			}
 			return true;
 		}
 		catch (Exception ex) {
+			log.warn("deploying index {} ot internal index {} failed", session.finalIndexName, session.temporaryIndexName, ex);
 			return false;
 		}
 	}
