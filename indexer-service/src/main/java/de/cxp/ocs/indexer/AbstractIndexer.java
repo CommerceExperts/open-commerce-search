@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.LocaleUtils;
+
 import de.cxp.ocs.api.indexer.FullIndexationService;
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.conf.IndexConfiguration;
@@ -17,7 +19,9 @@ import de.cxp.ocs.preprocessor.DataPreProcessor;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public abstract class AbstractIndexer implements FullIndexationService {
 
 	@NonNull
@@ -47,8 +51,10 @@ public abstract class AbstractIndexer implements FullIndexationService {
 		if (isImportRunning(indexName)) {
 			throw new IllegalStateException("Import for index " + indexName + " already running");
 		}
+		log.info("starting import session for index {} with locale {}", indexName, locale);
+
 		return new ImportSession(
-				indexName,
+				indexName.toLowerCase(LocaleUtils.toLocale(locale)),
 				initNewIndex(indexName, locale));
 	}
 
