@@ -74,6 +74,8 @@ public class IndexerController {
 
 	@GetMapping("/start/{indexName}")
 	public ResponseEntity<ImportSession> startImport(@PathVariable("indexName") String indexName, @RequestParam("locale") String locale) {
+		if (indexName == null || indexName.isEmpty()) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+		if (locale == null || locale.isEmpty()) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		try {
 			return ResponseEntity.ok(actualIndexers.get(indexName).startImport(indexName, locale));
 		}
@@ -96,7 +98,12 @@ public class IndexerController {
 	 * @throws Exception
 	 */
 	@PostMapping("/add")
-	public ResponseEntity<Void> add(@RequestBody BulkImportData data) throws Exception {
+	public ResponseEntity<String> add(@RequestBody BulkImportData data) throws Exception {
+		if (data.session == null) return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("import-session missing in bulk");
+		if (data.documents == null || data.documents.length == 0) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("no documents provided in bulk");
+		}
+
 		AbstractIndexer indexer = actualIndexers.get(data.getSession().getFinalIndexName());
 		if (!indexer.isImportRunning(data.session.temporaryIndexName)) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();

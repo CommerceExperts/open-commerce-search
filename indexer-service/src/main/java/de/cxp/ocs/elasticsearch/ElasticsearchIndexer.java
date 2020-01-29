@@ -29,22 +29,27 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	private final String	INDEX_PREFIX		= "ocs" + INDEX_DELIMITER;
 	private final Pattern	INDEX_NAME_PATTERN	= Pattern.compile(Pattern.quote(INDEX_PREFIX) + "(\\d+)\\" + INDEX_DELIMITER);
 
-	private final ElasticsearchIndexClient client;
+	private final ElasticsearchIndexClient indexClient;
 
 	public ElasticsearchIndexer(IndexConfiguration indexConf, RestHighLevelClient restClient, List<DataPreProcessor> dataProcessors) {
 		super(dataProcessors, indexConf);
-		client = new ElasticsearchIndexClient(restClient);
+		indexClient = new ElasticsearchIndexClient(restClient);
+	}
+
+	protected ElasticsearchIndexer(IndexConfiguration indexConf, List<DataPreProcessor> dataProcessors, ElasticsearchIndexClient esIndexClient) {
+		super(dataProcessors, indexConf);
+		indexClient = esIndexClient;
 	}
 
 	@Override
 	public boolean isImportRunning(String indexName) {
 		if (indexName.startsWith(INDEX_PREFIX)) {
-			Optional<Settings> settings = client.getSettings(indexName);
+			Optional<Settings> settings = indexClient.getSettings(indexName);
 			return settings.map(s -> "-1".equals(s.get("index.refresh_interval"))).orElse(false);
 		}
 		else {
-			Map<String, Set<AliasMetaData>> aliases = client.getAliases(INDEX_PREFIX + "*" + INDEX_DELIMITER + indexName + "*");
-			return (aliases.size() > 1);
+			Map<String, Set<AliasMetaData>> aliases = indexClient.getAliases(INDEX_PREFIX + "*" + INDEX_DELIMITER + indexName + "*");
+			return (aliases.size() > 1 || (aliases.size() == 1 && aliases.values().iterator().next().isEmpty()));
 		}
 	}
 
@@ -57,7 +62,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		String localizedIndexName = getLocalizedIndexName(indexName, LocaleUtils.toLocale(locale));
 		String finalIndexName = getNextIndexName(indexName, localizedIndexName);
 
-		client.createFreshIndex(finalIndexName);
+		indexClient.createFreshIndex(finalIndexName);
 
 		return finalIndexName;
 	}
@@ -93,7 +98,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	private String getNextIndexName(String indexName, String localizedIndexName) {
-		Map<String, Set<AliasMetaData>> aliases = client.getAliases(indexName);
+		Map<String, Set<AliasMetaData>> aliases = indexClient.getAliases(indexName);
 		if (aliases.size() == 0) return getNumberedIndexName(localizedIndexName, 1);
 
 		String oldIndexName = aliases.keySet().iterator().next();
@@ -115,10 +120,10 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	@Override
 	protected void addToIndex(ImportSession session, List<IndexableItem> bulk) throws Exception {
 		if (bulk.size() > 1000) {
-			client.indexRecordsChunkwise(session.temporaryIndexName, bulk.iterator(), 1000);
+			indexClient.indexRecordsChunkwise(session.temporaryIndexName, bulk.iterator(), 1000);
 		}
 		else {
-			client.indexRecords(session.temporaryIndexName, bulk.iterator());
+			indexClient.indexRecords(session.temporaryIndexName, bulk.iterator());
 		}
 
 	}
@@ -127,14 +132,14 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	public boolean deploy(ImportSession session) {
 		try {
 			// TODO: move those values into configuration
-			client.finalizeIndex(session.temporaryIndexName, 1, "5s");
+			indexClient.finalizeIndex(session.temporaryIndexName, 1, "5s");
 		}
 		catch (IOException e) {
 			log.error("can't finish import because index couldn't be flushed");
 			return false;
 		}
 
-		Map<String, Set<AliasMetaData>> currentAliasState = client.getAliases(session.finalIndexName);
+		Map<String, Set<AliasMetaData>> currentAliasState = indexClient.getAliases(session.finalIndexName);
 
 		String oldIndexName = null;
 		if (currentAliasState != null && !currentAliasState.isEmpty()) {
@@ -147,10 +152,10 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		}
 
 		try {
-			client.updateAlias(session.finalIndexName, oldIndexName, session.temporaryIndexName);
+			indexClient.updateAlias(session.finalIndexName, oldIndexName, session.temporaryIndexName);
 
 			if (oldIndexName != null) {
-				client.deleteIndex(oldIndexName, false);
+				indexClient.deleteIndex(oldIndexName, false);
 			}
 			return true;
 		}
@@ -160,7 +165,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	public void deleteIndex(String indexName) {
-		client.deleteIndex(indexName, false);
+		indexClient.deleteIndex(indexName, false);
 	}
 
 }

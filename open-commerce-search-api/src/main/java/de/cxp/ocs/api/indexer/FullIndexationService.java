@@ -149,4 +149,6 @@ public interface FullIndexationService {
 			})
 	void cancel(@RequestBody ImportSession session);
 
+	// TODO add option to clear non-finished index session
+
 }
