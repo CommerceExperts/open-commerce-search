@@ -32,7 +32,7 @@ public class IndexItemConverter {
 			indexableItem = new IndexableItem(doc.getId());
 		}
 
-		extractSourceValues(doc.getData(), indexableItem);
+		extractSourceValues(doc, indexableItem);
 
 		return indexableItem;
 	}
@@ -40,20 +40,29 @@ public class IndexItemConverter {
 	private MasterItem toMasterVariantItem(Product doc) {
 		MasterItem targetMaster = new MasterItem(doc.getId());
 
-		for (final Document variantProduct : doc.getVariants()) {
-			final Map<String, Object> sourceVariantData = variantProduct.getData();
+		for (final Document variantDocument : doc.getVariants()) {
 			final VariantItem targetVariant = new VariantItem(targetMaster);
-			extractSourceValues(sourceVariantData, targetVariant);
+			extractSourceValues(variantDocument, targetVariant);
 			targetMaster.getVariants().add(targetVariant);
 		}
 		return targetMaster;
 	}
 
-	private void extractSourceValues(final Map<String, Object> sourceData, final DataItem targetItem) {
+	private void extractSourceValues(Document sourceDoc, final DataItem targetItem) {
 		boolean isVariant = (targetItem instanceof VariantItem);
+		final Map<String, Object> sourceData = sourceDoc.getData();
 		for (final Field field : fields.values()) {
 			if ((isVariant && field.isVariantLevel() || !isVariant && field.isMasterLevel())) {
 				Object value = sourceData.get(field.getName());
+
+				// if there is no value by the field name but there are source
+				// fields defined, check all of them until a value can be
+				// extracted
+				if (value == null && field.getSourceNames() != null && !field.getSourceNames().isEmpty()) {
+					for (int i = 0; value == null && i < field.getSourceNames().size(); i++) {
+						value = sourceData.get(field.getSourceNames().get(i));
+					}
+				}
 				if (value != null) {
 					targetItem.setValue(field, value);
 				}
