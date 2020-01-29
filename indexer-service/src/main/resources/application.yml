@@ -32,6 +32,29 @@ ocs:
           usage:
             - result
           field-level: both
+        masterNr:
+          name: masterNr
+          type: string
+          source-names:
+            - MasterArticleNumber
+          usage:
+            - result
+          field-level: master
+        artNr:
+          name: artNr
+          type: string
+          source-names:
+            - ArticleNumber
+          usage:
+            - result
+          field-level: variant
+        ean:
+          name: ean
+          source-names:
+            - EAN
+          usage:
+            - search
+            - result
         title:
           name: title
           type: string
@@ -72,12 +95,42 @@ ocs:
           usage:
             - result
             - facet
+        shortDescription:
+          name: shortDescription
+          source-names:
+            - ShortDescription
+            - Short
+          usage:
+            - search
+            - result
         description:
           name: description
           source-names:
             - Description
-            - ShortDescription
             - Text
           usage:
             - search
             - result
+        productUrl:
+          name: productUrl
+          source-names:
+            - ProduktURL
+            - Deeplink
+          usage:
+            - result
+          field-level: both
+        imageUrl:
+          name: imageUrl
+          source-names:
+            - ImageURL
+          usage:
+            - result
+          field-level: both
+        stock:
+          name: stock
+          source-names:
+            - OnStock
+            - StockLevel
+          usage:
+            - Score
+            - Result
