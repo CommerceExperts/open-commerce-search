@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -27,8 +28,9 @@ public class ElasticsearchIndexerTest {
 	ElasticsearchIndexer underTest = new ElasticsearchIndexer(getIndexConf(), Collections.emptyList(), mockedIndexClient);
 
 	@BeforeEach
-	public void setupDefaultEsIndexClient() {
+	public void setupDefaultEsIndexClient() throws IOException {
 		when(mockedIndexClient.getSettings(any())).thenReturn(Optional.empty());
+		when(mockedIndexClient.indexRecords(any(), any())).thenReturn(Optional.empty());
 	}
 
 	@Test
