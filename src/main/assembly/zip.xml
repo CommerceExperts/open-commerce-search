@@ -1,0 +1,37 @@
+<assembly>
+  <id>1</id>
+  <formats>
+    <format>zip</format>
+  </formats>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <fileSets>
+    <fileSet>
+      <directory>src/main/checkstyle</directory>
+      <outputDirectory>coding/checkstyle</outputDirectory>
+      <includes>
+        <include>*.xml</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>src/main/pmd</directory>
+      <outputDirectory>coding/pmd</outputDirectory>
+      <includes>
+        <include>*.xml</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>src/main/resources</directory>
+      <outputDirectory>coding</outputDirectory>
+      <includes>
+        <include>buildNumber.properties</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>src/main/formatter</directory>
+      <outputDirectory>coding/formatter</outputDirectory>
+      <includes>
+        <include>*.xml</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+</assembly>

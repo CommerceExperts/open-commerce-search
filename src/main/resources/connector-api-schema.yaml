@@ -1,0 +1,499 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: MTO3 Search API
+  description: A sample API that uses a search as an example to demonstrate features in the OpenAPI 3.0 specification
+servers:
+  - url: http://127.0.0.1/
+paths:
+  /search:
+    get:
+      description: |
+        search for Items
+      operationId: search
+      parameters:
+        #- $ref: '#/components/parameters/engineParam'
+        - $ref: '#/components/parameters/apiVersionParam'
+        - in: query
+          name: id
+          description: optional query id to identify the query i.e. for tracking
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: store
+          description: store id
+          required: true
+          example: "sk"
+          schema:
+            type: string
+        - in: query
+          name: q
+          description: userquery
+          required: false
+          example: "t-shirt xl"
+          schema:
+            type: string
+        - in: query
+          name: lang
+          description: user language - if not set shop default will be used
+          required: false
+          example: "en"
+          schema:
+            type: string
+        - in: query
+          name: offset
+          description: index of the first item
+          required: false
+          example: 2
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            default: 0
+        - in: query
+          name: fetchsize
+          description: maximum number of items to return
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 4
+            default: 12
+        - in: query
+          name: filters
+          description: values to filter
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: object
+            properties:
+              category:
+                type: string
+                example: "cat_01"
+              brand:
+                type: string
+                example: "brand_01"
+              color:
+                type: string
+                example: "BLUE"
+              price:
+                type: object
+                properties:
+                  min:
+                    type: number
+                    format: float
+                    minimum: 0
+                  max:
+                    type: number
+                    format: float
+                    minimum: 0
+                minProperties: 1
+              size:
+                type: string
+                example: "M"
+
+            additionalProperties: true
+
+      responses:
+        '200':
+          description: Search Result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+  /suggest:
+    get:
+      description: |
+        search for Items
+      operationId: suggest
+      parameters:
+        #- $ref: '#/components/parameters/engineParam'
+        - $ref: '#/components/parameters/apiVersionParam'
+
+        - in: query
+          name: store
+          description: store id
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: lang
+          description: user language
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: q
+          description: userquery
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: context
+          description: context values to suggest
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: object
+            additionalProperties: true
+
+      responses:
+        '200':
+          description: Suggest Result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestResult'
+
+components:
+  parameters:
+
+    engineParam:
+      in: cookie
+      name: engine
+      description: "selector of the internal pre-configuration to use. I.e. search engine."
+      example: ff
+      schema:
+        type: string
+
+    apiVersionParam:
+      in: query
+      name: version
+      description: api version number
+      required: true
+      example: "v1.0"
+      schema:
+        type: string
+
+  schemas:
+    APIResponse:
+      type: object
+      required:
+        - version
+        - engine
+      properties:
+        version:
+          type: string
+          example: "v1"
+        engine:
+          type: string
+          example: "ff"
+
+    SuggestResult:
+      allOf:
+        - $ref: '#/components/schemas/APIResponse'
+        - type: object
+          required:
+          - lang
+          - store
+          - q
+          properties:
+            lang:
+              type: "string"
+              example: "en"
+            store:
+              type: "string"
+              example: "sk"
+            q:
+              type: "string"
+              example: "t-shirt xxl"
+            group:
+              type: "object"
+              required:
+                - code
+                - name
+                - items
+              properties:
+                code:
+                  type: string
+                name:
+                  type: string
+                items:
+                  type: "array"
+                  items:
+                    $ref: "#/components/schemas/ResultItem"
+                x-payload:
+                  allOf:
+                    - $ref: "#/components/schemas/Payload"
+            x-payload:
+                allOf:
+                  - $ref: "#/components/schemas/Payload"
+                
+
+    SearchResult:
+      allOf:
+        - $ref: '#/components/schemas/APIResponse'
+        - type: object
+          required:
+          - id
+          - lang
+          - offset
+          - maxfetchsize
+          - sort
+          - sorts
+          properties:
+            id:
+              type: string
+              example: "3ad67fe03"
+            q:
+              type: "string"
+              example: "t-shirt xxl"
+            numFound:
+              type: "integer"
+              format: int64
+              example: 15374
+            lang:
+              type: "string"
+              example: "en"
+            store:
+              type: "string"
+              example: "sk"
+            offset:
+              type: "integer"
+              format: int64
+              example: 1
+            maxfetchsize:
+              type: "integer"
+              format: int32
+              example: 24
+            sort:
+              type: "string"
+              example: "relevance-desc"
+            sorts:
+              type: "array"
+              items:
+                $ref: '#/components/schemas/Sort'
+            filters:
+              type: array
+              items:
+                $ref: "#/components/schemas/Filter"
+            items:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/ResultItem"
+            x-payload:
+              allOf:
+                - $ref: "#/components/schemas/Payload"
+                
+    Filter:
+      type: "object"
+      required:
+        - code
+        - type
+        - name
+        - selector
+      discriminator:
+        propertyName: type
+        mapping:
+          text: '#/components/schemas/TextFilter'
+          numeric: '#/components/schemas/NumericFilter'
+      properties:
+        code:
+          type: "string"
+        name:
+          type: "string"
+        type:
+          type: "string"
+        selector:
+          description: "Selection typw of the filter. ```and``` and ```or``` imply a multivalued filter. ```refine``` is used for a single selection"
+          type: "string"
+          enum:
+          - "and"
+          - "or"
+          - "refine"
+          maxItems: 1
+        x-payload:
+          allOf:
+            - $ref: "#/components/schemas/Payload"
+
+    TextFilter:
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - type: object
+          properties:
+            topvalues:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/TextFilterValue"
+            values:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/TextFilterValue"
+
+    NumericFilter:
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - type: object
+          properties:
+            min:
+              $ref: '#/components/schemas/NumericValue'
+            max:
+              $ref: '#/components/schemas/NumericValue'
+            topvalues:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/NumericFilterValue"
+            values:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/NumericFilterValue"
+
+    RangeFilter:
+      allOf:
+        - $ref: '#/components/schemas/Filter'
+        - type: object
+          required:
+            - global-min
+            - global-max
+            - min
+            - max
+          properties:
+            unit:
+              type: string
+              description: default unit of this filter
+              example: "m"
+            global-min:
+              description: global minimum. This will not change due other filter options
+              allOf:
+                - $ref: '#/components/schemas/NumericValue'
+            global-max:
+              description: global maximum. This will not change due other filter options
+              allOf:
+                - $ref: '#/components/schemas/NumericValue'
+            min:
+              description: minimum value of the current selection. This could change due other filter options
+              allOf:
+                - $ref: '#/components/schemas/NumericValue'
+            max:
+              description: maximum value of the current selection. This could change due other filter options
+              allOf:
+                - $ref: '#/components/schemas/NumericValue'
+            selected-min:
+              description: lower bound of the filter option (within global range)
+              allOf:
+                - $ref: '#/components/schemas/NumericValue'
+                - type: object
+                  properties:
+                    url:
+                      description: "url to follow in order to set/reset this filter"
+                      type: "string"
+                      format: "url"
+            selected-max:
+              description: upper bound of the filter option (within global range)
+              allOf:
+                - $ref: '#/components/schemas/NumericValue'
+                - type: object
+                  properties:
+                    url:
+                      description: "url to follow in order to set/reset this filter"
+                      type: "string"
+                      format: "url"
+
+              
+
+    FilterValue:
+      type: "object"
+      properties:
+        type:
+          type: "string"
+        code:
+          type: "string"
+        name:
+          description: "localized name of this filter"
+          type: "string"
+        selected:
+          description: "indicator for the acitivty of this filter option"
+          type: "boolean"
+        count:
+          description: "number of items matching this filter option"
+          type: "integer"
+          format: int64
+        url:
+          description: "url to follow in order to set/reset this filter"
+          type: "string"
+          format: "url"
+        x-payload:
+          allOf:
+            - $ref: "#/components/schemas/Payload"
+
+    NumericFilterValue:
+      allOf:
+        - $ref: '#/components/schemas/FilterValue'
+        - $ref: '#/components/schemas/NumericValue'
+        - type: "object"
+          properties:
+            children:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/NumericFilterValue"
+      
+    TextFilterValue:
+      allOf:
+        - $ref: '#/components/schemas/FilterValue'
+        - type: "object"
+          properties:
+            children:
+              type: "array"
+              items:
+                $ref: "#/components/schemas/TextFilterValue"
+            value:
+              type: "string"
+
+    NumericValue:
+      type: "object"
+      required: 
+        - unit
+        - value
+        - norm
+      properties:
+        unit:
+          type: float
+          description: unit of the value
+        value:
+          type: float
+          description: effective value
+        norm:
+          type: number
+          description: normalized value according to international system of units
+
+    Payload:
+      type: "object"
+      additionalProperties:
+        type: "object"
+
+    Sort:
+      type: "object"
+      properties:
+        code:
+          type: "string"
+          description: "internal code used as parameter value"
+          example: "relevance-desc"
+        name:
+          type: "string"
+          description: "display name of the Sort parameter"
+          example: "Relevance"        
+        url:
+          type: "string"
+          format: "url"
+
+    ResultItem:
+      type: "object"
+      required:
+      - "type"
+      - "code"
+      - "url"
+      properties:
+        type:
+          type: "string"
+        code:
+          type: "string"
+        name:
+          type: "string"
+        url:
+          type: "string"
+        x-payload:
+          allOf:
+            - $ref: "#/components/schemas/Payload"
