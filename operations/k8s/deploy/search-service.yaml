@@ -47,7 +47,7 @@ spec:
           name: search-api
         env:
         - name: ES_HOSTS
-          value: "ocs-es-http:9200"
+          value: "http://ocs-es-http:9200"
         - name: ES_AUTH_PW
           valueFrom:
             secretKeyRef:
