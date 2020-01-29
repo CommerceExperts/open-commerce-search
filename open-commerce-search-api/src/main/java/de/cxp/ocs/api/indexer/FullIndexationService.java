@@ -105,10 +105,13 @@ public interface FullIndexationService {
 					content = { @Content(schema = @Schema(ref = "BulkImportData")) },
 					required = true),
 			responses = {
-					@ApiResponse(responseCode = "200", description = "documents successfully added"),
+					@ApiResponse(
+							responseCode = "200",
+							description = "documents successfully added",
+							content = @Content(schema = @Schema(description = "Amount of documents successfuly added"))),
 					@ApiResponse(responseCode = "400", description = "import session is invalid")
 			})
-	void add(BulkImportData data) throws Exception;
+	int add(BulkImportData data) throws Exception;
 
 	/**
 	 * Finishes the import, flushing the new index and (in case there is

@@ -98,18 +98,18 @@ public class IndexerController {
 	 * @throws Exception
 	 */
 	@PostMapping("/add")
-	public ResponseEntity<String> add(@RequestBody BulkImportData data) throws Exception {
-		if (data.session == null) return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("import-session missing in bulk");
+	public ResponseEntity<Integer> add(@RequestBody BulkImportData data) throws Exception {
+		if (data.session == null) return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(0);
 		if (data.documents == null || data.documents.length == 0) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("no documents provided in bulk");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(0);
 		}
 
 		AbstractIndexer indexer = actualIndexers.get(data.getSession().getFinalIndexName());
 		if (!indexer.isImportRunning(data.session.temporaryIndexName)) {
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(0);
 		}
-		indexer.add(data);
-		return ResponseEntity.ok().build();
+		int successCount = indexer.add(data);
+		return ResponseEntity.ok().body(successCount);
 	}
 
 	@PostMapping("/done")

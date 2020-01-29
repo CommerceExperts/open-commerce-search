@@ -63,7 +63,7 @@ public abstract class AbstractIndexer implements FullIndexationService {
 	protected abstract String initNewIndex(String indexName, String locale);
 
 	@Override
-	public void add(BulkImportData data) throws Exception {
+	public int add(BulkImportData data) throws Exception {
 		validateSession(data.session);
 		List<IndexableItem> bulk = new ArrayList<>();
 		for (Document doc : data.getDocuments()) {
@@ -75,11 +75,14 @@ public abstract class AbstractIndexer implements FullIndexationService {
 		}
 		log.info("converted {} of {} documents", bulk.size(), data.documents.length);
 		if (bulk.size() > 0) {
-			addToIndex(data.getSession(), bulk);
+			return addToIndex(data.getSession(), bulk);
+		}
+		else {
+			return 0;
 		}
 	}
 
-	protected abstract void addToIndex(ImportSession session, List<IndexableItem> bulk) throws Exception;
+	protected abstract int addToIndex(ImportSession session, List<IndexableItem> bulk) throws Exception;
 
 	private boolean preProcess(Document doc) {
 		boolean isIndexable = true;

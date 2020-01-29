@@ -226,7 +226,7 @@ class ElasticsearchIndexClient {
 	 * @return
 	 * @throws IOException
 	 */
-	public BulkResponse indexRecords(String indexName, Iterator<IndexableItem> records) throws IOException {
+	public Optional<BulkResponse> indexRecords(String indexName, Iterator<IndexableItem> records) throws IOException {
 		BulkRequest bulkIndexRequest = new BulkRequest();
 		int docCount = 0;
 		while (records.hasNext()) {
@@ -241,8 +241,8 @@ class ElasticsearchIndexClient {
 			}
 		}
 		// TODO use BulkProcessor
-		if (docCount > 0) return highLevelClient.bulk(bulkIndexRequest, RequestOptions.DEFAULT);
-		else return null;
+		if (docCount > 0) return Optional.ofNullable(highLevelClient.bulk(bulkIndexRequest, RequestOptions.DEFAULT));
+		else return Optional.empty();
 	}
 
 	private IndexRequest asIndexRequest(String indexName, final IndexableItem record)

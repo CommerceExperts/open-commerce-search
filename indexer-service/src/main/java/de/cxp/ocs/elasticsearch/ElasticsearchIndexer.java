@@ -8,9 +8,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.action.bulk.BulkItemResponse;
+import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.cluster.metadata.AliasMetaData;
 import org.elasticsearch.common.settings.Settings;
@@ -122,14 +125,41 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	@Override
-	protected void addToIndex(ImportSession session, List<IndexableItem> bulk) throws Exception {
+	protected int addToIndex(ImportSession session, List<IndexableItem> bulk) throws Exception {
 		if (bulk.size() > 1000) {
 			log.info("Adding {} documents in 1000 chunks to index {}", bulk.size(), session.finalIndexName);
-			indexClient.indexRecordsChunkwise(session.temporaryIndexName, bulk.iterator(), 1000);
+			return indexClient.indexRecordsChunkwise(session.temporaryIndexName, bulk.iterator(), 1000)
+					.stream()
+					.collect(Collectors.summingInt(this::getSuccessCount));
 		}
 		else {
 			log.info("Adding {} documents to index {}", bulk.size(), session.finalIndexName);
-			indexClient.indexRecords(session.temporaryIndexName, bulk.iterator());
+			return indexClient.indexRecords(session.temporaryIndexName, bulk.iterator())
+					.map(this::getSuccessCount)
+					.orElse(0);
+		}
+	}
+
+	private int getSuccessCount(BulkResponse bulkResponse) {
+		if (bulkResponse.hasFailures()) {
+			int success = 0;
+			int failures = 0;
+			for (BulkItemResponse responseItem : bulkResponse.getItems()) {
+				if (responseItem.isFailed()) {
+					if (failures++ == 0) {
+						log.warn("First failure in bulk: {}", responseItem.getFailureMessage());
+					}
+				}
+				else {
+					success++;
+				}
+			}
+			if (failures > 1) {
+				log.warn("{} bulk insertions failed. {} successes", failures, success);
+			}
+			return success;
+		} else {
+			return bulkResponse.getItems().length;
 		}
 	}
 

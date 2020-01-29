@@ -141,7 +141,15 @@
         },
         "responses" : {
           "200" : {
-            "description" : "documents successfully added"
+            "description" : "documents successfully added",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string",
+                  "description" : "Amount of documents successfuly added"
+                }
+              }
+            }
           },
           "400" : {
             "description" : "import session is invalid"
