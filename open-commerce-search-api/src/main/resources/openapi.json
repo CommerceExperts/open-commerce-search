@@ -33,6 +33,9 @@
             "description" : "indexation was already confirmed or import session is invalid"
           }
         },
+        "security" : [ {
+          "basic-auth" : [ ]
+        } ],
         "servers" : [ {
           "url" : "http://indexer-service",
           "description" : "Service to run a full import into a new index. To do so, start a indexation session with a request to 'start' and use the returned ImportSession object to 'add' products bulkwise. If all documents where added, use the 'done' request to deploy that index. In case there were failures (or more failures then tollerated), the 'cancel' request can be used to stop the process and cleanup the incomplete index. Depending on the document size, an amount of 500-2000 documents per bulk is sufficient. If product and content data should be indexed, its recommended to use different indexes. Otherwise make sure to use the same fields for the same content type, e.g. both kind of documents can have a textual 'title' field, but both kind of documents shouldn't have for example an 'author' field, which could be used for product facets (e.g. book authors) but not for faceting the content documents (e.g. blog post authors).",
@@ -63,6 +66,9 @@
             "description" : "indexation was already confirmed or import session is invalid"
           }
         },
+        "security" : [ {
+          "basic-auth" : [ ]
+        } ],
         "servers" : [ {
           "url" : "http://indexer-service",
           "description" : "Service to run a full import into a new index. To do so, start a indexation session with a request to 'start' and use the returned ImportSession object to 'add' products bulkwise. If all documents where added, use the 'done' request to deploy that index. In case there were failures (or more failures then tollerated), the 'cancel' request can be used to stop the process and cleanup the incomplete index. Depending on the document size, an amount of 500-2000 documents per bulk is sufficient. If product and content data should be indexed, its recommended to use different indexes. Otherwise make sure to use the same fields for the same content type, e.g. both kind of documents can have a textual 'title' field, but both kind of documents shouldn't have for example an 'author' field, which could be used for product facets (e.g. book authors) but not for faceting the content documents (e.g. blog post authors).",
@@ -107,6 +113,9 @@
             "description" : "there is already an import running for that index"
           }
         },
+        "security" : [ {
+          "basic-auth" : [ ]
+        } ],
         "servers" : [ {
           "url" : "http://indexer-service",
           "description" : "Service to run a full import into a new index. To do so, start a indexation session with a request to 'start' and use the returned ImportSession object to 'add' products bulkwise. If all documents where added, use the 'done' request to deploy that index. In case there were failures (or more failures then tollerated), the 'cancel' request can be used to stop the process and cleanup the incomplete index. Depending on the document size, an amount of 500-2000 documents per bulk is sufficient. If product and content data should be indexed, its recommended to use different indexes. Otherwise make sure to use the same fields for the same content type, e.g. both kind of documents can have a textual 'title' field, but both kind of documents shouldn't have for example an 'author' field, which could be used for product facets (e.g. book authors) but not for faceting the content documents (e.g. blog post authors).",
@@ -138,6 +147,9 @@
             "description" : "import session is invalid"
           }
         },
+        "security" : [ {
+          "basic-auth" : [ ]
+        } ],
         "servers" : [ {
           "url" : "http://indexer-service",
           "description" : "Service to run a full import into a new index. To do so, start a indexation session with a request to 'start' and use the returned ImportSession object to 'add' products bulkwise. If all documents where added, use the 'done' request to deploy that index. In case there were failures (or more failures then tollerated), the 'cancel' request can be used to stop the process and cleanup the incomplete index. Depending on the document size, an amount of 500-2000 documents per bulk is sufficient. If product and content data should be indexed, its recommended to use different indexes. Otherwise make sure to use the same fields for the same content type, e.g. both kind of documents can have a textual 'title' field, but both kind of documents shouldn't have for example an 'author' field, which could be used for product facets (e.g. book authors) but not for faceting the content documents (e.g. blog post authors).",
@@ -176,6 +188,9 @@
             "description" : "Document already exists but replaceExisting is set to false"
           }
         },
+        "security" : [ {
+          "basic-auth" : [ ]
+        } ],
         "servers" : [ {
           "url" : "http://indexer-service",
           "variables" : { }
@@ -210,6 +225,9 @@
             "description" : "index does not exist"
           }
         },
+        "security" : [ {
+          "basic-auth" : [ ]
+        } ],
         "servers" : [ {
           "url" : "http://indexer-service",
           "variables" : { }
@@ -235,6 +253,9 @@
             "description" : "index does not exist or document not found"
           }
         },
+        "security" : [ {
+          "basic-auth" : [ ]
+        } ],
         "servers" : [ {
           "url" : "http://indexer-service",
           "variables" : { }
@@ -250,6 +271,9 @@
             "description" : "a list of available tenants"
           }
         },
+        "security" : [ {
+          "basic-auth" : [ ]
+        } ],
         "servers" : [ {
           "url" : "http://search-service",
           "variables" : { }
@@ -305,6 +329,9 @@
             }
           }
         },
+        "security" : [ {
+          "basic-auth" : [ ]
+        } ],
         "servers" : [ {
           "url" : "http://search-service",
           "variables" : { }
@@ -481,9 +508,6 @@
       "FacetEntry" : {
         "type" : "object",
         "properties" : {
-          "type" : {
-            "type" : "string"
-          },
           "key" : {
             "type" : "string"
           },
@@ -495,6 +519,9 @@
           "link" : {
             "type" : "string",
             "format" : "URI"
+          },
+          "type" : {
+            "type" : "string"
           }
         },
         "description" : "The entries of that facet.",
@@ -509,6 +536,16 @@
       "HierarchialFacetEntry" : {
         "type" : "object",
         "properties" : {
+          "children" : {
+            "type" : "array",
+            "description" : "Child facet entries to that particular facet. The child facets again could be HierarchialFacetEntries.",
+            "items" : {
+              "$ref" : "#/components/schemas/FacetEntry"
+            }
+          },
+          "path" : {
+            "type" : "string"
+          },
           "type" : {
             "type" : "string"
           },
@@ -523,16 +560,6 @@
           "link" : {
             "type" : "string",
             "format" : "URI"
-          },
-          "children" : {
-            "type" : "array",
-            "description" : "Child facet entries to that particular facet. The child facets again could be HierarchialFacetEntries.",
-            "items" : {
-              "$ref" : "#/components/schemas/FacetEntry"
-            }
-          },
-          "path" : {
-            "type" : "string"
           }
         }
       },
@@ -671,6 +698,12 @@
             "format" : "URI"
           }
         }
+      }
+    },
+    "securitySchemes" : {
+      "basic-auth" : {
+        "type" : "http",
+        "scheme" : "basic"
       }
     }
   }

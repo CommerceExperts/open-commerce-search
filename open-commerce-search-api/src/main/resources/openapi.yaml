@@ -26,6 +26,8 @@ paths:
       responses:
         "400":
           description: indexation was already confirmed or import session is invalid
+      security:
+      - basic-auth: []
       servers:
       - url: http://indexer-service
         description: Service to run a full import into a new index. To do so, start
@@ -60,6 +62,8 @@ paths:
           description: successfully done
         "400":
           description: indexation was already confirmed or import session is invalid
+      security:
+      - basic-auth: []
       servers:
       - url: http://indexer-service
         description: Service to run a full import into a new index. To do so, start
@@ -105,6 +109,8 @@ paths:
                 $ref: '#/components/schemas/ImportSession'
         "409":
           description: there is already an import running for that index
+      security:
+      - basic-auth: []
       servers:
       - url: http://indexer-service
         description: Service to run a full import into a new index. To do so, start
@@ -140,6 +146,8 @@ paths:
           description: documents successfully added
         "400":
           description: import session is invalid
+      security:
+      - basic-auth: []
       servers:
       - url: http://indexer-service
         description: Service to run a full import into a new index. To do so, start
@@ -184,6 +192,8 @@ paths:
           description: index does not exist
         "409":
           description: Document already exists but replaceExisting is set to false
+      security:
+      - basic-auth: []
       servers:
       - url: http://indexer-service
         variables: {}
@@ -210,6 +220,8 @@ paths:
           description: document not found
         "404":
           description: index does not exist
+      security:
+      - basic-auth: []
       servers:
       - url: http://indexer-service
         variables: {}
@@ -235,6 +247,8 @@ paths:
           description: document successfuly patched
         "404":
           description: index does not exist or document not found
+      security:
+      - basic-auth: []
       servers:
       - url: http://indexer-service
         variables: {}
@@ -246,6 +260,8 @@ paths:
       responses:
         "200":
           description: a list of available tenants
+      security:
+      - basic-auth: []
       servers:
       - url: http://search-service
         variables: {}
@@ -287,6 +303,8 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/SearchResult'
+      security:
+      - basic-auth: []
       servers:
       - url: http://search-service
         variables: {}
@@ -454,8 +472,6 @@ components:
     FacetEntry:
       type: object
       properties:
-        type:
-          type: string
         key:
           type: string
         docCount:
@@ -466,6 +482,8 @@ components:
         link:
           type: string
           format: URI
+        type:
+          type: string
       description: The entries of that facet.
       discriminator:
         propertyName: type
@@ -475,6 +493,14 @@ components:
     HierarchialFacetEntry:
       type: object
       properties:
+        children:
+          type: array
+          description: Child facet entries to that particular facet. The child facets
+            again could be HierarchialFacetEntries.
+          items:
+            $ref: '#/components/schemas/FacetEntry'
+        path:
+          type: string
         type:
           type: string
         key:
@@ -487,14 +513,6 @@ components:
         link:
           type: string
           format: URI
-        children:
-          type: array
-          description: Child facet entries to that particular facet. The child facets
-            again could be HierarchialFacetEntries.
-          items:
-            $ref: '#/components/schemas/FacetEntry'
-        path:
-          type: string
     ResultHit:
       type: object
       properties:
@@ -613,3 +631,7 @@ components:
         link:
           type: string
           format: URI
+  securitySchemes:
+    basic-auth:
+      type: http
+      scheme: basic

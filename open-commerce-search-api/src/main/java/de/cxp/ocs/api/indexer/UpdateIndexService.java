@@ -11,11 +11,16 @@ import de.cxp.ocs.model.index.Document;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+@SecurityScheme(name = "basic-auth", type = SecuritySchemeType.HTTP, scheme = "basic")
+@SecurityRequirement(name = "basic-auth")
 @Server(url = "http://indexer-service")
 @Tag(name = "update")
 @Path("indexer-api/v1/update/{indexName}")

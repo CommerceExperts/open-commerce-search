@@ -8,10 +8,13 @@ import de.cxp.ocs.model.index.BulkImportData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -30,6 +33,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
  * be used for product facets (e.g. book authors) but not for faceting the
  * content documents (e.g. blog post authors).
  */
+
+@SecurityScheme(name = "basic-auth", type = SecuritySchemeType.HTTP, scheme = "basic")
+@SecurityRequirement(name = "basic-auth")
 @Server(
 		url = "http://indexer-service",
 		description = "Service to run a full import into a new index." +
