@@ -51,13 +51,13 @@ ocs:
         label: Color
     scoring-configuration:
       boost-mode: avg
-       score-mode: sum
-       score-functions:
-         - type: field_value_factor
-           field: stock
-           weight: 2.5
-           options:
-             missing: 0
+      score-mode: sum
+      score-functions:
+        - type: field_value_factor
+          field: stock
+          weight: 2.5
+          options:
+            missing: 0
     query-configuration:
       ean-search:
         strategy: "ConfigurableQuery"
