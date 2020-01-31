@@ -7,14 +7,12 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 
 @Data
 @NoArgsConstructor
 public class TenantSearchConfiguration {
 
 	@NestedConfigurationProperty
-	@NonNull
 	private String indexName;
 
 	@NestedConfigurationProperty

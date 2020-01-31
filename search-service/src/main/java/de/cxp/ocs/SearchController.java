@@ -98,7 +98,17 @@ public class SearchController {
 	}
 
 	private TenantSearchConfiguration getTenantSearchConfiguration(String tenant) {
-		return properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
+		TenantSearchConfiguration defaultTenantConfig = properties.getDefaultTenantConfig();
+		TenantSearchConfiguration tenantConfig = properties.getTenantConfig().getOrDefault(tenant, defaultTenantConfig);
+		if (tenantConfig != defaultTenantConfig) {
+			if (tenantConfig.getFacetConfiguration().getFacets().isEmpty())
+				tenantConfig.setFacetConfiguration(defaultTenantConfig.getFacetConfiguration());
+			if (tenantConfig.getQueryConfiguration().isEmpty())
+				tenantConfig.getQueryConfiguration().putAll(defaultTenantConfig.getQueryConfiguration());
+			if (tenantConfig.getScoringConfiguration().getScoreFunctions().isEmpty())
+				tenantConfig.setScoringConfiguration(defaultTenantConfig.getScoringConfiguration());
+		}
+		return tenantConfig;
 	}
 
 	private IndexConfiguration getIndexConfiguration(String indexName) {
