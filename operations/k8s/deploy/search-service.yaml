@@ -34,8 +34,8 @@ spec:
                   - search-api
               topologyKey: kubernetes.io/hostname      
       containers:
-      - name: restful-search
-        image: commerceexperts/ocs-search-service:0.1
+      - name: search-service
+        image: commerceexperts/ocs-search-service:latest
         imagePullPolicy: Always
         resources:
           limits:
