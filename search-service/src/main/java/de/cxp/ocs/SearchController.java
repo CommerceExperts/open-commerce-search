@@ -83,6 +83,9 @@ public class SearchController {
 		SearchConfiguration configCopy = new SearchConfiguration();
 
 		TenantSearchConfiguration tenantSearchConf = getTenantSearchConfiguration(tenant);
+		if (tenantSearchConf.getIndexName() == null) {
+			tenantSearchConf.setIndexName(tenant);
+		}
 
 		IndexConfiguration indexConfig = getIndexConfiguration(tenantSearchConf.getIndexName());
 
