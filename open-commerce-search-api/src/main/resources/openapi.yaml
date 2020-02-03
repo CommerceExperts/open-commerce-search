@@ -477,6 +477,8 @@ components:
     FacetEntry:
       type: object
       properties:
+        type:
+          type: string
         key:
           type: string
         docCount:
@@ -487,8 +489,6 @@ components:
         link:
           type: string
           format: URI
-        type:
-          type: string
       description: The entries of that facet.
       discriminator:
         propertyName: type
@@ -498,14 +498,6 @@ components:
     HierarchialFacetEntry:
       type: object
       properties:
-        children:
-          type: array
-          description: Child facet entries to that particular facet. The child facets
-            again could be HierarchialFacetEntries.
-          items:
-            $ref: '#/components/schemas/FacetEntry'
-        path:
-          type: string
         type:
           type: string
         key:
@@ -518,6 +510,14 @@ components:
         link:
           type: string
           format: URI
+        children:
+          type: array
+          description: Child facet entries to that particular facet. The child facets
+            again could be HierarchialFacetEntries.
+          items:
+            $ref: '#/components/schemas/FacetEntry'
+        path:
+          type: string
     ResultHit:
       type: object
       properties:

@@ -516,6 +516,9 @@
       "FacetEntry" : {
         "type" : "object",
         "properties" : {
+          "type" : {
+            "type" : "string"
+          },
           "key" : {
             "type" : "string"
           },
@@ -527,9 +530,6 @@
           "link" : {
             "type" : "string",
             "format" : "URI"
-          },
-          "type" : {
-            "type" : "string"
           }
         },
         "description" : "The entries of that facet.",
@@ -544,16 +544,6 @@
       "HierarchialFacetEntry" : {
         "type" : "object",
         "properties" : {
-          "children" : {
-            "type" : "array",
-            "description" : "Child facet entries to that particular facet. The child facets again could be HierarchialFacetEntries.",
-            "items" : {
-              "$ref" : "#/components/schemas/FacetEntry"
-            }
-          },
-          "path" : {
-            "type" : "string"
-          },
           "type" : {
             "type" : "string"
           },
@@ -568,6 +558,16 @@
           "link" : {
             "type" : "string",
             "format" : "URI"
+          },
+          "children" : {
+            "type" : "array",
+            "description" : "Child facet entries to that particular facet. The child facets again could be HierarchialFacetEntries.",
+            "items" : {
+              "$ref" : "#/components/schemas/FacetEntry"
+            }
+          },
+          "path" : {
+            "type" : "string"
           }
         }
       },

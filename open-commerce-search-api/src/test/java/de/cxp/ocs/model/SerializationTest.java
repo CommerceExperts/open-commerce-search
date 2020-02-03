@@ -1,7 +1,5 @@
 package de.cxp.ocs.model;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
@@ -230,7 +228,7 @@ public class SerializationTest {
 		});
 
 		if (expected instanceof Product) {
-			assertThat(actual, instanceOf(Product.class));
+			assertTrue(actual instanceof Product);
 			if (((Product) expected).getVariants() == null) {
 				assertNull(((Product) actual).getVariants());
 			}
