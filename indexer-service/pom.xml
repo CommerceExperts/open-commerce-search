@@ -143,10 +143,6 @@
 			<plugin>
 				<artifactId>maven-dependency-plugin</artifactId>
 			</plugin>
-			<plugin>
-				<groupId>io.github.zlika</groupId>
-				<artifactId>reproducible-build-maven-plugin</artifactId>
-			</plugin>
 		</plugins>
 	</build>
 

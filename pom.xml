@@ -215,20 +215,6 @@
 				</plugin>
 
 				<plugin>
-					<groupId>io.github.zlika</groupId>
-					<artifactId>reproducible-build-maven-plugin</artifactId>
-					<version>0.11</version>
-					<executions>
-						<execution>
-							<phase>package</phase>
-							<goals>
-								<goal>strip-jar</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-
-				<plugin>
 					<groupId>com.spotify</groupId>
 					<artifactId>dockerfile-maven-plugin</artifactId>
 					<version>${dockerfile-maven-plugin.version}</version>
