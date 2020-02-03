@@ -167,8 +167,7 @@ ocs:
           "[category]": 2
           "[category.standard]": 1.7
 
-# index configuration MUST be the copy from indexer-service (although source-names could be removed
-ocs:
+  # index configuration MUST be the copy from indexer-service (although source-names could be removed
   default-index-config:
     field-configuration:
       fields:
