@@ -1,0 +1,43 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: indexer-service
+  labels:
+    component: ocs-stack
+    role: indexer-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: ocs-stack
+      role: indexer-api
+  template:
+    metadata:
+      labels:
+        component: ocs-stack
+        role: indexer-api
+    spec:
+      containers:
+      - name: indexer-service
+        image: commerceexperts/ocs-indexer-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8535
+          name: indexer-api
+        env:
+        - name: ES_HOSTS
+          value: "http://ocs-es-http:9200"
+        - name: ES_AUTH_PW
+          valueFrom:
+            secretKeyRef:
+              name: ocs-es-elastic-user
+              key: elastic
+        - name: ES_AUTH
+          value: "elastic:$(ES_AUTH_PW)"
+        - name: JAVA_OPTS
+          value: -Xmx3g
+        resources:
+          limits:
+            memory: 3256Mi
+          requests:
+            memory: 3256Mi

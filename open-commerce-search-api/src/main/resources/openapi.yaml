@@ -1,0 +1,642 @@
+openapi: 3.0.1
+info:
+  title: Open Commerce Search API
+  description: A common product search API that separates its usage from required
+    search expertise
+  contact:
+    email: info@commerce-experts.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: "0.2"
+paths:
+  /indexer-api/v1/full/cancel:
+    post:
+      tags:
+      - indexer
+      description: Cancels the import and in case there was an index created, it will
+        be deleted.
+      operationId: cancel
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/ImportSession'
+        required: true
+      responses:
+        "400":
+          description: indexation was already confirmed or import session is invalid
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://indexer-service
+        description: Service to run a full import into a new index. To do so, start
+          a indexation session with a request to 'start' and use the returned ImportSession
+          object to 'add' products bulkwise. If all documents where added, use the
+          'done' request to deploy that index. In case there were failures (or more
+          failures then tollerated), the 'cancel' request can be used to stop the
+          process and cleanup the incomplete index. Depending on the document size,
+          an amount of 500-2000 documents per bulk is sufficient. If product and content
+          data should be indexed, its recommended to use different indexes. Otherwise
+          make sure to use the same fields for the same content type, e.g. both kind
+          of documents can have a textual 'title' field, but both kind of documents
+          shouldn't have for example an 'author' field, which could be used for product
+          facets (e.g. book authors) but not for faceting the content documents (e.g.
+          blog post authors).
+        variables: {}
+  /indexer-api/v1/full/done:
+    post:
+      tags:
+      - indexer
+      description: Finishes the import, flushing the new index and (in case there
+        is already an index with the initialized name) replacing the old one.
+      operationId: done
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/ImportSession'
+        required: true
+      responses:
+        "200":
+          description: successfully done
+        "400":
+          description: indexation was already confirmed or import session is invalid
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://indexer-service
+        description: Service to run a full import into a new index. To do so, start
+          a indexation session with a request to 'start' and use the returned ImportSession
+          object to 'add' products bulkwise. If all documents where added, use the
+          'done' request to deploy that index. In case there were failures (or more
+          failures then tollerated), the 'cancel' request can be used to stop the
+          process and cleanup the incomplete index. Depending on the document size,
+          an amount of 500-2000 documents per bulk is sufficient. If product and content
+          data should be indexed, its recommended to use different indexes. Otherwise
+          make sure to use the same fields for the same content type, e.g. both kind
+          of documents can have a textual 'title' field, but both kind of documents
+          shouldn't have for example an 'author' field, which could be used for product
+          facets (e.g. book authors) but not for faceting the content documents (e.g.
+          blog post authors).
+        variables: {}
+  /indexer-api/v1/full/start/{indexName}:
+    get:
+      tags:
+      - indexer
+      description: Starts a new full import. Returns a handle containing meta data,
+        that has to be passed to all following calls.
+      operationId: startImport
+      parameters:
+      - name: indexName
+        in: path
+        description: index name, that should match the regular expression '[a-z0-9_-]+'
+        required: true
+        schema:
+          type: string
+      - name: locale
+        in: query
+        description: used for language dependent settings
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: import session started
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ImportSession'
+        "409":
+          description: there is already an import running for that index
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://indexer-service
+        description: Service to run a full import into a new index. To do so, start
+          a indexation session with a request to 'start' and use the returned ImportSession
+          object to 'add' products bulkwise. If all documents where added, use the
+          'done' request to deploy that index. In case there were failures (or more
+          failures then tollerated), the 'cancel' request can be used to stop the
+          process and cleanup the incomplete index. Depending on the document size,
+          an amount of 500-2000 documents per bulk is sufficient. If product and content
+          data should be indexed, its recommended to use different indexes. Otherwise
+          make sure to use the same fields for the same content type, e.g. both kind
+          of documents can have a textual 'title' field, but both kind of documents
+          shouldn't have for example an 'author' field, which could be used for product
+          facets (e.g. book authors) but not for faceting the content documents (e.g.
+          blog post authors).
+        variables: {}
+  /indexer-api/v1/full/add:
+    post:
+      tags:
+      - indexer
+      description: Add one or more documents to a running import session.
+      operationId: add
+      requestBody:
+        description: Data that contains the import session reference and one or more
+          documents that should be added to that session.
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/BulkImportData'
+        required: true
+      responses:
+        "200":
+          description: documents successfully added
+          content:
+            '*/*':
+              schema:
+                type: string
+                description: Amount of documents successfuly added
+        "400":
+          description: import session is invalid
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://indexer-service
+        description: Service to run a full import into a new index. To do so, start
+          a indexation session with a request to 'start' and use the returned ImportSession
+          object to 'add' products bulkwise. If all documents where added, use the
+          'done' request to deploy that index. In case there were failures (or more
+          failures then tollerated), the 'cancel' request can be used to stop the
+          process and cleanup the incomplete index. Depending on the document size,
+          an amount of 500-2000 documents per bulk is sufficient. If product and content
+          data should be indexed, its recommended to use different indexes. Otherwise
+          make sure to use the same fields for the same content type, e.g. both kind
+          of documents can have a textual 'title' field, but both kind of documents
+          shouldn't have for example an 'author' field, which could be used for product
+          facets (e.g. book authors) but not for faceting the content documents (e.g.
+          blog post authors).
+        variables: {}
+  /indexer-api/v1/update/{indexName}:
+    put:
+      tags:
+      - update
+      description: Puts a document to the index. If document does not exist, it will
+        be added. An existing product will be overwritten unless the parameter 'replaceExisting"
+        is set to "false". Provided document should be a complete object, partial
+        updates should be  done using the updateDocument method.
+      operationId: putProduct
+      parameters:
+      - name: indexName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: replaceExisting
+        in: query
+        description: set to false to avoid overriding a document with that ID. Defaults
+          to 'true'
+        schema:
+          type: boolean
+      responses:
+        "201":
+          description: Document created
+        "404":
+          description: index does not exist
+        "409":
+          description: Document already exists but replaceExisting is set to false
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://indexer-service
+        variables: {}
+    delete:
+      tags:
+      - update
+      description: Delete existing document. If document does not exist, it returns
+        code 304.
+      operationId: deleteProduct
+      parameters:
+      - name: indexName
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: id
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: document deleted
+        "304":
+          description: document not found
+        "404":
+          description: index does not exist
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://indexer-service
+        variables: {}
+    patch:
+      tags:
+      - update
+      description: Partial update of an existing document. If the document does not
+        exist, no update will be performed and status code 404 is returned. In case
+        the document is a master product with variants, the provided master product
+        may only contain the changed values. However if some data at the product variants
+        are updated, all data from all variant products are required, otherwise missing
+        variants won't be there after the update! This is how single variants can
+        be deleted.
+      operationId: patchDocument
+      parameters:
+      - name: indexName
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: document successfuly patched
+        "404":
+          description: index does not exist or document not found
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://indexer-service
+        variables: {}
+  /search-api/v1/tenants:
+    get:
+      tags:
+      - search
+      operationId: getTenants
+      responses:
+        "200":
+          description: a list of available tenants
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://search-service
+        variables: {}
+  /search-api/v1/search/{tenant}:
+    get:
+      tags:
+      - search
+      summary: Search for documents
+      description: Runs a search request for a certain tenant. The tenant should exist
+        at the service and linked to a certain index in the backend. Different tenants
+        may use the same index.
+      operationId: search
+      parameters:
+      - name: tenant
+        in: path
+        description: tenant name
+        required: true
+        schema:
+          type: string
+      - name: searchQuery
+        in: query
+        description: the query that describes the wished result
+        required: true
+        style: form
+        schema:
+          $ref: '#/components/schemas/SearchQuery'
+      responses:
+        "403":
+          description: tenant can't be accessed or does not exist
+        "200":
+          description: successful found results
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+        "404":
+          description: Optional response code that represents 'no result'
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://search-service
+        variables: {}
+components:
+  schemas:
+    ImportSession:
+      required:
+      - finalIndexName
+      - temporaryIndexName
+      type: object
+      properties:
+        finalIndexName:
+          type: string
+        temporaryIndexName:
+          type: string
+      readOnly: true
+    Attribute:
+      required:
+      - label
+      - value
+      type: object
+      properties:
+        id:
+          pattern: '[A-Za-z0-9\-_.]'
+          type: string
+          description: 'Optional: Static ID of that attribute. The id SHOULD be URL
+            friendly, since it could be used to build according filter parameters.
+            If not set, the label could be used for parameter building.'
+        label:
+          type: string
+          description: Human readable name of the attribute, e.g. 'Color' or 'Max.
+            Speed in km/h'
+        code:
+          pattern: '[A-Za-z0-9\-_.]'
+          type: string
+          description: 'Optional: code that represents that attribute value, e.g.
+            "FF0000" for color'
+        value:
+          type: string
+          description: Human readable representation of that attribute, e.g. 'Red'
+            for the attribute 'Color'
+      description: Rich model that can be used to represent a document or product
+        attribute. If 'id' and/or 'code' are provieded, these can be used for consistent
+        filtering, even if the label and values are changing. The label and the values
+        will be used used to produce nice facets or if used for search, they will
+        be added to the searchable content.
+      example:
+        id: a.maxSpeed
+        label: Max Speed
+        value: 230 km/h
+        code: 230
+    BulkImportData:
+      required:
+      - documents
+      type: object
+      properties:
+        session:
+          $ref: '#/components/schemas/ImportSession'
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/Document'
+      description: composite object that is used to add documents to the index.
+    Category:
+      required:
+      - name
+      type: object
+      properties:
+        id:
+          type: string
+          description: Optional ID for a consistent filtering
+        name:
+          type: string
+      description: categories are treated in a parent-child relationship, so a product
+        can be placed into a path within a category tree. Multiple category paths
+        can be defined per document.
+    Document:
+      required:
+      - data
+      - id
+      type: object
+      properties:
+        id:
+          type: string
+        data:
+          type: object
+          additionalProperties:
+            type: object
+            description: 'The data property should be used for standard fields, such
+              as title, description, price. Only values of the following types are
+              accepted (others will be dropped silently): Standard primitive types
+              (Boolean, String, Integer, Double) and arrays of these types. Attributes
+              (key-value objects with ID) should be passed to the attributes property.'
+          description: 'The data property should be used for standard fields, such
+            as title, description, price. Only values of the following types are accepted
+            (others will be dropped silently): Standard primitive types (Boolean,
+            String, Integer, Double) and arrays of these types. Attributes (key-value
+            objects with ID) should be passed to the attributes property.'
+        attributes:
+          type: array
+          description: multiple attributes can be delivered separately from standard
+            data fields
+          items:
+            $ref: '#/components/schemas/Attribute'
+        categories:
+          type: array
+          items:
+            type: array
+            description: categories are treated in a parent-child relationship, so
+              a product can be placed into a path within a category tree. Multiple
+              category paths can be defined per document.
+            items:
+              $ref: '#/components/schemas/Category'
+      description: A data record that contains any data relevant for search. The single
+        field types and conversions are part of the according service configuration.
+    Product:
+      type: object
+      description: Main product containing the data that is common for all variants.
+        A product may represent a master-variant relation ship. A variant should be
+        associated to a single Product and cannot have variants again - those will
+        be ignored. It should only contain data special to that variant. Data that
+        is common to all variants should be set at master level.
+      allOf:
+      - $ref: '#/components/schemas/Document'
+      - type: object
+        properties:
+          variants:
+            type: array
+            description: for products without variants, it can be null or rather us
+              a document directly.
+            items:
+              $ref: '#/components/schemas/Document'
+    Facet:
+      type: object
+      properties:
+        fieldName:
+          type: string
+          description: This is the name coming from the data. Separate label information
+            should be available in the meta data.
+        absoluteFacetCoverage:
+          type: integer
+          description: This is the amount of matched documents that are covered by
+            that facet.
+          format: int64
+        isFiltered:
+          type: boolean
+          description: Is set to true if there an active filter from that facet.
+        entries:
+          type: array
+          description: The entries of that facet.
+          items:
+            $ref: '#/components/schemas/FacetEntry'
+        meta:
+          type: object
+          additionalProperties:
+            type: object
+            description: Optional meta data for that facet, e.g. display hints like
+              a label or a facet-type.
+          description: Optional meta data for that facet, e.g. display hints like
+            a label or a facet-type.
+        filtered:
+          type: boolean
+      description: If facets are part of this slice, they are placed here. By default
+        only one slice SHOULD contain facets.
+    FacetEntry:
+      type: object
+      properties:
+        type:
+          type: string
+        key:
+          type: string
+        docCount:
+          type: integer
+          description: Estimated amount of documents that will be returned, if this
+            facet entry is picked as filter.
+          format: int64
+        link:
+          type: string
+          format: URI
+      description: The entries of that facet.
+      discriminator:
+        propertyName: type
+        mapping:
+          hierarchical: '#/components/schemas/HierarchialFacetEntry'
+          simple: '#/components/schemas/FacetEntry'
+    HierarchialFacetEntry:
+      type: object
+      properties:
+        type:
+          type: string
+        key:
+          type: string
+        docCount:
+          type: integer
+          description: Estimated amount of documents that will be returned, if this
+            facet entry is picked as filter.
+          format: int64
+        link:
+          type: string
+          format: URI
+        children:
+          type: array
+          description: Child facet entries to that particular facet. The child facets
+            again could be HierarchialFacetEntries.
+          items:
+            $ref: '#/components/schemas/FacetEntry'
+        path:
+          type: string
+    ResultHit:
+      type: object
+      properties:
+        index:
+          type: string
+        document:
+          $ref: '#/components/schemas/Document'
+        matchedQueries:
+          type: array
+          items:
+            type: string
+      description: the list of actual hits for that result view.
+    SearchQuery:
+      type: object
+      properties:
+        userQuery:
+          type: string
+        filters:
+          type: object
+          additionalProperties:
+            type: string
+        sort:
+          type: string
+        limit:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+        withFacets:
+          type: boolean
+    SearchResult:
+      type: object
+      properties:
+        tookInMillis:
+          type: integer
+          description: amount of time the internal search needed to compute that result
+          format: int64
+        inputQuery:
+          $ref: '#/components/schemas/SearchQuery'
+        slices:
+          type: array
+          description: The result may consist of several slices, for example if a
+            search request couldn't be answered matching all words (e.g. "striped
+            nike shirt") then one slice could be the result for one part of the query
+            (e.g. "striped shirt") and the other could be for another part of the
+            query (e.g. "nike shirt"). This can also be used to deliver some special
+            advertised products or to split the result in different ranked slices
+            (e.g. the first 3 results are ranked by popularity, the next 3 are sorted
+            by price and the rest is ranked by 'default' relevance). Each slice contains
+            the {@link SearchQuery} that represent that exact slice. At least 1 slice
+            should be expected. If there is no slice, no results were found.
+          items:
+            $ref: '#/components/schemas/SearchResultSlice'
+        sortOptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sorting'
+        meta:
+          type: object
+          additionalProperties:
+            type: object
+    SearchResultSlice:
+      type: object
+      properties:
+        label:
+          type: string
+          description: An identifier for that result slice. Can be used to differentiate
+            different slices. Values depend on the implementation.
+        matchCount:
+          type: integer
+          description: the absolute number of matches in this result.
+          format: int64
+        nextOffset:
+          type: integer
+          description: the offset value to use to get the next result batch
+          format: int64
+        nextLink:
+          type: string
+          description: URL conform query parameters, that has to be used to get the
+            next bunch of results. Is null if there are no more results.
+          format: URI
+        resultQuery:
+          $ref: '#/components/schemas/SearchQuery'
+        hits:
+          type: array
+          description: the list of actual hits for that result view.
+          items:
+            $ref: '#/components/schemas/ResultHit'
+        facets:
+          type: array
+          description: If facets are part of this slice, they are placed here. By
+            default only one slice SHOULD contain facets.
+          items:
+            $ref: '#/components/schemas/Facet'
+      description: The result may consist of several slices, for example if a search
+        request couldn't be answered matching all words (e.g. "striped nike shirt")
+        then one slice could be the result for one part of the query (e.g. "striped
+        shirt") and the other could be for another part of the query (e.g. "nike shirt").
+        This can also be used to deliver some special advertised products or to split
+        the result in different ranked slices (e.g. the first 3 results are ranked
+        by popularity, the next 3 are sorted by price and the rest is ranked by 'default'
+        relevance). Each slice contains the {@link SearchQuery} that represent that
+        exact slice. At least 1 slice should be expected. If there is no slice, no
+        results were found.
+    Sorting:
+      type: object
+      properties:
+        field:
+          type: string
+        sortOrder:
+          type: string
+          enum:
+          - asc
+          - desc
+        link:
+          type: string
+          format: URI
+  securitySchemes:
+    basic-auth:
+      type: http
+      scheme: basic

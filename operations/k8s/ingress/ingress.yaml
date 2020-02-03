@@ -1,0 +1,27 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ocs-ingress
+  labels:
+    app: ocs-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx-ocs"
+    # type of authentication
+    nginx.ingress.kubernetes.io/auth-type: basic
+    # name of the secret that contains the user/password definitions
+    nginx.ingress.kubernetes.io/auth-secret: basic-auth
+    # message to display with an appropriate context why the authentication is required
+    nginx.ingress.kubernetes.io/auth-realm: 'OCS Authentication Required'
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /search-api
+        backend:
+          serviceName: ocs-search-service
+          servicePort: search-api
+      - path: /indexer-api
+        backend:
+          serviceName: ocs-indexer-service
+          servicePort: indexer-api
+          

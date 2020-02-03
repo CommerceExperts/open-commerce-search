@@ -1,47 +1,39 @@
 package de.cxp.ocs.model.result;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = true)
 public class HierarchialFacetEntry extends FacetEntry {
 
-	@Getter
-	private List<FacetEntry> children = new ArrayList<>();
+	public final String type = "hierarchical";
 
-	@Setter
-	@Getter
-	private String path;
+	/**
+	 * Child facet entries to that particular facet. The child facets again
+	 * could be HierarchialFacetEntries.
+	 */
+	@Schema(description = "Child facet entries to that particular facet. The child facets again could be HierarchialFacetEntries.")
+	public List<FacetEntry> children = new ArrayList<>();
 
-	private final Map<String, FacetEntry> childIndex = new HashMap<>();
+	public String path;
 
-	public HierarchialFacetEntry(String key, long docCount) {
-		super(key, docCount);
-	}
-
-	public HierarchialFacetEntry setChildren(FacetEntry[] children) {
-		for (FacetEntry c : children) {
-			this.addChild(c);
-		}
-		return this;
+	public HierarchialFacetEntry(String key, long docCount, String link) {
+		super(key, docCount, link);
 	}
 
 	public HierarchialFacetEntry addChild(final FacetEntry child) {
 		children.add(child);
-		childIndex.put(child.getKey(), child);
 		return this;
 	}
-
-	public FacetEntry getChildByKey(String key) {
-		return childIndex.get(key);
-	}
-
 }

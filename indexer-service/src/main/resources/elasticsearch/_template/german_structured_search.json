@@ -1,0 +1,337 @@
+{
+  "index_patterns": "ocs-*-de",
+  "order": 100,
+  "settings": {
+    "index": {
+      "max_result_window": 100000,
+      "similarity": {
+        "default": {
+          "type": "boolean"
+        }
+      }
+    },
+    "analysis": {
+      "filter": {
+        "capture_separated_units": {
+          "type": "pattern_capture",
+          "patterns": "\\d\\s+[a-zA-Z]+"
+        },
+        "float_trunc": {
+          "pattern": "(\\d+)\\.\\d+([a-z]+)",
+          "type": "pattern_replace",
+          "replacement": "$1$2"
+        },
+        "normalize_punctuation": {
+          "pattern": "[.,']+",
+          "type": "pattern_replace",
+          "replacement": "."
+        },
+        "remove_thousand_separator": {
+          "pattern": "\\.(\\d{3,})",
+          "type": "pattern_replace",
+          "replacement": "$1"
+        },
+        "inch_unit": {
+          "pattern": "\"",
+          "type": "pattern_replace",
+          "replacement": ""
+        },
+        "remove_whitespace": {
+          "pattern": "\\s+",
+          "type": "pattern_replace",
+          "replacement": ""
+        },
+        "glued_shingle": {
+          "token_separator": "",
+          "type": "shingle"
+        },
+        "german_stemmer": {
+          "type": "stemmer",
+          "language": "light_german"
+        },
+        "german_stop": {
+          "type": "stop",
+          "stopwords": "_german_"
+        },
+        "aws_synonyms" : {
+          "type" : "synonym",
+          "synonyms" : [
+            "stuhl, stühle",
+            "handtasche, hand tasche, handtaschen, hand taschen",
+            "damenrock, damen rock, damenröcke, damen röcke",
+            "damen hose, damenhose, damenhosen, damen hosen"
+          ]
+        }
+      },
+      "char_filter": {
+        "html": {
+          "type": "html_strip"
+        },
+        "german_special_letters": {
+          "type": "mapping",
+          "mappings": [
+            "Ä => ae",
+            "ä => ae",
+            "Ö => oe",
+            "ö => oe",
+            "Ü => ue",
+            "ü => ue",
+            "ß => ss"
+          ]
+        },
+        "irrelevant_chars": {
+          "pattern": "[^\\p{L}\\s\\d_-]",
+          "type": "pattern_replace",
+          "replacement": " "
+        },
+        "word_border_marker": {
+          "type": "pattern_replace",
+          "pattern": "\\b",
+          "replacement": "_"
+        },
+        "word_border_mark_dedup": {
+          "type": "pattern_replace",
+          "pattern": "_{2,}",
+          "replacement": "_"
+        }
+      },
+      "analyzer": {
+        "id_sku_analyzer": {
+          "filter": [
+            "remove_whitespace",
+            "lowercase"
+          ],
+          "type": "custom",
+          "tokenizer": "keyword"
+        },
+        "num_attributes": {
+          "filter": [
+            "capture_separated_units",
+            "remove_whitespace",
+            "inch_unit",
+            "lowercase",
+            "normalize_punctuation",
+            "remove_thousand_separator",
+            "float_trunc",
+            "unique"
+          ],
+          "type": "custom",
+          "tokenizer": "num_w_unit_tokens"
+        },
+        "suggest": {
+          "filter": [
+            "lowercase",
+            "glued_shingle"
+          ],
+          "type": "custom",
+          "tokenizer": "whitespace"
+        },
+        "shingles": {
+          "char_filter": [
+            "html",
+            "german_special_letters"
+          ],
+          "filter": [
+            "lowercase",
+            "asciifolding",
+            "glued_shingle"
+          ],
+          "type": "custom",
+          "tokenizer": "standard"
+        },
+        "minimal": {
+          "filter": [
+            "lowercase",
+            "asciifolding"
+          ],
+          "char_filter": [
+            "html",
+            "german_special_letters",
+            "irrelevant_chars"
+          ],
+          "type": "custom",
+          "tokenizer": "whitespace"
+        },
+        "ngram": {
+          "filter": [
+            "lowercase"
+          ],
+          "char_filter": [
+            "html",
+            "irrelevant_chars",
+            "german_special_letters",
+            "word_border_marker",
+            "word_border_mark_dedup"
+          ],
+          "type": "custom",
+          "tokenizer": "trigram_tokenizer"
+        },
+        "standard": {
+          "filter": [
+            "lowercase",
+            "aws_synonyms",
+            "german_stemmer"
+          ],
+          "char_filter": [
+            "html",
+            "german_special_letters",
+            "irrelevant_chars"
+          ],
+          "type": "custom",
+          "tokenizer": "standard"
+        },
+        "category_analyzer": {
+    	  "tokenizer": "path_hierarchy"
+        }
+      },
+      "tokenizer": {
+        "num_w_unit_tokens": {
+          "pattern": "(\\b[\\d.,']+(\\s*x\\s*[\\d.,']+)*+[\\s-]*[a-zA-Z\\\"]+)",
+          "type": "pattern",
+          "group": "1"
+        },
+        "trigram_tokenizer": {
+          "type": "ngram",
+          "min_gram": 3,
+          "max_gram": 3,
+          "token_chars": [
+            "letter",
+            "digit"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "dynamic_templates": [
+      {
+        "result_data": {
+          "path_match": "*resultData.*",
+          "mapping": {
+            "index": false,
+            "type": "text",
+            "doc_values": false
+          }
+        }
+      },
+      {
+        "scores": {
+          "path_match": "*scores.*",
+          "mapping": {
+            "type": "float"
+          }
+        }
+      },
+      {
+        "string_sort_data": {
+          "path_match": "*sortData.*",
+          "match_mapping_type": "string",
+          "mapping": {
+            "type": "keyword"
+          }
+        }
+      },
+      {
+        "search_data": {
+          "path_match": "*searchData.*",
+          "mapping": {
+            "norms": false,
+            "fielddata": true,
+            "type": "text",
+            "copy_to": "searchable_numeric_patterns",
+            "analyzer": "minimal",
+            "fields": {
+              "standard": {
+                "norms": false,
+                "analyzer": "standard",
+                "type": "text"
+              },
+              "shingles": {
+                "norms": false,
+                "analyzer": "shingles",
+                "type": "text"
+              },
+              "ngram": {
+                "norms": false,
+                "analyzer": "ngram",
+                "type": "text"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "properties": {
+      "searchable_numeric_patterns": {
+          "type": "text",
+          "analyzer": "num_attributes"
+      },
+      "searchData": {"type": "object"},
+      "resultData": {"type": "object"},
+      "sortData": {"type": "object"},
+      "scores": {"type": "object"},
+      "categories": {
+          "type": "text",
+          "analyzer": "category_analyzer",
+          "fielddata": "true",
+          "norms": "true"
+      },
+      "termFacetData": {
+        "type": "nested",
+        "properties": {
+          "name": {
+            "type": "keyword"
+          },
+          "value": {
+            "type": "keyword"
+          }
+        }
+      },
+      "numberFacetData": {
+        "type": "nested",
+        "properties": {
+          "name": {
+            "type": "keyword"
+          },
+          "value": {
+            "type": "float"
+          }
+        }
+      },
+      "variants": {
+        "type": "nested",
+        "properties": {
+          "termFacetData": {
+            "type": "nested",
+            "properties": {
+              "name": {
+                "type": "keyword"
+              },
+              "value": {
+                "type": "keyword"
+              }
+            }
+          },
+          "numberFacetData": {
+            "type": "nested",
+            "properties": {
+              "name": {
+                "type": "keyword"
+              },
+              "value": {
+                "type": "float"
+              }
+            }
+          }
+        }
+      },
+      "suggest": {
+        "type": "completion",
+        "analyzer": "suggest",
+        "preserve_separators": true,
+        "preserve_position_increments": true,
+        "max_input_length": 50
+      }
+    }
+  }
+}

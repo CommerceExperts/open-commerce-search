@@ -1,0 +1,57 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: search-service
+  labels:
+    component: ocs-stack
+    role: search-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: ocs-stack
+      role: search-api
+  template:
+    metadata:
+      labels:
+        component: ocs-stack
+        role: search-api
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - ocs-stack
+                - key: role
+                  operator: In
+                  values:
+                  - search-api
+              topologyKey: kubernetes.io/hostname      
+      containers:
+      - name: search-service
+        image: commerceexperts/ocs-search-service:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 1024Mi
+          requests:
+            memory: 1024Mi
+        ports:
+        - containerPort: 8534
+          name: search-api
+        env:
+        - name: ES_HOSTS
+          value: "http://ocs-es-http:9200"
+        - name: ES_AUTH_PW
+          valueFrom:
+            secretKeyRef:
+              name: ocs-es-elastic-user
+              key: elastic
+        - name: ES_AUTH
+          value: "elastic:$(ES_AUTH_PW)"
