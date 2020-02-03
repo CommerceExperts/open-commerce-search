@@ -152,7 +152,7 @@
 				</configuration>
 				<executions>
 					<execution>
-						<phase>generate-resources</phase>
+						<phase>compile</phase>
 						<goals>
 							<goal>resolve</goal>
 						</goals>
@@ -167,7 +167,7 @@
 				<executions>
 					<execution>
 						<id>generate-client</id>
-						<phase>process-resources</phase>
+						<phase>compile</phase>
 						<goals>
 							<goal>generate</goal>
 						</goals>
@@ -201,7 +201,7 @@
 				<version>3.0.0</version>
 				<executions>
 					<execution>
-						<phase>process-resources</phase>
+						<phase>process-classes</phase>
 						<goals>
 							<goal>add-source</goal>
 						</goals>
