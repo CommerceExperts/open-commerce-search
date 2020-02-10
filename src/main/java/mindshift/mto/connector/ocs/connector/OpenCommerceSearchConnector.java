@@ -1,9 +1,9 @@
 package mindshift.mto.connector.ocs.connector;
 
-import mindshift.mto.connector.api.v2.ConnectorException;
-import mindshift.mto.connector.api.v2.SearchConnector;
 import mindshift.mto.connector.ocs.service.OcsSearchService;
 import mindshift.mto.connector.ocs.service.OcsSuggestService;
+import mindshift.search.connector.api.v2.ConnectorException;
+import mindshift.search.connector.api.v2.SearchConnector;
 import mindshift.search.connector.models.SearchResult;
 import mindshift.search.connector.models.SearchState;
 import mindshift.search.connector.models.SuggestRequest;
