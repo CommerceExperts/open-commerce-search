@@ -1,9 +1,10 @@
-package mindshift.mto.connector.ocs.engine;
+package mindshift.search.connector.ocs.engine;
 
 import java.util.Map;
-import mindshift.mto.connector.ocs.connector.OpenCommerceSearchConnector;
+
 import mindshift.search.connector.api.v2.SearchConnector;
 import mindshift.search.connector.api.v2.engine.EngineFactory;
+import mindshift.search.connector.ocs.connector.OpenCommerceSearchConnector;
 
 /**
  * Open Commerce Search implementation of the EngineFactory.
