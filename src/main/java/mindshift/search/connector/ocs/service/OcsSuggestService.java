@@ -1,4 +1,4 @@
-package mindshift.mto.connector.ocs.service;
+package mindshift.search.connector.ocs.service;
 
 import mindshift.search.connector.models.SuggestRequest;
 import mindshift.search.connector.models.SuggestResult;
