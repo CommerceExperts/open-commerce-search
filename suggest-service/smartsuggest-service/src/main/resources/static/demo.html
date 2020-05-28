@@ -1,0 +1,93 @@
+<!DOCTYPE html><html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>SmartSuggest Demo</title>
+    <meta name="description" content="">
+	<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { margin: 0; padding: 0; border: 0; min-width: 320px;
+		color: black; font-family: 'Open Sans',Helvetica,Arial,sans-serif; font-size: 14px; font-weight: 300; letter-spacing: .01em;}
+		h1 {font-weight: 100; font-size: 1.7em;}
+		.pure-form {background:#232a35; border-top: 1px solid #eee; border-bottom:1px solid #eee; margin:30px 0; padding:20px 10px; text-align:center;}
+		.pure-form input {padding: 5px;}
+    </style>
+    <link rel="stylesheet" href="auto-complete.css">
+</head>
+<body>
+    <div style="max-width:900px;padding:0 10px;margin:40px auto;text-align:center">
+        <h1><img src="https://www.searchhub.io/assets/images/searchHub_black.png"> - SmartSuggest Demo</h1>
+    </div>
+    <form onsubmit="return false;" class="pure-form">
+        <input id="smartsuggest-demo" autofocus type="text" name="userQuery" placeholder="type ..." style="width:100%;max-width:600px;outline:0">
+    </form>
+    
+
+    <div id="fb-root"></div>
+    <script src="auto-complete.min.js"></script>
+	<script>
+		var indexName = window.location.search.substr(1).split('&')[0];
+
+		document.getElementById('smartsuggest-demo').disabled = true;
+		document.getElementById('smartsuggest-demo').value = 'waiting for data for indexName '+indexName+'...';
+		
+		if (indexName == undefined || indexName == "") {
+			document.getElementById('smartsuggest-demo').value = 'Invalid URL: No indexName defined!';
+		} else {
+			checkForData();
+		}
+
+		var endpointUrl = 'smartsuggest/'+indexName+'?userQuery=';
+		var waitTime = 2;
+		function checkForData() {
+			var xhr = new XMLHttpRequest();
+			xhr.open('GET', endpointUrl+'a', true);
+			
+			xhr.onload = function(){
+				if (this.response == "[]") {
+					setTimeout(checkForData, waitTime);
+					waitTime = 2*waitTime;
+				} else {
+					document.getElementById('smartsuggest-demo').disabled = false;
+					document.getElementById('smartsuggest-demo').value = '';
+				}
+			};
+			xhr.onerror = function() {
+				 setTimeout(checkForData, waitTime);
+				 waitTime = 2*waitTime;
+			}
+
+			xhr.send();
+		}
+		
+		var demo = new autoComplete({
+			selector: '#smartsuggest-demo',
+			minChars: 0,
+			cache: false,
+			delay: 20,
+			source: function(term, suggest){
+				if (xhr) {
+					try { xhr.abort(); } catch(e){}
+				}
+				var xhr = new XMLHttpRequest();
+				xhr.open('GET', endpointUrl+term, true);
+				xhr.onload = function(){
+					console.log(JSON.parse(this.response));
+					suggest(JSON.parse(this.response));
+				};
+
+				xhr.send();
+			},
+			renderItem: function (item, search){
+				search = search.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&amp;');
+				var re = new RegExp("(" + search.split(' ').join('|') + ")", "gi");
+				return '<div class="autocomplete-suggestion" data-val="'+item+'">'+item.replace(re, "<b>$1</b>")+'</div>';
+			},
+			onSelect: function(e, term, item){
+				console.log('Item "'+item.getAttribute('data-val')+' selected by '+(e.type == 'keydown' ? 'pressing enter' : 'mouse click')+'.');
+				document.getElementById('smartsuggest-demo').value = item.getAttribute('data-val');
+			}
+		});
+    </script>
+</body>
+</html>

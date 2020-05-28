@@ -1,0 +1,4 @@
+#rapidoid config
+log:
+  level: info
+  fancy: false
