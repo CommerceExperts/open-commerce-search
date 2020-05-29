@@ -13,7 +13,7 @@ pipeline {
 		stage('test') {
 			steps {
 				withMaven(mavenSettingsConfig: '67c40a88-505a-4f78-94a3-d879cc1a29f6') {
-					sh 'mvn $MAVEN_CLI_OPTS clean test'
+					sh 'mvn $MAVEN_CLI_OPTS clean test -P !sync-openapi-spec'
 				}
 			}
 		} // end test
@@ -21,7 +21,7 @@ pipeline {
 		stage('build packages') {
 			steps {
 				withMaven(mavenSettingsConfig: '67c40a88-505a-4f78-94a3-d879cc1a29f6') {
-					sh "mvn $MAVEN_CLI_OPTS install -DskipTests=true"
+					sh "mvn $MAVEN_CLI_OPTS install -DskipTests=true -P !sync-openapi-spec"
 				}
 			}
 		} // end build packages
@@ -35,7 +35,7 @@ pipeline {
 			}
 			steps {
 				withMaven(mavenSettingsConfig: '67c40a88-505a-4f78-94a3-d879cc1a29f6') {
-					sh "mvn $MAVEN_CLI_OPTS deploy -DskipTests=true -P dockerize"
+					sh "mvn $MAVEN_CLI_OPTS deploy -DskipTests=true -P dockerize,!sync-openapi-spec"
 				}
 			}
 		} // end deploy

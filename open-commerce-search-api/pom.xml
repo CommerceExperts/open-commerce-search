@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.2</version>
+		<version>0.3</version>
 		<relativePath>../</relativePath>
 	</parent>
 
@@ -123,6 +123,40 @@
 		</dependency>
 	</dependencies>
 
+	<profiles>
+		<profile>
+			<id>sync-openapi-spec</id>
+			<!-- should be active during development, but skipped on build server -->
+			<activation>
+				<activeByDefault />
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>io.swagger.core.v3</groupId>
+						<artifactId>swagger-maven-plugin</artifactId>
+						<version>2.1.1</version>
+						<configuration>
+							<configurationFilePath>${project.basedir}/src/main/resources/openapi-configuration.json</configurationFilePath>
+							<outputFileName>openapi</outputFileName>
+							<outputPath>${project.basedir}/src/main/resources</outputPath>
+							<outputFormat>JSONANDYAML</outputFormat>
+							<prettyPrint>TRUE</prettyPrint>
+						</configuration>
+						<executions>
+							<execution>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>resolve</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
 	<build>
 		<plugins>
 			<plugin>
@@ -140,34 +174,13 @@
 			</plugin>
 
 			<plugin>
-				<groupId>io.swagger.core.v3</groupId>
-				<artifactId>swagger-maven-plugin</artifactId>
-				<version>2.1.1</version>
-				<configuration>
-					<configurationFilePath>${project.basedir}/src/main/resources/openapi-configuration.json</configurationFilePath>
-					<outputFileName>openapi</outputFileName>
-					<outputPath>${project.basedir}/src/main/resources</outputPath>
-					<outputFormat>JSONANDYAML</outputFormat>
-					<prettyPrint>TRUE</prettyPrint>
-				</configuration>
-				<executions>
-					<execution>
-						<phase>compile</phase>
-						<goals>
-							<goal>resolve</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-
-			<plugin>
 				<groupId>org.openapitools</groupId>
 				<artifactId>openapi-generator-maven-plugin</artifactId>
 				<version>4.2.2</version>
 				<executions>
 					<execution>
 						<id>generate-client</id>
-						<phase>compile</phase>
+						<phase>generate-sources</phase>
 						<goals>
 							<goal>generate</goal>
 						</goals>

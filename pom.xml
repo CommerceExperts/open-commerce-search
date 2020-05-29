@@ -6,7 +6,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.2</version>
+	<version>0.3</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -105,6 +105,11 @@
 				<artifactId>micrometer-core</artifactId>
 				<version>${micrometer.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>io.micrometer</groupId>
+				<artifactId>micrometer-registry-jmx</artifactId>
+				<version>${micrometer.version}</version>
+			</dependency>
 
 			<dependency>
 				<groupId>com.google.guava</groupId>
@@ -132,7 +137,7 @@
 				<groupId>org.projectlombok</groupId>
 				<artifactId>lombok</artifactId>
 				<scope>provided</scope>
-				<version>1.16.18</version>
+				<version>1.18.12</version>
 			</dependency>
 
 			<dependency>
@@ -153,7 +158,12 @@
 				<version>3.2.4</version>
 				<scope>test</scope>
 			</dependency>
-
+			<dependency>
+				<groupId>org.assertj</groupId>
+				<artifactId>assertj-core</artifactId>
+				<version>3.13.1</version>
+				<scope>test</scope>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -238,6 +248,7 @@
 
 						<!-- <tag>${git.commit.id.abbrev}-${git.branch}</tag> -->
 						<tag>${project.version}</tag>
+						<useMavenSettingsForAuth>true</useMavenSettingsForAuth>
 						<buildArgs>
 							<JAR_FILE>${project.build.finalName}.jar</JAR_FILE>
 						</buildArgs>
@@ -249,9 +260,12 @@
 
 	<distributionManagement>
 		<repository>
-			<id>github</id>
-			<name>CXP Open Commerce Search on GitHub</name>
-			<url>https://maven.pkg.github.com/CommerceExperts/open-commerce-search</url>
+			<id>cxp-public-releases</id>
+			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-external/</url>
 		</repository>
+		<snapshotRepository>
+			<id>cxp-public-snapshots</id>
+			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-public-snapshots/</url>
+		</snapshotRepository>
 	</distributionManagement>
 </project>
