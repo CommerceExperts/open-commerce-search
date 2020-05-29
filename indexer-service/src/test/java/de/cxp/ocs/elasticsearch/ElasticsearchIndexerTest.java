@@ -30,7 +30,6 @@ public class ElasticsearchIndexerTest {
 	@BeforeEach
 	public void setupDefaultEsIndexClient() throws IOException {
 		when(mockedIndexClient.getSettings(any())).thenReturn(Optional.empty());
-		when(mockedIndexClient.indexRecords(any(), any())).thenReturn(Optional.empty());
 	}
 
 	@Test
@@ -46,6 +45,8 @@ public class ElasticsearchIndexerTest {
 				new Document().setId("2").set("title", "Test 2")
 						.setCategories(Collections.singletonList(new Category[] { new Category("c1", "cat1"), new Category("c2", "cat2") }))
 		});
+
+		when(mockedIndexClient.indexRecords(any(), any())).thenReturn(Optional.empty());
 		underTest.add(data);
 		verify(mockedIndexClient).indexRecords(argThat(is(importSession.temporaryIndexName)), anyObject());
 

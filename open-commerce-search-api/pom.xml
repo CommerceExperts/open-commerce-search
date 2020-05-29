@@ -214,7 +214,7 @@
 				<version>3.0.0</version>
 				<executions>
 					<execution>
-						<phase>process-resources</phase>
+						<phase>process-classes</phase>
 						<goals>
 							<goal>add-source</goal>
 						</goals>
