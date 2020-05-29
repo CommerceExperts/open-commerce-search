@@ -6,7 +6,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.2</version>
+	<version>0.3</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -260,9 +260,12 @@
 
 	<distributionManagement>
 		<repository>
-			<id>github</id>
-			<name>CXP Open Commerce Search on GitHub</name>
-			<url>https://maven.pkg.github.com/CommerceExperts/open-commerce-search</url>
+			<id>cxp-public-releases</id>
+			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-external/</url>
 		</repository>
+		<snapshotRepository>
+			<id>cxp-public-snapshots</id>
+			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-public-snapshots/</url>
+		</snapshotRepository>
 	</distributionManagement>
 </project>

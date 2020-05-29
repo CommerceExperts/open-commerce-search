@@ -61,7 +61,9 @@
 		</plugins>
 	</build>
 
-	<profiles>
+	<!-- at the moment, this project has no suggest-data-provider dependency included, 
+		 so it does not make much sense to build a container image from it. -->
+	<!-- <profiles>
 		<profile>
 			<id>dockerize</id>
 			<build>
@@ -82,6 +84,6 @@
 				</plugins>
 			</build>
 		</profile>
-	</profiles>
+	</profiles> -->
 
 </project>
