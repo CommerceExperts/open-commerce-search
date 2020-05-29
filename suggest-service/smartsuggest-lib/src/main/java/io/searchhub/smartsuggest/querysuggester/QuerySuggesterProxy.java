@@ -3,6 +3,7 @@ package io.searchhub.smartsuggest.querysuggester;
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -10,9 +11,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.lucene.store.AlreadyClosedException;
 
+import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -20,22 +20,23 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class QuerySuggesterProxy implements QuerySuggester {
 
-	private final AtomicReference<QuerySuggester>	innerQuerySuggester	= new AtomicReference<>(new NoQuerySuggester());
+	private final AtomicReference<QuerySuggester>	innerQuerySuggester			= new AtomicReference<>(new NoQuerySuggester());
 	private final String							indexName;
-	private volatile boolean						isClosed			= false;
+	private volatile boolean						isClosed					= false;
+	private int										maxSuggestionsPerCacheEntry	= 10;
 
-	private final int cacheLetterLength = Integer.getInteger("CACHE_LETTER_LENGTH", 3);
-	private LoadingCache<String, List<Result>> firstLetterCache = CacheBuilder.newBuilder()
+	private final int					cacheLetterLength	= Integer.getInteger("CACHE_LETTER_LENGTH", 3);
+	private Cache<String, List<Result>>	firstLetterCache	= CacheBuilder.newBuilder()
 			.maximumSize(Long.getLong("CACHE_MAX_SIZE", 10_000L))
-			.build(new CacheLoader<String, List<Result>>() {
+			.build();
 
-				@Override
-				public List<Result> load(String key) throws Exception {
-					return innerQuerySuggester.get().suggest(key);
-				}});
-	
 	public QuerySuggesterProxy(String indexName) {
 		this.indexName = indexName;
+	}
+
+	public QuerySuggesterProxy(String indexName, int maxSuggestionsPerCacheEntry) {
+		this(indexName);
+		this.maxSuggestionsPerCacheEntry = maxSuggestionsPerCacheEntry;
 	}
 
 	public void updateQueryMapper(@NonNull QuerySuggester newSuggester) throws AlreadyClosedException {
@@ -47,7 +48,7 @@ public class QuerySuggesterProxy implements QuerySuggester {
 					indexName);
 		}
 		firstLetterCache.asMap().keySet()
-			.forEach(term -> firstLetterCache.put(term, newSuggester.suggest(term)));
+				.forEach(term -> firstLetterCache.put(term, newSuggester.suggest(term)));
 		QuerySuggester oldSuggester = innerQuerySuggester.getAndSet(newSuggester);
 		if (oldSuggester != null) {
 			oldSuggester.destroy();
@@ -65,16 +66,44 @@ public class QuerySuggesterProxy implements QuerySuggester {
 	@Override
 	public List<Result> suggest(String term, int maxResults, Set<String> groups) throws SuggestException {
 		if (isClosed || isBlank(term)) return emptyList();
-		term = term.trim().toLowerCase();
-		if (term.length() <= cacheLetterLength) {
+		String normalizedTerm = term.trim().toLowerCase();
+
+		// only cache results, if no filter is given and the teh maximum amount
+		// of results is <= to the maxSuggestionPerCacheEntry level
+		if (normalizedTerm.length() <= cacheLetterLength && groups.isEmpty() && maxResults <= maxSuggestionsPerCacheEntry) {
 			try {
-				return firstLetterCache.get(term);
+				List<Result> cachedResults = firstLetterCache.get(normalizedTerm, () -> innerQuerySuggester.get().suggest(normalizedTerm, maxSuggestionsPerCacheEntry, groups));
+
+				if (maxResults < maxSuggestionsPerCacheEntry) {
+					cachedResults = truncateResult(maxResults, cachedResults);
+				}
+
+				return cachedResults;
 			}
 			catch (ExecutionException e) {
 				throw new SuggestException(e.getCause());
 			}
-		} else {
-			return innerQuerySuggester.get().suggest(term, maxResults, groups);
 		}
+		else {
+			return innerQuerySuggester.get().suggest(normalizedTerm, maxResults, groups);
+		}
+	}
+
+	private List<Result> truncateResult(int maxResults, List<Result> cachedResults) {
+		List<Result> truncatedResults = new ArrayList<>();
+		int resultCount = 0;
+		for (Result r : cachedResults) {
+			if (r.getSuggestions().size() > resultCount + maxResults) {
+				truncatedResults.add(new Result(r.getName(), r.getSuggestions().subList(0, maxResults - resultCount)));
+				resultCount = maxResults;
+				break;
+			}
+			else {
+				truncatedResults.add(r);
+				resultCount += r.getSuggestions().size();
+			}
+		}
+		cachedResults = truncatedResults;
+		return cachedResults;
 	}
 }
