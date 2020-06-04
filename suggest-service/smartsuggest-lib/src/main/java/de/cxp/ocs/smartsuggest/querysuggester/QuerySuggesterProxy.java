@@ -70,7 +70,7 @@ public class QuerySuggesterProxy implements QuerySuggester {
 
 		// only cache results, if no filter is given and the teh maximum amount
 		// of results is <= to the maxSuggestionPerCacheEntry level
-		if (normalizedTerm.length() <= cacheLetterLength && groups.isEmpty() && maxResults <= maxSuggestionsPerCacheEntry) {
+		if (normalizedTerm.length() <= cacheLetterLength && (groups == null || groups.isEmpty()) && maxResults <= maxSuggestionsPerCacheEntry) {
 			try {
 				List<Result> cachedResults = firstLetterCache.get(normalizedTerm, () -> innerQuerySuggester.get().suggest(normalizedTerm, maxSuggestionsPerCacheEntry, groups));
 
