@@ -4,7 +4,12 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>mindshift.search</groupId>
+  <parent>
+    <groupId>mindshift.search</groupId>
+    <artifactId>search-java-base-pom</artifactId>
+    <version>0.14.0</version>
+  </parent>
+
   <artifactId>search-ocs-connector</artifactId>
   <version>0.5.0</version>
   <packaging>jar</packaging>
