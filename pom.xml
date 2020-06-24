@@ -50,7 +50,7 @@
     <checkstyle.version>8.21</checkstyle.version>
 
     <!-- Dependency Versions -->
-    <connector-api.version>0.17.0</connector-api.version>
+    <connector-api.version>0.21.0</connector-api.version>
     
   </properties>
   <dependencies>
