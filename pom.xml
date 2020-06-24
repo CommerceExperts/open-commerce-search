@@ -818,36 +818,4 @@
 
   </profiles>
 
-    <repositories>
-        <repository>
-            <id>eci-nexus-jenkins-releases</id>
-            <url>https://www.secrz.de/nexus/content/repositories/mindshift-releases/</url>
-        </repository>
-        <repository>
-            <id>eci-nexus-jenkins-snapshots</id>
-            <url>https://www.secrz.de/nexus/content/repositories/mindshift-snapshots/</url>
-        </repository>
-        <repository>
-            <id>nexus-eci</id>
-            <url>https://www.secrz.de/nexus/content/groups/eci</url>
-        </repository>
-    </repositories>
-
-  <distributionManagement>
-    <repository>
-      <id>eci-nexus-jenkins</id>
-      <name>Internal Releases</name>
-      <url>https://www.secrz.de/nexus/content/repositories/mindshift-releases/</url>
-    </repository>
-    <snapshotRepository>
-      <id>eci-nexus-jenkins</id>
-      <name>Internal Releases</name>
-      <url>https://www.secrz.de/nexus/content/repositories/mindshift-snapshots/</url>
-    </snapshotRepository>
-    <site>
-      <id>eci-progress-site</id>
-      <name>ECI PROgRESS Project Site</name>
-      <url>file://${progress.site.staged.directory}</url>
-    </site>
-  </distributionManagement>
 </project>
