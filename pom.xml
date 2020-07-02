@@ -6,7 +6,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.3.1</version>
+	<version>0.3.2</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -257,6 +257,21 @@
 				</plugin>
 			</plugins>
 		</pluginManagement>
+
+		<plugins>
+			<plugin>
+				<groupId>org.honton.chas</groupId>
+				<artifactId>exists-maven-plugin</artifactId>
+				<version>0.3.0</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>remote</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
 	</build>
 
 	<distributionManagement>
