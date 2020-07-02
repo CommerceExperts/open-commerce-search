@@ -179,7 +179,7 @@ public class SerializationTest {
 				new SearchResult(),
 
 				new SearchResult()
-						.setInputQuery(new SearchQuery().setUserQuery("the answer").setSort("wisdom").setLimit(1))
+						.setInputURI(new SearchQuery().setQ("the answer").setSort("wisdom").setLimit(1).asUri())
 						.setTookInMillis(42L));
 	}
 

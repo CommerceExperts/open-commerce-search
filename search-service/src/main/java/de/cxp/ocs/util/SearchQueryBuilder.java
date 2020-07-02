@@ -5,9 +5,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
@@ -18,7 +16,6 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
-import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SortOrder;
 import de.cxp.ocs.model.result.Sorting;
 
@@ -40,7 +37,7 @@ public class SearchQueryBuilder {
 		InternalSearchParams defaultParams = new InternalSearchParams();
 		URIBuilder linkBuilder = new URIBuilder();
 
-		linkBuilder.addParameter("userQuery", params.userQuery);
+		linkBuilder.addParameter("q", params.userQuery);
 		if (!params.filters.isEmpty()) {
 			for (InternalResultFilter filter : params.filters) {
 				linkBuilder.addParameter(filter.getField(), joinParameterValues(filter.getValues()));
@@ -61,17 +58,6 @@ public class SearchQueryBuilder {
 		}
 	}
 
-	public SearchQuery buildSearchQuery() {
-		SearchQuery query = new SearchQuery();
-		query.limit = searchParams.limit;
-		query.offset = searchParams.offset;
-		query.withFacets = searchParams.withFacets;
-		query.userQuery = searchParams.userQuery;
-		query.sort = searchParams.sortings.isEmpty() ? null : getSortingsString(searchParams.sortings);
-		query.filters = getFiltersHashMap();
-		return null;
-	}
-
 	private static String getSortingsString(List<Sorting> sortings) {
 		StringBuilder sortingString = new StringBuilder();
 		for (Sorting sorting : sortings) {
@@ -80,15 +66,6 @@ public class SearchQueryBuilder {
 			sortingString.append(sorting.field);
 		}
 		return sortingString.toString();
-	}
-
-	private Map<String, String> getFiltersHashMap() {
-		if (searchParams.filters.isEmpty()) return null;
-		Map<String, String> filterParams = new HashMap<>(searchParams.filters.size());
-		for (InternalResultFilter rf : searchParams.filters) {
-			filterParams.put(rf.getField(), joinParameterValues(rf.getValues()));
-		}
-		return filterParams;
 	}
 
 	private static String joinParameterValues(String... values) {

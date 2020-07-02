@@ -13,17 +13,16 @@
     "version" : "0.2"
   },
   "paths" : {
-    "/indexer-api/v1/full/add" : {
+    "/indexer-api/v1/full/done" : {
       "post" : {
         "tags" : [ "indexer" ],
-        "description" : "Add one or more documents to a running import session.",
-        "operationId" : "add",
+        "description" : "Finishes the import, flushing the new index and (in case there is already an index with the initialized name) replacing the old one.",
+        "operationId" : "done",
         "requestBody" : {
-          "description" : "Data that contains the import session reference and one or more documents that should be added to that session.",
           "content" : {
             "*/*" : {
               "schema" : {
-                "$ref" : "#/components/schemas/BulkImportData"
+                "$ref" : "#/components/schemas/ImportSession"
               }
             }
           },
@@ -31,18 +30,10 @@
         },
         "responses" : {
           "200" : {
-            "description" : "documents successfully added",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "type" : "string",
-                  "description" : "Amount of documents successfuly added"
-                }
-              }
-            }
+            "description" : "successfully done"
           },
           "400" : {
-            "description" : "import session is invalid"
+            "description" : "indexation was already confirmed or import session is invalid"
           }
         },
         "security" : [ {
@@ -85,16 +76,17 @@
         } ]
       }
     },
-    "/indexer-api/v1/full/done" : {
+    "/indexer-api/v1/full/add" : {
       "post" : {
         "tags" : [ "indexer" ],
-        "description" : "Finishes the import, flushing the new index and (in case there is already an index with the initialized name) replacing the old one.",
-        "operationId" : "done",
+        "description" : "Add one or more documents to a running import session.",
+        "operationId" : "add",
         "requestBody" : {
+          "description" : "Data that contains the import session reference and one or more documents that should be added to that session.",
           "content" : {
             "*/*" : {
               "schema" : {
-                "$ref" : "#/components/schemas/ImportSession"
+                "$ref" : "#/components/schemas/BulkImportData"
               }
             }
           },
@@ -102,10 +94,18 @@
         },
         "responses" : {
           "200" : {
-            "description" : "successfully done"
+            "description" : "documents successfully added",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string",
+                  "description" : "Amount of documents successfuly added"
+                }
+              }
+            }
           },
           "400" : {
-            "description" : "indexation was already confirmed or import session is invalid"
+            "description" : "import session is invalid"
           }
         },
         "security" : [ {
@@ -293,6 +293,39 @@
           "schema" : {
             "$ref" : "#/components/schemas/SearchQuery"
           }
+        }, {
+          "name" : "filters",
+          "in" : "query",
+          "description" : "Any other parameters are used as filters. They are validated according to the actual data and configuration. Each filter can have multiple values, separated by comma. Commas inside the values have to be double-URL encoded. Depending on the configured backend type these values are used differently.",
+          "style" : "form",
+          "schema" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          },
+          "examples" : {
+            "joined filter 2" : {
+              "description" : "The way filters are interpreted depends on the backend configuration. If that field is configured to be used for \"exclusive filtering\" only products would be shown that are available in red AND black",
+              "value" : "color=red,black"
+            },
+            "simple filter" : {
+              "description" : "Filters are simple parameters with the field-names as parameter and the filter values as comma separated parameter values.",
+              "value" : "brand=adidas"
+            },
+            "joined filter" : {
+              "description" : "products from adidas OR nike are shown",
+              "value" : "brand=adidas,nike"
+            },
+            "hierarchical filter" : {
+              "description" : "if category would be configured as path, these values are used for hierarchical filtering",
+              "value" : "category=men,shoes,sneaker"
+            },
+            "numeric range filter" : {
+              "description" : "if price is configured as numeric field, these values are used as range filters",
+              "value" : "price=10,99.90"
+            }
+          }
         } ],
         "responses" : {
           "403" : {
@@ -308,7 +341,7 @@
               }
             }
           },
-          "404" : {
+          "204" : {
             "description" : "Optional response code that represents 'no result'",
             "content" : {
               "*/*" : {
@@ -316,6 +349,12 @@
                   "$ref" : "#/components/schemas/SearchResult"
                 }
               }
+            }
+          },
+          "404" : {
+            "description" : "response code if tenant is unknown or index does not exist",
+            "content" : {
+              "text/plain" : { }
             }
           }
         },
@@ -349,6 +388,19 @@
   },
   "components" : {
     "schemas" : {
+      "ImportSession" : {
+        "required" : [ "finalIndexName", "temporaryIndexName" ],
+        "type" : "object",
+        "properties" : {
+          "finalIndexName" : {
+            "type" : "string"
+          },
+          "temporaryIndexName" : {
+            "type" : "string"
+          }
+        },
+        "readOnly" : true
+      },
       "Attribute" : {
         "required" : [ "label", "value" ],
         "type" : "object",
@@ -444,19 +496,6 @@
           }
         },
         "description" : "A data record that contains any data relevant for search. The single field types and conversions are part of the according service configuration."
-      },
-      "ImportSession" : {
-        "required" : [ "finalIndexName", "temporaryIndexName" ],
-        "type" : "object",
-        "properties" : {
-          "finalIndexName" : {
-            "type" : "string"
-          },
-          "temporaryIndexName" : {
-            "type" : "string"
-          }
-        },
-        "readOnly" : true
       },
       "Product" : {
         "type" : "object",
@@ -589,34 +628,6 @@
         },
         "description" : "the list of actual hits for that result view."
       },
-      "SearchQuery" : {
-        "type" : "object",
-        "properties" : {
-          "userQuery" : {
-            "type" : "string"
-          },
-          "filters" : {
-            "type" : "object",
-            "additionalProperties" : {
-              "type" : "string"
-            }
-          },
-          "sort" : {
-            "type" : "string"
-          },
-          "limit" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "offset" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "withFacets" : {
-            "type" : "boolean"
-          }
-        }
-      },
       "SearchResult" : {
         "type" : "object",
         "properties" : {
@@ -625,8 +636,10 @@
             "description" : "amount of time the internal search needed to compute that result",
             "format" : "int64"
           },
-          "inputQuery" : {
-            "$ref" : "#/components/schemas/SearchQuery"
+          "inputURI" : {
+            "type" : "string",
+            "description" : "The URI that was used to get that result view. May be used to generate breadcrumbs.",
+            "format" : "URI"
           },
           "slices" : {
             "type" : "array",
@@ -671,8 +684,10 @@
             "description" : "URL conform query parameters, that has to be used to get the next bunch of results. Is null if there are no more results.",
             "format" : "URI"
           },
-          "resultQuery" : {
-            "$ref" : "#/components/schemas/SearchQuery"
+          "resultLink" : {
+            "type" : "string",
+            "description" : "The query that represents exact that passed slice. If send to the engine again, that slice should be returned as main result.",
+            "format" : "URI"
           },
           "hits" : {
             "type" : "array",
@@ -704,6 +719,32 @@
           "link" : {
             "type" : "string",
             "format" : "URI"
+          }
+        }
+      },
+      "SearchQuery" : {
+        "type" : "object",
+        "properties" : {
+          "q" : {
+            "type" : "string"
+          },
+          "sort" : {
+            "type" : "string"
+          },
+          "limit" : {
+            "minimum" : 1,
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "offset" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "withFacets" : {
+            "type" : "boolean"
+          },
+          "userQuery" : {
+            "$ref" : "#/components/schemas/SearchQuery"
           }
         }
       }

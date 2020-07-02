@@ -1,6 +1,8 @@
 package de.cxp.ocs.model.params;
 
-import java.util.Map;
+import javax.annotation.Nonnegative;
+import javax.annotation.Nonnull;
+import javax.validation.constraints.Min;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,38 +13,16 @@ import lombok.experimental.Accessors;
 @Data
 public class SearchQuery {
 
-	public String userQuery;
-
 	/**
-	 * Any other parameters are used as filters. They are validated according to
-	 * the actual data and the configuration.
-	 * 
-	 * Each filter can have multiple values, separated by comma. Commas inside
-	 * the values have to be double-URL encoded.
-	 * Depending on the configured backend type these values are used
-	 * differently.
-	 * 
-	 * Examples:
-	 * 
-	 * brand=adidas
-	 * 
-	 * brand=adidas,nike (=> products from adidas OR nike are shown)
-	 * 
-	 * category=men,shoes,sneaker (=> if category would be configured as path,
-	 * these values are used for hierarchical filtering)
-	 * 
-	 * price=10,99.99 (=> if price is configured as numeric field, these values
-	 * are
-	 * used as range filters)
-	 * 
-	 * color=red,black (=> if that field is configured to be used for "exclusive
-	 * filtering" only products would be shown that are available in red AND
-	 * black)
-	 * 
-	 * optional for the future also negations could be supported, e.g.
-	 * color=red,!black
+	 * the user query.
 	 */
-	public Map<String, String> filters;
+	@Nonnull
+	public String q;
+
+	public SearchQuery setUserQuery(String userQuery) {
+		q = userQuery;
+		return this;
+	}
 
 	/**
 	 * example:
@@ -52,8 +32,10 @@ public class SearchQuery {
 	 */
 	public String sort;
 
+	@Min(1)
 	public int limit = 12;
 
+	@Nonnegative
 	public int offset = 0;
 
 	/**
@@ -62,5 +44,14 @@ public class SearchQuery {
 	 */
 	public boolean withFacets = true;
 
+	public String asUri() {
+		StringBuilder uri = new StringBuilder();
+		uri.append("q=").append(q);
+		if (sort != null) uri.append("&sort=").append(sort);
+		uri.append("&limit=").append(limit);
+		if (offset > 0) uri.append("&offset=").append(offset);
+		uri.append("&withFacets=").append(withFacets);
+		return uri.toString();
+	}
 
 }

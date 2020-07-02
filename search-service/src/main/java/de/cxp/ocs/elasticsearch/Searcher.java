@@ -223,13 +223,13 @@ public class Searcher {
 	 * @throws IOException
 	 */
 	// @Timed(value = "find", percentiles = { 0.5, 0.8, 0.95, 0.98 })
-	public SearchResult find(String userQuery, InternalSearchParams parameters) throws IOException {
+	public SearchResult find(InternalSearchParams parameters) throws IOException {
 
 		long start = System.currentTimeMillis();
 
 		FiltersBuilder filtersBuilder = new FiltersBuilder(config, parameters.filters);
 
-		String asciiFoldedUserQuery = StringUtils.asciify(userQuery);
+		String asciiFoldedUserQuery = StringUtils.asciify(parameters.userQuery);
 
 		List<QueryStringTerm> searchWords = UserQueryAnalyzer.defaultAnalyzer.analyze(asciiFoldedUserQuery);
 		Iterator<ESQueryBuilder> stagedQueryBuilders = queryBuilder.getStagedQueryBuilders(searchWords);
@@ -277,7 +277,7 @@ public class Searcher {
 			if (correctedWords == null && spellCorrector != null
 					&& stagedQueryBuilder.allowParallelSpellcheckExecution()
 					&& (!searchQuery.isWithSpellCorrection() || stagedQueryBuilders.hasNext())) {
-				searchSourceBuilder.suggest(spellCorrector.buildSpellCorrectionQuery(userQuery));
+				searchSourceBuilder.suggest(spellCorrector.buildSpellCorrectionQuery(parameters.userQuery));
 			}
 			else {
 				searchSourceBuilder.suggest(null);
@@ -344,7 +344,7 @@ public class Searcher {
 
 	private SearchResult buildResult(InternalSearchParams parameters, SearchResponse searchResponse, SearchQueryBuilder linkBuilder) {
 		SearchResult searchResult = new SearchResult();
-		searchResult.inputQuery = new SearchQueryBuilder(parameters).buildSearchQuery();
+		searchResult.inputURI = SearchQueryBuilder.toLink(parameters).toString();
 		searchResult.slices = new ArrayList<>(1);
 
 		resultTimer.record(() -> {
@@ -487,7 +487,7 @@ public class Searcher {
 		SearchResultSlice srSlice = new SearchResultSlice();
 		// XXX think about building parameters according to the actual performed
 		// search (e.g. with relaxed query or with implicit set filters)
-		srSlice.resultQuery = new SearchQueryBuilder(parameters).buildSearchQuery();
+		srSlice.resultLink =  SearchQueryBuilder.toLink(parameters).toString();
 		srSlice.matchCount = searchHits.getTotalHits().value;
 
 		Map<String, SortOrder> sortedFields = getSortedNumericFields(parameters);

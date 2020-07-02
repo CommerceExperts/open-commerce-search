@@ -1,6 +1,6 @@
 package de.cxp.ocs;
 
-import static de.cxp.ocs.util.SearchParamsParser.parseParams;
+import static de.cxp.ocs.util.SearchParamsParser.*;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -18,18 +18,19 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
+import de.cxp.ocs.api.searcher.SearchService;
 import de.cxp.ocs.config.ApplicationProperties;
 import de.cxp.ocs.config.IndexConfiguration;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.config.TenantSearchConfiguration;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.Searcher;
+import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.util.InternalSearchParams;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -41,7 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping(path = "/search-api/v1")
 @Slf4j
-public class SearchController {
+public class SearchController implements SearchService {
 
 	@Autowired
 	@NonNull
@@ -62,19 +63,20 @@ public class SearchController {
 			.build();
 
 	@GetMapping("/search/{tenant}")
-	public SearchResult get(
-			@PathVariable("tenant") String tenant,
-			@RequestParam("q") String query,
-			@RequestParam(required = false, name = "searchhub") boolean searchhub,
-			@RequestParam(required = false) Map<String, Object> params) throws ExecutionException, IOException {
+	@Override
+	public SearchResult search(@PathVariable("tenant") String tenant, SearchQuery searchQuery, Map<String, String> filters) throws Exception {
 		SearchConfiguration searchConfig = searchConfigs.computeIfAbsent(tenant, this::getConfigForTenant);
 		log.debug("Using index {} for tenant {}", searchConfig.getIndexName(), tenant);
 
-		final InternalSearchParams parameters = parseParams(params, searchConfig.getFieldConfiguration().getFields());
-		parameters.userQuery = query;
+		final InternalSearchParams parameters = new InternalSearchParams();
+		parameters.userQuery = searchQuery.q;
+		parameters.limit = searchQuery.limit;
+		parameters.offset = searchQuery.offset;
+		parameters.sortings = parseSortings(searchQuery.sort, searchConfig.getFieldConfiguration().getFields());
+		parameters.filters = parseFilters(filters, searchConfig.getFieldConfiguration().getFields());
 
 		final Searcher searcher = searchClientCache.get(tenant, () -> new Searcher(esBuilder.getRestHLClient(), searchConfig, registry));
-		SearchResult result = searcher.find(query, parameters);
+		SearchResult result = searcher.find(parameters);
 
 		return result;
 	}

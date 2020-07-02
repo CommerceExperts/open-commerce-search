@@ -8,10 +8,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Consumer;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldUsage;
+import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
@@ -26,17 +26,12 @@ public class SearchParamsParser {
 	 * @param params
 	 * @return
 	 */
-	public static InternalSearchParams parseParams(Map<String, Object> params, final Map<String, Field> fields) {
-		final InternalSearchParams searchParams = new InternalSearchParams();
-		if (params == null) return searchParams;
+	public static List<InternalResultFilter> parseFilters(Map<String, String> filterValues, final Map<String, Field> fields) {
+		List<InternalResultFilter> filters = new ArrayList<>();
 
-		mapParameterIfPresent(params, "limit", value -> searchParams.limit = Integer.parseInt(value));
-		mapParameterIfPresent(params, "offset", value -> searchParams.offset = Integer.parseInt(value));
-		mapParameterIfPresent(params, "sort", value -> searchParams.sortings.addAll(getSortings(value, fields)));
-
-		for (Entry<String, Object> p : params.entrySet()) {
+		for (Entry<String, String> p : filterValues.entrySet()) {
 			String paramName = p.getKey();
-			String paramValue = String.valueOf(p.getValue());
+			String paramValue = p.getValue();
 
 			Field field = fields.get(paramName);
 
@@ -46,32 +41,25 @@ public class SearchParamsParser {
 			if (field != null && field.getUsage().contains(FieldUsage.Facet)) {
 				switch (field.getType()) {
 					case category:
-						searchParams.filters.add(new PathResultFilter(field.getName(), Arrays.asList(split(paramValue, VALUE_DELIMITER))));
+						filters.add(new PathResultFilter(field.getName(), Arrays.asList(split(paramValue, VALUE_DELIMITER))));
 						break;
 					case number:
 						String[] paramValues = splitPreserveAllTokens(paramValue, VALUE_DELIMITER);
 						if (paramValues.length != 2) throw new IllegalArgumentException("unexpected numeric filter value: " + paramValue);
-						searchParams.filters.add(new NumberResultFilter(
+						filters.add(new NumberResultFilter(
 								field.getName(),
 								Util.tryToParseAsNumber(paramValues[0]).orElse(null),
 								Util.tryToParseAsNumber(paramValues[0]).orElse(null)));
 					default:
-						searchParams.filters.add(new TermResultFilter(field.getName(), split(paramValue, VALUE_DELIMITER)));
+						filters.add(new TermResultFilter(field.getName(), split(paramValue, VALUE_DELIMITER)));
 				}
 			}
 		}
 
-		return searchParams;
+		return filters;
 	}
 
-	private static void mapParameterIfPresent(Map<String, Object> params, String key, Consumer<String> paramConsumer) {
-		Object paramValue = params.get(key);
-		if (paramValue != null && paramValue instanceof String) {
-			paramConsumer.accept((String) paramValue);
-		}
-	}
-
-	private static List<Sorting> getSortings(String paramValue, final Map<String, Field> fields) {
+	public static List<Sorting> parseSortings(String paramValue, final Map<String, Field> fields) {
 		String[] paramValueSplit = split(paramValue, VALUE_DELIMITER);
 		List<Sorting> sortings = new ArrayList<>(paramValueSplit.length);
 		for (String rawSortValue : paramValueSplit) {

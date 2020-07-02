@@ -35,10 +35,9 @@ public class DefaultQueryBuilder implements ESQueryBuilder {
 				.analyzer("split")
 				.fuzziness(Fuzziness.AUTO)
 				.minimumShouldMatch("2<80%")
-				.tieBreaker(0.8f);
-		// WTF: for some reason the type() method is not fluent! ^^
-		mainQuery.type(searchTerms.size() == 1 ? Type.BEST_FIELDS : Type.CROSS_FIELDS);
-		mainQuery.queryName(name == null ? "defaultQuery" : name);
+				.tieBreaker(0.8f)
+				.type(searchTerms.size() == 1 ? Type.BEST_FIELDS : Type.CROSS_FIELDS)
+				.queryName(name == null ? "defaultQuery" : name);
 
 		QueryStringQueryBuilder variantQuery = QueryBuilders.queryStringQuery(ESQueryUtils.buildQueryString(searchTerms, " "))
 				.minimumShouldMatch("1")

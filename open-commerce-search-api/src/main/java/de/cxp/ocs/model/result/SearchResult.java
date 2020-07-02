@@ -21,11 +21,14 @@ public class SearchResult {
 	public long tookInMillis;
 
 	/**
-	 * The search parameters that were used to get that result view.
+	 * The search parameters (SearchQuery parameters + filters) that were used
+	 * to get that result view.
 	 * May be used to generate breadcrumbs.
 	 */
-	@Schema(description = "The search parameters that were used to get that result view. May be used to generate breadcrumbs.")
-	public SearchQuery inputQuery;
+	@Schema(
+			format = "URI",
+			description = "The URI that was used to get that result view. May be used to generate breadcrumbs.")
+	public String inputURI;
 
 	/**
 	 * The result may consist of several slices, for example if a search request
@@ -39,8 +42,8 @@ public class SearchResult {
 	 * ranked by popularity, the next 3 are sorted by price and the rest is
 	 * ranked by 'default' relevance).
 	 * 
-	 * Each slice contains the {@link SearchQuery} that represent that exact
-	 * slice.
+	 * Each slice contains the {@link SearchQuery} encoded as URI that represent
+	 * that exact slice.
 	 * 
 	 * At least 1 slice should be expected. If there is no slice, no results
 	 * were found.

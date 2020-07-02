@@ -26,9 +26,9 @@ public class InternalSearchParams {
 	 */
 	public boolean withFacets = true;
 
-	public final List<Sorting> sortings = new ArrayList<>();
+	public List<Sorting> sortings = new ArrayList<>();
 
-	public final List<InternalResultFilter> filters = new ArrayList<>();
+	public List<InternalResultFilter> filters = new ArrayList<>();
 
 	public InternalSearchParams withSorting(Sorting sorting) {
 		sortings.add(sorting);
