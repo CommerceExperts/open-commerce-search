@@ -293,29 +293,32 @@ paths:
           additionalProperties:
             type: string
         examples:
-          joined filter 2:
+          hierarchical_filter:
+            summary: hierarchical filter
+            description: if category would be configured as path, these values are
+              used for hierarchical filtering
+            value: category=men,shoes,sneaker
+          numeric_range_filter:
+            summary: numeric range filter
+            description: if price is configured as numeric field, these values are
+              used as range filters
+            value: price=10,99.90
+          joined_exclusive_filter:
+            summary: joined exclusive filter
             description: The way filters are interpreted depends on the backend configuration.
               If that field is configured to be used for "exclusive filtering" only
               products would be shown that are available in red AND black
             value: color=red,black
-          simple filter:
+          simple_filter:
+            summary: simple filter
             description: Filters are simple parameters with the field-names as parameter
               and the filter values as comma separated parameter values.
             value: brand=adidas
-          joined filter:
+          joined_filter:
+            summary: joined filter
             description: products from adidas OR nike are shown
             value: brand=adidas,nike
-          hierarchical filter:
-            description: if category would be configured as path, these values are
-              used for hierarchical filtering
-            value: category=men,shoes,sneaker
-          numeric range filter:
-            description: if price is configured as numeric field, these values are
-              used as range filters
-            value: price=10,99.90
       responses:
-        "403":
-          description: tenant can't be accessed or does not exist
         "200":
           description: successful found results
           content:
@@ -328,6 +331,10 @@ paths:
             '*/*':
               schema:
                 $ref: '#/components/schemas/SearchResult'
+        "403":
+          description: tenant can't be accessed or does not exist
+          content:
+            text/plain: {}
         "404":
           description: response code if tenant is unknown or index does not exist
           content:

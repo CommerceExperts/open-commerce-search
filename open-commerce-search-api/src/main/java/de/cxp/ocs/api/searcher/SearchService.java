@@ -73,7 +73,7 @@ public interface SearchService {
 	 *        </li>
 	 * 
 	 * @return
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	@GET
 	@Path("search/{tenant}")
@@ -92,7 +92,7 @@ public interface SearchService {
 							description = "Optional response code that represents 'no result'",
 							content = @Content(schema = @Schema(ref = "SearchResult"))),
 					@ApiResponse(
-							responseCode = "403", 
+							responseCode = "403",
 							description = "tenant can't be accessed or does not exist",
 							content = @Content(mediaType = "text/plain")),
 					@ApiResponse(
@@ -121,23 +121,28 @@ public interface SearchService {
 							"Depending on the configured backend type these values are used differently.",
 					examples = {
 							@ExampleObject(
-									name = "simple filter", 
+									name = "simple_filter",
+									summary = "simple filter",
 									value = "brand=adidas",
 									description = "Filters are simple parameters with the field-names as parameter and the filter values as comma separated parameter values."),
 							@ExampleObject(
-									name = "joined filter", 
-									value = "brand=adidas,nike", 
+									name = "joined_filter",
+									summary = "joined filter",
+									value = "brand=adidas,nike",
 									description = "products from adidas OR nike are shown"),
 							@ExampleObject(
-									name = "hierarchical filter",
+									name = "hierarchical_filter",
+									summary = "hierarchical filter",
 									value = "category=men,shoes,sneaker",
 									description = "if category would be configured as path, these values are used for hierarchical filtering"),
 							@ExampleObject(
-									name = "numeric range filter",
+									name = "numeric_range_filter",
+									summary = "numeric range filter",
 									value = "price=10,99.90",
 									description = "if price is configured as numeric field, these values are used as range filters"),
 							@ExampleObject(
-									name = "joined filter 2",
+									name = "joined_exclusive_filter",
+									summary = "joined exclusive filter",
 									value = "color=red,black",
 									description = "The way filters are interpreted depends on the backend configuration. "
 											+ "If that field is configured to be used for \"exclusive filtering\" only products would be shown that are available in red AND black")
