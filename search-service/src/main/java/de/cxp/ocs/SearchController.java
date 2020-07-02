@@ -4,11 +4,15 @@ import static de.cxp.ocs.util.SearchParamsParser.*;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
+import org.elasticsearch.client.RequestOptions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.http.HttpStatus;
@@ -80,7 +84,27 @@ public class SearchController implements SearchService {
 
 		return result;
 	}
-
+	
+	@GetMapping("/tenants")
+	@Override
+	public String[] getTenants() {
+		Set<String> tenants = new HashSet<>();
+		try {
+			esBuilder.getRestHLClient().indices()
+			.getAlias(new GetAliasesRequest(), RequestOptions.DEFAULT)
+			.getAliases()
+			.entrySet()
+			.stream()
+			.filter(aliasEntry -> !aliasEntry.getKey().startsWith(".") && !aliasEntry.getValue().isEmpty())
+			.map(aliasEntry -> aliasEntry.getValue().iterator().next().alias())
+			.forEach(tenants::add);
+		}
+		catch (IOException e) {
+			log.warn("could not retrieve ES indices", e);
+		}
+		return properties.getTenantConfig().keySet().toArray(new String[0]);
+	}
+	
 	private SearchConfiguration getConfigForTenant(String tenant) {
 		SearchConfiguration configCopy = new SearchConfiguration();
 
@@ -117,9 +141,7 @@ public class SearchController implements SearchService {
 		return properties.getIndexConfig().getOrDefault(indexName, properties.getDefaultIndexConfig());
 	}
 
-	@ExceptionHandler(
-			value = { ExecutionException.class, IOException.class, RuntimeException.class,
-					ClassNotFoundException.class })
+	@ExceptionHandler({ ExecutionException.class, IOException.class, RuntimeException.class, ClassNotFoundException.class })
 	public ResponseEntity<String> handleInternalErrors(Exception e) {
 		final String errorId = UUID.randomUUID().toString();
 		log.error("Internal Server Error " + errorId, e);
