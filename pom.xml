@@ -7,7 +7,7 @@
   <parent>
     <groupId>mindshift.search</groupId>
     <artifactId>search-java-base-pom</artifactId>
-    <version>0.14.0</version>
+    <version>0.19.0</version>
   </parent>
 
   <artifactId>search-ocs-connector</artifactId>
