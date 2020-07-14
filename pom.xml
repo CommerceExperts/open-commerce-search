@@ -50,14 +50,27 @@
     <checkstyle.version>8.21</checkstyle.version>
 
     <!-- Dependency Versions -->
-    <connector-api.version>0.21.0</connector-api.version>
+    <search-commons-java.version>0.11.0</search-commons-java.version>
+    <search-connector-api.version>0.21.0</search-connector-api.version>
     
   </properties>
   <dependencies>
     <dependency>
       <groupId>mindshift.search</groupId>
       <artifactId>search-connector-api</artifactId>
-      <version>${connector-api.version}</version>
+      <version>${search-connector-api.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>mindshift.search</groupId>
+      <artifactId>search-connector-utils</artifactId>
+      <version>${search-connector-api.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>mindshift.search</groupId>
+      <artifactId>search-commons-java</artifactId>
+      <version>${search-commons-java.version}</version>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
 
