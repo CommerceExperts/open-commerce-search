@@ -6,7 +6,9 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.3.2</version>
+  <!-- FIXME: use separate parent pom for dependency management 
+       and this pom only as multi-module aggregator -->
+	<version>0.3.3</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
