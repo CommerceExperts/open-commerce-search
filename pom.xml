@@ -46,7 +46,38 @@
       <version>${search-commons-java.version}</version>
       <scope>compile</scope>
     </dependency>
+    
+    <dependency>
+      <groupId>de.cxp.ocs</groupId>
+      <artifactId>open-commerce-search-api</artifactId>
+      <version>0.3</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+	  <artifactId>lombok</artifactId>
+	  <version>1.18.8</version>
+	  <scope>provided</scope>
+    </dependency>
+    
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <scope>test</scope>
+      </dependency>
   </dependencies>
+
+  <repositories>
+    <repository>
+      <id>searchhub-releases</id>
+      <url>https://nexus.commerce-experts.com/content/repositories/searchhub-external/</url>
+    </repository>
+  </repositories>
 
   <build>
         <!-- lock down plugins versions to avoid using Maven defaults
