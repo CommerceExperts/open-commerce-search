@@ -27,7 +27,7 @@
     <search-commons-java.version>0.11.0</search-commons-java.version>
     <search-connector-api.version>0.26.0</search-connector-api.version>
   </properties>
-  
+
   <dependencies>
     <dependency>
       <groupId>mindshift.search</groupId>
@@ -50,7 +50,7 @@
     <dependency>
       <groupId>de.cxp.ocs</groupId>
       <artifactId>open-commerce-search-api</artifactId>
-      <version>0.3</version>
+      <version>0.3.2</version>
     </dependency>
     
     <dependency>

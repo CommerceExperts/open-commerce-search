@@ -1,4 +1,4 @@
-package mindshift.search.connector.ocs.util;
+package mindshift.search.connector.ocs.mapper;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -7,6 +7,7 @@ import java.util.Collections;
 import org.junit.jupiter.api.Test;
 
 import mindshift.search.connector.api.v2.models.SearchRequest;
+import mindshift.search.connector.ocs.mapper.MindshiftSearchRequestBuilder;
 
 public class SearchRequestBuilderTest {
 
@@ -14,7 +15,7 @@ public class SearchRequestBuilderTest {
 	public void testClone() {
 		SearchRequest request = getFullyLoadedSearchRequest();
 		
-		SearchRequestBuilder underTest = new SearchRequestBuilder(request);
+		MindshiftSearchRequestBuilder underTest = new MindshiftSearchRequestBuilder(request);
 		// use same sort param, so the objects still should be equals
 		SearchRequest clone = underTest.withSort(request.getSort());
 
@@ -26,7 +27,7 @@ public class SearchRequestBuilderTest {
 	public void testChangingSortParameter() {
 		SearchRequest request = getFullyLoadedSearchRequest();
 		
-		SearchRequestBuilder underTest = new SearchRequestBuilder(request);
+		MindshiftSearchRequestBuilder underTest = new MindshiftSearchRequestBuilder(request);
 		SearchRequest clone = underTest.withSort("title");
 
 		assertTrue(clone.getSort().equals("title"));
