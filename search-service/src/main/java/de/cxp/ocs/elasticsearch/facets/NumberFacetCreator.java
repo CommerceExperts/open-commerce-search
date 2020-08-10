@@ -98,6 +98,8 @@ public class NumberFacetCreator implements NestedFacetCreator {
 			FacetConfig facetConfig = facetsBySourceField.get(facetName);
 			if (facetConfig == null) facetConfig = new FacetConfig(facetName, facetName);
 
+			// TODO: add support for range facet
+			// TODO: change number facets to have "min/max" entries instead formatted labels
 			Facet facet = FacetFactory.create(facetConfig);
 
 			InternalResultFilter facetFilter = filtersByName.get(facetName);
