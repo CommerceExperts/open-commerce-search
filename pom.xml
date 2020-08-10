@@ -6,9 +6,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-  <!-- FIXME: use separate parent pom for dependency management 
-       and this pom only as multi-module aggregator -->
-	<version>0.3.3</version>
+	<version>0.4-SNAPSHOT</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -28,7 +26,7 @@
 		<dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
 
 		<ocs-api.version>0.3</ocs-api.version>
-		<ocs-lib.version>0.1</ocs-lib.version>
+		<ocs-lib.version>0.1.1</ocs-lib.version>
 
 		<elasticsearch.version>7.5.0</elasticsearch.version>
 		<spring-boot.version>1.5.22.RELEASE</spring-boot.version>
@@ -58,7 +56,7 @@
 			<dependency>
 				<groupId>com.fasterxml.jackson.core</groupId>
 				<artifactId>jackson-databind</artifactId>
-        <version>${jackson.version}</version>
+				<version>${jackson.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.fasterxml.jackson.core</groupId>
@@ -189,6 +187,14 @@
 					<configuration>
 						<workingDirectory>${project.build.directory}</workingDirectory>
 						<argLine>-Dfile.encoding=UTF-8</argLine>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-deploy-plugin</artifactId>
+					<version>3.0.0-M1</version>
+					<configuration>
+						<deployAtEnd>true</deployAtEnd>
 					</configuration>
 				</plugin>
 
