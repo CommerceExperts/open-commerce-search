@@ -3,6 +3,7 @@ package de.cxp.ocs.indexer.model;
 import static de.cxp.ocs.util.Util.*;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
@@ -10,10 +11,12 @@ import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.util.MinMaxSet;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Enum describing the usage of an field that will be indexed.
  */
+@Slf4j
 public class FieldUsageApplier {
 
 	public static void handleSearchField(final DataItem record, final Field field, Object value) {
@@ -140,6 +143,12 @@ public class FieldUsageApplier {
 		final Optional<Number> numValue;
 		if (value instanceof Number) {
 			numValue = Optional.of((Number) value);
+		}
+		else if (value instanceof List<?>) {
+			for (Object v : (List<?>)value) {
+				handleScoreField(record, field, v);
+			}
+			return;
 		}
 		else {
 			numValue = tryToParseAsNumber(String.valueOf(value));
