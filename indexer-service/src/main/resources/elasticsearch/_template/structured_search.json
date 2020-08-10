@@ -190,6 +190,7 @@
           "mapping": {
             "norms": false,
             "fielddata": true,
+            "eager_global_ordinals": true,
             "type": "text",
             "copy_to": "searchable_numeric_patterns",
             "analyzer": "minimal",
@@ -197,7 +198,8 @@
               "standard": {
                 "norms": false,
                 "analyzer": "standard",
-                "type": "text"
+                "type": "text",
+                "eager_global_ordinals": true
               },
               "shingles": {
                 "norms": false,
