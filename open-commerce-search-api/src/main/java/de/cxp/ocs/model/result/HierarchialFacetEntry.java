@@ -15,6 +15,7 @@ import lombok.experimental.Accessors;
 @AllArgsConstructor
 @Accessors(chain = true)
 @EqualsAndHashCode(callSuper = true)
+@Schema(allOf = {FacetEntry.class})
 public class HierarchialFacetEntry extends FacetEntry {
 
 	public final String type = "hierarchical";

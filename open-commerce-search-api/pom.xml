@@ -11,7 +11,7 @@
 	</parent>
 
 	<artifactId>open-commerce-search-api</artifactId>
-	<version>0.3</version>
+	<version>0.3.2</version>
 	<packaging>jar</packaging>
 
 	<description>An open and abstract search API that covers minimal search functionality</description>
@@ -140,12 +140,12 @@
 							<configurationFilePath>${project.basedir}/src/main/resources/openapi-configuration.json</configurationFilePath>
 							<outputFileName>openapi</outputFileName>
 							<outputPath>${project.basedir}/src/main/resources</outputPath>
-							<outputFormat>JSONANDYAML</outputFormat>
+							<outputFormat>YAML</outputFormat>
 							<prettyPrint>TRUE</prettyPrint>
 						</configuration>
 						<executions>
 							<execution>
-								<phase>generate-resources</phase>
+								<phase>process-sources</phase>
 								<goals>
 									<goal>resolve</goal>
 								</goals>
@@ -180,7 +180,7 @@
 				<executions>
 					<execution>
 						<id>generate-client</id>
-						<phase>generate-sources</phase>
+						<phase>process-resources</phase>
 						<goals>
 							<goal>generate</goal>
 						</goals>

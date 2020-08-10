@@ -21,7 +21,8 @@ import lombok.experimental.Accessors;
 		description = "Main product containing the data that is common for all variants."
 				+ " A product may represent a master-variant relation ship."
 				+ " A variant should be associated to a single Product and cannot have variants again - those will be ignored."
-				+ " It should only contain data special to that variant. Data that is common to all variants should be set at master level.")
+				+ " It should only contain data special to that variant. Data that is common to all variants should be set at master level.",
+		allOf = {Document.class})
 @Data
 @NoArgsConstructor
 @ToString(callSuper = true)
