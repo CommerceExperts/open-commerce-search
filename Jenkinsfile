@@ -29,9 +29,13 @@ pipeline {
 
     stage('deploy') {
       when {
-        allOf {
+        anyOf {
           branch 'master'
-          not { expression { PROJECT_VERSION ==~ /.*-SNAPSHOT/ } }
+          // deploy from develop if SNAPSHOT version
+          allOf {
+            branch 'develop'
+            expression { PROJECT_VERSION ==~ /.*-SNAPSHOT/ }
+          }
         }
       }
       steps {
