@@ -15,8 +15,8 @@ public class OcsSuggestServiceAdapter {
      * @return SuggestResult
      */
     public SuggestResult suggest(final SuggestRequest request) {
-        // TODO get results from OCS
-
+        // TODO OCS has no suggest API yet
+    	
         SuggestResult suggestResult = new SuggestResult();
         suggestResult.setQ(request.getQ());
         return suggestResult;

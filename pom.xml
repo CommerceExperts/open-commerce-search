@@ -24,6 +24,7 @@
     <!-- Plugin Versions managed by parent -->
 
     <!-- Dependency Versions -->
+    <jackson.version>2.10.4</jackson.version>
     <search-commons-java.version>0.11.0</search-commons-java.version>
     <search-connector-api.version>0.26.0</search-connector-api.version>
   </properties>
@@ -59,6 +60,13 @@
 	  <version>1.18.8</version>
 	  <scope>provided</scope>
     </dependency>
+    
+    <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
+        <scope>provided</scope>
+      </dependency>
     
     <dependency>
         <groupId>org.junit.jupiter</groupId>

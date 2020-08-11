@@ -1,6 +1,7 @@
 package mindshift.search.connector.ocs.mapper;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -71,6 +72,8 @@ public class SearchResultMapper {
 
 	private List<Sort> extractSorts(de.cxp.ocs.client.models.SearchResult ocsResult, MindshiftSearchRequestBuilder requestBuilder) {
 		List<Sorting> sortOptions = ocsResult.getSortOptions();
+		if (sortOptions == null) return Collections.emptyList();
+		
 		List<Sort> sorts = new ArrayList<>(sortOptions.size());
 
 		for (Sorting sortOption : sortOptions) {
@@ -183,7 +186,7 @@ public class SearchResultMapper {
 			
 			textFacet.add(textFacetValue);
 		}
-		return null;
+		return textFacet;
 	}
 
 	private List<Breadcrumb> extractBreadCrumbs(SearchRequest request) {

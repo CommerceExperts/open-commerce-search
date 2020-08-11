@@ -1,0 +1,307 @@
+{
+	"tookInMillis": 50,
+	"inputURI": "?q=obuv&price=0.0%2C9.99",
+	"slices": [{
+			"label": null,
+			"matchCount": 34,
+			"nextOffset": 12,
+			"nextLink": null,
+			"resultLink": "?q=obuv&price=0.0%2C9.99",
+			"hits": [{
+					"index": "ocs-1-mind_sk_sk-de",
+					"document": {
+						"id": "100265941",
+						"data": {
+							"price": "9.99",
+							"imageUrl": "https://lidl-shop.sk/media/b526f6a4c7f01244717f949944135e3c.octet-stream",
+							"description": "S bočným zipsom",
+							"shortDescription": "<p>Mimoriadne m&auml;kk&aacute; hrejiv&aacute; pod&scaron;&iacute;vka</p>",
+							"artNr": "100265941009",
+							"stock": "204",
+							"productUrl": "https://lidl-shop.sk/p/pepperts-chlapcenska-clenkova-obuv/p100265941?variantid=100265941009",
+							"title": "Chlapčenská členková obuv",
+							"brand": "PEPPERTS"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": ["default-query((obuv))"]
+				}, {
+					"index": "ocs-1-mind_sk_sk-de",
+					"document": {
+						"id": "100265942",
+						"data": {
+							"price": "9.99",
+							"imageUrl": "https://lidl-shop.sk/media/90cda6aba281141c70f4aa5818e61212.octet-stream",
+							"description": "Mimoriadne mäkká hrejivá podšívka",
+							"shortDescription": "<p>Komfortn&eacute; ob&uacute;vanie a vyz&uacute;vanie vďaka bočn&eacute;mu zipsu</p>",
+							"artNr": "100265942008",
+							"stock": "88",
+							"productUrl": "https://lidl-shop.sk/p/lupilu-chlapcenska-clenkova-obuv/p100265942?variantid=100265942008",
+							"title": "Chlapčenská členková obuv",
+							"brand": "LUPILU"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": ["default-query((obuv))"]
+				}, {
+					"index": "ocs-1-mind_sk_sk-de",
+					"document": {
+						"id": "100265943",
+						"data": {
+							"price": "9.99",
+							"imageUrl": "https://lidl-shop.sk/media/1f94cfbf10a6131d2ba871f11dadf02e.octet-stream",
+							"description": "Pohodlný polster na okraji zvršku",
+							"shortDescription": "<p>Mimoriadne m&auml;kk&aacute; hrejiv&aacute; pod&scaron;&iacute;vka</p>",
+							"artNr": "100265943010",
+							"stock": "189",
+							"productUrl": "https://lidl-shop.sk/p/pepperts-dievcenska-obuv/p100265943?variantid=100265943010",
+							"title": "Dievčenská obuv",
+							"brand": "PEPPERTS"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": ["default-query((obuv))"]
+				}, {
+					"index": "ocs-1-mind_sk_sk-de",
+					"document": {
+						"id": "100265944",
+						"data": {
+							"price": "6.99",
+							"imageUrl": "https://lidl-shop.sk/media/d4f253c762b51bbe7a819dbc4d5af6df.octet-stream",
+							"description": "V imitácii baranej kože",
+							"shortDescription": "<p>Pr&iacute;jemne m&auml;kk&aacute;, hrejiv&aacute; pod&scaron;&iacute;vka</p>",
+							"artNr": "100265944004",
+							"stock": "52",
+							"productUrl": "https://lidl-shop.sk/p/esmara-damska-obuv/p100265944?variantid=100265944004",
+							"title": "Dámska obuv",
+							"brand": "ESMARA"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": ["default-query((obuv))"]
+				}, {
+					"index": "ocs-1-mind_sk_sk-de",
+					"document": {
+						"id": "100265975",
+						"data": {
+							"price": "9.99",
+							"imageUrl": "https://lidl-shop.sk/media/317d7f5709741c535ad16b6d0a58497b.octet-stream",
+							"description": "Mimoriadne mäkká, hrejivá podšívka",
+							"shortDescription": "<p>Pohodln&eacute; ob&uacute;vanie a vyz&uacute;vanie vďaka bočn&eacute;mu zipsu</p>",
+							"artNr": "100265975009",
+							"stock": "146",
+							"productUrl": "https://lidl-shop.sk/p/lupilu-dievcenska-clenkova-obuv/p100265975?variantid=100265975009",
+							"title": "Dievčenská členková obuv",
+							"brand": "LUPILU"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": ["default-query((obuv))"]
+				}, {
+					"index": "ocs-1-mind_sk_sk-de",
+					"document": {
+						"id": "100266844",
+						"data": {
+							"price": "9.99",
+							"imageUrl": "https://lidl-shop.sk/media/0f04dd50c25d4be95950232955131a8d.octet-stream",
+							"description": "Športová a moderná obuv na voľný čas",
+							"shortDescription": "Príjemný komfort pri nosení vďaka polstrovanému jazyku a okraju zvršku",
+							"artNr": "100266844011",
+							"stock": "1416",
+							"productUrl": "https://lidl-shop.sk/p/livergy-panska-obuv/p100266844?variantid=100266844011",
+							"title": "Pánska obuv",
+							"brand": "LIVERGY"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": ["default-query((obuv))"]
+				}, {
+					"index": "ocs-1-mind_sk_sk-de",
+					"document": {
+						"id": "100267389",
+						"data": {
+							"price": "9.99",
+							"imageUrl": "https://lidl-shop.sk/media/5d14a5157f71c76ac90919fd9e99cef4.octet-stream",
+							"description": "S módnym dizajnom",
+							"shortDescription": "<p>Komfortn&eacute; polstrovanie okrajov zvr&scaron;ku</p>",
+							"artNr": "100267389004",
+							"stock": "40",
+							"productUrl": "https://lidl-shop.sk/p/pepperts-chlapcenska-obuv/p100267389?variantid=100267389004",
+							"title": "Chlapčenská obuv",
+							"brand": "PEPPERTS"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": ["default-query((obuv))"]
+				}, {
+					"index": "ocs-1-mind_sk_sk-de",
+					"document": {
+						"id": "100280057",
+						"data": {
+							"price": "6.99",
+							"imageUrl": "https://lidl-shop.sk/media/714aefdc95f84c983e836dcad6dad5b6.jpeg",
+							"description": "Preklápací a nastaviteľný pätový remeň s prackou pre bezpečnú stabilitu",
+							"shortDescription": "Z vysokokvalitnej, pevnej kože",
+							"artNr": "100280057008",
+							"stock": "656",
+							"productUrl": "https://lidl-shop.sk/p/damska-panska-obuv/p100280057?variantid=100280057008",
+							"title": "Dámska / pánska obuv"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": ["default-query((obuv))"]
+				}, {
+					"index": "ocs-1-mind_sk_sk-de",
+					"document": {
+						"id": "100281978",
+						"data": {
+							"price": "9.99",
+							"imageUrl": "https://lidl-shop.sk/media/ac9a943b32dcddc2f8ad119b3675735a.jpeg",
+							"description": "Spracovanie zaručujúce vysokú flexibilitu a optimálne priliehanie – zvršok je priamo zošitý s vnútornou podošvou",
+							"shortDescription": "Rôzne farebné varianty",
+							"artNr": "100281978010",
+							"stock": "208",
+							"productUrl": "https://lidl-shop.sk/p/crivit-panska-sportova-obuv/p100281978?variantid=100281978010",
+							"title": "Pánska športová obuv",
+							"brand": "CRIVIT"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": ["default-query((obuv))"]
+				}, {
+					"index": "ocs-1-mind_sk_sk-de",
+					"document": {
+						"id": "100282449",
+						"data": {
+							"price": "9.99",
+							"imageUrl": "https://lidl-shop.sk/media/c70dd38858fcd8d36d651f412c3954c8.jpeg",
+							"description": "Textilné vnútro pre príjemný komfort pri nosení",
+							"shortDescription": "Rôzne farebné varianty",
+							"artNr": "100282449010",
+							"stock": "709",
+							"productUrl": "https://lidl-shop.sk/p/crivit-damska-sportova-obuv/p100282449?variantid=100282449010",
+							"title": "Dámska športová obuv",
+							"brand": "CRIVIT"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": ["default-query((obuv))"]
+				}, {
+					"index": "ocs-1-mind_sk_sk-de",
+					"document": {
+						"id": "100282786",
+						"data": {
+							"price": "6.99",
+							"imageUrl": "https://lidl-shop.sk/media/79edd9f7c6527ed7530a4f0437397500.jpeg",
+							"description": "V ležérnom štýle",
+							"shortDescription": "Rôzne farebné varianty",
+							"artNr": "100282786012",
+							"stock": "35",
+							"productUrl": "https://lidl-shop.sk/p/esmara-damska-obuv-na-volny-cas/p100282786?variantid=100282786012",
+							"title": "Dámska obuv na voľný čas",
+							"brand": "ESMARA"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": ["default-query((obuv))"]
+				}, {
+					"index": "ocs-1-mind_sk_sk-de",
+					"document": {
+						"id": "100285418",
+						"data": {
+							"price": "6.99",
+							"imageUrl": "https://lidl-shop.sk/media/00c219fe21655ad5923afc8bdcfc3a59.jpeg",
+							"description": "Vysoký komfort pri nosení vďaka textilnej stielke",
+							"shortDescription": "Rôzne farebné varianty",
+							"artNr": "100285418010",
+							"stock": "1",
+							"productUrl": "https://lidl-shop.sk/p/lupilu-chlapcenska-obuv/p100285418?variantid=100285418010",
+							"title": "Chlapčenská obuv",
+							"brand": "LUPILU"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": ["default-query((obuv))"]
+				}
+			],
+			"facets": [{
+					"fieldName": "brand",
+					"absoluteFacetCoverage": 32,
+					"isFiltered": false,
+					"entries": [{
+							"type": "simple",
+							"key": "PEPPERTS",
+							"docCount": 8,
+							"link": "?q=obuv&price=0.0%2C9.99&brand=PEPPERTS"
+						}, {
+							"type": "simple",
+							"key": "LIVERGY",
+							"docCount": 7,
+							"link": "?q=obuv&price=0.0%2C9.99&brand=LIVERGY"
+						}, {
+							"type": "simple",
+							"key": "ESMARA",
+							"docCount": 6,
+							"link": "?q=obuv&price=0.0%2C9.99&brand=ESMARA"
+						}, {
+							"type": "simple",
+							"key": "CRIVIT",
+							"docCount": 5,
+							"link": "?q=obuv&price=0.0%2C9.99&brand=CRIVIT"
+						}, {
+							"type": "simple",
+							"key": "LUPILU",
+							"docCount": 5,
+							"link": "?q=obuv&price=0.0%2C9.99&brand=LUPILU"
+						}, {
+							"type": "simple",
+							"key": "Mistral",
+							"docCount": 1,
+							"link": "?q=obuv&price=0.0%2C9.99&brand=Mistral"
+						}
+					],
+					"meta": {
+						"label": "Brand",
+						"type": "string",
+						"multiSelect": true,
+						"order": 2
+					},
+					"filtered": false
+				}, {
+					"fieldName": "price",
+					"absoluteFacetCoverage": 34,
+					"isFiltered": true,
+					"entries": [{
+							"type": "simple",
+							"key": "0,00 - 9,99",
+							"docCount": 34,
+							"link": "q=obuv&price=0,00+-+9,99"
+						}
+					],
+					"meta": {
+						"unit": "€",
+						"label": "Price",
+						"type": "string",
+						"multiSelect": false,
+						"order": 3
+					},
+					"filtered": true
+				}
+			]
+		}
+	],
+	"sortOptions": null,
+	"meta": null
+}

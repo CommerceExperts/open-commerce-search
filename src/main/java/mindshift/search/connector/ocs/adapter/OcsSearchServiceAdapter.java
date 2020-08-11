@@ -70,7 +70,7 @@ public class OcsSearchServiceAdapter {
 	 * @return
 	 */
 	public SearchResult searchWithoutQuery(final CategorySearchRequest categoryRequest) {
-		// TODO fetch result from OCS
+		// TODO fetch result from OCS without query not possible yet
 
 		SearchResult searchResult = new SearchResult();
 		searchResult.setId(categoryRequest.getId());
