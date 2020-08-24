@@ -30,6 +30,10 @@ public class SearchParamsParser {
 		List<InternalResultFilter> filters = new ArrayList<>();
 
 		for (Entry<String, String> p : filterValues.entrySet()) {
+			// special handling for spring: filters maps contains all parameters
+			// and the mapping result objects
+			if (!(p.getValue() instanceof String)) continue;
+
 			String paramName = p.getKey();
 			String paramValue = p.getValue();
 
@@ -49,7 +53,8 @@ public class SearchParamsParser {
 						filters.add(new NumberResultFilter(
 								field.getName(),
 								Util.tryToParseAsNumber(paramValues[0]).orElse(null),
-								Util.tryToParseAsNumber(paramValues[0]).orElse(null)));
+								Util.tryToParseAsNumber(paramValues[1]).orElse(null)));
+						break;
 					default:
 						filters.add(new TermResultFilter(field.getName(), split(paramValue, VALUE_DELIMITER)));
 				}

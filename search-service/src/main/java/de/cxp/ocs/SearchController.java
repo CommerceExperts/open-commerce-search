@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.google.common.cache.Cache;
@@ -68,7 +69,7 @@ public class SearchController implements SearchService {
 
 	@GetMapping("/search/{tenant}")
 	@Override
-	public SearchResult search(@PathVariable("tenant") String tenant, SearchQuery searchQuery, Map<String, String> filters) throws Exception {
+	public SearchResult search(@PathVariable("tenant") String tenant, SearchQuery searchQuery, @RequestParam Map<String, String> filters) throws Exception {
 		SearchConfiguration searchConfig = searchConfigs.computeIfAbsent(tenant, this::getConfigForTenant);
 		log.debug("Using index {} for tenant {}", searchConfig.getIndexName(), tenant);
 
@@ -76,7 +77,9 @@ public class SearchController implements SearchService {
 		parameters.userQuery = searchQuery.q;
 		parameters.limit = searchQuery.limit;
 		parameters.offset = searchQuery.offset;
-		parameters.sortings = parseSortings(searchQuery.sort, searchConfig.getFieldConfiguration().getFields());
+		if (searchQuery.sort != null) {
+			parameters.sortings = parseSortings(searchQuery.sort, searchConfig.getFieldConfiguration().getFields());
+		}
 		parameters.filters = parseFilters(filters, searchConfig.getFieldConfiguration().getFields());
 
 		final Searcher searcher = searchClientCache.get(tenant, () -> new Searcher(esBuilder.getRestHLClient(), searchConfig, registry));
