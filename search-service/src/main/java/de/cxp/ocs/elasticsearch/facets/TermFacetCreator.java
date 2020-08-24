@@ -91,6 +91,7 @@ public class TermFacetCreator implements NestedFacetCreator {
 			InternalResultFilter facetFilter = filtersByName.get(facetName);
 			if (facetFilter != null && facetFilter instanceof TermResultFilter) {
 				facet.setFiltered(true);
+				// FIXME: create deselect links for selected facet entry
 				if (facetConfig.isMultiSelect()) {
 					fillFacet(facet, facetNameBucket, facetConfig, linkBuilder);
 				}

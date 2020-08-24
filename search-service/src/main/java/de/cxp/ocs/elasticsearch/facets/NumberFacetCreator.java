@@ -111,7 +111,7 @@ public class NumberFacetCreator implements NestedFacetCreator {
 					facet.addEntry(
 							facetEntryLabel,
 							docCount,
-							linkBuilder.withFilterAsLink(facetConfig, facetEntryLabel));
+							linkBuilder.withoutFilterAsLink(facetConfig, facetEntryLabel));
 					facet.setAbsoluteFacetCoverage(docCount);
 				}
 				else {
@@ -169,9 +169,12 @@ public class NumberFacetCreator implements NestedFacetCreator {
 			if (currentVariantCount >= variantCountPerBucket) {
 				currentValueInterval.upperBound = (Double) valueBucket.getKey() + interval - 0.01;
 				facet.addEntry(
+						// TODO: differentiate between label and filter value
 						currentValueInterval.getEntry(),
 						currentDocumentCount,
-						linkBuilder.withFilterAsLink(facetConfig, currentValueInterval.getEntry()));
+						// FIXME: use parameter-builder or similar to build filter values
+						// FIXME: mark selected elements and create deselect link!
+						linkBuilder.withFilterAsLink(facetConfig, currentValueInterval.lowerBound+","+currentValueInterval.upperBound));
 
 				currentDocumentCount = 0;
 				currentVariantCount = 0;

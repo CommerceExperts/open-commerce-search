@@ -7,6 +7,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
@@ -86,8 +87,46 @@ public class SearchQueryBuilder {
 	}
 
 	// TODO test that shit
+	public String withoutFilterAsLink(FacetConfig facetConfig, String filterValue) {
+		if (searchQueryLink.toString().matches(".*[?&]" + Pattern.quote(facetConfig.getSourceField()) + "=[^&].*?"+Pattern.quote(filterValue)+".*")) {
+			URIBuilder linkBuilder = new URIBuilder(searchQueryLink);
+			if (facetConfig.isMultiSelect()) {
+				Optional<String[]> otherValues = linkBuilder.getQueryParams().stream()
+						.filter(param -> facetConfig.getSourceField().equals(param.getName()))
+						.findFirst()
+						.map(NameValuePair::getValue)
+						.map(value -> StringUtils.split(value, VALUE_DELIMITER));
+				
+				if (otherValues.isPresent() && otherValues.get().length > 1) {
+					StringBuilder joinAllButValue = new StringBuilder();
+					for(String value : otherValues.get()) {
+						if (joinAllButValue.length() > 0) joinAllButValue.append(',');
+						joinAllButValue.append(value);
+					}
+					linkBuilder.setParameter(facetConfig.getSourceField(), joinAllButValue.toString());
+				} else {
+					linkBuilder.setParameter(facetConfig.getSourceField(), null);
+				}
+			}
+			else {
+				linkBuilder.setParameter(facetConfig.getSourceField(), null);
+			}
+			try {
+				return linkBuilder.build().getQuery().toString();
+			}
+			catch (URISyntaxException e) {
+				throw new IllegalArgumentException("parameter caused URISyntaxException: " + facetConfig.getSourceField() + "=" + filterValue, e);
+			}
+		}
+		else {
+			return searchQueryLink.getQuery();
+
+		}
+	}
+
+	// TODO test that shit
 	public String withFilterAsLink(FacetConfig facetConfig, String filterValue) {
-		if (searchQueryLink.toString().matches("[?&]" + facetConfig.getSourceField() + "=")) {
+		if (searchQueryLink.toString().matches(".*[?&]" + Pattern.quote(facetConfig.getSourceField()) + "=.*")) {
 			URIBuilder linkBuilder = new URIBuilder(searchQueryLink);
 			if (facetConfig.isMultiSelect()) {
 				Optional<String> otherValues = linkBuilder.getQueryParams().stream()
@@ -104,7 +143,7 @@ public class SearchQueryBuilder {
 				linkBuilder.setParameter(facetConfig.getSourceField(), filterValue);
 			}
 			try {
-				return linkBuilder.build().getQuery().toString();
+				return linkBuilder.build().getQuery();
 			}
 			catch (URISyntaxException e) {
 				throw new IllegalArgumentException("parameter caused URISyntaxException: " + facetConfig.getSourceField() + "=" + filterValue, e);
