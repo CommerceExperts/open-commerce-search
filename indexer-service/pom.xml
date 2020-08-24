@@ -11,7 +11,7 @@
 	</parent>
 
 	<artifactId>indexer-service</artifactId>
-	<version>0.1.4</version>
+	<version>0.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	
 <!-- Import dependency management from Spring Boot -->
