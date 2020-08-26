@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -159,12 +160,30 @@ public class SearchController implements SearchService {
 		return properties.getIndexConfig().getOrDefault(indexName, properties.getDefaultIndexConfig());
 	}
 
+	@ExceptionHandler({ ElasticsearchStatusException.class })
+	public ResponseEntity<ExceptionResponse> handleElasticsearchExceptions(ElasticsearchStatusException e) {
+		if (e.getMessage().contains("type=index_not_found_exception")) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND)
+					.body(ExceptionResponse.builder()
+							.message(e.getMessage())
+							.code(HttpStatus.NOT_FOUND.value())
+							.build());
+		}
+
+		return handleInternalErrors(e);
+	}
+
 	@ExceptionHandler({ ExecutionException.class, IOException.class, RuntimeException.class, ClassNotFoundException.class })
-	public ResponseEntity<String> handleInternalErrors(Exception e) {
+	public ResponseEntity<ExceptionResponse> handleInternalErrors(Exception e) {
 		final String errorId = UUID.randomUUID().toString();
 		log.error("Internal Server Error " + errorId, e);
-		return new ResponseEntity<>("Something went wrong. Error reference: " + errorId,
-				HttpStatus.INTERNAL_SERVER_ERROR);
+		
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+				.body(ExceptionResponse.builder()
+						.message("Internal Error")
+						.code(HttpStatus.INTERNAL_SERVER_ERROR.value())
+						.errorId(errorId)
+						.build());
 	}
 
 }
