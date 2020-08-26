@@ -87,57 +87,72 @@ public class SearchController implements SearchService {
 
 		return result;
 	}
-	
+
 	@GetMapping("/tenants")
 	@Override
 	public String[] getTenants() {
 		Set<String> tenants = new HashSet<>();
 		try {
 			esBuilder.getRestHLClient().indices()
-			.getAlias(new GetAliasesRequest(), RequestOptions.DEFAULT)
-			.getAliases()
-			.entrySet()
-			.stream()
-			.filter(aliasEntry -> !aliasEntry.getKey().startsWith(".") && !aliasEntry.getValue().isEmpty())
-			.map(aliasEntry -> aliasEntry.getValue().iterator().next().alias())
-			.forEach(tenants::add);
+					.getAlias(new GetAliasesRequest(), RequestOptions.DEFAULT)
+					.getAliases()
+					.entrySet()
+					.stream()
+					.filter(aliasEntry -> !aliasEntry.getKey().startsWith(".") && !aliasEntry.getValue().isEmpty())
+					.map(aliasEntry -> aliasEntry.getValue().iterator().next().alias())
+					.forEach(tenants::add);
 		}
 		catch (IOException e) {
 			log.warn("could not retrieve ES indices", e);
 		}
 		return properties.getTenantConfig().keySet().toArray(new String[0]);
 	}
-	
+
 	private SearchConfiguration getConfigForTenant(String tenant) {
-		SearchConfiguration configCopy = new SearchConfiguration();
+		SearchConfiguration mergedConfig = new SearchConfiguration();
 
-		TenantSearchConfiguration tenantSearchConf = getTenantSearchConfiguration(tenant);
-		if (tenantSearchConf.getIndexName() == null) {
-			tenantSearchConf.setIndexName(tenant);
+		TenantSearchConfiguration defaultConfig = properties.getDefaultTenantConfig();
+		TenantSearchConfiguration specificConfig = properties.getTenantConfig().get(tenant);
+
+		if (specificConfig != null && specificConfig.getIndexName() != null) {
+			mergedConfig.setIndexName(specificConfig.getIndexName());
+		}
+		else if (defaultConfig.getIndexName() != null) {
+			mergedConfig.setIndexName(defaultConfig.getIndexName());
+		}
+		else {
+			mergedConfig.setIndexName(tenant);
 		}
 
-		IndexConfiguration indexConfig = getIndexConfiguration(tenantSearchConf.getIndexName());
+		IndexConfiguration indexConfig = getIndexConfiguration(mergedConfig.getIndexName());
+		mergedConfig.setFieldConfiguration(indexConfig.getFieldConfiguration());
 
-		configCopy.setIndexName(tenantSearchConf.getIndexName());
-		configCopy.setFacetConfiguration(tenantSearchConf.getFacetConfiguration());
-		configCopy.setFieldConfiguration(indexConfig.getFieldConfiguration());
-		configCopy.getQueryConfigs().putAll(tenantSearchConf.getQueryConfiguration());
-		configCopy.setScoring(tenantSearchConf.getScoringConfiguration());
-		return configCopy;
-	}
-
-	private TenantSearchConfiguration getTenantSearchConfiguration(String tenant) {
-		TenantSearchConfiguration defaultTenantConfig = properties.getDefaultTenantConfig();
-		TenantSearchConfiguration tenantConfig = properties.getTenantConfig().getOrDefault(tenant, defaultTenantConfig);
-		if (tenantConfig != defaultTenantConfig) {
-			if (tenantConfig.getFacetConfiguration().getFacets().isEmpty())
-				tenantConfig.setFacetConfiguration(defaultTenantConfig.getFacetConfiguration());
-			if (tenantConfig.getQueryConfiguration().isEmpty())
-				tenantConfig.getQueryConfiguration().putAll(defaultTenantConfig.getQueryConfiguration());
-			if (tenantConfig.getScoringConfiguration().getScoreFunctions().isEmpty())
-				tenantConfig.setScoringConfiguration(defaultTenantConfig.getScoringConfiguration());
+		if (specificConfig != null && !specificConfig.getFacetConfiguration().getFacets().isEmpty()) {
+			// only set specific facet config, if a specific config exists and
+			// is not empty
+			mergedConfig.setFacetConfiguration(specificConfig.getFacetConfiguration());
 		}
-		return tenantConfig;
+		else if (specificConfig == null || !specificConfig.isDisableFacets()) {
+			// only set default facet config, if specific config does not exist
+			// or if disableFacets is not activated/true
+			mergedConfig.setFacetConfiguration(defaultConfig.getFacetConfiguration());
+		}
+
+		if (specificConfig != null && !specificConfig.getQueryConfiguration().isEmpty()) {
+			mergedConfig.getQueryConfigs().putAll(specificConfig.getQueryConfiguration());
+		}
+		else if (specificConfig == null || !specificConfig.isDisableQueryConfig()) {
+			mergedConfig.getQueryConfigs().putAll(defaultConfig.getQueryConfiguration());
+		}
+
+		if (specificConfig != null && !specificConfig.getScoringConfiguration().getScoreFunctions().isEmpty()) {
+			mergedConfig.setScoring(specificConfig.getScoringConfiguration());
+		}
+		else if (specificConfig == null || !specificConfig.isDisableScorings()) {
+			mergedConfig.setScoring(defaultConfig.getScoringConfiguration());
+		}
+
+		return mergedConfig;
 	}
 
 	private IndexConfiguration getIndexConfiguration(String indexName) {

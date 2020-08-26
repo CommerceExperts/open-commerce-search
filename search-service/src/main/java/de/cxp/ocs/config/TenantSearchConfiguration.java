@@ -15,6 +15,23 @@ public class TenantSearchConfiguration {
 	@NestedConfigurationProperty
 	private String indexName;
 
+	/**
+	 * can be used by the tenant specific configuration to disable facet
+	 * creation.
+	 */
+	boolean disableFacets = false;
+
+	/**
+	 * can be used by the tenant specific configuration to disable scoring.
+	 */
+	boolean disableScorings = false;
+
+	/**
+	 * can be used by the tenant specific configuration to disable conditional
+	 * queries and only use the default query.
+	 */
+	boolean disableQueryConfig = false;
+
 	@NestedConfigurationProperty
 	private FacetConfiguration facetConfiguration = new FacetConfiguration();
 
