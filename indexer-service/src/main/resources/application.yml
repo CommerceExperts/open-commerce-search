@@ -38,6 +38,7 @@ ocs:
           source-names:
             - MasterArticleNumber
           usage:
+            - search
             - result
           field-level: master
         artNr:
@@ -46,6 +47,7 @@ ocs:
           source-names:
             - ArticleNumber
           usage:
+            - search
             - result
           field-level: variant
         ean:
@@ -94,6 +96,7 @@ ocs:
             - CategoryPath
           usage:
             - result
+            - search
             - facet
         shortDescription:
           name: shortDescription
