@@ -127,7 +127,9 @@ public class SearchController implements SearchService {
 		catch (IOException e) {
 			log.warn("could not retrieve ES indices", e);
 		}
-		return properties.getTenantConfig().keySet().toArray(new String[0]);
+		tenants.addAll(searchConfigs.keySet());
+		tenants.addAll(properties.getTenantConfig().keySet());
+		return tenants.toArray(new String[tenants.size()]);
 	}
 
 	private SearchConfiguration getConfigForTenant(String tenant) {
