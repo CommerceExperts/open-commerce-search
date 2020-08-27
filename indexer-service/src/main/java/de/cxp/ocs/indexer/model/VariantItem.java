@@ -2,6 +2,7 @@ package de.cxp.ocs.indexer.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import de.cxp.ocs.config.Field;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -20,5 +21,12 @@ public class VariantItem extends DataItem {
 	@JsonIgnore
 	public MasterItem getMaster() {
 		return master;
+	}
+
+	@Override
+	public void setValue(Field field, Object value) {
+		if (field.isVariantLevel()) {
+			super.setValue(field, value);
+		}
 	}
 }

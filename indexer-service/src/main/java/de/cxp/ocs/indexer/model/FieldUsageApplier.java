@@ -11,16 +11,14 @@ import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.util.MinMaxSet;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Enum describing the usage of an field that will be indexed.
  */
-@Slf4j
 public class FieldUsageApplier {
 
 	public static void handleSearchField(final DataItem record, final Field field, Object value) {
-		if (value == null || value instanceof String && ((String) value).isEmpty()) {
+		if (isEmpty(value)) {
 			return;
 		}
 
@@ -60,7 +58,7 @@ public class FieldUsageApplier {
 	};
 
 	public static void handleSortField(final DataItem record, final Field field, Object value) {
-		if (value == null || value instanceof String && ((String) value).isEmpty()) {
+		if (isEmpty(value)) {
 			return;
 		}
 
@@ -79,7 +77,14 @@ public class FieldUsageApplier {
 						value));
 			}
 		}
-	};
+	}
+
+	private static boolean isEmpty(Object value) {
+		return value == null
+				|| value instanceof String && ((String) value).isEmpty()
+				|| value instanceof Collection && ((Collection<?>) value).isEmpty()
+				|| value.getClass().isArray() && ((Object[]) value).length == 0;
+	}
 
 	private static Object ensureCorrectValueType(final Field field, final Object value) {
 		Object parsedValue = value;
@@ -98,15 +103,18 @@ public class FieldUsageApplier {
 	}
 
 	/**
-	 * If value is instance of {@link Number}, it will be indexed as a
-	 * numeric facet.
-	 * Otherwise it will be indexed as String, even if the string contains a
-	 * number.
+	 * <p>
+	 * If the field is set to number type, the value will be indexed as a
+	 * numeric facet. Otherwise it will be indexed as String, even if the string
+	 * contains a number.
+	 * </p>
+	 * <p>
+	 * For fields that should be indexed on both levels, facets will only be
+	 * indexed on variant level to avoid conflicts during facet creation.
+	 * </p>
 	 */
 	public static void handleFacetField(final DataItem record, final Field field, Object value) {
-		if (value == null || value instanceof String && ((String) value).isEmpty() || value instanceof Collection
-				&& ((Collection<?>) value).isEmpty() || value.getClass().isArray()
-						&& ((Object[]) value).length == 0) {
+		if (isEmpty(value) || field.isBothLevel() && record instanceof MasterItem) {
 			return;
 		}
 
@@ -145,7 +153,7 @@ public class FieldUsageApplier {
 			numValue = Optional.of((Number) value);
 		}
 		else if (value instanceof List<?>) {
-			for (Object v : (List<?>)value) {
+			for (Object v : (List<?>) value) {
 				handleScoreField(record, field, v);
 			}
 			return;

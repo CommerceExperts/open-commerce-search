@@ -54,6 +54,5 @@ public abstract class DataItem {
 		for (final FieldUsage fu : field.getUsage()) {
 			FieldUsageApplier.apply(fu, this, field, value);
 		}
-
 	}
 }

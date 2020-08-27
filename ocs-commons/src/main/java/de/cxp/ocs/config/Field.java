@@ -57,7 +57,18 @@ public class Field {
 	public boolean isMasterLevel() {
 		return FieldLevel.master.equals(fieldLevel) || FieldLevel.both.equals(fieldLevel);
 	}
-
+	
+	/**
+	 * Checks weather the field should be indexed on both - master and variant - level.
+	 *
+	 * @return <code>true</code> if the field is on both level,
+	 *         <code>false</code> otherwise.
+	 */
+	@JsonIgnore
+	public boolean isBothLevel() {
+		return FieldLevel.both.equals(fieldLevel);
+	}
+	
 	/**
 	 * Sets the names of the csv header column which should be used as the
 	 * source of the fields. Multiple names are supported to build combi-fields.
@@ -101,4 +112,5 @@ public class Field {
 	private String valueDelimiter = null;
 
 	private String searchContentPrefix = null;
+
 }
