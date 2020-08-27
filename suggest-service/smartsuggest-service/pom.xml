@@ -76,11 +76,8 @@
 						<artifactId>maven-dependency-plugin</artifactId>
 					</plugin>
 					<plugin>
-						<groupId>com.spotify</groupId>
-						<artifactId>dockerfile-maven-plugin</artifactId>
-						<configuration>
-							<skip>false</skip>
-						</configuration>
+						<groupId>com.google.cloud.tools</groupId>
+						<artifactId>jib-maven-plugin</artifactId>
 					</plugin>
 				</plugins>
 			</build>

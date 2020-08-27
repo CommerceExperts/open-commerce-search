@@ -234,34 +234,38 @@
 				</plugin>
 
 				<plugin>
-					<groupId>com.spotify</groupId>
-					<artifactId>dockerfile-maven-plugin</artifactId>
-					<version>${dockerfile-maven-plugin.version}</version>
+					<groupId>com.google.cloud.tools</groupId>
+					<artifactId>jib-maven-plugin</artifactId>
+					<version>2.5.2</version>
+					<configuration>
+						<from>
+							<image>openjdk:8-jdk-alpine</image>
+						</from>
+						<to>
+							<image>${docker.repository}/${docker.prefix}${project.artifactId}:${project.version}</image>
+							<tags>
+								<tag>latest</tag>
+							</tags>
+						</to>
+						<container>
+							<jvmFlags>
+								<jvmFlag>-server</jvmFlag>
+							</jvmFlags>
+							<args>
+								<arg>-Djava.security.egd=file:/dev/./urandom</arg>
+								<arg>-Dspring.profiles.active=docker</arg>
+							</args>
+						</container>
+					</configuration>
 					<executions>
 						<execution>
-							<id>default</id>
+							<id>build-and-push-docker-image</id>
+							<phase>package</phase>
 							<goals>
 								<goal>build</goal>
 							</goals>
 						</execution>
-						<execution>
-							<id>push-image</id>
-							<goals>
-								<goal>push</goal>
-							</goals>
-							<phase>deploy</phase>
-						</execution>
 					</executions>
-					<configuration>
-						<repository>${docker.repository}/${docker.prefix}${project.artifactId}</repository>
-
-						<!-- <tag>${git.commit.id.abbrev}-${git.branch}</tag> -->
-						<tag>${project.version}</tag>
-						<useMavenSettingsForAuth>true</useMavenSettingsForAuth>
-						<buildArgs>
-							<JAR_FILE>${project.build.finalName}.jar</JAR_FILE>
-						</buildArgs>
-					</configuration>
 				</plugin>
 			</plugins>
 		</pluginManagement>
