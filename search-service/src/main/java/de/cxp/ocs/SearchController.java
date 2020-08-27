@@ -68,9 +68,20 @@ public class SearchController implements SearchService {
 			.maximumSize(10)
 			.build();
 
+	private final Cache<String, Exception> brokenTenantsCache = CacheBuilder.newBuilder()
+			.expireAfterWrite(5, TimeUnit.MINUTES)
+			.build();
+
 	@GetMapping("/search/{tenant}")
 	@Override
 	public SearchResult search(@PathVariable("tenant") String tenant, SearchQuery searchQuery, @RequestParam Map<String, String> filters) throws Exception {
+		// deny access to tenants that were considered invalid before
+		// this is done until the latestTenantsCache invalidates that
+		Exception latestTenantEx = brokenTenantsCache.getIfPresent(tenant);
+		if (latestTenantEx != null) {
+			throw latestTenantEx;
+		}
+
 		SearchConfiguration searchConfig = searchConfigs.computeIfAbsent(tenant, this::getConfigForTenant);
 		log.debug("Using index {} for tenant {}", searchConfig.getIndexName(), tenant);
 
@@ -83,10 +94,20 @@ public class SearchController implements SearchService {
 		}
 		parameters.filters = parseFilters(filters, searchConfig.getFieldConfiguration().getFields());
 
-		final Searcher searcher = searchClientCache.get(tenant, () -> new Searcher(esBuilder.getRestHLClient(), searchConfig, registry));
-		SearchResult result = searcher.find(parameters);
-
-		return result;
+		try {
+			final Searcher searcher = searchClientCache.get(tenant, () -> new Searcher(esBuilder.getRestHLClient(), searchConfig, registry));
+			return searcher.find(parameters);
+		}
+		catch (ElasticsearchStatusException esx) {
+			if (esx.getMessage().contains("type=index_not_found_exception")) {
+				// don't keep objects for invalid tenants
+				searchConfigs.remove(tenant);
+				searchClientCache.invalidate(tenant);
+				// and deny further requests for the next N minutes
+				brokenTenantsCache.put(tenant, esx);
+			}
+			throw esx;
+		}
 	}
 
 	@GetMapping("/tenants")
