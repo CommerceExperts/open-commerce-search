@@ -1,0 +1,55 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                      http://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <localRepository />
+  <interactiveMode />
+  <usePluginRegistry />
+  <offline />
+  <pluginGroups />
+  <servers>
+    <server>
+      <id>central</id>
+      <username>${jfrogUser}</username>
+      <password>${jfrogPassword}</password>
+    </server>
+    <server>
+      <id>sit-artifactory</id>
+      <username>${jfrogUser}</username>
+      <password>${jfrogPassword}</password>
+    </server>
+  </servers>
+  <proxies />
+  <profiles>
+    <profile>
+      <id>sit-artifactory</id>
+      <repositories>
+        <repository>
+          <id>central</id>
+          <url>https://schwarzit.jfrog.io/schwarzit/xx-sit-odj-search-maven-virtual</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <id>central</id>
+          <url>https://schwarzit.jfrog.io/schwarzit/xx-sit-odj-search-maven-virtual</url>
+          <releases>
+            <enabled>true</enabled>
+          </releases>
+          <snapshots>
+            <enabled>true</enabled>
+          </snapshots>
+        </pluginRepository>
+      </pluginRepositories>
+    </profile>
+  </profiles>
+  <activeProfiles>
+    <activeProfile>sit-artifactory</activeProfile>
+  </activeProfiles>
+</settings>
