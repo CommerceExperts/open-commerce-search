@@ -15,7 +15,6 @@ import de.cxp.ocs.client.models.ResultHit;
 import de.cxp.ocs.client.models.SearchResultSlice;
 import de.cxp.ocs.client.models.Sorting;
 import de.cxp.ocs.client.models.Sorting.SortOrderEnum;
-import lombok.RequiredArgsConstructor;
 import mindshift.search.connector.api.v2.models.Breadcrumb;
 import mindshift.search.connector.api.v2.models.Facet;
 import mindshift.search.connector.api.v2.models.Facet.SelectorEnum;
@@ -30,7 +29,6 @@ import mindshift.search.connector.api.v2.models.TextFacetValue;
 /**
  * Maps the OCS SearchResult to the MindShift SearchResult object.
  */
-@RequiredArgsConstructor
 public class SearchResultMapper {
 
 	private static final String ENGINE_NAME = "ocs";
@@ -43,6 +41,11 @@ public class SearchResultMapper {
 	
 	final SearchRequest request;
 	
+	public SearchResultMapper(de.cxp.ocs.client.models.SearchResult ocsResult, SearchRequest request) {
+		this.ocsResult = ocsResult;
+		this.request = request;
+	}
+
 	public SearchResult toMindshiftResult() {
 		SearchResult searchResult = new SearchResult();
 		searchResult.setEngine(ENGINE_NAME);

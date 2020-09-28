@@ -4,20 +4,25 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.cxp.ocs.client.StringUtil;
 import de.cxp.ocs.client.models.SearchQuery;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import mindshift.search.connector.api.v2.models.SearchRequest;
 
 /**
  * Maps the Mindshift SearchRequest object to OCS SearchQuery + Filters.
  */
-@Slf4j
-@RequiredArgsConstructor
 public class SearchQueryMapper {
 
+	final static Logger log = LoggerFactory.getLogger(SearchQueryMapper.class);
+
 	final SearchRequest request;
+
+	public SearchQueryMapper(SearchRequest request) {
+		this.request = request;
+	}
 
 	public SearchQuery getOcsQuery() {
 		SearchQuery ocsQuery = new SearchQuery();

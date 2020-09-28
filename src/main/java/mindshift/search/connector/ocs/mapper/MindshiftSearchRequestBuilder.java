@@ -5,13 +5,15 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 
-import lombok.RequiredArgsConstructor;
 import mindshift.search.connector.api.v2.models.SearchRequest;
 
-@RequiredArgsConstructor
 class MindshiftSearchRequestBuilder {
 
 	private final SearchRequest baseRequest;
+
+	public MindshiftSearchRequestBuilder(SearchRequest baseRequest) {
+		this.baseRequest = baseRequest;
+	}
 
 	public SearchRequest withSort(String sort) {
 		SearchRequest clone = cloneRequest(baseRequest);
