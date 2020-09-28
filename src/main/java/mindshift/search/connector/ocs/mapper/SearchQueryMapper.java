@@ -16,16 +16,26 @@ import mindshift.search.connector.api.v2.models.SearchRequest;
  */
 public class SearchQueryMapper {
 
-	final static Logger log = LoggerFactory.getLogger(SearchQueryMapper.class);
+	private final static Logger LOG = LoggerFactory.getLogger(SearchQueryMapper.class);
 
-	final SearchRequest request;
+	private final SearchRequest request;
 
-	public SearchQueryMapper(SearchRequest request) {
+	/**
+	 * Constructor of SearchQueryMapper.
+	 * 
+	 * @param request
+	 */
+	public SearchQueryMapper(final SearchRequest request) {
 		this.request = request;
 	}
 
+	/**
+	 * Builds and returns OCS SearchQuery.
+	 * 
+	 * @return
+	 */
 	public SearchQuery getOcsQuery() {
-		SearchQuery ocsQuery = new SearchQuery();
+		final SearchQuery ocsQuery = new SearchQuery();
 		ocsQuery.setQ(request.getQ());
 		ocsQuery.setLimit(request.getFetchsize());
 		ocsQuery.setOffset(request.getOffset().intValue());
@@ -33,9 +43,14 @@ public class SearchQueryMapper {
 		return ocsQuery;
 	}
 
+	/**
+	 * Builds filter hash map for OCS.
+	 * 
+	 * @return
+	 */
 	public Map<String, String> getOcsFilters() {
-		Map<String, String> filters = new HashMap<>();
-		for (Entry<String, Object> reqFilterEntry : request.getFilters().entrySet()) {
+		final Map<String, String> filters = new HashMap<>();
+		for (final Entry<String, Object> reqFilterEntry : request.getFilters().entrySet()) {
 			if (reqFilterEntry.getValue() instanceof String) {
 				filters.put(reqFilterEntry.getKey(), (String) reqFilterEntry.getValue());
 			}
@@ -43,7 +58,7 @@ public class SearchQueryMapper {
 				filters.put(reqFilterEntry.getKey(), StringUtil.join((String[]) reqFilterEntry.getValue(), ","));
 			}
 			else {
-				log.error("can't handle filter '{}' with value of type '{}'", reqFilterEntry.getKey(), reqFilterEntry.getValue().getClass());
+				LOG.error("can't handle filter '{}' with value of type '{}'", reqFilterEntry.getKey(), reqFilterEntry.getValue().getClass());
 			}
 		}
 		return filters;
@@ -55,16 +70,18 @@ public class SearchQueryMapper {
 	 * @param sort
 	 * @return
 	 */
-	private String translateSortParam(String sort) {
-		int splitIndex = sort.lastIndexOf('-');
+	private String translateSortParam(final String sort) {
+		final int splitIndex = sort.lastIndexOf('-');
+		final String translatedSort;
 		if (splitIndex == -1) {
 			// sort only contains field name, which is the same behavior in OCS
-			return sort;
+			translatedSort = sort;
 		}
 		else {
-			String order = sort.substring(splitIndex + 1);
-			return (order.equals("desc") ? "-" : "") + sort.substring(0, splitIndex);
+			final String order = sort.substring(splitIndex + 1);
+			translatedSort = ("desc".equals(order) ? "-" : "") + sort.substring(0, splitIndex);
 		}
+		return translatedSort;
 	}
 
 }

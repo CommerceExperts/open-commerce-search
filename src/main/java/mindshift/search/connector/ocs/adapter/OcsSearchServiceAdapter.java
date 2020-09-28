@@ -22,11 +22,15 @@ public class OcsSearchServiceAdapter {
 
 	final Logger log = LoggerFactory.getLogger(OcsSearchServiceAdapter.class);
 
-	private final ApiClient	ocsClient;
 	private final SearchApi	searchService;
 
-	public OcsSearchServiceAdapter(OcsConnectorConfig config) {
-		ocsClient = new ApiClient();
+	/**
+	 * Constructor of the OCS Adapter.
+	 * 
+	 * @param config
+	 */
+	public OcsSearchServiceAdapter(final OcsConnectorConfig config) {
+		final ApiClient ocsClient = new ApiClient();
 		ocsClient.setBasePath(config.getSearchEndpoint());
 		ocsClient.setUsername(config.getAuthUser());
 		ocsClient.setPassword(config.getAuthPassword());

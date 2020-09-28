@@ -38,16 +38,27 @@ public class SearchResultMapper {
 	private static final String ADAPTER_VERSION = "1.0"; // ?
 
 	final de.cxp.ocs.client.models.SearchResult ocsResult;
-	
+
 	final SearchRequest request;
-	
-	public SearchResultMapper(de.cxp.ocs.client.models.SearchResult ocsResult, SearchRequest request) {
+
+	/**
+	 * Constructor of the SearchResultMapper.
+	 * 
+	 * @param ocsResult
+	 * @param request
+	 */
+	public SearchResultMapper(final de.cxp.ocs.client.models.SearchResult ocsResult, final SearchRequest request) {
 		this.ocsResult = ocsResult;
 		this.request = request;
 	}
 
+	/**
+	 * Build and return mindshift compliant result.
+	 * 
+	 * @return
+	 */
 	public SearchResult toMindshiftResult() {
-		SearchResult searchResult = new SearchResult();
+		final SearchResult searchResult = new SearchResult();
 		searchResult.setEngine(ENGINE_NAME);
 		searchResult.setMaxfetchsize(MAX_FETCH_SIZE);
 		searchResult.setVersion(ADAPTER_VERSION);
@@ -58,29 +69,28 @@ public class SearchResultMapper {
 		searchResult.setOffset(request.getOffset());
 		searchResult.setSort(request.getSort());
 		searchResult.setQ(request.getQ());
-		
-		MindshiftSearchRequestBuilder requestBuilder = new MindshiftSearchRequestBuilder(request);
-		
+
+		final MindshiftSearchRequestBuilder requestBuilder = new MindshiftSearchRequestBuilder(request);
 		searchResult.setBreadcrumbs(extractBreadCrumbs(request));
 		searchResult.setFacets(extractFacets(ocsResult, requestBuilder));
 		searchResult.setSorts(extractSorts(ocsResult, requestBuilder));
 		searchResult.setxPayload(ocsResult.getMeta());
 
-		List<SearchResultSlice> resultSlices = ocsResult.getSlices();
+		final List<SearchResultSlice> resultSlices = ocsResult.getSlices();
 		searchResult.setItems(extractResultItems(resultSlices));
 		searchResult.setNumFound(resultSlices.stream().collect(Collectors.summarizingLong(SearchResultSlice::getMatchCount)).getSum());
-		
+
 		return searchResult;
 	}
 
-	private List<Sort> extractSorts(de.cxp.ocs.client.models.SearchResult ocsResult, MindshiftSearchRequestBuilder requestBuilder) {
-		List<Sorting> sortOptions = ocsResult.getSortOptions();
+	private List<Sort> extractSorts(final de.cxp.ocs.client.models.SearchResult ocsResult, final MindshiftSearchRequestBuilder requestBuilder) {
+		final List<Sorting> sortOptions = ocsResult.getSortOptions();
 		if (sortOptions == null) return Collections.emptyList();
-		
-		List<Sort> sorts = new ArrayList<>(sortOptions.size());
+
+		final List<Sort> sorts = new ArrayList<>(sortOptions.size());
 
 		for (Sorting sortOption : sortOptions) {
-			Sort s = new Sort();
+			final Sort s = new Sort();
 			s.setName(sortOption.getField());
 
 			if (sortOption.getSortOrder().equals(SortOrderEnum.DESC)) {
@@ -99,10 +109,10 @@ public class SearchResultMapper {
 	}
 
 	private List<ResultItem> extractResultItems(List<SearchResultSlice> resultSlices) {
-		List<ResultItem> resultItems = new ArrayList<>();
-		for (SearchResultSlice slice : resultSlices) {
+		final List<ResultItem> resultItems = new ArrayList<>();
+		for (final SearchResultSlice slice : resultSlices) {
 
-			for (ResultHit hit : slice.getHits()) {
+			for (final ResultHit hit : slice.getHits()) {
 				ResultItem resultItem = new ResultItem();
 				resultItem.setType("product");
 				resultItem.setCode(hit.getDocument().getId());
@@ -118,8 +128,8 @@ public class SearchResultMapper {
 		return resultItems;
 	}
 
-	private List<Facet> extractFacets(de.cxp.ocs.client.models.SearchResult ocsResult, MindshiftSearchRequestBuilder requestBuilder) {
-		List<Facet> facets = new ArrayList<>();
+	private List<Facet> extractFacets(final de.cxp.ocs.client.models.SearchResult ocsResult, final MindshiftSearchRequestBuilder requestBuilder) {
+		final List<Facet> facets = new ArrayList<>();
 
 		List<de.cxp.ocs.client.models.Facet> ocsFacets = null;
 		for (SearchResultSlice slice : ocsResult.getSlices()) {
@@ -133,24 +143,24 @@ public class SearchResultMapper {
 
 		if (ocsFacets != null) {
 			for (de.cxp.ocs.client.models.Facet ocsFacet : ocsFacets) {
-				String facetType = ocsFacet.getMeta().getOrDefault("type", "string").toString();
-				boolean multiSelect = (boolean) ocsFacet.getMeta().getOrDefault("multiSelect", false);
+				final String facetType = ocsFacet.getMeta().getOrDefault("type", "string").toString();
+				final boolean multiSelect = (boolean) ocsFacet.getMeta().getOrDefault("multiSelect", false);
 
-				Facet facet;
+				final Facet facet;
 				switch (facetType) {
 					case "number":
-						RangeFacet rangeFacet = new RangeFacet();
+						final RangeFacet rangeFacet = new RangeFacet();
 						// XXX: Range facet not yet supported by OCS
 						facet = rangeFacet;
 						break;
-						// TODO there are some cases, where single numeric
-						// values are the best suitable facet type
-						// case "special-number-terms":
+					// TODO there are some cases, where single numeric
+					// values are the best suitable facet type
+					// case "special-number-terms":
 					case "category":
 					case "string":
 					default:
-						TextFacet textFacet = new TextFacet();
-						List<TextFacetValue> textFacetValues = extractTextValues(ocsFacet.getEntries(), ocsFacet.getFieldName(), requestBuilder);
+						final TextFacet textFacet = new TextFacet();
+						final List<TextFacetValue> textFacetValues = extractTextValues(ocsFacet.getEntries(), ocsFacet.getFieldName(), requestBuilder);
 						textFacet.setTopvalues(textFacetValues.stream().collect(
 								Comparators.greatest(5,
 										Comparator.comparingLong(TextFacetValue::getCount))));
@@ -171,9 +181,9 @@ public class SearchResultMapper {
 		return facets;
 	}
 
-	private List<TextFacetValue> extractTextValues(List<FacetEntry> entries, String facetKey, MindshiftSearchRequestBuilder requestBuilder) {
-		List<TextFacetValue> textFacet = new ArrayList<>(entries.size());
-		for (FacetEntry entry : entries) {
+	private List<TextFacetValue> extractTextValues(final List<FacetEntry> entries, String facetKey, final MindshiftSearchRequestBuilder requestBuilder) {
+		final List<TextFacetValue> textFacet = new ArrayList<>(entries.size());
+		for (final FacetEntry entry : entries) {
 			TextFacetValue textFacetValue = new TextFacetValue();
 			textFacetValue.setCode(entry.getKey());
 			textFacetValue.setCount(entry.getDocCount());
@@ -181,38 +191,39 @@ public class SearchResultMapper {
 			textFacetValue.setName(entry.getKey());
 			textFacetValue.setSelected(requestBuilder.hasFilter(facetKey, entry.getKey()));
 			textFacetValue.setState(requestBuilder.withFilter(facetKey, entry.getKey()));
-			
+
 			if (entry.getType().equals("hierarchical")) {
-				List<TextFacetValue> children = extractTextValues(((HierarchialFacetEntry)entry).getChildren(), facetKey, requestBuilder);
+				final List<TextFacetValue> children = extractTextValues(((HierarchialFacetEntry) entry).getChildren(), facetKey, requestBuilder);
 				textFacetValue.setChildren(children);
 			}
-			
+
 			textFacet.add(textFacetValue);
 		}
 		return textFacet;
 	}
 
-	private List<Breadcrumb> extractBreadCrumbs(SearchRequest request) {
-		List<Breadcrumb> breadCrumbs = new ArrayList<>();
-		
-		SearchRequest state = new SearchRequest();
+	private List<Breadcrumb> extractBreadCrumbs(final SearchRequest request) {
+		final List<Breadcrumb> breadCrumbs = new ArrayList<>();
+
+		final SearchRequest state = new SearchRequest();
 		state.setQ(request.getQ());
+
 		Breadcrumb crumb = new Breadcrumb();
 		crumb.setCode("query");
 		crumb.setLabel(request.getQ());
 		crumb.setState(MindshiftSearchRequestBuilder.cloneRequest(state));
 		breadCrumbs.add(crumb);
-		
-		for(Entry<String, Object> filterEntry : request.getFilters().entrySet()) {
+
+		for (final Entry<String, Object> filterEntry : request.getFilters().entrySet()) {
 			state.putFiltersItem(filterEntry.getKey(), filterEntry.getValue());
-			
+
 			crumb = new Breadcrumb();
 			crumb.setCode(filterEntry.getKey());
 			crumb.setLabel(filterEntry.getValue().toString());
 			crumb.setState(MindshiftSearchRequestBuilder.cloneRequest(state));
 			breadCrumbs.add(crumb);
 		}
-		
+
 		return breadCrumbs;
 	}
 }
