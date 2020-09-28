@@ -1,5 +1,7 @@
 package mindshift.search.connector.ocs.connector;
 
+import javax.security.auth.Subject;
+
 import mindshift.search.connector.api.v2.ConnectorException;
 import mindshift.search.connector.api.v2.ConnectorSkeleton;
 import mindshift.search.connector.api.v2.models.CategorySearchRequest;
@@ -32,18 +34,18 @@ public class OpenCommerceSearchConnector extends ConnectorSkeleton<OpenCommerceS
     }
 
     @Override
-    public SearchResult category(final CategorySearchRequest categoryRequest)
+	public SearchResult category(Subject subject, CategorySearchRequest categoryRequest)
             throws ConnectorException {
         return searchService.searchWithoutQuery(categoryRequest);
     }
 
     @Override
-    public SearchResult search(final SearchRequest searchRequest) throws ConnectorException {
+	public SearchResult search(Subject subject, SearchRequest searchRequest) throws ConnectorException {
         return searchService.search(searchRequest);
     }
 
     @Override
-    public SuggestResult suggest(final SuggestRequest suggestRequest) throws ConnectorException {
+	public SuggestResult suggest(Subject subject, SuggestRequest suggestRequest) throws ConnectorException {
         return suggestService.suggest(suggestRequest);
     }
 

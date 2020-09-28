@@ -27,7 +27,7 @@
     <!-- Dependency Versions -->
     <jackson.version>2.10.4</jackson.version>
     <search-commons-java.version>0.11.0</search-commons-java.version>
-    <search-connector-api.version>0.26.0</search-connector-api.version>
+    <search-connector-api.version>2.1.0</search-connector-api.version>
   </properties>
 
   <dependencies>
