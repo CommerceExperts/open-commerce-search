@@ -231,7 +231,7 @@ ocs:
             - sort
             - result
             - facet
-          field-level: both
+          field-level: variant
         category:
           name: category
           type: category
