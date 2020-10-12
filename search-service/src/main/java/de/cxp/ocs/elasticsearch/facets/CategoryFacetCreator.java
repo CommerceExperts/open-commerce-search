@@ -90,7 +90,7 @@ public class CategoryFacetCreator implements FacetCreator {
 	}
 
 	private HierarchialFacetEntry toFacetEntry(String value, SearchQueryBuilder linkBuilder) {
-		return new HierarchialFacetEntry(value, 0, linkBuilder.withFilterAsLink(categoryFacetConfig, value));
+		return new HierarchialFacetEntry(value, 0, linkBuilder.withFilterAsLink(categoryFacetConfig, value), linkBuilder.isFilterSelected(categoryFacetConfig, value));
 	}
 
 }

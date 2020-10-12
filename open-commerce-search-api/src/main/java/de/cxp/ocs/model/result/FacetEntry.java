@@ -39,4 +39,7 @@ public class FacetEntry {
 	@Schema(format = "URI")
 	public String link;
 
+	@Schema(description = "Should be set to true in the response, if that filter is actually selected.")
+	public boolean selected = false;
+
 }

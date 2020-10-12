@@ -30,8 +30,8 @@ public class IntervalFacetEntry extends FacetEntry {
 	 * @param docCount
 	 * @param link
 	 */
-	public IntervalFacetEntry(Number lowerBound, Number upperBound, long docCount, String link) {
-		super(getLabel(lowerBound, upperBound), docCount, link);
+	public IntervalFacetEntry(Number lowerBound, Number upperBound, long docCount, String link, boolean isSelected) {
+		super(getLabel(lowerBound, upperBound), docCount, link, isSelected);
 		this.lowerBound = lowerBound;
 		this.upperBound = upperBound;
 	}

@@ -21,6 +21,7 @@ import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.model.result.Facet;
+import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.IntervalFacetEntry;
 import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.SearchQueryBuilder;
@@ -106,19 +107,19 @@ public class NumberFacetCreator implements NestedFacetCreator {
 					// filtered single select facet
 					long docCount = getDocCount(facetNameBucket);
 					NumericFacetEntryBuilder facetEntry = new NumericFacetEntryBuilder(((NumberResultFilter) facetFilter));
-					facet.addEntry(
-							new IntervalFacetEntry(facetEntry.lowerBound, facetEntry.upperBound, docCount,
-									linkBuilder.withoutFilterAsLink(facetConfig, facetEntry.getFilterValue())));
+					facetEntry.currentDocumentCount = docCount;
+					facetEntry.currentVariantCount = (int) docCount;
+					facet.addEntry(createIntervalFacetEntry(facetEntry, (NumberResultFilter) facetFilter, facetConfig, linkBuilder));
 					facet.setAbsoluteFacetCoverage(docCount);
 				}
 				else {
 					// multiselect facet
-					fillFacet(facetNameBucket, facet, facetConfig, linkBuilder);
+					fillFacet(facetNameBucket, facet, facetConfig, linkBuilder, (NumberResultFilter) facetFilter);
 				}
 			}
 			else {
 				// unfiltered facet
-				fillFacet(facetNameBucket, facet, facetConfig, linkBuilder);
+				fillFacet(facetNameBucket, facet, facetConfig, linkBuilder, null);
 			}
 			termFacets.add(facet);
 		}
@@ -140,51 +141,56 @@ public class NumberFacetCreator implements NestedFacetCreator {
 		return absFacetCoverage;
 	}
 
-	private void fillFacet(Terms.Bucket facetNameBucket, Facet facet, FacetConfig facetConfig, SearchQueryBuilder linkBuilder) {
+	private void fillFacet(Terms.Bucket facetNameBucket, Facet facet, FacetConfig facetConfig, SearchQueryBuilder linkBuilder, NumberResultFilter selectedFilter) {
 		Histogram facetValues = ((Histogram) facetNameBucket.getAggregations().get(FACET_VALUES_AGG));
 		List<? extends Bucket> valueBuckets = facetValues.getBuckets();
 
 		long variantCount = facetNameBucket.getDocCount();
 		long variantCountPerBucket = variantCount / (wishedFacetSize + 1);
 
-		NumericFacetEntryBuilder currentValueInterval = new NumericFacetEntryBuilder();
-		int currentDocumentCount = 0;
-		int currentVariantCount = 0;
+		NumericFacetEntryBuilder currentEntryBuilder = new NumericFacetEntryBuilder();
 		long absDocCount = 0;
 		for (Histogram.Bucket valueBucket : valueBuckets) {
-			if (currentDocumentCount == 0) {
-				currentValueInterval.lowerBound = (Double) valueBucket.getKey();
+			if (currentEntryBuilder.currentDocumentCount == 0) {
+				currentEntryBuilder.lowerBound = (Double) valueBucket.getKey();
+			}
+			Double value = (Double) valueBucket.getKey();
+
+			if (selectedFilter != null && selectedFilter.getLowerBound().equals(value)) {
+
 			}
 
 			long docCount = nestedFacetCorrector != null
 					? nestedFacetCorrector.getCorrectedDocumentCount(valueBucket)
 					: valueBucket.getDocCount();
-			currentVariantCount += valueBucket.getDocCount();
-			currentDocumentCount += docCount;
+			currentEntryBuilder.currentVariantCount += valueBucket.getDocCount();
+			currentEntryBuilder.currentDocumentCount += docCount;
+			currentEntryBuilder.upperBound = (Double) valueBucket.getKey() + interval - 0.01;
 			absDocCount += docCount;
-			currentValueInterval.upperBound = (Double) valueBucket.getKey() + interval - 0.01;
 
-			if (currentVariantCount >= variantCountPerBucket) {
-				facet.addEntry(
-						new IntervalFacetEntry(currentValueInterval.lowerBound, currentValueInterval.upperBound, currentDocumentCount,
-								// FIXME: mark selected elements and create
-								// deselect link!
-								linkBuilder.withFilterAsLink(facetConfig, currentValueInterval.getFilterValue())));
-
-				currentDocumentCount = 0;
-				currentVariantCount = 0;
-				currentValueInterval = new NumericFacetEntryBuilder();
+			if (currentEntryBuilder.currentVariantCount >= variantCountPerBucket) {
+				facet.addEntry(createIntervalFacetEntry(currentEntryBuilder, selectedFilter, facetConfig, linkBuilder));
+				currentEntryBuilder = new NumericFacetEntryBuilder();
 			}
 		}
-		if (currentVariantCount > 0) {
-			facet.addEntry(
-					new IntervalFacetEntry(currentValueInterval.lowerBound, currentValueInterval.upperBound, currentDocumentCount,
-							// FIXME: mark selected elements and create
-							// deselect link!
-							linkBuilder.withFilterAsLink(facetConfig, currentValueInterval.getFilterValue())));
+		if (currentEntryBuilder.currentVariantCount > 0) {
+			facet.addEntry(createIntervalFacetEntry(currentEntryBuilder, selectedFilter, facetConfig, linkBuilder));
 		}
 
 		facet.setAbsoluteFacetCoverage(absDocCount);
+	}
+
+	private FacetEntry createIntervalFacetEntry(NumericFacetEntryBuilder currentValueInterval, NumberResultFilter selectedFilter, FacetConfig facetConfig,
+			SearchQueryBuilder linkBuilder) {
+		boolean isSelected = selectedFilter != null
+				&& selectedFilter.getLowerBound().floatValue() == currentValueInterval.lowerBound.floatValue()
+				&& selectedFilter.getUpperBound().floatValue() == currentValueInterval.upperBound.floatValue();
+		return new IntervalFacetEntry(currentValueInterval.lowerBound,
+				currentValueInterval.upperBound,
+				currentValueInterval.currentDocumentCount,
+				isSelected ? linkBuilder.withoutFilterAsLink(facetConfig, currentValueInterval.getFilterValue())
+						: linkBuilder.withFilterAsLink(facetConfig, currentValueInterval.getFilterValue()),
+				isSelected);
 	}
 
 	@NoArgsConstructor
@@ -192,6 +198,8 @@ public class NumberFacetCreator implements NestedFacetCreator {
 
 		Double	lowerBound;
 		Double	upperBound;
+		long	currentDocumentCount	= 0;
+		int		currentVariantCount		= 0;
 
 		NumericFacetEntryBuilder(NumberResultFilter facetFilter) {
 			Number lowerBoundValue = facetFilter.getLowerBound();

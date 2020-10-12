@@ -88,7 +88,7 @@ public class SearchQueryBuilder {
 
 	// TODO test that shit
 	public String withoutFilterAsLink(FacetConfig facetConfig, String filterValue) {
-		if (searchQueryLink.toString().matches(".*[?&]" + Pattern.quote(facetConfig.getSourceField()) + "=[^&].*?"+Pattern.quote(filterValue)+".*")) {
+		if (isFilterSelected(facetConfig, filterValue)) {
 			URIBuilder linkBuilder = new URIBuilder(searchQueryLink);
 			if (facetConfig.isMultiSelect()) {
 				Optional<String[]> otherValues = linkBuilder.getQueryParams().stream()
@@ -159,7 +159,10 @@ public class SearchQueryBuilder {
 			catch (UnsupportedEncodingException e) {
 				throw new UncheckedExecutionException(e);
 			}
-
 		}
+	}
+
+	public boolean isFilterSelected(FacetConfig facetConfig, String filterValue) {
+		return searchQueryLink.toString().matches(".*[?&]" + Pattern.quote(facetConfig.getSourceField()) + "=[^&]*?" + Pattern.quote(filterValue) + "($|[&,].*)");
 	}
 }
