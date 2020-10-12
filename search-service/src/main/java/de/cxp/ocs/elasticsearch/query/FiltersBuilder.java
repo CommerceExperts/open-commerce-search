@@ -18,18 +18,18 @@ import org.elasticsearch.index.query.QueryBuilders;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.SearchConfiguration;
+import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilterAdapter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilterAdapter;
 import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.PathResultFilterAdapter;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilterAdapter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilterAdapter;
 
 public class FiltersBuilder {
 
-	private final Set<String>	multiSelectFacets	= new HashSet<>();
+	private final Set<String>	postFilterFacets	= new HashSet<>();
 	private final Set<String>	variantFields		= new HashSet<>();
 
 	private Map<String, QueryBuilder> filterQueries = new HashMap<>();
@@ -46,7 +46,7 @@ public class FiltersBuilder {
 
 	public FiltersBuilder(SearchConfiguration searchConfig, List<InternalResultFilter> filters) {
 		for (FacetConfig facet : searchConfig.getFacetConfiguration().getFacets()) {
-			if (facet.isMultiSelect()) multiSelectFacets.add(facet.getSourceField());
+			if (facet.isMultiSelect() || facet.isShowUnselectedOptions()) postFilterFacets.add(facet.getSourceField());
 		}
 		for (Field field : searchConfig.getFieldConfiguration().getFields().values()) {
 			if (field.isVariantLevel()) variantFields.add(field.getName());
@@ -69,7 +69,7 @@ public class FiltersBuilder {
 
 	public QueryBuilder buildPostFilters() {
 		if (postFilters == null) {
-			MasterVariantQuery separatedPostFilters = buildFilters(this::isMultiSelectQuery);
+			MasterVariantQuery separatedPostFilters = buildFilters(this::isPostFilterQuery);
 			postFilters = mergeQueries(separatedPostFilters.getMasterLevelQuery(), separatedPostFilters
 					.getVariantLevelQuery());
 		}
@@ -95,11 +95,11 @@ public class FiltersBuilder {
 	}
 
 	private boolean isBasicQuery(String fieldName) {
-		return !multiSelectFacets.contains(fieldName);
+		return !postFilterFacets.contains(fieldName);
 	}
 
-	private boolean isMultiSelectQuery(String fieldName) {
-		return multiSelectFacets.contains(fieldName);
+	private boolean isPostFilterQuery(String fieldName) {
+		return postFilterFacets.contains(fieldName);
 	}
 
 	private void prepareFilters(List<InternalResultFilter> filters) {

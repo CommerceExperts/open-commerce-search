@@ -103,7 +103,7 @@ public class NumberFacetCreator implements NestedFacetCreator {
 
 			InternalResultFilter facetFilter = filtersByName.get(facetName);
 			if (facetFilter != null && facetFilter instanceof NumberResultFilter) {
-				if (!facetConfig.isMultiSelect()) {
+				if (!facetConfig.isMultiSelect() && !facetConfig.isShowUnselectedOptions()) {
 					// filtered single select facet
 					long docCount = getDocCount(facetNameBucket);
 					NumericFacetEntryBuilder facetEntry = new NumericFacetEntryBuilder(((NumberResultFilter) facetFilter));

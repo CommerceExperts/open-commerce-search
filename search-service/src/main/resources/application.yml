@@ -38,6 +38,7 @@ ocs:
       - source-field: price
         label: Price
         order: 3
+        show-unselected-options: true
         meta-data:
           unit: "€"
         excludeFromFacetLimit: true

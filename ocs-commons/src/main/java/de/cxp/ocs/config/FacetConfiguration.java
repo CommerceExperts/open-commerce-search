@@ -41,6 +41,16 @@ public class FacetConfiguration {
 		 */
 		private int optimalValueCount = 5;
 
+		/**
+		 * Set to true if all options should be shown after filtering on one of
+		 * the options of the same facet.
+		 */
+		private boolean showUnselectedOptions = false;
+
+		/**
+		 * Set to true if it should be possible to select several different
+		 * values of the same facet.
+		 */
 		private boolean isMultiSelect = false;
 
 		private byte order = Byte.MAX_VALUE;
