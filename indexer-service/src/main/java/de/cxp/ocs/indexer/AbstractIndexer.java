@@ -51,10 +51,14 @@ public abstract class AbstractIndexer implements FullIndexationService {
 		if (isImportRunning(indexName)) {
 			throw new IllegalStateException("Import for index " + indexName + " already running");
 		}
+		if (!indexName.equals(indexName.toLowerCase(LocaleUtils.toLocale(locale)))) {
+			throw new IllegalArgumentException(String.format("Invalid index name [%s], must be lowercase", indexName));
+		}
+
 		log.info("starting import session for index {} with locale {}", indexName, locale);
 
 		return new ImportSession(
-				indexName.toLowerCase(LocaleUtils.toLocale(locale)),
+				indexName,
 				initNewIndex(indexName, locale));
 	}
 

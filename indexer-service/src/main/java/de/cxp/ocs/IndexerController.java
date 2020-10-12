@@ -73,11 +73,14 @@ public class IndexerController {
 	}
 
 	@GetMapping("/start/{indexName}")
-	public ResponseEntity<ImportSession> startImport(@PathVariable("indexName") String indexName, @RequestParam("locale") String locale) {
+	public ResponseEntity startImport(@PathVariable("indexName") String indexName, @RequestParam("locale") String locale) {
 		if (indexName == null || indexName.isEmpty()) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		if (locale == null || locale.isEmpty()) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		try {
 			return ResponseEntity.ok(actualIndexers.get(indexName).startImport(indexName, locale));
+		}
+		catch (IllegalArgumentException argEx) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(argEx.getMessage());
 		}
 		catch (IllegalStateException ise) {
 			return ResponseEntity.status(HttpStatus.CONFLICT).build();
