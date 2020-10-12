@@ -51,7 +51,7 @@ public class IntervalFacetEntry extends FacetEntry {
 		if (to == null) {
 			return "> " + from.toString();
 		}
-		return to.toString() + " - " + from.toString();
+		return from.toString() + "-" + to.toString();
 	}
 
 }
