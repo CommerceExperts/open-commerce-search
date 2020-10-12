@@ -191,7 +191,7 @@ public class QuerySuggestManager implements AutoCloseable {
 	 * Basic constructor to create QuerySuggestManager with default settings.
 	 * To customize behavioral settings, use the builder instead.
 	 */
-	public QuerySuggestManager() {
+	private QuerySuggestManager() {
 		ServiceLoader<SuggestDataProvider> serviceLoader = ServiceLoader.load(SuggestDataProvider.class);
 		Iterator<SuggestDataProvider> suggestDataProviders = serviceLoader.iterator();
 		SuggestDataProvider dataProvider = null;

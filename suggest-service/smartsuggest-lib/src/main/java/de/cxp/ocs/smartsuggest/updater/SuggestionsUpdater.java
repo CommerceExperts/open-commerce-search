@@ -60,7 +60,7 @@ public class SuggestionsUpdater implements Runnable {
 					indexName, unrecoverableEx.getClass().getSimpleName(), unrecoverableEx.getMessage());
 			throw unrecoverableEx;
 		}
-		catch (Exception e) {
+		catch (Throwable e) {
 			updateFailCount++;
 			log.warn("update failed for index {}: {}",
 					indexName, e.getClass().getSimpleName() + " : " + e.getMessage());
