@@ -1,13 +1,12 @@
 package de.cxp.ocs.elasticsearch.facets;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
-import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.model.result.Facet;
 
 public class FacetFactory {
 
 	private static enum MetaDataValues {
-		type, label, order, multiSelect
+		label, order, multiSelect
 	}
 
 	public static String getLabel(Facet facet) {
@@ -18,13 +17,15 @@ public class FacetFactory {
 		return (byte) facet.meta.get(MetaDataValues.order.name());
 	}
 
-	public static Facet create(FacetConfig facetConfig) {
+	public static Facet create(FacetConfig facetConfig, String type) {
 		Facet facet = new Facet(facetConfig.getSourceField());
 		facet.getMeta().putAll(facetConfig.getMetaData());
-		facet.meta.put(MetaDataValues.type.name(), FieldType.string.name());
+
+		facet.setType(type);
 		facet.meta.put(MetaDataValues.label.name(), facetConfig.getLabel());
 		facet.meta.put(MetaDataValues.multiSelect.name(), facetConfig.isMultiSelect());
 		facet.meta.put(MetaDataValues.order.name(), facetConfig.getOrder());
 		return facet;
 	}
+
 }

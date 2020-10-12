@@ -48,7 +48,7 @@ public class CategoryFacetCreator implements FacetCreator {
 		List<? extends Bucket> catBuckets = categoryAgg.getBuckets();
 		if (catBuckets.size() == 0) return Collections.emptyList();
 
-		Facet facet = FacetFactory.create(categoryFacetConfig);
+		Facet facet = FacetFactory.create(categoryFacetConfig, "hierarchical");
 
 		Map<String, HierarchialFacetEntry> entries = new LinkedHashMap<>(catBuckets.size());
 		long absDocCount = 0;

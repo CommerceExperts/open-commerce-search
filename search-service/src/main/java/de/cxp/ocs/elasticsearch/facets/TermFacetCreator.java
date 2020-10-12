@@ -84,7 +84,7 @@ public class TermFacetCreator implements NestedFacetCreator {
 			FacetConfig facetConfig = facetsBySourceField.get(facetName);
 			if (facetConfig == null) facetConfig = new FacetConfig(facetName, facetName);
 
-			Facet facet = FacetFactory.create(facetConfig);
+			Facet facet = FacetFactory.create(facetConfig, "text");
 
 			// TODO: this code chunk could be abstracted together with
 			// NumberFacetCreator

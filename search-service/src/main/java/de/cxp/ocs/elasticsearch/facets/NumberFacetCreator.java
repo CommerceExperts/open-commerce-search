@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
@@ -22,6 +21,7 @@ import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.model.result.Facet;
+import de.cxp.ocs.model.result.IntervalFacetEntry;
 import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.SearchQueryBuilder;
 import lombok.NoArgsConstructor;
@@ -98,20 +98,17 @@ public class NumberFacetCreator implements NestedFacetCreator {
 			FacetConfig facetConfig = facetsBySourceField.get(facetName);
 			if (facetConfig == null) facetConfig = new FacetConfig(facetName, facetName);
 
-			// TODO: add support for range facet
-			// TODO: change number facets to have "min/max" entries instead formatted labels
-			Facet facet = FacetFactory.create(facetConfig);
+			Facet facet = FacetFactory.create(facetConfig, "interval");
 
 			InternalResultFilter facetFilter = filtersByName.get(facetName);
 			if (facetFilter != null && facetFilter instanceof NumberResultFilter) {
 				if (!facetConfig.isMultiSelect()) {
 					// filtered single select facet
 					long docCount = getDocCount(facetNameBucket);
-					String facetEntryLabel = new NumericFacetEntryBuilder((NumberResultFilter) facetFilter).getEntry();
+					NumericFacetEntryBuilder facetEntry = new NumericFacetEntryBuilder(((NumberResultFilter) facetFilter));
 					facet.addEntry(
-							facetEntryLabel,
-							docCount,
-							linkBuilder.withoutFilterAsLink(facetConfig, facetEntryLabel));
+							new IntervalFacetEntry(facetEntry.lowerBound, facetEntry.upperBound, docCount,
+									linkBuilder.withoutFilterAsLink(facetConfig, facetEntry.getFilterValue())));
 					facet.setAbsoluteFacetCoverage(docCount);
 				}
 				else {
@@ -169,12 +166,10 @@ public class NumberFacetCreator implements NestedFacetCreator {
 			if (currentVariantCount >= variantCountPerBucket) {
 				currentValueInterval.upperBound = (Double) valueBucket.getKey() + interval - 0.01;
 				facet.addEntry(
-						// TODO: differentiate between label and filter value
-						currentValueInterval.getEntry(),
-						currentDocumentCount,
-						// FIXME: use parameter-builder or similar to build filter values
-						// FIXME: mark selected elements and create deselect link!
-						linkBuilder.withFilterAsLink(facetConfig, currentValueInterval.lowerBound+","+currentValueInterval.upperBound));
+						new IntervalFacetEntry(currentValueInterval.lowerBound, currentValueInterval.upperBound, currentDocumentCount,
+								// FIXME: mark selected elements and create
+								// deselect link!
+								linkBuilder.withFilterAsLink(facetConfig, currentValueInterval.getFilterValue())));
 
 				currentDocumentCount = 0;
 				currentVariantCount = 0;
@@ -197,18 +192,19 @@ public class NumberFacetCreator implements NestedFacetCreator {
 			upperBound = upperBoundValue == null ? null : upperBoundValue.doubleValue();
 		}
 
-		String getEntry() {
-			// TODO handle no lower bound / no upper bound
-			// TODO replace hard coded locale by configuration entry, as soon as
-			// we have a per channel conf
-			return String.format(Locale.GERMAN, "%1$,.2f", lowerBound) + " - " + String.format(Locale.GERMAN, "%1$,.2f",
-					upperBound);
+		String getFilterValue() {
+			if (lowerBound == null && upperBound == null) {
+				return "";
+			}
+			if (lowerBound == null) {
+				return upperBound.toString();
+			}
+			if (upperBound == null) {
+				return lowerBound.toString();
+			}
+			return lowerBound + "," + upperBound;
 		}
 
-		@Override
-		public String toString() {
-			return getEntry();
-		}
 	}
 
 }

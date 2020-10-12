@@ -40,6 +40,12 @@ public class Facet {
 	@Schema(description = "The entries of that facet.")
 	public List<FacetEntry> entries = new ArrayList<>();
 
+	@Schema(
+			description = "The type of the facet, so the kind of FacetEntries it contains. "
+					+ "To build a dynamic range slider, the first and the last entry of a interval facet can be used.",
+			allowableValues = { "text", "hierarchical", "interval" })
+	public String type = "text";
+	
 	/**
 	 * Optional meta data for that facet, e.g. display hints like a label or a
 	 * facet-type.
@@ -47,6 +53,15 @@ public class Facet {
 	@Schema(description = "Optional meta data for that facet, e.g. display hints like a label or a facet-type.")
 	public Map<String, Object> meta = new HashMap<>();
 
+	/**
+	 * Add simple {@link FacetEntry} to the facet. Only meaningful for
+	 * TextFacets.
+	 * 
+	 * @param key
+	 * @param docCount
+	 * @param link
+	 * @return
+	 */
 	public Facet addEntry(String key, long docCount, String link) {
 		entries.add(new FacetEntry(key, docCount, link));
 		return this;
