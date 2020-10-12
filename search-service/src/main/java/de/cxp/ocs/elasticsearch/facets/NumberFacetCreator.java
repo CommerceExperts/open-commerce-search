@@ -162,9 +162,9 @@ public class NumberFacetCreator implements NestedFacetCreator {
 			currentVariantCount += valueBucket.getDocCount();
 			currentDocumentCount += docCount;
 			absDocCount += docCount;
+			currentValueInterval.upperBound = (Double) valueBucket.getKey() + interval - 0.01;
 
 			if (currentVariantCount >= variantCountPerBucket) {
-				currentValueInterval.upperBound = (Double) valueBucket.getKey() + interval - 0.01;
 				facet.addEntry(
 						new IntervalFacetEntry(currentValueInterval.lowerBound, currentValueInterval.upperBound, currentDocumentCount,
 								// FIXME: mark selected elements and create
@@ -176,6 +176,14 @@ public class NumberFacetCreator implements NestedFacetCreator {
 				currentValueInterval = new NumericFacetEntryBuilder();
 			}
 		}
+		if (currentVariantCount > 0) {
+			facet.addEntry(
+					new IntervalFacetEntry(currentValueInterval.lowerBound, currentValueInterval.upperBound, currentDocumentCount,
+							// FIXME: mark selected elements and create
+							// deselect link!
+							linkBuilder.withFilterAsLink(facetConfig, currentValueInterval.getFilterValue())));
+		}
+
 		facet.setAbsoluteFacetCoverage(absDocCount);
 	}
 
