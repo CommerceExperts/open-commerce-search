@@ -126,6 +126,9 @@ public class SearchQueryBuilder {
 
 	// TODO test that shit
 	public String withFilterAsLink(FacetConfig facetConfig, String filterValue) {
+		if (isFilterSelected(facetConfig, filterValue)) {
+			return searchQueryLink.toString();
+		}
 		if (searchQueryLink.toString().matches(".*[?&]" + Pattern.quote(facetConfig.getSourceField()) + "=.*")) {
 			URIBuilder linkBuilder = new URIBuilder(searchQueryLink);
 			if (facetConfig.isMultiSelect()) {
@@ -163,6 +166,6 @@ public class SearchQueryBuilder {
 	}
 
 	public boolean isFilterSelected(FacetConfig facetConfig, String filterValue) {
-		return searchQueryLink.toString().matches(".*[?&]" + Pattern.quote(facetConfig.getSourceField()) + "=[^&]*?" + Pattern.quote(filterValue) + "($|[&,].*)");
+		return searchQueryLink.getQuery().matches("(^|.*?&)" + Pattern.quote(facetConfig.getSourceField()) + "=[^&]*?" + Pattern.quote(filterValue) + "($|[&,]).*");
 	}
 }
