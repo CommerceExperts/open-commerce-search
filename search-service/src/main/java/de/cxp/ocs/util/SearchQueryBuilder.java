@@ -7,12 +7,14 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
@@ -23,7 +25,7 @@ import de.cxp.ocs.model.result.Sorting;
 public class SearchQueryBuilder {
 
 	public static String	VALUE_DELIMITER			= ",";
-	public static String	VALUE_DELIMITER_ENCODED	= "%2C";
+	public static String	VALUE_DELIMITER_ENCODED	= "%252C";
 	public static String	SORT_DESC_PREFIX		= "-";
 
 	private final InternalSearchParams	searchParams;
@@ -91,25 +93,27 @@ public class SearchQueryBuilder {
 		if (isFilterSelected(facetConfig, filterValue)) {
 			URIBuilder linkBuilder = new URIBuilder(searchQueryLink);
 			if (facetConfig.isMultiSelect()) {
-				Optional<String[]> otherValues = linkBuilder.getQueryParams().stream()
+				Optional<Set<String>> filterValues = linkBuilder.getQueryParams().stream()
 						.filter(param -> facetConfig.getSourceField().equals(param.getName()))
 						.findFirst()
 						.map(NameValuePair::getValue)
-						.map(value -> StringUtils.split(value, VALUE_DELIMITER));
+						.map(value -> StringUtils.split(value, VALUE_DELIMITER))
+						.map(Sets::newHashSet);
 				
-				if (otherValues.isPresent() && otherValues.get().length > 1) {
-					StringBuilder joinAllButValue = new StringBuilder();
-					for(String value : otherValues.get()) {
-						if (joinAllButValue.length() > 0) joinAllButValue.append(',');
-						joinAllButValue.append(value);
-					}
-					linkBuilder.setParameter(facetConfig.getSourceField(), joinAllButValue.toString());
+				if (filterValues.isPresent() && filterValues.get().size() > 1) {
+					Set<String> values = filterValues.get();
+					values.remove(filterValue);
+					linkBuilder.setParameter(facetConfig.getSourceField(), StringUtils.join(values, VALUE_DELIMITER));
 				} else {
-					linkBuilder.setParameter(facetConfig.getSourceField(), null);
+					List<NameValuePair> queryParams = linkBuilder.getQueryParams();
+					queryParams.removeIf(nvp -> nvp.getName().equals(facetConfig.getSourceField()));
+					linkBuilder.setParameters(queryParams);
 				}
 			}
 			else {
-				linkBuilder.setParameter(facetConfig.getSourceField(), null);
+				List<NameValuePair> queryParams = linkBuilder.getQueryParams();
+				queryParams.removeIf(nvp -> nvp.getName().equals(facetConfig.getSourceField()));
+				linkBuilder.setParameters(queryParams);
 			}
 			try {
 				return linkBuilder.build().getQuery().toString();
@@ -167,5 +171,9 @@ public class SearchQueryBuilder {
 
 	public boolean isFilterSelected(FacetConfig facetConfig, String filterValue) {
 		return searchQueryLink.getQuery().matches("(^|.*?&)" + Pattern.quote(facetConfig.getSourceField()) + "=[^&]*?" + Pattern.quote(filterValue) + "($|[&,]).*");
+	}
+
+	public String toString() {
+		return searchQueryLink.getQuery();
 	}
 }
