@@ -1,9 +1,9 @@
 {
   "index_patterns": "ocs-*",
-  "order":    0,
+  "order": 0,
   "settings": {
     "index": {
-      "max_result_window": 100000,
+      "max_result_window": 10000,
       "similarity": {
         "default": {
           "type": "boolean"
@@ -134,7 +134,7 @@
           "tokenizer": "trigram_tokenizer"
         },
         "category_analyzer": {
-    	  "tokenizer": "path_hierarchy"
+          "tokenizer": "path_hierarchy"
         }
       },
       "tokenizer": {
@@ -180,7 +180,8 @@
           "path_match": "*sortData.*",
           "match_mapping_type": "string",
           "mapping": {
-            "type": "keyword"
+            "type": "keyword",
+            "eager_global_ordinals": true
           }
         }
       },
@@ -190,7 +191,6 @@
           "mapping": {
             "norms": false,
             "fielddata": true,
-            "eager_global_ordinals": true,
             "type": "text",
             "copy_to": "searchable_numeric_patterns",
             "analyzer": "minimal",
@@ -198,8 +198,7 @@
               "standard": {
                 "norms": false,
                 "analyzer": "standard",
-                "type": "text",
-                "eager_global_ordinals": true
+                "type": "text"
               },
               "shingles": {
                 "norms": false,
@@ -229,16 +228,19 @@
           "type": "text",
           "analyzer": "category_analyzer",
           "fielddata": "true",
+          "eager_global_ordinals": true,
           "norms": "true"
       },
       "termFacetData": {
         "type": "nested",
         "properties": {
           "name": {
-            "type": "keyword"
+            "type": "keyword",
+            "eager_global_ordinals": true
           },
           "value": {
-            "type": "keyword"
+            "type": "keyword",
+            "eager_global_ordinals": true
           }
         }
       },
@@ -246,7 +248,8 @@
         "type": "nested",
         "properties": {
           "name": {
-            "type": "keyword"
+            "type": "keyword",
+            "eager_global_ordinals": true
           },
           "value": {
             "type": "float"
@@ -260,10 +263,12 @@
             "type": "nested",
             "properties": {
               "name": {
-                "type": "keyword"
+                "type": "keyword",
+                "eager_global_ordinals": true
               },
               "value": {
-                "type": "keyword"
+                "type": "keyword",
+                "eager_global_ordinals": true
               }
             }
           },
@@ -271,7 +276,8 @@
             "type": "nested",
             "properties": {
               "name": {
-                "type": "keyword"
+                "type": "keyword",
+                "eager_global_ordinals": true
               },
               "value": {
                 "type": "float"
