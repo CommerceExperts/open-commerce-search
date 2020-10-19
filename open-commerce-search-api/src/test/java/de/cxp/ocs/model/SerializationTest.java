@@ -157,15 +157,16 @@ public class SerializationTest {
 				new Sorting("title", SortOrder.ASC, "sort=title"),
 
 				new SearchQuery()
+						.setQ("foo")
 						.setLimit(8)
 						.setOffset(42)
-						.setSort("sort=margin"),
+						.setSort("margin"),
 
-				new FacetEntry("red", 2, null),
+				new FacetEntry("red", 2, null, false),
 
 				new Facet("brand").addEntry("nike", 13, "brand=nike"),
 				new Facet("categories")
-						.addEntry(new HierarchialFacetEntry("a", 50, "categories=a").addChild(new FacetEntry("aa", 23, "categories=aa"))),
+						.addEntry(new HierarchialFacetEntry("a", 50, "categories=a", true).addChild(new FacetEntry("aa", 23, "categories=aa", false))),
 
 				new ResultHit()
 						.setDocument(new Document("12").setData(Collections.singletonMap("title", "nice stuff")))
