@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -72,9 +71,6 @@ public class QuerySuggestManager implements AutoCloseable {
 
 	private Path suggestIndexFolder;
 
-	@NonNull
-	private Locale locale = Locale.ROOT;
-
 	private long updateRate = 60;
 
 	private MeterRegistryAdapter metricsRegistry;
@@ -84,9 +80,6 @@ public class QuerySuggestManager implements AutoCloseable {
 	public static class QuerySuggestManagerBuilder {
 
 		private Path suggestIndexFolder;
-
-		@NonNull
-		private Locale locale = Locale.ROOT;
 
 		private int updateRate = 60;
 
@@ -111,21 +104,6 @@ public class QuerySuggestManager implements AutoCloseable {
 		}
 
 		/**
-		 * Sets the locale that will be used to decide which stopwords file to
-		 * load.
-		 *
-		 * @param locale
-		 *        the indexName's locale
-		 * @return {@code this} instance, for chaining
-		 */
-		// FIXME: locale should be indexName specific
-		@Deprecated
-		public QuerySuggestManagerBuilder locale(Locale locale) {
-			this.locale = locale;
-			return this;
-		}
-
-		/**
 		 * Set the rate (in seconds) at which the update should run.
 		 * The value must be 5 &lt;= x &lt;= 3600.
 		 * Default: 60
@@ -139,6 +117,13 @@ public class QuerySuggestManager implements AutoCloseable {
 			return this;
 		}
 
+		/**
+		 * Changes the engine that should be used generate the suggestions.
+		 * Per default {@link SuggesterEngine::LUCENE} is used.
+		 * 
+		 * @param engine
+		 * @return
+		 */
 		public QuerySuggestManagerBuilder engine(SuggesterEngine engine) {
 			this.engine = engine;
 			return this;
@@ -158,6 +143,14 @@ public class QuerySuggestManager implements AutoCloseable {
 			return this;
 		}
 
+		/**
+		 * Optionally add micrometer.io MeterRegistry. An internal adapter is
+		 * used in order to avoid ClassNotFound exception in case micrometer is
+		 * not on the classpath.
+		 * 
+		 * @param reg
+		 * @return
+		 */
 		public QuerySuggestManagerBuilder addMetricsRegistryAdapter(MeterRegistryAdapter reg) {
 			this.metricsRegistry = reg;
 			return this;
@@ -169,7 +162,6 @@ public class QuerySuggestManager implements AutoCloseable {
 			}
 			QuerySuggestManager querySuggestManager = new QuerySuggestManager();
 			querySuggestManager.suggestIndexFolder = suggestIndexFolder;
-			querySuggestManager.locale = locale;
 			querySuggestManager.updateRate = updateRate;
 			querySuggestManager.metricsRegistry = metricsRegistry;
 			querySuggestManager.engine = engine;
@@ -203,7 +195,8 @@ public class QuerySuggestManager implements AutoCloseable {
 					+ " Please provide a SuggestDataProvider implementation accessible via ServiceLoader.");
 		}
 		if (suggestDataProviders.hasNext()) {
-			// TODO build a "CompoundSuggestDataServiceProvider" that checks all available service providers for data
+			// TODO build a "CompoundSuggestDataServiceProvider" that checks all
+			// available service providers for data
 			log.warn("more than one SuggestDataServiceProvider found! Will only use the first one of type {}", dataProvider.getClass().getCanonicalName());
 		}
 		log.info("initialized SmartSuggest with {}", dataProvider.getClass().getCanonicalName());

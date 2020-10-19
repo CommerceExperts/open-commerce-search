@@ -73,16 +73,16 @@ public class SuggestionsUpdater implements Runnable {
 	}
 
 	private void update() throws IOException {
-		Instant modTime = Instant.ofEpochMilli(dataProvider.getLastDataModTime(indexName));
-		if (modTime == null) {
+		long lastDataModTime = dataProvider.getLastDataModTime(indexName);
+		if (lastDataModTime == -1) {
 			throw new IllegalStateException("no data available for index " + indexName);
 		}
+		Instant modTime = Instant.ofEpochMilli(lastDataModTime);
 		if (lastUpdate == null || modTime.isAfter(lastUpdate)) {
 			SuggestData suggestData = dataProvider.loadData(indexName);
 
 			if (suggestData == null) {
-				log.error("Received NULL suggest data from query api service. Unable to update query suggester for index "
-						+ indexName);
+				log.error("Received NULL suggest data from query api service. Unable to update query suggester for index " + indexName);
 			}
 			else {
 				List<SuggestRecord> suggestRecords = suggestData.getSuggestRecords();
