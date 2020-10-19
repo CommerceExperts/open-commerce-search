@@ -88,7 +88,6 @@ public class SearchQueryBuilder {
 		return valuesString.toString();
 	}
 
-	// TODO test that shit
 	public String withoutFilterAsLink(FacetConfig facetConfig, String filterValue) {
 		if (isFilterSelected(facetConfig, filterValue)) {
 			URIBuilder linkBuilder = new URIBuilder(searchQueryLink);
@@ -128,7 +127,6 @@ public class SearchQueryBuilder {
 		}
 	}
 
-	// TODO test that shit
 	public String withFilterAsLink(FacetConfig facetConfig, String filterValue) {
 		if (isFilterSelected(facetConfig, filterValue)) {
 			return searchQueryLink.toString();
