@@ -137,11 +137,12 @@ public class TermFacetCreator implements NestedFacetCreator {
 	}
 
 	private FacetEntry buildFacetEntry(FacetConfig facetConfig, String filterValue, long docCount, SearchQueryBuilder linkBuilder) {
+		boolean isSelected = linkBuilder.isFilterSelected(facetConfig, filterValue);
 		return new FacetEntry(
 				filterValue,
 				docCount,
-				linkBuilder.withFilterAsLink(facetConfig, filterValue),
-				linkBuilder.isFilterSelected(facetConfig, filterValue));
+				isSelected ? linkBuilder.withoutFilterAsLink(facetConfig, filterValue) : linkBuilder.withFilterAsLink(facetConfig, filterValue),
+				isSelected);
 	}
 
 	private long getDocumentCount(Bucket valueBucket) {

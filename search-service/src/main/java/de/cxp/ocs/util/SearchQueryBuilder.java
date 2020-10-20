@@ -1,10 +1,7 @@
 package de.cxp.ocs.util;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -15,7 +12,6 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URIBuilder;
 
 import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.UncheckedExecutionException;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
@@ -25,7 +21,7 @@ import de.cxp.ocs.model.result.Sorting;
 public class SearchQueryBuilder {
 
 	public static String	VALUE_DELIMITER			= ",";
-	public static String	VALUE_DELIMITER_ENCODED	= "%252C";
+	public static String	VALUE_DELIMITER_ENCODED	= "%2C";
 	public static String	SORT_DESC_PREFIX		= "-";
 
 	private final InternalSearchParams	searchParams;
@@ -88,19 +84,20 @@ public class SearchQueryBuilder {
 		return valuesString.toString();
 	}
 
-	public String withoutFilterAsLink(FacetConfig facetConfig, String filterValue) {
+	public String withoutFilterAsLink(FacetConfig facetConfig, String... filterValues) {
+		String filterValue = joinParameterValues(filterValues);
 		if (isFilterSelected(facetConfig, filterValue)) {
 			URIBuilder linkBuilder = new URIBuilder(searchQueryLink);
 			if (facetConfig.isMultiSelect()) {
-				Optional<Set<String>> filterValues = linkBuilder.getQueryParams().stream()
+				Optional<Set<String>> existingFilterValues = linkBuilder.getQueryParams().stream()
 						.filter(param -> facetConfig.getSourceField().equals(param.getName()))
 						.findFirst()
 						.map(NameValuePair::getValue)
 						.map(value -> StringUtils.split(value, VALUE_DELIMITER))
 						.map(Sets::newHashSet);
 				
-				if (filterValues.isPresent() && filterValues.get().size() > 1) {
-					Set<String> values = filterValues.get();
+				if (existingFilterValues.isPresent() && existingFilterValues.get().size() > 1) {
+					Set<String> values = existingFilterValues.get();
 					values.remove(filterValue);
 					linkBuilder.setParameter(facetConfig.getSourceField(), StringUtils.join(values, VALUE_DELIMITER));
 				} else {
@@ -127,7 +124,8 @@ public class SearchQueryBuilder {
 		}
 	}
 
-	public String withFilterAsLink(FacetConfig facetConfig, String filterValue) {
+	public String withFilterAsLink(FacetConfig facetConfig, String... filterValues) {
+		String filterValue = joinParameterValues(filterValues);
 		if (isFilterSelected(facetConfig, filterValue)) {
 			return searchQueryLink.toString();
 		}
@@ -155,15 +153,10 @@ public class SearchQueryBuilder {
 			}
 		}
 		else {
-			try {
-				String newParam = facetConfig.getSourceField() + "=" + URLEncoder.encode(filterValue, StandardCharsets.UTF_8.name());
-				String query = searchQueryLink.getQuery();
-				if (query.length() == 0) return newParam;
-				else return searchQueryLink.toString() + "&" + newParam;
-			}
-			catch (UnsupportedEncodingException e) {
-				throw new UncheckedExecutionException(e);
-			}
+			String newParam = facetConfig.getSourceField() + "=" + filterValue;
+			String query = searchQueryLink.getQuery();
+			if (query.length() == 0) return newParam;
+			else return query + "&" + newParam;
 		}
 	}
 

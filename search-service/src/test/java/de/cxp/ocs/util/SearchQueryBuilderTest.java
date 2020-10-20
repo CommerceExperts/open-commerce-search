@@ -40,6 +40,30 @@ public class SearchQueryBuilderTest {
 	}
 
 	@Test
+	public void testSeveralFilters() {
+		SearchQueryBuilder underTest = new SearchQueryBuilder(
+				new InternalSearchParams()
+						.setUserQuery("foo")
+						.withFilter(new TermResultFilter("brand", "apple", "orange")));
+		String result = underTest.withFilterAsLink(
+				new FacetConfig("Price", "price"), "0", "10");
+		assertTrue(result.contains("brand=apple,orange"), result);
+		assertTrue(result.contains("price=0,10"), result);
+	}
+
+	@Test
+	public void testEncodedFilters() {
+		SearchQueryBuilder underTest = new SearchQueryBuilder(
+				new InternalSearchParams()
+						.setUserQuery("foo")
+						.withFilter(new TermResultFilter("brand", "äpple")));
+		String result = underTest.withFilterAsLink(
+				new FacetConfig("Category", "cat"), "Männer", "Was für's Köpfchen, Mützen & Schals");
+		assertTrue(result.contains("brand=äpple"), result);
+		assertTrue(result.contains("cat=Männer,Was für's Köpfchen%2C Mützen %26 Schals"), result);
+	}
+
+	@Test
 	public void testRemoveMultiSelectFilter() {
 		SearchQueryBuilder underTest = new SearchQueryBuilder(
 				new InternalSearchParams()
@@ -53,7 +77,7 @@ public class SearchQueryBuilderTest {
 	}
 
 	@Test
-	public void testSomethingElse() {
+	public void testRemoveFilter() {
 		SearchQueryBuilder underTest = new SearchQueryBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
@@ -63,7 +87,7 @@ public class SearchQueryBuilderTest {
 		assertTrue(baseLink.contains("price=1.23,4.56"), baseLink);
 		assertTrue(baseLink.contains("brand=apple,orange"), baseLink);
 
-		String result = underTest.withoutFilterAsLink(new FacetConfig("Price", "price"), "1.23,4.56");
+		String result = underTest.withoutFilterAsLink(new FacetConfig("Price", "price"), "1.23", "4.56");
 		assertFalse(result.contains("price"), result);
 		assertTrue(result.contains("brand=apple,orange"), result);
 	}

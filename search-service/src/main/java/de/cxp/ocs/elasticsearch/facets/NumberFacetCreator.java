@@ -188,8 +188,8 @@ public class NumberFacetCreator implements NestedFacetCreator {
 		return new IntervalFacetEntry(currentValueInterval.lowerBound,
 				currentValueInterval.upperBound,
 				currentValueInterval.currentDocumentCount,
-				isSelected ? linkBuilder.withoutFilterAsLink(facetConfig, currentValueInterval.getFilterValue())
-						: linkBuilder.withFilterAsLink(facetConfig, currentValueInterval.getFilterValue()),
+				isSelected ? linkBuilder.withoutFilterAsLink(facetConfig, currentValueInterval.getFilterValues())
+						: linkBuilder.withFilterAsLink(facetConfig, currentValueInterval.getFilterValues()),
 				isSelected);
 	}
 
@@ -208,17 +208,17 @@ public class NumberFacetCreator implements NestedFacetCreator {
 			upperBound = upperBoundValue == null ? null : upperBoundValue.doubleValue();
 		}
 
-		String getFilterValue() {
+		String[] getFilterValues() {
 			if (lowerBound == null && upperBound == null) {
-				return "";
+				return null;
 			}
 			if (lowerBound == null) {
-				return upperBound.toString();
+				return new String[] { upperBound.toString() };
 			}
 			if (upperBound == null) {
-				return lowerBound.toString();
+				return new String[] { lowerBound.toString() };
 			}
-			return lowerBound + "," + upperBound;
+			return new String[] { lowerBound.toString(), upperBound.toString() };
 		}
 
 	}
