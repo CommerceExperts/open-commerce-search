@@ -2,6 +2,8 @@ package de.cxp.ocs.util;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -112,14 +114,14 @@ public class SearchQueryBuilder {
 				linkBuilder.setParameters(queryParams);
 			}
 			try {
-				return linkBuilder.build().getQuery().toString();
+				return linkBuilder.build().getRawQuery();
 			}
 			catch (URISyntaxException e) {
 				throw new IllegalArgumentException("parameter caused URISyntaxException: " + facetConfig.getSourceField() + "=" + filterValue, e);
 			}
 		}
 		else {
-			return searchQueryLink.getQuery();
+			return searchQueryLink.getRawQuery();
 
 		}
 	}
@@ -146,17 +148,26 @@ public class SearchQueryBuilder {
 				linkBuilder.setParameter(facetConfig.getSourceField(), filterValue);
 			}
 			try {
-				return linkBuilder.build().getQuery();
+				return linkBuilder.build().getRawQuery();
 			}
 			catch (URISyntaxException e) {
 				throw new IllegalArgumentException("parameter caused URISyntaxException: " + facetConfig.getSourceField() + "=" + filterValue, e);
 			}
 		}
 		else {
-			String newParam = facetConfig.getSourceField() + "=" + filterValue;
-			String query = searchQueryLink.getQuery();
+			String newParam = facetConfig.getSourceField() + "=" + encodeValue(filterValue);
+			String query = searchQueryLink.getRawQuery();
 			if (query.length() == 0) return newParam;
 			else return query + "&" + newParam;
+		}
+	}
+
+	private String encodeValue(String value) {
+		try {
+			return URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
+		}
+		catch (Exception e) {
+			return value;
 		}
 	}
 
@@ -165,6 +176,6 @@ public class SearchQueryBuilder {
 	}
 
 	public String toString() {
-		return searchQueryLink.getQuery();
+		return searchQueryLink.getRawQuery();
 	}
 }

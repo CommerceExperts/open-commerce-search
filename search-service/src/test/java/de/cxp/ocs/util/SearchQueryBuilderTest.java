@@ -36,7 +36,7 @@ public class SearchQueryBuilderTest {
 		String result = underTest.withFilterAsLink(
 				new FacetConfig("Brand", "brand").setMultiSelect(true),
 				"orange");
-		assertTrue(result.contains("brand=apple,orange"), result);
+		assertTrue(result.contains("brand=apple%2Corange"), result);
 	}
 
 	@Test
@@ -47,8 +47,8 @@ public class SearchQueryBuilderTest {
 						.withFilter(new TermResultFilter("brand", "apple", "orange")));
 		String result = underTest.withFilterAsLink(
 				new FacetConfig("Price", "price"), "0", "10");
-		assertTrue(result.contains("brand=apple,orange"), result);
-		assertTrue(result.contains("price=0,10"), result);
+		assertTrue(result.contains("brand=apple%2Corange"), result);
+		assertTrue(result.contains("price=0%2C10"), result);
 	}
 
 	@Test
@@ -59,8 +59,8 @@ public class SearchQueryBuilderTest {
 						.withFilter(new TermResultFilter("brand", "äpple")));
 		String result = underTest.withFilterAsLink(
 				new FacetConfig("Category", "cat"), "Männer", "Was für's Köpfchen, Mützen & Schals");
-		assertTrue(result.contains("brand=äpple"), result);
-		assertTrue(result.contains("cat=Männer,Was für's Köpfchen%2C Mützen %26 Schals"), result);
+		assertTrue(result.contains("brand=%C3%A4pple"), result);
+		assertTrue(result.contains("cat=M%C3%A4nner%2CWas+f%C3%BCr%27s+K%C3%B6pfchen%252C+M%C3%BCtzen+%26+Schals"), result);
 	}
 
 	@Test
@@ -84,11 +84,11 @@ public class SearchQueryBuilderTest {
 						.withFilter(new TermResultFilter("brand", "apple", "orange"))
 						.withFilter(new NumberResultFilter("price", 1.23, 4.56)));
 		String baseLink = underTest.toString();
-		assertTrue(baseLink.contains("price=1.23,4.56"), baseLink);
-		assertTrue(baseLink.contains("brand=apple,orange"), baseLink);
+		assertTrue(baseLink.contains("price=1.23%2C4.56"), baseLink);
+		assertTrue(baseLink.contains("brand=apple%2Corange"), baseLink);
 
 		String result = underTest.withoutFilterAsLink(new FacetConfig("Price", "price"), "1.23", "4.56");
 		assertFalse(result.contains("price"), result);
-		assertTrue(result.contains("brand=apple,orange"), result);
+		assertTrue(result.contains("brand=apple%2Corange"), result);
 	}
 }
