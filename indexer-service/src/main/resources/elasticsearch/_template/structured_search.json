@@ -185,6 +185,18 @@
           }
         }
       },
+	  {
+	    "categories_data": {
+		  "path_match": "categories.*",
+		  "mapping": {
+			"type": "text",
+			"analyzer": "category_analyzer",
+			"fielddata": "true",
+			"eager_global_ordinals": true,
+			"norms": false
+		  }
+		}
+	  },
       {
         "search_data": {
           "path_match": "*searchData.*",
@@ -224,13 +236,7 @@
       "resultData": {"type": "object"},
       "sortData": {"type": "object"},
       "scores": {"type": "object"},
-      "categories": {
-          "type": "text",
-          "analyzer": "category_analyzer",
-          "fielddata": "true",
-          "eager_global_ordinals": true,
-          "norms": "true"
-      },
+	  "categories": {"type": "object"},
       "termFacetData": {
         "type": "nested",
         "properties": {

@@ -3,14 +3,22 @@ package de.cxp.ocs.indexer.model;
 import static de.cxp.ocs.util.Util.*;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Function;
+
+import org.apache.commons.lang3.StringUtils;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.FieldUsage;
+import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.util.MinMaxSet;
+import io.micrometer.core.lang.NonNull;
 
 /**
  * Enum describing the usage of an field that will be indexed.
@@ -20,6 +28,17 @@ public class FieldUsageApplier {
 	public static void handleSearchField(final DataItem record, final Field field, Object value) {
 		if (isEmpty(value)) {
 			return;
+		}
+
+		if (FieldType.category.equals(field.getType())) {
+			// for search only extract category names
+			value = convertCategoryData(value, catPath -> {
+				StringBuilder searchableCategoryPath = new StringBuilder();
+				for (Category c : catPath) {
+					searchableCategoryPath.append(c.getName()).append(" / ");
+				}
+				return searchableCategoryPath.toString();
+			});
 		}
 
 		if (value instanceof Collection<?>) {
@@ -46,15 +65,18 @@ public class FieldUsageApplier {
 			}
 		}
 
-		record.getSearchData().compute(field.getName(), computeSearchDataValue(value));
+		record.getSearchData().compute(field.getName(), joinSearchDataValue(value));
 		if (record instanceof VariantItem) {
-			((VariantItem) record).getMaster().getSearchData().compute(field.getName(), computeSearchDataValue(
+			((VariantItem) record).getMaster().getSearchData().compute(field.getName(), joinSearchDataValue(
 					value));
 		}
 	};
 
-	public static void handleResultField(final DataItem record, final Field field, final Object value) {
-		record.getResultData().compute(field.getName(), computeSearchDataValue(value));
+	public static void handleResultField(final DataItem record, final Field field, Object value) {
+		if (FieldType.category.equals(field.getType())) {
+			value = convertCategoryData(value, FieldUsageApplier::toCategoryPathString);
+		}
+		record.getResultData().compute(field.getName(), joinSearchDataValue(value));
 	};
 
 	public static void handleSortField(final DataItem record, final Field field, Object value) {
@@ -66,14 +88,14 @@ public class FieldUsageApplier {
 
 		Object previousValue = record.getSortData().putIfAbsent(field.getName(), new MinMaxSet<>(value));
 		if (previousValue != null) {
-			record.getSortData().compute(field.getName(), computeSearchDataValue(value));
+			record.getSortData().compute(field.getName(), joinSearchDataValue(value));
 		}
 
 		if (record instanceof VariantItem) {
 			previousValue = ((VariantItem) record).getMaster().getSortData()
 					.putIfAbsent(field.getName(), new MinMaxSet<>(value));
 			if (previousValue != null) {
-				((VariantItem) record).getMaster().getSortData().compute(field.getName(), computeSearchDataValue(
+				((VariantItem) record).getMaster().getSortData().compute(field.getName(), joinSearchDataValue(
 						value));
 			}
 		}
@@ -98,6 +120,9 @@ public class FieldUsageApplier {
 								+ " is not numeric: " + value.toString().substring(0, 12)
 								+ (value.toString().length() > 12 ? "..." : "")));
 			}
+		}
+		if (FieldType.category.equals(field.getType())) {
+			parsedValue = convertCategoryData(value, FieldUsageApplier::toCategoryPathString);
 		}
 		return parsedValue;
 	}
@@ -132,8 +157,11 @@ public class FieldUsageApplier {
 				}
 				break;
 			case category:
-				Collection<String> values = toStringCollection(value);
-				((MasterItem) record).getCategories().addAll(values);
+				if (record instanceof IndexableItem) {
+					((IndexableItem) record).getCategories()
+							.computeIfAbsent(field.getName(), n -> new HashSet<>())
+							.addAll(convertCategoryData(value, FieldUsageApplier::toCategoryPathString));
+				}
 				break;
 			default:
 				if (value instanceof Collection || value.getClass().isArray()) {
@@ -162,11 +190,11 @@ public class FieldUsageApplier {
 			numValue = tryToParseAsNumber(String.valueOf(value));
 		}
 		if (numValue.isPresent()) {
-			record.getScores().compute(field.getName(), computeScoreDataValue(numValue.get()));
+			record.getScores().compute(field.getName(), joinScoreDataValue(numValue.get()));
 
 			if (record instanceof VariantItem) {
 				((VariantItem) record).getMaster().getScores()
-						.compute(field.getName(), computeScoreDataValue(numValue.get()));
+						.compute(field.getName(), joinScoreDataValue(numValue.get()));
 			}
 		}
 		else {
@@ -175,12 +203,12 @@ public class FieldUsageApplier {
 
 	};
 
-	protected static BiFunction<? super String, ? super Object, ? extends Object> computeSearchDataValue(
+	protected static BiFunction<? super String, ? super Object, ? extends Object> joinSearchDataValue(
 			final Object value) {
 		return (name, oldVal) -> collectObjects(oldVal, value);
 	}
 
-	protected static BiFunction<? super String, ? super Object, ? extends Object> computeScoreDataValue(
+	protected static BiFunction<? super String, ? super Object, ? extends Object> joinScoreDataValue(
 			final Number value) {
 		// only keep biggest value
 		// XXX are there cases, where a lower value should be kept?
@@ -193,7 +221,7 @@ public class FieldUsageApplier {
 		};
 	}
 
-	public static void apply(FieldUsage fieldUsage, DataItem indexableItem, Field field, Object value) {
+	public static void apply(FieldUsage fieldUsage, DataItem indexableItem, Field field, @NonNull Object value) {
 		switch (fieldUsage) {
 			case Facet:
 				handleFacetField(indexableItem, field, value);
@@ -213,4 +241,46 @@ public class FieldUsageApplier {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
+	private static Collection<String> convertCategoryData(Object value, Function<Category[], String> toStringMethod) {
+		if (value instanceof Category[]) {
+			return Collections.singletonList(toStringMethod.apply((Category[]) value));
+		}
+		else if (value instanceof Collection) {
+			Object elem = ((Collection<?>) value).iterator().next();
+			Set<String> convertedCategories = new HashSet<String>();
+			if (elem instanceof Category[]) {
+				for (Category[] path : (Collection<Category[]>) value) {
+					convertedCategories.add(toStringMethod.apply((Category[]) path));
+				}
+			}
+			else if (elem instanceof String[]) {
+				for (String[] path : (Collection<String[]>) value) {
+					convertedCategories.add(StringUtils.join(path, '/'));
+				}
+			}
+			else {
+				for (Object path : (Collection<?>) value) {
+					convertedCategories.add(path.toString());
+				}
+			}
+			return convertedCategories;
+		}
+		else if (value instanceof String[]) {
+			return Collections.singletonList(StringUtils.join((String[]) value, '/'));
+		}
+		else {
+			return Collections.singletonList(value.toString());
+		}
+	}
+
+	private static String toCategoryPathString(Category[] categories) {
+		StringBuilder categoryPath = new StringBuilder();
+		for (Category c : categories) {
+			if (categoryPath.length() > 0) categoryPath.append('/');
+			categoryPath.append(c.getName().replace("/", "%2F"));
+			if (c.getId() != null) categoryPath.append(':').append(c.getId());
+		}
+		return categoryPath.toString();
+	}
 }

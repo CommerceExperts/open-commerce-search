@@ -1,6 +1,6 @@
 package de.cxp.ocs.elasticsearch.query;
 
-import static de.cxp.ocs.config.FieldConstants.*;
+import static de.cxp.ocs.config.FieldConstants.VARIANTS;
 import static de.cxp.ocs.util.ESQueryUtils.mergeQueries;
 
 import java.util.HashMap;
@@ -106,19 +106,10 @@ public class FiltersBuilder {
 		if (filters.isEmpty()) return;
 
 		// collect filter queries on master and variant level
+		// TODO: very error prone code. Do this
 		boolean buildVariantQueryAfterwards = false;
 		for (InternalResultFilter filter : filters) {
-			String fieldPrefix;
-			switch (filter.getClass().getSimpleName()) {
-				case "TermResultFilter":
-					fieldPrefix = TERM_FACET_DATA;
-					break;
-				case "NumberResultFilter":
-					fieldPrefix = NUMBER_FACET_DATA;
-					break;
-				default:
-					fieldPrefix = "";
-			}
+			String fieldPrefix = filter.getFieldPrefix();
 
 			if (isVariantField(filter.getField())) {
 				fieldPrefix = VARIANTS + "." + fieldPrefix;
@@ -130,15 +121,15 @@ public class FiltersBuilder {
 			InternalResultFilterAdapter<? super InternalResultFilter> filterAdapter = (InternalResultFilterAdapter<? super InternalResultFilter>) filterAdapters
 					.get(filter.getClass());
 
-			if (fieldPrefix.isEmpty()) {
-				filterQueries.put(filter.getField(), filterAdapter.getAsQuery(fieldPrefix, filter));
-			}
-			else {
+			if (filter.isNestedFilter()) {
 				filterQueries.put(filter.getField(),
 						QueryBuilders.nestedQuery(
 								fieldPrefix,
 								filterAdapter.getAsQuery(fieldPrefix + ".", filter),
 								ScoreMode.None));
+			}
+			else {
+				filterQueries.put(filter.getField(), filterAdapter.getAsQuery(fieldPrefix, filter));
 			}
 		}
 

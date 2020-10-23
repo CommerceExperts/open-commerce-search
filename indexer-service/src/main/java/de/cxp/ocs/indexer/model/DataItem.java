@@ -1,6 +1,7 @@
 package de.cxp.ocs.indexer.model;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,12 @@ public abstract class DataItem {
 	private final Map<String, Object> sortData = new HashMap<>();
 
 	public void setValue(final Field field, final Object value) {
+		if (value == null
+				|| (value instanceof String && ((String) value).isEmpty())
+				|| (value instanceof Collection<?> && ((Collection<?>) value).isEmpty())) {
+			return;
+		}
+
 		for (final FieldUsage fu : field.getUsage()) {
 			FieldUsageApplier.apply(fu, this, field, value);
 		}

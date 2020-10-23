@@ -1,5 +1,6 @@
 package de.cxp.ocs.elasticsearch.query.filter;
 
+import de.cxp.ocs.config.FieldConstants;
 import lombok.Data;
 
 @Data
@@ -29,5 +30,15 @@ public class NumberResultFilter implements InternalResultFilter {
 	public String[] getValues() {
 		if (lowerBound.equals(upperBound)) return new String[] { lowerBound.toString()};
 		else return new String[] { lowerBound.toString(), upperBound.toString() };
+	}
+
+	@Override
+	public String getFieldPrefix() {
+		return FieldConstants.NUMBER_FACET_DATA;
+	}
+
+	@Override
+	public boolean isNestedFilter() {
+		return true;
 	}
 }

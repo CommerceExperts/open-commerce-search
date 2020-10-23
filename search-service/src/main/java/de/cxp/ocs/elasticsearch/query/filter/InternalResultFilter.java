@@ -4,5 +4,10 @@ public interface InternalResultFilter {
 
 	String getField();
 
+	String getFieldPrefix();
+
+	boolean isNestedFilter();
+
 	String[] getValues();
+
 }

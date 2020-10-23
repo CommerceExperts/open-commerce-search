@@ -1,30 +1,71 @@
 package de.cxp.ocs.indexer;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import de.cxp.ocs.config.Field;
+import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.indexer.model.DataItem;
 import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.indexer.model.MasterItem;
 import de.cxp.ocs.indexer.model.VariantItem;
-import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * converts {@link Document} / {@link Product} objects into
  * {@link DataItem}
  */
-@RequiredArgsConstructor
+@Slf4j
 public class IndexItemConverter {
 
 	@NonNull
-	private final Map<String, Field> fields;
+	private final Map<String, Field>	fields;
+	private final Optional<Field>		categoryField;
+
+	public IndexItemConverter(Map<String, Field> fields) {
+		this.fields = fields;
+		categoryField = determineDefaultCategoryField(fields);
+	}
+
+	private Optional<Field> determineDefaultCategoryField(Map<String, Field> fields) {
+		Map<String, Field> categoryFields = fields.values().stream()
+				.filter(v -> FieldType.category.equals(v.getType()))
+				.collect(Collectors.toMap(Field::getName, v -> v));
+		// if there are several fields of type category, try to determine which
+		// one is the most suitable for Document::categories
+		if (categoryFields.size() > 1) {
+			// best case: one of the fields has one of these preferred names:
+			for (String preferedCatFieldName : new String[] { "categories", "category" }) {
+				if (categoryFields.containsKey(preferedCatFieldName)) {
+					categoryFields.entrySet().removeIf(e -> !e.getKey().equals(preferedCatFieldName));
+					log.warn("Multiple category fields defined! Will index Document::categories into field with prefered name '{}'!", preferedCatFieldName);
+					break;
+				}
+			}
+
+			// alternative case: if one field has no "source field names",
+			// it should be the categories field.
+			if (categoryFields.size() > 1) {
+				categoryFields.entrySet().removeIf(e -> e.getValue().getSourceNames().size() > 0);
+				if (categoryFields.isEmpty()) {
+					log.warn("Multiple category fields defined, but none with one of the prefered names (categories/category) or without source names found!"
+							+ " Won't index Document::categories data!");
+				}
+			}
+
+			// last case: we don't know which one is the most suitable one.
+			// Don't index categories at all.
+			if (categoryFields.size() > 1) {
+				categoryFields.clear();
+				log.warn("Multiple category fields defined, but none has unique characteristic! Won't index Document::categories data!");
+			}
+		}
+		return categoryFields.isEmpty() ? Optional.empty() : Optional.of(categoryFields.values().iterator().next());
+	}
 
 	public IndexableItem toIndexableItem(Document doc) {
 		// TODO: validate document (e.g. require IDs etc.)
@@ -60,82 +101,17 @@ public class IndexItemConverter {
 				continue;
 			}
 
-			switch (field.getType()) {
-				case id:
-					// no ID handling here
-					// TODO: use that field information to retrieve an ID from
-					// the data in case the source document itself has not
-					// explicit ID set.
-					break;
-				case category:
-					if (targetItem instanceof IndexableItem) {
-						extractCategoryPaths(field, sourceDoc, targetItem);
-					}
-					break;
-				default:
-					List<String> sourceValues = new ArrayList<>(1);
-					Object value = sourceData.get(field.getName());
-					if (value != null) sourceValues.add(value.toString());
-
-					if (field.getSourceNames() != null) {
-
-						for (int i = 0; i < field.getSourceNames().size(); i++) {
-							Object sourceValue = sourceData.get(field.getSourceNames().get(i));
-							if (sourceValue != null) {
-								sourceValues.add(sourceValue.toString());
-							}
-						}
-						if (sourceValues.size() > 0) {
-							value = sourceValues;
-						}
-					}
-
-					if (!sourceValues.isEmpty()) {
-						targetItem.setValue(field, sourceValues.size() == 1 ? sourceValues.get(0) : sourceValues);
-					}
-			}
-		}
-	}
-
-	private void extractCategoryPaths(final Field field, Document sourceDoc, final DataItem targetItem) {
-		Set<String> categoryPaths = ((IndexableItem) targetItem).getCategories();
-
-		// handle special category field
-		if (sourceDoc.getCategories() != null) {
-			List<Category[]> sourceCategories = sourceDoc.getCategories();
-			for (Category[] categoryPath : sourceCategories) {
-				categoryPaths.add(toCategoryPathString(categoryPath));
-			}
-		}
-		// fallback: try to get categories from the standard data
-		// fields
-		else if (field.getSourceNames() != null && !field.getSourceNames().isEmpty()) {
-			for (int i = 0; i < field.getSourceNames().size(); i++) {
-				Object sourceValue = sourceDoc.getData().get(field.getSourceNames().get(i));
-				if (sourceValue != null) {
-					if (sourceValue instanceof List<?>) {
-						((List<?>) sourceValue).forEach(o -> categoryPaths.add(o.toString()));
-					}
-					else if (sourceValue instanceof String[]) {
-						for (String s : (String[]) sourceValue) {
-							categoryPaths.add(s);
-						}
-					}
-					else {
-						categoryPaths.add(sourceValue.toString());
-					}
+			Object value = sourceData.get(field.getName());
+			targetItem.setValue(field, value);
+			
+			if (field.getSourceNames() != null) {
+				for (int i = 0; i < field.getSourceNames().size(); i++) {
+					targetItem.setValue(field, sourceData.get(field.getSourceNames().get(i)));
 				}
 			}
 		}
+		
+		categoryField.ifPresent(f -> targetItem.setValue(f, sourceDoc.getCategories()));
 	}
 
-	private String toCategoryPathString(Category[] categories) {
-		StringBuilder categoryPath = new StringBuilder();
-		for (Category c : categories) {
-			if (categoryPath.length() > 0) categoryPath.append('/');
-			categoryPath.append(c.getName().replace("/", "%2F"));
-			if (c.getId() != null) categoryPath.append(':').append(c.getId());
-		}
-		return categoryPath.toString();
-	}
 }

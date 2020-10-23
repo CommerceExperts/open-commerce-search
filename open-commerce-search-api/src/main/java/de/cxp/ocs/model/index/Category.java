@@ -22,4 +22,7 @@ public class Category {
 		return new Category(null, name);
 	}
 
+	public String toString() {
+		return id == null ? name : name + ":" + id;
+	}
 }

@@ -22,29 +22,34 @@ import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
 import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.SearchQueryBuilder;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 
-@RequiredArgsConstructor
 @Accessors(chain = true)
 public class CategoryFacetCreator implements FacetCreator {
 
-	private static final String AGGREGATION_NAME = "_category";
+	private static final String AGGREGATION_NAME_PREFIX = "_category";
 
-	// TODO: support several hierarchical facets
 	private final FacetConfig categoryFacetConfig;
+	private final String		aggregationName;
+	private final String		categoryFieldName;
+
+	public CategoryFacetCreator(FacetConfig categoryFacetConfig) {
+		this.categoryFacetConfig = categoryFacetConfig;
+		aggregationName = AGGREGATION_NAME_PREFIX + "_" + categoryFacetConfig.getSourceField();
+		categoryFieldName = FieldConstants.CATEGORY_FACET_DATA + "." + categoryFacetConfig.getSourceField();
+	}
 
 	@Override
 	public AbstractAggregationBuilder<?> buildAggregation(InternalSearchParams parameters) {
-		return AggregationBuilders.terms(AGGREGATION_NAME)
-				.field(FieldConstants.CATEGORY_FACET_DATA)
+		return AggregationBuilders.terms(aggregationName)
+				.field(categoryFieldName)
 				.size(120)
 				.minDocCount(1);
 	}
 
 	@Override
 	public Collection<Facet> createFacets(List<InternalResultFilter> filters, Aggregations aggResult, SearchQueryBuilder linkBuilder) {
-		Terms categoryAgg = (Terms) aggResult.get(AGGREGATION_NAME);
+		Terms categoryAgg = (Terms) aggResult.get(aggregationName);
 		List<? extends Bucket> catBuckets = categoryAgg.getBuckets();
 		if (catBuckets.size() == 0) return Collections.emptyList();
 

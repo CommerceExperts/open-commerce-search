@@ -1,5 +1,6 @@
 package de.cxp.ocs.elasticsearch.query.filter;
 
+import de.cxp.ocs.config.FieldConstants;
 import lombok.Data;
 
 /**
@@ -27,4 +28,13 @@ public class TermResultFilter implements InternalResultFilter {
 		return null;
 	}
 
+	@Override
+	public String getFieldPrefix() {
+		return FieldConstants.TERM_FACET_DATA;
+	}
+
+	@Override
+	public boolean isNestedFilter() {
+		return true;
+	}
 }

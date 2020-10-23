@@ -8,7 +8,7 @@ public class PathResultFilterAdapter implements InternalResultFilterAdapter<Path
 
 	@Override
 	public QueryBuilder getAsQuery(String fieldPrefix, PathResultFilter filter) {
-		return QueryBuilders.prefixQuery(fieldPrefix + filter.getField(), StringUtils.join(filter.getPath(), '/'));
+		return QueryBuilders.prefixQuery(fieldPrefix + "." + filter.getField(), StringUtils.join(filter.getPath(), '/'));
 	}
 
 }
