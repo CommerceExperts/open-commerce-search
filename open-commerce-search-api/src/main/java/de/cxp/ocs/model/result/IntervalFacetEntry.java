@@ -54,4 +54,35 @@ public class IntervalFacetEntry extends FacetEntry {
 		return from.toString() + "-" + to.toString();
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + ((lowerBound == null) ? 0 : lowerBound.hashCode());
+		result = prime * result + ((type == null) ? 0 : type.hashCode());
+		result = prime * result + ((upperBound == null) ? 0 : upperBound.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (!super.equals(obj)) return false;
+		if (getClass() != obj.getClass()) return false;
+		IntervalFacetEntry other = (IntervalFacetEntry) obj;
+		if (lowerBound == null) {
+			if (other.lowerBound != null) return false;
+		}
+		else if (!lowerBound.equals(other.lowerBound)) return false;
+		if (type == null) {
+			if (other.type != null) return false;
+		}
+		else if (!type.equals(other.type)) return false;
+		if (upperBound == null) {
+			if (other.upperBound != null) return false;
+		}
+		else if (!upperBound.equals(other.upperBound)) return false;
+		return true;
+	}
+
 }

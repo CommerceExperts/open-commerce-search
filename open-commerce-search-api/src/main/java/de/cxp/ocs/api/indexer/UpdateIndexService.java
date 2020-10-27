@@ -80,7 +80,7 @@ public interface UpdateIndexService {
 					@ApiResponse(responseCode = "404", description = "index does not exist"),
 					@ApiResponse(responseCode = "409", description = "Document already exists but replaceExisting is set to false")
 			})
-	void putProduct(
+	void putDocument(
 			@Parameter(
 					in = ParameterIn.PATH,
 					name = "indexName",
@@ -109,6 +109,6 @@ public interface UpdateIndexService {
 					@ApiResponse(responseCode = "304", description = "document not found"),
 					@ApiResponse(responseCode = "404", description = "index does not exist")
 			})
-	void deleteProduct(@PathParam("indexName") String indexName, @QueryParam("id") String id);
+	void deleteDocument(@PathParam("indexName") String indexName, @QueryParam("id") String id);
 
 }

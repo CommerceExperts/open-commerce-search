@@ -6,11 +6,12 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.4</version>
+	<version>0.5</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
 		<module>open-commerce-search-api</module>
+		<module>ocs-java-client</module>
 		<module>ocs-commons</module>
 		<module>indexer-service</module>
 		<module>search-service</module>
@@ -25,7 +26,7 @@
 		<docker.prefix>ocs-</docker.prefix>
 		<dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
 
-		<ocs-api.version>0.4</ocs-api.version>
+		<ocs-api.version>0.5</ocs-api.version>
 		<ocs-commons.version>0.1.1</ocs-commons.version>
 
 		<elasticsearch.version>7.5.0</elasticsearch.version>
@@ -171,33 +172,6 @@
 	<build>
 		<pluginManagement>
 			<plugins>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.3</version>
-					<configuration>
-						<source>${java.version}</source>
-						<target>${java.version}</target>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-surefire-plugin</artifactId>
-					<version>2.20.1</version>
-					<configuration>
-						<workingDirectory>${project.build.directory}</workingDirectory>
-						<argLine>-Dfile.encoding=UTF-8</argLine>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-deploy-plugin</artifactId>
-					<version>3.0.0-M1</version>
-					<configuration>
-						<deployAtEnd>true</deployAtEnd>
-					</configuration>
-				</plugin>
-
 				<!-- Set up JAR manifest -->
 				<plugin>
 					<artifactId>maven-jar-plugin</artifactId>
@@ -271,6 +245,32 @@
 		</pluginManagement>
 
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.3</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.20.1</version>
+				<configuration>
+					<workingDirectory>${project.build.directory}</workingDirectory>
+					<argLine>-Dfile.encoding=UTF-8</argLine>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<version>3.0.0-M1</version>
+				<configuration>
+					<deployAtEnd>true</deployAtEnd>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.honton.chas</groupId>
 				<artifactId>exists-maven-plugin</artifactId>

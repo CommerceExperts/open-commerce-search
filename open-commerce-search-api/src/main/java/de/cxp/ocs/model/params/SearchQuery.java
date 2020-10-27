@@ -1,7 +1,5 @@
 package de.cxp.ocs.model.params;
 
-import javax.annotation.Nonnegative;
-import javax.annotation.Nonnull;
 import javax.validation.constraints.Min;
 
 import lombok.Data;
@@ -16,7 +14,6 @@ public class SearchQuery {
 	/**
 	 * the user query.
 	 */
-	@Nonnull
 	public String q;
 
 	public SearchQuery setUserQuery(String userQuery) {
@@ -35,7 +32,7 @@ public class SearchQuery {
 	@Min(1)
 	public int limit = 12;
 
-	@Nonnegative
+	@Min(0)
 	public int offset = 0;
 
 	/**

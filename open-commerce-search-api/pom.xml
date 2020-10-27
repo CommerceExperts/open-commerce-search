@@ -11,7 +11,7 @@
 	</parent>
 
 	<artifactId>open-commerce-search-api</artifactId>
-	<version>0.4.1</version>
+	<version>0.5</version>
 	<packaging>jar</packaging>
 
 	<description>An open and abstract search API that covers minimal search functionality</description>
@@ -19,14 +19,6 @@
 	<properties>
 		<java.version>1.8</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<jersey.version>2.25.1</jersey.version>
-
-		<gson-fire.version>1.8.3</gson-fire.version>
-		<jsr305.version>3.0.2</jsr305.version>
-		<swagger-jaxrs.version>1.6.0</swagger-jaxrs.version>
-		<okhttp.version>3.14.2</okhttp.version>
-		<threetenbp.version>1.4.0</threetenbp.version>
-		<swagger-core.version>1.5.22</swagger-core.version>
 	</properties>
 
 	<dependencies>
@@ -48,71 +40,11 @@
 			<artifactId>javax.servlet-api</artifactId>
 			<version>3.1.0</version>
 		</dependency>
-
-		<!-- dependencies for generated client -->
-		<dependency>
-			<groupId>io.swagger</groupId>
-			<artifactId>swagger-annotations</artifactId>
-			<version>${swagger-core.version}</version>
-			<scope>provided</scope>
-		</dependency>
 		<dependency>
 			<groupId>javax.ws.rs</groupId>
 			<artifactId>javax.ws.rs-api</artifactId>
 			<version>2.1</version>
 			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.gsonfire</groupId>
-			<artifactId>gson-fire</artifactId>
-			<version>${gson-fire.version}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.google.code.findbugs</groupId>
-			<artifactId>jsr305</artifactId>
-			<version>${jsr305.version}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>javax.annotation</groupId>
-			<artifactId>javax.annotation-api</artifactId>
-			<version>1.2</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.squareup.okhttp3</groupId>
-			<artifactId>okhttp</artifactId>
-			<version>${okhttp.version}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.squareup.okhttp3</groupId>
-			<artifactId>logging-interceptor</artifactId>
-			<version>${okhttp.version}</version>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.threeten</groupId>
-			<artifactId>threetenbp</artifactId>
-			<version>${threetenbp.version}</version>
-			<scope>provided</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.fasterxml.jackson.module</groupId>
-			<artifactId>jackson-module-parameter-names</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter</artifactId>
-			<scope>test</scope>
 		</dependency>
 
 		<!-- install lombok into your ide to use its power: https://projectlombok.org/download.html -->
@@ -156,77 +88,5 @@
 			</build>
 		</profile>
 	</profiles>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>${java.version}</source>
-					<target>${java.version}</target>
-					<!-- necessary for jackson-module-parameter-names -->
-					<compilerArgs>
-						<compilerArg>-parameters</compilerArg>
-					</compilerArgs>
-					<fork>true</fork>
-				</configuration>
-			</plugin>
-
-			<plugin>
-				<groupId>org.openapitools</groupId>
-				<artifactId>openapi-generator-maven-plugin</artifactId>
-				<version>4.2.2</version>
-				<executions>
-					<execution>
-						<id>generate-client</id>
-						<phase>process-resources</phase>
-						<goals>
-							<goal>generate</goal>
-						</goals>
-						<configuration>
-							<generatorName>java</generatorName>
-							<inputSpec>${project.basedir}/src/main/resources/openapi.yaml</inputSpec>
-							<output>${project.build.directory}/generated-sources</output>
-
-							<apiPackage>de.cxp.ocs.client.api</apiPackage>
-							<modelPackage>de.cxp.ocs.client.models</modelPackage>
-
-							<generateSupportingFiles>true</generateSupportingFiles>
-							<generateApiDocumentation>true</generateApiDocumentation>
-							<generateModelDocumentation>true</generateModelDocumentation>
-							<generateApiTests>false</generateApiTests>
-							<generateModelTests>false</generateModelTests>
-
-							<typeMappings>map=java.util.Map</typeMappings>
-
-							<configOptions>
-								<sourceFolder>src/main/java</sourceFolder>
-							</configOptions>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>build-helper-maven-plugin</artifactId>
-				<version>3.0.0</version>
-				<executions>
-					<execution>
-						<phase>process-classes</phase>
-						<goals>
-							<goal>add-source</goal>
-						</goals>
-						<configuration>
-							<sources>
-								<source>${project.build.directory}/generated-sources/src/main/java</source>
-							</sources>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
 
 </project>

@@ -1,8 +1,9 @@
-package de.cxp.ocs.model;
+package de.cxp.ocs.client.deserializer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.stream.Stream;
 
@@ -10,14 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonCreator.Mode;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.model.index.Attribute;
@@ -28,6 +22,7 @@ import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
+import de.cxp.ocs.model.result.IntervalFacetEntry;
 import de.cxp.ocs.model.result.ResultHit;
 import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.model.result.SearchResultSlice;
@@ -40,7 +35,7 @@ public class SerializationTest {
 	// serialization
 	final ObjectMapper serializer = new ObjectMapper();
 
-	final ObjectMapper deserializer = new ObjectMapper();
+	ObjectMapper deserializer;
 
 	/**
 	 * special configuration for jackson object mapper to work with the
@@ -48,44 +43,7 @@ public class SerializationTest {
 	 */
 	@BeforeEach
 	public void configureDeserialization() {
-		deserializer.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-
-		deserializer.registerModule(new ParameterNamesModule(Mode.PROPERTIES));
-		deserializer.addMixIn(Facet.class, FacetMixin.class);
-		deserializer.addMixIn(SearchQuery.class, SearchQueryCreator.class);
-
-		SimpleModule deserializerModule = new SimpleModule();
-		deserializerModule.addDeserializer(Document.class, new DocumentDeserializer());
-		deserializerModule.addDeserializer(Product.class, new ProductDeserializer());
-		deserializerModule.addDeserializer(FacetEntry.class, new FacetEntryDeserializer());
-		deserializer.registerModule(deserializerModule);
-	}
-
-	@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "_type")
-	public static abstract class WithTypeInfo {}
-
-	public static abstract class SearchQueryCreator {
-
-		@JsonCreator
-		SearchQueryCreator(String label) {}
-	}
-
-	public static abstract class AttributeCreator {
-
-		@JsonCreator
-		AttributeCreator(String id, String label, String code, String value) {}
-	}
-
-	public static abstract class FacetMixin {
-
-		@JsonCreator
-		FacetMixin(String name) {}
-
-		@JsonIgnore
-		abstract String getLabel();
-
-		@JsonIgnore
-		abstract String getType();
+		deserializer = ObjectMapperFactory.createObjectMapper();
 	}
 
 	@ParameterizedTest
@@ -108,6 +66,8 @@ public class SerializationTest {
 
 	public static Stream<Object> getSerializableObjects() {
 		return Stream.of(
+				new ImportSession("foo_bar", "ocs-foo_bar-de"),
+				
 				new Product("1")
 						.set("title", "string values test"),
 				Attribute.of("a1", "with id"),
@@ -165,6 +125,9 @@ public class SerializationTest {
 				new FacetEntry("red", 2, null, false),
 
 				new Facet("brand").addEntry("nike", 13, "brand=nike"),
+				new Facet("price").setMeta(Collections.singletonMap("multiSelect", "true"))
+						.setType("interval")
+						.addEntry(new IntervalFacetEntry(10, 19.99, 123, "price=10,19.99", true)),
 				new Facet("categories")
 						.addEntry(new HierarchialFacetEntry("a", 50, "categories=a", true).addChild(new FacetEntry("aa", 23, "categories=aa", false))),
 
@@ -175,7 +138,13 @@ public class SerializationTest {
 
 				new SearchResultSlice()
 						.setMatchCount(42)
-						.setNextOffset(8),
+						.setNextOffset(8)
+						.setFacets(Arrays.asList(
+								new Facet("brand").addEntry(new FacetEntry("puma", 9292, "q=shoes", true)),
+								new Facet("fake").setFiltered(true),
+								new Facet("asd").setAbsoluteFacetCoverage(124)
+										.addEntry(new HierarchialFacetEntry("Shoes", 124, "cat=shoes", false)
+												.addChild(new FacetEntry("Sneakers", 12, "cat=shoes,sneakers", false))))),
 
 				new SearchResult(),
 

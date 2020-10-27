@@ -1,4 +1,4 @@
-package de.cxp.ocs.model;
+package de.cxp.ocs.client.deserializer;
 
 import java.io.IOException;
 import java.util.ArrayList;
