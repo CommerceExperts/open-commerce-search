@@ -6,7 +6,6 @@ import de.cxp.ocs.api.indexer.FullIndexationService;
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.api.indexer.UpdateIndexService;
 import de.cxp.ocs.client.deserializer.ObjectMapperFactory;
-import de.cxp.ocs.client.target.ImportApi;
 import de.cxp.ocs.model.index.BulkImportData;
 import de.cxp.ocs.model.index.Document;
 import feign.Feign;

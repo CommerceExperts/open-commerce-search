@@ -5,7 +5,6 @@ import java.util.function.Consumer;
 
 import de.cxp.ocs.api.searcher.SearchService;
 import de.cxp.ocs.client.deserializer.ObjectMapperFactory;
-import de.cxp.ocs.client.target.SearchApi;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
 import feign.Feign;
