@@ -1,6 +1,7 @@
 package de.cxp.ocs.elasticsearch;
 
-import static de.cxp.ocs.config.FieldConstants.*;
+import static de.cxp.ocs.config.FieldConstants.RESULT_DATA;
+import static de.cxp.ocs.config.FieldConstants.VARIANTS;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -57,6 +58,7 @@ import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueryBuilder;
 import de.cxp.ocs.elasticsearch.query.builder.ESQueryBuilder;
 import de.cxp.ocs.elasticsearch.query.builder.ESQueryBuilderFactory;
+import de.cxp.ocs.elasticsearch.query.builder.MatchAllQueryBuilder;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
 import de.cxp.ocs.model.index.Document;
@@ -227,10 +229,16 @@ public class Searcher {
 
 		FiltersBuilder filtersBuilder = new FiltersBuilder(config, parameters.filters);
 
-		String asciiFoldedUserQuery = StringUtils.asciify(parameters.userQuery);
-
-		List<QueryStringTerm> searchWords = UserQueryAnalyzer.defaultAnalyzer.analyze(asciiFoldedUserQuery);
-		Iterator<ESQueryBuilder> stagedQueryBuilders = queryBuilder.getStagedQueryBuilders(searchWords);
+		Iterator<ESQueryBuilder> stagedQueryBuilders;
+		List<QueryStringTerm> searchWords;
+		if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
+			String asciiFoldedUserQuery = StringUtils.asciify(parameters.userQuery);
+			searchWords = UserQueryAnalyzer.defaultAnalyzer.analyze(asciiFoldedUserQuery);
+			stagedQueryBuilders = queryBuilder.getStagedQueryBuilders(searchWords);
+		} else {
+			stagedQueryBuilders = Collections.<ESQueryBuilder>singletonList(new MatchAllQueryBuilder()).iterator();
+			searchWords = Collections.emptyList();
+		}
 
 		SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource().size(parameters.limit)
 				.from(parameters.offset);

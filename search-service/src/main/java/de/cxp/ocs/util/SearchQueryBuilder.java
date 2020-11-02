@@ -4,7 +4,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,7 +23,6 @@ import de.cxp.ocs.config.Field;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.model.result.SortOrder;
 import de.cxp.ocs.model.result.Sorting;
-import lombok.NonNull;
 
 public class SearchQueryBuilder {
 
@@ -52,7 +50,9 @@ public class SearchQueryBuilder {
 	private static Map<String, String> toUrlParams(InternalSearchParams params) {
 		InternalSearchParams defaultParams = new InternalSearchParams();
 		Builder<String, String> urlParams = ImmutableMap.<String, String>builder();
-		urlParams.put("q", params.userQuery);
+		if (params.userQuery != null) {
+			urlParams.put("q", params.userQuery);
+		}
 		if (!params.filters.isEmpty()) {
 			for (InternalResultFilter filter : params.filters) {
 				urlParams.put(filter.getField(), joinParameterValues(filter.getValues()));
@@ -197,7 +197,7 @@ public class SearchQueryBuilder {
 		} else {
 			String newParam = facetConfig.getSourceField() + "=" + urlEncodeValue(filterValue);
 			String query = searchQueryLink.getRawQuery();
-			if (query.length() == 0)
+			if (query == null || query.length() == 0)
 				return newParam;
 			else
 				return query + "&" + newParam;
@@ -205,7 +205,8 @@ public class SearchQueryBuilder {
 	}
 
 	public boolean isFilterSelected(FacetConfig facetConfig, String filterValue) {
-		return searchQueryLink.getQuery().matches("(^|.*?&)" + Pattern.quote(facetConfig.getSourceField()) + "=[^&]*?"
+		return searchQueryLink.getQuery() != null && searchQueryLink.getQuery().matches("(^|.*?&)"
+				+ Pattern.quote(facetConfig.getSourceField()) + "=[^&]*?"
 				+ Pattern.quote(filterValue) + "($|[&,]).*");
 	}
 
