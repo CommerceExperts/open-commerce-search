@@ -100,14 +100,14 @@ public class Searcher {
 
 	private SpellCorrector spellCorrector;
 
-	private final Timer					findTimer;
-	private final Timer					sortTimer;
-	private final Timer					sqbTimer;
-	private final Timer					inputWordsTimer;
-	private final Timer					correctedWordsTimer;
-	private final Timer					resultTimer;
-	private final Timer					searchRequestTimer;
-	private final DistributionSummary	summary;
+	private final Timer findTimer;
+	private final Timer sortTimer;
+	private final Timer sqbTimer;
+	private final Timer inputWordsTimer;
+	private final Timer correctedWordsTimer;
+	private final Timer resultTimer;
+	private final Timer searchRequestTimer;
+	private final DistributionSummary summary;
 
 	public Searcher(RestHighLevelClient restClient, SearchConfiguration config, final MeterRegistry registry) {
 		this.restClient = restClient;
@@ -121,9 +121,7 @@ public class Searcher {
 		inputWordsTimer = getTimer("inputWordsSearch", config.getIndexName());
 		correctedWordsTimer = getTimer("correctedWordsSearch", config.getIndexName());
 		searchRequestTimer = getTimer("executeSearchRequest", config.getIndexName());
-		summary = DistributionSummary
-				.builder("stagedSearches")
-				.tag("indexName", config.getIndexName())
+		summary = DistributionSummary.builder("stagedSearches").tag("indexName", config.getIndexName())
 				.register(registry);
 
 		facetApplier = new FacetConfigurationApplyer(config);
@@ -136,8 +134,8 @@ public class Searcher {
 	}
 
 	private Timer getTimer(final String name, final String indexName) {
-		return Timer.builder(name).tag("indexName", indexName).publishPercentiles(0.5, 0.8, 0.9, 0.95).register(
-				registry);
+		return Timer.builder(name).tag("indexName", indexName).publishPercentiles(0.5, 0.8, 0.9, 0.95)
+				.register(registry);
 	}
 
 	private SpellCorrector initSpellCorrection() {
@@ -197,9 +195,9 @@ public class Searcher {
 		FacetConfiguration facetConf = config.getFacetConfiguration();
 		facetCreators.add(new TermFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()));
 		facetCreators.add(new NumberFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()));
-		facetCreators.add(new VariantFacetCreator(Arrays.asList(
-				new TermFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()),
-				new NumberFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()))));
+		facetCreators.add(new VariantFacetCreator(
+				Arrays.asList(new TermFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()),
+						new NumberFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()))));
 	}
 
 	// private FacetCreator createExplicitFacetCreator(Field field) {
@@ -234,8 +232,7 @@ public class Searcher {
 		List<QueryStringTerm> searchWords = UserQueryAnalyzer.defaultAnalyzer.analyze(asciiFoldedUserQuery);
 		Iterator<ESQueryBuilder> stagedQueryBuilders = queryBuilder.getStagedQueryBuilders(searchWords);
 
-		SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource()
-				.size(parameters.limit)
+		SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource().size(parameters.limit)
 				.from(parameters.offset);
 
 		MasterVariantQuery basicFilters = filtersBuilder.buildBasicFilters();
@@ -272,14 +269,14 @@ public class Searcher {
 						searchQuery == null ? "NULL"
 								: searchQuery.getMasterLevelQuery().toString().replaceAll("[\n\\s]+", " "));
 			}
-			if (searchQuery == null) continue;
+			if (searchQuery == null)
+				continue;
 
 			if (correctedWords == null && spellCorrector != null
 					&& stagedQueryBuilder.allowParallelSpellcheckExecution()
 					&& (!searchQuery.isWithSpellCorrection() || stagedQueryBuilders.hasNext())) {
 				searchSourceBuilder.suggest(spellCorrector.buildSpellCorrectionQuery(parameters.userQuery));
-			}
-			else {
+			} else {
 				searchSourceBuilder.suggest(null);
 			}
 
@@ -294,8 +291,8 @@ public class Searcher {
 
 			// if we don't have any hits, but there's a chance to get corrected
 			// words, then enrich the search words with the corrected words
-			if (searchResponse.getHits().getTotalHits().value == 0 && correctedWords == null
-					&& spellCorrector != null && searchResponse.getSuggest() != null) {
+			if (searchResponse.getHits().getTotalHits().value == 0 && correctedWords == null && spellCorrector != null
+					&& searchResponse.getSuggest() != null) {
 				Sample correctedWordsSample = Timer.start(registry);
 				correctedWords = spellCorrector.extractRelatedWords(searchWords, searchResponse.getSuggest());
 				if (correctedWords.size() > 0) {
@@ -334,15 +331,15 @@ public class Searcher {
 		SearchResponse searchResponse;
 		{
 			SearchRequest searchRequest = new SearchRequest(config.getIndexName())
-					.searchType(SearchType.QUERY_THEN_FETCH)
-					.source(searchSourceBuilder);
+					.searchType(SearchType.QUERY_THEN_FETCH).source(searchSourceBuilder);
 			searchResponse = restClient.search(searchRequest, RequestOptions.DEFAULT);
 		}
 		sample.stop(searchRequestTimer);
 		return searchResponse;
 	}
 
-	private SearchResult buildResult(InternalSearchParams parameters, SearchResponse searchResponse, SearchQueryBuilder linkBuilder) {
+	private SearchResult buildResult(InternalSearchParams parameters, SearchResponse searchResponse,
+			SearchQueryBuilder linkBuilder) {
 		SearchResult searchResult = new SearchResult();
 		searchResult.inputURI = SearchQueryBuilder.toLink(parameters).toString();
 		searchResult.slices = new ArrayList<>(1);
@@ -350,17 +347,27 @@ public class Searcher {
 		resultTimer.record(() -> {
 			if (searchResponse != null) {
 				SearchResultSlice searchResultSlice = toSearchResult(searchResponse, parameters);
-				searchResultSlice.facets = facetApplier.getFacets(
-						searchResponse.getAggregations(),
-						facetCreators,
-						searchResultSlice.matchCount,
-						parameters.filters,
-						linkBuilder);
+				searchResultSlice.facets = facetApplier.getFacets(searchResponse.getAggregations(), facetCreators,
+						searchResultSlice.matchCount, parameters.filters, linkBuilder);
 				searchResult.slices.add(searchResultSlice);
 			}
 		});
+		searchResult.sortOptions = buildSortOptions(linkBuilder);
 
 		return searchResult;
+	}
+
+	private List<Sorting> buildSortOptions(SearchQueryBuilder linkBuilder) {
+		List<Sorting> sortings = new ArrayList<>();
+		for (Field sortField : sortFields.values()) {
+			if (sortField.isBothLevel())
+				continue;
+			for (de.cxp.ocs.model.result.SortOrder order : de.cxp.ocs.model.result.SortOrder.values()) {
+				sortings.add(new Sorting(sortField.getName(), order, linkBuilder.isSortingActive(sortField, order),
+						linkBuilder.withSortingLink(sortField, order)));
+			}
+		}
+		return sortings;
 	}
 
 	private void setFetchSources(SearchSourceBuilder searchSourceBuilder, List<SortBuilder<?>> variantSortings) {
@@ -376,9 +383,9 @@ public class Searcher {
 	}
 
 	/**
-	 * Applies sort definitions onto the searchSourceBuilder and if some of
-	 * these sorts also apply to the variant level, it will create these sort
-	 * definitions and return them as list.
+	 * Applies sort definitions onto the searchSourceBuilder and if some of these
+	 * sorts also apply to the variant level, it will create these sort definitions
+	 * and return them as list.
 	 * 
 	 * @param parameters
 	 * @param searchSourceBuilder
@@ -390,18 +397,18 @@ public class Searcher {
 			for (Sorting sorting : sortings) {
 				Field sortField = sortFields.get(sorting.field);
 				if (sortField != null) {
-					searchSourceBuilder.sort(SortBuilders
-							.fieldSort(FieldConstants.SORT_DATA + "." + sorting.field)
-							.order(sorting.sortOrder == null ? SortOrder.ASC : SortOrder.fromString(sorting.sortOrder.name())));
+					searchSourceBuilder.sort(SortBuilders.fieldSort(FieldConstants.SORT_DATA + "." + sorting.field)
+							.order(sorting.sortOrder == null ? SortOrder.ASC
+									: SortOrder.fromString(sorting.sortOrder.name())));
 
 					if (sortField.isVariantLevel()) {
 						variantSortings.add(SortBuilders
-								.fieldSort(FieldConstants.VARIANTS + "." + FieldConstants.SORT_DATA + "."
-										+ sorting.field)
-								.order(sorting.sortOrder == null ? SortOrder.ASC : SortOrder.fromString(sorting.sortOrder.name())));
+								.fieldSort(
+										FieldConstants.VARIANTS + "." + FieldConstants.SORT_DATA + "." + sorting.field)
+								.order(sorting.sortOrder == null ? SortOrder.ASC
+										: SortOrder.fromString(sorting.sortOrder.name())));
 					}
-				}
-				else {
+				} else {
 					log.debug("tried to sort by an unsortable field {}", sorting.field);
 				}
 			}
@@ -411,16 +418,14 @@ public class Searcher {
 
 	private QueryBuilder buildFinalQuery(MasterVariantQuery searchQuery, MasterVariantQuery basicFilters,
 			List<SortBuilder<?>> variantSortings) {
-		QueryBuilder masterLevelQuery = ESQueryUtils.mergeQueries(
-				searchQuery.getMasterLevelQuery(),
+		QueryBuilder masterLevelQuery = ESQueryUtils.mergeQueries(searchQuery.getMasterLevelQuery(),
 				basicFilters.getMasterLevelQuery());
 
 		boolean variantQueryMustMatch = false;
 		QueryBuilder varFilterQuery = basicFilters.getVariantLevelQuery();
 		if (varFilterQuery == null) {
 			varFilterQuery = QueryBuilders.matchAllQuery();
-		}
-		else {
+		} else {
 			// if variant query contains hard filters, it should go into a
 			// boolean must clause
 			variantQueryMustMatch = true;
@@ -429,24 +434,21 @@ public class Searcher {
 		FilterFunctionBuilder[] masterScoringFunctions = scoringCreator.getScoringFunctions(false);
 		if (masterScoringFunctions.length > 0) {
 			masterLevelQuery = QueryBuilders.functionScoreQuery(masterLevelQuery, masterScoringFunctions)
-					.boostMode(scoringCreator.getBoostMode())
-					.scoreMode(scoringCreator.getScoreMode())
+					.boostMode(scoringCreator.getBoostMode()).scoreMode(scoringCreator.getScoreMode())
 					.maxBoost(masterScoringFunctions.length);
 		}
 
 		QueryBuilder variantsMatchQuery;
 		if (variantSortings.isEmpty() && searchQuery.getVariantLevelQuery() != null) {
 			// if sorting is available, scoring and boosting not necessary
-			variantsMatchQuery = QueryBuilders.boolQuery()
-					.must(varFilterQuery)
+			variantsMatchQuery = QueryBuilders.boolQuery().must(varFilterQuery)
 					.should(searchQuery.getVariantLevelQuery().boost(2f));
 
 			FilterFunctionBuilder[] variantScoringFunctions = scoringCreator.getScoringFunctions(true);
 			if (variantScoringFunctions.length > 0) {
 				variantsMatchQuery = QueryBuilders.functionScoreQuery(variantsMatchQuery, variantScoringFunctions);
 			}
-		}
-		else {
+		} else {
 			variantsMatchQuery = varFilterQuery;
 		}
 
@@ -462,20 +464,14 @@ public class Searcher {
 		// should clause to accept products without variants as well!
 		if (masterLevelQuery instanceof BoolQueryBuilder) {
 			return ((BoolQueryBuilder) masterLevelQuery).should(variantLevelQuery);
-		}
-		else {
-			return QueryBuilders.boolQuery()
-					.must(masterLevelQuery)
-					.should(variantLevelQuery);
+		} else {
+			return QueryBuilders.boolQuery().must(masterLevelQuery).should(variantLevelQuery);
 		}
 	}
 
 	private InnerHitBuilder getVariantInnerHits(List<SortBuilder<?>> variantSortings) {
-		InnerHitBuilder variantInnerHits = new InnerHitBuilder()
-				.setSize(1)
-				.setFetchSourceContext(
-						new FetchSourceContext(true, new String[] { VARIANTS + "." + RESULT_DATA + ".*" },
-								null));
+		InnerHitBuilder variantInnerHits = new InnerHitBuilder().setSize(1).setFetchSourceContext(
+				new FetchSourceContext(true, new String[] { VARIANTS + "." + RESULT_DATA + ".*" }, null));
 		if (!variantSortings.isEmpty()) {
 			variantInnerHits.setSorts(variantSortings);
 		}
@@ -487,7 +483,7 @@ public class Searcher {
 		SearchResultSlice srSlice = new SearchResultSlice();
 		// XXX think about building parameters according to the actual performed
 		// search (e.g. with relaxed query or with implicit set filters)
-		srSlice.resultLink =  SearchQueryBuilder.toLink(parameters).toString();
+		srSlice.resultLink = SearchQueryBuilder.toLink(parameters).toString();
 		srSlice.matchCount = searchHits.getTotalHits().value;
 
 		Map<String, SortOrder> sortedFields = getSortedNumericFields(parameters);
@@ -500,10 +496,8 @@ public class Searcher {
 				variantHit = variantHits.getAt(0);
 			}
 
-			ResultHit resultHit = new ResultHit()
-					.setDocument(getResultDocument(hit, variantHit))
-					.setIndex(hit.getIndex())
-					.setMatchedQueries(hit.getMatchedQueries());
+			ResultHit resultHit = new ResultHit().setDocument(getResultDocument(hit, variantHit))
+					.setIndex(hit.getIndex()).setMatchedQueries(hit.getMatchedQueries());
 
 			addSortFieldPrefix(hit, resultHit, sortedFields);
 
@@ -526,13 +520,12 @@ public class Searcher {
 	}
 
 	/**
-	 * If we sort by a numeric value (e.g. price) and there are several
-	 * different values at a product for that given field (e.g. multiple prices
-	 * from the variants), then add a prefix "from" or "to" depending on sort
-	 * order.
+	 * If we sort by a numeric value (e.g. price) and there are several different
+	 * values at a product for that given field (e.g. multiple prices from the
+	 * variants), then add a prefix "from" or "to" depending on sort order.
 	 * 
-	 * The goal is to show "from 10€" if sorted by price ascending and "to 59€"
-	 * if sorted by price descending.
+	 * The goal is to show "from 10€" if sorted by price ascending and "to 59€" if
+	 * sorted by price descending.
 	 * 
 	 * @param hit
 	 * @param resultHit
@@ -545,8 +538,8 @@ public class Searcher {
 			sortedFields.forEach((fieldName, order) -> {
 				resultHit.document.getData().computeIfPresent(fieldName, (fn, v) -> {
 					Object fieldSortData = ((Map<String, Object>) sortData).get(fn);
-					if (fieldSortData != null && fieldSortData instanceof Collection && ((Collection<?>) fieldSortData)
-							.size() > 1) {
+					if (fieldSortData != null && fieldSortData instanceof Collection
+							&& ((Collection<?>) fieldSortData).size() > 1) {
 						resultHit.document.set(fn + "_prefix", SortOrder.ASC.equals(order) ? "{from}" : "{to}");
 						// collection is already sorted asc/desc: first value is
 						// the relevant one
@@ -569,25 +562,22 @@ public class Searcher {
 
 		// TODO: Only for development purposes, remove in production to save
 		// performance!!
-		resultFields.entrySet().stream()
-				.sorted(Comparator.comparing(entry -> config.getFieldConfiguration().getField(entry.getKey()),
-						(f1, f2) -> {
-							if (f1 == null) {
-								return 1;
-							}
-							else if (f2 == null) {
-								return -1;
-							}
-							int o1 = f1.getUsage().contains(FieldUsage.Score) ? 1 : 0;
-							int o2 = f2.getUsage().contains(FieldUsage.Score) ? 1 : 0;
+		resultFields.entrySet().stream().sorted(
+				Comparator.comparing(entry -> config.getFieldConfiguration().getField(entry.getKey()), (f1, f2) -> {
+					if (f1 == null) {
+						return 1;
+					} else if (f2 == null) {
+						return -1;
+					}
+					int o1 = f1.getUsage().contains(FieldUsage.Score) ? 1 : 0;
+					int o2 = f2.getUsage().contains(FieldUsage.Score) ? 1 : 0;
 
-							if (o1 == 0 && o1 == o2) {
-								return String.CASE_INSENSITIVE_ORDER.compare(f1.getName(), f2.getName());
-							}
-							return Integer.compare(o2, o1);
-						}))
-				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-						(oldValue, newValue) -> oldValue, LinkedHashMap::new));
+					if (o1 == 0 && o1 == o2) {
+						return String.CASE_INSENSITIVE_ORDER.compare(f1.getName(), f2.getName());
+					}
+					return Integer.compare(o2, o1);
+				})).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue,
+						LinkedHashMap::new));
 
 		return new Document(hit.getId()).setData(resultFields);
 	}

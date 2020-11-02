@@ -15,6 +15,11 @@ public class Sorting {
 	public SortOrder	sortOrder;
 
 	/**
+	 * Is set to true, if this sorting is active in the current result.
+	 */
+	public boolean      isActive = false;
+	
+	/**
 	 * URL conform query parameters, that has to be used to activate that sort
 	 * option.
 	 */

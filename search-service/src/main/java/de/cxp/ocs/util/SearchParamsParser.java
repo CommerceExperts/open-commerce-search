@@ -76,7 +76,7 @@ public class SearchParamsParser {
 			}
 			Field fieldConf = fields.get(fieldName);
 			if (fieldConf != null && fieldConf.getUsage().contains(FieldUsage.Sort)) {
-				sortings.add(new Sorting(fieldName, sortOrder, null));
+				sortings.add(new Sorting(fieldName, sortOrder, true, null));
 			}
 		}
 		return sortings;
