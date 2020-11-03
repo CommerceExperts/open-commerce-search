@@ -247,7 +247,7 @@ class ElasticsearchIndexClient {
 
 	private IndexRequest asIndexRequest(String indexName, final IndexableItem record)
 			throws JsonProcessingException {
-		IndexRequest indexRequest = new IndexRequest(indexName, RECORD_TYPE, record.getId());
+		IndexRequest indexRequest = new IndexRequest(indexName).id(record.getId());
 		indexRequest.source(mapper.writeValueAsBytes(record), XContentType.JSON);
 		return indexRequest;
 	}

@@ -68,6 +68,7 @@ public final class Util {
 	public static Object collectObjects(Object oldValue, Object newValue) {
 		if (oldValue == null) return newValue;
 		if (newValue == null) return oldValue;
+		if (oldValue.equals(newValue)) return oldValue;
 
 		if (oldValue instanceof Collection<?>) {
 			if (newValue instanceof Collection<?>) {

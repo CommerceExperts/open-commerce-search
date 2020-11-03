@@ -31,9 +31,6 @@ public abstract class AbstractIndexer implements FullIndexationService {
 	@NonNull
 	final IndexConfiguration indexConf;
 
-	@Getter(value = AccessLevel.PROTECTED)
-	final Map<String, Field> fields;
-
 	private final CombiFieldBuilder combiFieldBuilder;
 
 	private final IndexItemConverter indexItemConverter;
@@ -41,9 +38,9 @@ public abstract class AbstractIndexer implements FullIndexationService {
 	public AbstractIndexer(@NonNull List<DataPreProcessor> dataPreProcessors, @NonNull IndexConfiguration indexConf) {
 		this.dataPreProcessors = dataPreProcessors;
 		this.indexConf = indexConf;
-		fields = Collections.unmodifiableMap(indexConf.getFieldConfiguration().getFields());
+		Map<String, Field> fields = Collections.unmodifiableMap(indexConf.getFieldConfiguration().getFields());
 		combiFieldBuilder = new CombiFieldBuilder(fields);
-		indexItemConverter = new IndexItemConverter(fields);
+		indexItemConverter = new IndexItemConverter(indexConf.getFieldConfiguration());
 	}
 
 	@Override

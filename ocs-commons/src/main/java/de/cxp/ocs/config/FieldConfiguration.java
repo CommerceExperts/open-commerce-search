@@ -1,5 +1,6 @@
 package de.cxp.ocs.config;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,10 +22,21 @@ public class FieldConfiguration {
 	@NonNull
 	private final Map<String, Field> fields = new LinkedHashMap<>();
 
+	/**
+	 * for dynamic field names, the sourceNames are used as regular expressions.
+	 */
+	@NonNull
+	private final List<Field> dynamicFields = new ArrayList<>();
+
 	public FieldConfiguration addField(Field field) {
 		if (fields.put(field.getName(), field) != null) {
 			log.warn("overwriting field configuration {}", field.getName());
 		}
+		return this;
+	}
+
+	public FieldConfiguration addDynamicField(Field dynamicField) {
+		if (dynamicField != null) dynamicFields.add(dynamicField);
 		return this;
 	}
 
@@ -34,6 +46,9 @@ public class FieldConfiguration {
 	 * @return an <code>Optional</code> containing the first found ID field,
 	 *         or an empty <code>Optional</code> if no such field could be
 	 *         found.
+	 * @deprecated This method is OK for a single usage, but it's not efficient
+	 *             to use it regularly in the code. Consider storing the ID
+	 *             field instead somewhere.
 	 */
 	public Optional<Field> getIdField() {
 		return fields.values().stream().filter(f -> FieldType.id.equals(f.getType())).findFirst();
@@ -58,6 +73,9 @@ public class FieldConfiguration {
 	 * @param sourceName
 	 *        the source name to check.
 	 * @return an optional containing the found field, if any.
+	 * @deprecated This method is OK for a single usage, but it's not efficient
+	 *             to use it regularly in the code. Consider build an according
+	 *             index instead.
 	 */
 	public Optional<Field> getFieldBySourceName(final String sourceName) {
 		return fields.values().stream().filter(f -> f.getSourceNames().contains(sourceName)).findFirst();
@@ -69,6 +87,9 @@ public class FieldConfiguration {
 	 * @param type
 	 *        the type of the fields to return.
 	 * @return an optional containing the found field, if any.
+	 * @deprecated This method is OK for a single usage, but it's not efficient
+	 *             to use it regularly in the code. Consider storing and
+	 *             according index instead.
 	 */
 	public Optional<Field> getField(final FieldType type) {
 		return fields.values().stream().filter(f -> type.equals(f.getType())).findFirst();
@@ -80,6 +101,9 @@ public class FieldConfiguration {
 	 * @param type
 	 *        the type of the fields to return.
 	 * @return a list containing all fields of the specified type.
+	 * @deprecated This method is OK for a single usage, but it's not efficient
+	 *             to use it regularly in the code. Consider storing and
+	 *             according index instead.
 	 */
 	public List<Field> getFieldsByType(@NonNull FieldType type) {
 		return fields.values().stream().filter(f -> type.equals(f.getType())).collect(Collectors.toList());
