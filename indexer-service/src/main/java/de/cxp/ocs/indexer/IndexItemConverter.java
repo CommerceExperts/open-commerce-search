@@ -85,7 +85,7 @@ public class IndexItemConverter {
 
 		if (sourceDoc.getAttributes() != null) {
 			for (Attribute attribute : sourceDoc.getAttributes()) {
-				fieldConfigIndex.getMatchingField(attribute.getLabel(), attribute.getValue())
+				fieldConfigIndex.getMatchingField(attribute.getLabel(), attribute)
 						.map(field -> {
 							if ((field.isVariantLevel() && !isVariant) || (field.isMasterLevel() && isVariant)) {
 								return null;

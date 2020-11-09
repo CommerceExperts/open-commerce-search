@@ -8,14 +8,18 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import com.google.common.base.Predicates;
+
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.indexer.model.IndexableItem;
+import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.util.Util;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -29,9 +33,19 @@ public class FieldConfigIndex {
 		Field				fieldConfig;
 
 		public boolean matches(String fieldName, Object value) {
-			return (fieldNamePredicate == null || fieldNamePredicate.test(fieldName))
-					&& (valuePredicate == null || valuePredicate.test(value));
+			return fieldNamePredicate.test(fieldName) && valuePredicate.test(value);
 		}
+	}
+
+	@AllArgsConstructor
+	private static class WrappedField extends Field {
+
+		@Getter
+		private String name;
+
+		@Delegate
+		private Field wrappedField;
+
 	}
 
 	@NonNull
@@ -72,23 +86,42 @@ public class FieldConfigIndex {
 		// create index for dynamic fields. each key is a predicate that is
 		// tested with the according field name and its value
 		for (Field dynamicField : fieldConfiguration.getDynamicFields()) {
+
+			Predicate<Object> valuePredicate = null;
+			if (FieldType.string.equals(dynamicField.getType())) {
+				valuePredicate = value -> (value instanceof Attribute ? ((Attribute) value).getValue() : value) instanceof String;
+			}
+			else if (FieldType.number.equals(dynamicField.getType())) {
+				valuePredicate = value -> Util.tryToParseAsNumber(value instanceof Attribute ? ((Attribute) value).getValue() : value).isPresent();
+			}
+			else if (dynamicField.getType() != null){
+				log.warn("dynamic field configuration with type={} not supported. Will not use type as match criterion", dynamicField.getType());
+				valuePredicate = Predicates.alwaysTrue();
+			}
+			
+			// hack around: criterion to make sure a dynamic field should only
+			// be used for attributes
+			// XXX find better solution to make dynamic fields only work for
+			// attributes
+			if ("attribute".equals(dynamicField.getName())) {
+				if (FieldType.string.equals(dynamicField.getType())) {
+					valuePredicate = valuePredicate.and(value -> value instanceof Attribute);
+				}
+				else if (FieldType.number.equals(dynamicField.getType())) {
+					valuePredicate = valuePredicate.and(value -> value instanceof Attribute);
+				}
+			}
+
 			for (final String sourceName : dynamicField.getSourceNames()) {
 				dynamicFields.add(
 						new DynamicFieldConfig(
 								Pattern.compile(sourceName).asPredicate(),
-								null,
+								valuePredicate,
 								dynamicField));
 			}
+
 			if (dynamicField.getSourceNames().isEmpty()) {
-				if (FieldType.string.equals(dynamicField.getType())) {
-					dynamicFields.add(new DynamicFieldConfig(null, value -> value instanceof String, dynamicField));
-				}
-				else if (FieldType.number.equals(dynamicField.getType())) {
-					dynamicFields.add(new DynamicFieldConfig(null, value -> Util.tryToParseAsNumber(value).isPresent(), dynamicField));
-				}
-				else {
-					log.warn("dynamic field configuration without sourceNames and fieldUsage={} are not handled", dynamicField.getType());
-				}
+				log.warn("dynamic field configuration without sourceNames are ignored");
 			}
 		}
 
@@ -136,7 +169,7 @@ public class FieldConfigIndex {
 		// return first matching dynamic field
 		for (DynamicFieldConfig dynamicFieldConf : dynamicFields) {
 			if (dynamicFieldConf.matches(fieldName, value)) {
-				return Optional.of(dynamicFieldConf.fieldConfig);
+				return Optional.of(new WrappedField(fieldName, dynamicFieldConf.fieldConfig));
 			}
 		}
 

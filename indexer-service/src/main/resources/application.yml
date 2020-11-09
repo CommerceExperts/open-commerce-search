@@ -137,3 +137,21 @@ ocs:
           usage:
             - Score
             - Result
+      dynamic-fields:
+        - name: attribute
+          type: number
+          source-names:
+            - .*
+          usage:
+            - Facet
+        - name: attribute
+          type: string
+          source-names:
+            - .*
+          usage:
+            - Facet
+        - name: others
+          source-names:
+            - .*
+          usage:
+            - Result
