@@ -1,6 +1,8 @@
 package de.cxp.ocs.indexer;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -112,16 +114,17 @@ public class FieldConfigIndex {
 				}
 			}
 
-			for (final String sourceName : dynamicField.getSourceNames()) {
+			Collection<String> sourceNames = dynamicField.getSourceNames();
+			if (dynamicField.getSourceNames().isEmpty()) {
+				sourceNames = Collections.singletonList(".*");
+			}
+
+			for (final String sourceName : sourceNames) {
 				dynamicFields.add(
 						new DynamicFieldConfig(
 								Pattern.compile(sourceName).asPredicate(),
 								valuePredicate,
 								dynamicField));
-			}
-
-			if (dynamicField.getSourceNames().isEmpty()) {
-				log.warn("dynamic field configuration without sourceNames are ignored");
 			}
 		}
 

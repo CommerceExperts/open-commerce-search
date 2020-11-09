@@ -213,21 +213,28 @@ public class IndexItemConverterTest {
 				new FieldConfiguration()
 						// this pattern at the standard field MUST NOT work!
 						.addField(new Field("title").addSourceName(".*").setUsage(FieldUsage.Search))
-						.addDynamicField(new Field("num_attributes").setType(FieldType.number).setUsage(FieldUsage.Facet))
-						.addDynamicField(new Field("text_attributes").setType(FieldType.string).setUsage(FieldUsage.Facet)));
+						// special case: if field is named "attribute" it will
+						// only apply to attribute data and not to other unknown
+						// fields
+						.addDynamicField(new Field("attribute").setType(FieldType.number).setUsage(FieldUsage.Facet))
+						.addDynamicField(new Field("attribute").setType(FieldType.string).setUsage(FieldUsage.Facet)));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("1")
+				.set("unknown", "must be ignored")
 				.setAttributes(
 						new Attribute().setLabel("color").setValue("red"),
 						new Attribute().setLabel("size").setValue("41.5")));
 
 		assertTrue(result.getSearchData().isEmpty());
+		assertTrue(result.getResultData().isEmpty());
 
+		assertEquals(1, result.getTermFacetData().size());
 		assertEquals("color", result.getTermFacetData().get(0).getName());
 		assertEquals("red", result.getTermFacetData().get(0).getValue());
 
+		assertEquals(1, result.getNumberFacetData().size());
 		assertEquals("size", result.getNumberFacetData().get(0).getName());
-		assertEquals(41.5, result.getNumberFacetData().get(0).getValue());
+		assertEquals(41.5f, result.getNumberFacetData().get(0).getValue());
 	}
 
 	/**

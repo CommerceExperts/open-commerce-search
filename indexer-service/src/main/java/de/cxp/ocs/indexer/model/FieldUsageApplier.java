@@ -36,8 +36,8 @@ public class FieldUsageApplier {
 
 		String fieldName = field.getName();
 		if (value instanceof Attribute) {
-			value = ((Attribute) value).getValue();
 			fieldName = ((Attribute) value).getLabel();
+			value = ((Attribute) value).getValue();
 		}
 
 		if (FieldType.category.equals(field.getType())) {
@@ -101,8 +101,8 @@ public class FieldUsageApplier {
 
 		String fieldName = field.getName();
 		if (value instanceof Attribute) {
-			value = ((Attribute) value).getValue();
 			fieldName = ((Attribute) value).getLabel();
+			value = ((Attribute) value).getValue();
 		}
 
 		value = ensureCorrectValueType(field, value);
