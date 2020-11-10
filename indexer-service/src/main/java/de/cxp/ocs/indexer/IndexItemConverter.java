@@ -1,7 +1,9 @@
 package de.cxp.ocs.indexer;
 
 import java.util.Map.Entry;
+import java.util.function.Function;
 
+import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.indexer.model.DataItem;
 import de.cxp.ocs.indexer.model.IndexableItem;
@@ -67,18 +69,12 @@ public class IndexItemConverter {
 
 	private void extractSourceValues(Document sourceDoc, final DataItem targetItem) {
 		final boolean isVariant = (targetItem instanceof VariantItem);
+		Function<Field, Field> fieldAtCorrectDocLevelMapper = isVariant ? this::isFieldAtVariantLevel : this::isFieldAtMasterLevel;
 
 		if (sourceDoc.getData() != null) {
 			for (Entry<String, Object> dataField : sourceDoc.getData().entrySet()) {
 				fieldConfigIndex.getMatchingField(dataField.getKey(), dataField.getValue())
-						.map(field -> {
-							if ((field.isVariantLevel() && !isVariant) || (field.isMasterLevel() && isVariant)) {
-								return null;
-							}
-							else {
-								return field;
-							}
-						})
+						.map(fieldAtCorrectDocLevelMapper)
 						.ifPresent(field -> targetItem.setValue(field, dataField.getValue()));
 			}
 		}
@@ -86,14 +82,7 @@ public class IndexItemConverter {
 		if (sourceDoc.getAttributes() != null) {
 			for (Attribute attribute : sourceDoc.getAttributes()) {
 				fieldConfigIndex.getMatchingField(attribute.getLabel(), attribute)
-						.map(field -> {
-							if ((field.isVariantLevel() && !isVariant) || (field.isMasterLevel() && isVariant)) {
-								return null;
-							}
-							else {
-								return field;
-							}
-						})
+						.map(fieldAtCorrectDocLevelMapper)
 						.ifPresent(field -> targetItem.setValue(field, attribute));
 			}
 		}
@@ -101,4 +90,21 @@ public class IndexItemConverter {
 		fieldConfigIndex.getCategoryField().ifPresent(f -> targetItem.setValue(f, sourceDoc.getCategories()));
 	}
 
+	private Field isFieldAtVariantLevel(Field field) {
+		if (field.isBothLevel() || field.isVariantLevel()) {
+			return field;
+		}
+		else {
+			return null;
+		}
+	}
+
+	private Field isFieldAtMasterLevel(Field field) {
+		if (field.isBothLevel() || field.isMasterLevel()) {
+			return field;
+		}
+		else {
+			return null;
+		}
+	}
 }
