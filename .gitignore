@@ -32,3 +32,8 @@ hs_err_pid*
 # maven
 target
 bin
+
+# custom application properties for testing
+application-*properties
+application-*yml
+application-*yaml

@@ -30,7 +30,7 @@ ocs:
           name: id
           type: id
           usage:
-            - result
+            - Result
           field-level: both
         masterNr:
           name: masterNr
@@ -38,8 +38,8 @@ ocs:
           source-names:
             - MasterArticleNumber
           usage:
-            - search
-            - result
+            - Search
+            - Result
           field-level: master
         artNr:
           name: artNr
@@ -47,16 +47,16 @@ ocs:
           source-names:
             - ArticleNumber
           usage:
-            - search
-            - result
+            - Search
+            - Result
           field-level: variant
         ean:
           name: ean
           source-names:
             - EAN
           usage:
-            - search
-            - result
+            - Search
+            - Result
         title:
           name: title
           type: string
@@ -65,9 +65,9 @@ ocs:
             - product_name
             - ProductName
           usage:
-            - search
-            - result
-            - sort
+            - Search
+            - Result
+            - Sort
         brand:
           name: brand
           type: string
@@ -75,18 +75,18 @@ ocs:
             - Brand
           value-delimiter: "|"
           usage:
-            - search
-            - facet
-            - result
+            - Search
+            - Facet
+            - Result
         price:
           name: price
           type: number
           source-names:
             - Price
           usage:
-            - sort
-            - result
-            - facet
+            - Sort
+            - Result
+            - Facet
           field-level: variant
         category:
           name: category
@@ -95,39 +95,39 @@ ocs:
             - Categories
             - CategoryPath
           usage:
-            - result
-            - search
-            - facet
+            - Result
+            - Search
+            - Facet
         shortDescription:
           name: shortDescription
           source-names:
             - ShortDescription
             - Short
           usage:
-            - search
-            - result
+            - Search
+            - Result
         description:
           name: description
           source-names:
             - Description
             - Text
           usage:
-            - search
-            - result
+            - Search
+            - Result
         productUrl:
           name: productUrl
           source-names:
             - ProduktURL
             - Deeplink
           usage:
-            - result
+            - Result
           field-level: both
         imageUrl:
           name: imageUrl
           source-names:
             - ImageURL
           usage:
-            - result
+            - Result
           field-level: both
         stock:
           name: stock
