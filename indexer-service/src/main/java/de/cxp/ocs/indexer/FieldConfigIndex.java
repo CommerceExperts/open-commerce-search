@@ -1,5 +1,6 @@
 package de.cxp.ocs.indexer;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -20,8 +21,6 @@ import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.util.Util;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NonNull;
-import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -39,19 +38,9 @@ public class FieldConfigIndex {
 		}
 	}
 
-	@AllArgsConstructor
-	private static class WrappedField extends Field {
-
-		@Getter
-		private String name;
-
-		@Delegate
-		private Field wrappedField;
-
-	}
-
-	@NonNull
 	private final Map<String, Field> fields = new HashMap<>();
+
+	private final Map<String, Field> generatedFields = new HashMap<>();
 
 	@Getter
 	private final Optional<Field> categoryField;
@@ -96,11 +85,11 @@ public class FieldConfigIndex {
 			else if (FieldType.number.equals(dynamicField.getType())) {
 				valuePredicate = value -> Util.tryToParseAsNumber(value instanceof Attribute ? ((Attribute) value).getValue() : value).isPresent();
 			}
-			else if (dynamicField.getType() != null){
+			else if (dynamicField.getType() != null) {
 				log.warn("dynamic field configuration with type={} not supported. Will not use type as match criterion", dynamicField.getType());
 				valuePredicate = Predicates.alwaysTrue();
 			}
-			
+
 			// hack around: criterion to make sure a dynamic field should only
 			// be used for attributes
 			// XXX find better solution to make dynamic fields only work for
@@ -169,15 +158,39 @@ public class FieldConfigIndex {
 		// exact matching field name
 		if (field != null) return Optional.of(field);
 
+		field = generatedFields.get(fieldName);
+		if (field != null) return Optional.of(field);
+
 		// return first matching dynamic field
 		for (DynamicFieldConfig dynamicFieldConf : dynamicFields) {
 			if (dynamicFieldConf.matches(fieldName, value)) {
-				return Optional.of(new WrappedField(fieldName, dynamicFieldConf.fieldConfig));
+				Field generatedField = cloneField(dynamicFieldConf.fieldConfig);
+				generatedField.setName(fieldName);
+				generatedFields.put(fieldName, generatedField);
+				return Optional.of(generatedField);
 			}
 		}
 
 		// no result
 		return Optional.empty();
+	}
+
+	private static Field cloneField(final Field original) {
+		final Field clone = new Field();
+		for (Method m : Field.class.getMethods()) {
+			if (m.getName().startsWith("set") && m.getParameterCount() == 1) {
+				try {
+					Method getter = Field.class.getMethod(m.getName().replaceFirst("set", "get"));
+					Object property = getter.invoke(original);
+					m.invoke(clone, property);
+				}
+				catch (Exception e) {
+					throw new IllegalStateException(
+							"problem mapping a getter method to the setter method '" + m.getName() + "'", e);
+				}
+			}
+		}
+		return clone;
 	}
 
 }
