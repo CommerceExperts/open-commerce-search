@@ -23,9 +23,8 @@
     <helper.plugin.version>3.2.0</helper.plugin.version>
 
     <!-- Dependency Versions -->
-    <jackson.version>2.10.4</jackson.version>
-    <search-commons-java.version>0.11.0</search-commons-java.version>
-    <search-connector-api.version>2.1.0</search-connector-api.version>
+    <search-commons-java.version>0.16.0</search-commons-java.version>
+    <search-connector-api.version>2.2.0</search-connector-api.version>
   </properties>
 
   <dependencies>
@@ -43,30 +42,15 @@
 
     <dependency>
       <groupId>de.cxp.ocs</groupId>
-      <artifactId>open-commerce-search-api</artifactId>
-      <version>0.3.2</version>
+      <artifactId>ocs-java-client</artifactId>
+      <version>0.1</version>
     </dependency>
-
+    
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
     </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-    </dependency>
 
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>${jackson.version}</version>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>

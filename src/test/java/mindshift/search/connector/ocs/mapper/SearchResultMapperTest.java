@@ -1,25 +1,28 @@
 package mindshift.search.connector.ocs.mapper;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
-import de.cxp.ocs.client.models.Facet;
-import de.cxp.ocs.client.models.FacetEntry;
-import de.cxp.ocs.client.models.ResultHit;
-import de.cxp.ocs.client.models.SearchResult;
-import de.cxp.ocs.client.models.SearchResultSlice;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import de.cxp.ocs.model.result.Facet;
+import de.cxp.ocs.model.result.FacetEntry;
+import de.cxp.ocs.model.result.ResultHit;
+import de.cxp.ocs.model.result.SearchResult;
+import de.cxp.ocs.model.result.SearchResultSlice;
 import mindshift.search.connector.api.v2.models.ResultItem;
 import mindshift.search.connector.api.v2.models.SearchRequest;
 import mindshift.search.connector.api.v2.models.TextFacet;
@@ -28,14 +31,13 @@ import mindshift.search.connector.api.v2.models.TextFacetValue;
 public class SearchResultMapperTest {
 
     @Test
-    public void testDefaultResultMapping()
-            throws JsonParseException, JsonMappingException, IOException {
+	public void testDefaultResultMapping() throws JsonParseException, IOException {
         InputStream resourceAsStream = SearchResultMapperTest.class.getClassLoader()
                 .getResourceAsStream("ocs-search-response.json");
         assumeTrue(resourceAsStream != null);
 
-        ObjectMapper jsonMapper = new ObjectMapper();
-        SearchResult ocsResult = jsonMapper.readValue(resourceAsStream, SearchResult.class);
+		String json = new BufferedReader(new InputStreamReader(resourceAsStream)).lines().collect(Collectors.joining());
+		SearchResult ocsResult = new ObjectMapper().readValue(json, SearchResult.class);
         assertNotNull(ocsResult);
 
         SearchRequest request = getSearchRequest(ocsResult);
@@ -73,7 +75,7 @@ public class SearchResultMapperTest {
     }
 
     private SearchRequest getSearchRequest(SearchResult ocsResult) {
-        String[] ocsRawParams = ocsResult.getInputURI().getQuery().split("\\&");
+		String[] ocsRawParams = ocsResult.getInputURI().split("\\&");
         Map<String, String> params = new HashMap<>(ocsRawParams.length);
         for (String param : ocsRawParams) {
             String[] paramSplit = param.split("=", 2);
