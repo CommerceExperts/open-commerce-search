@@ -1,4 +1,4 @@
-package de.cxp.ocs.indexer;
+package de.cxp.ocs.config;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -13,16 +13,16 @@ import java.util.regex.Pattern;
 
 import com.google.common.base.Predicates;
 
-import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldConfiguration;
-import de.cxp.ocs.config.FieldType;
-import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.util.Util;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Special class that cares about resolving the correct field configuration,
+ * especially for "the category field" and dynamic fields.
+ */
 @Slf4j
 public class FieldConfigIndex {
 
@@ -48,8 +48,8 @@ public class FieldConfigIndex {
 	private final List<DynamicFieldConfig> dynamicFields = new ArrayList<>();
 
 	/**
-	 * Constructor of the converter that prepares the given field configurations
-	 * for converting Documents into {@link IndexableItem}.
+	 * Constructor of the Field Index that prepares the given field
+	 * configurations to match static and dynamic fields.
 	 * 
 	 * @param standardFields
 	 * @param dynamicFields
@@ -74,8 +74,7 @@ public class FieldConfigIndex {
 			}
 		}
 
-		// create index for dynamic fields. each key is a predicate that is
-		// tested with the according field name and its value
+		// create index for dynamic fields.
 		for (Field dynamicField : fieldConfiguration.getDynamicFields()) {
 
 			Predicate<Object> valuePredicate = null;
