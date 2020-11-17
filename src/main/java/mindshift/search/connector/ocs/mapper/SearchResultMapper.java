@@ -1,5 +1,7 @@
 package mindshift.search.connector.ocs.mapper;
 
+import com.google.common.collect.Comparators;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -7,8 +9,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import com.google.common.collect.Comparators;
 
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
@@ -32,7 +32,7 @@ import mindshift.search.connector.api.v2.models.TextFacetValue;
 /**
  * Maps the OCS SearchResult to the MindShift SearchResult object.
  */
-@SuppressWarnings("PMD.AvoidInstantiatingObjectsInLoops")
+@SuppressWarnings("PMD")
 public class SearchResultMapper {
 
     private static final String ENGINE_NAME = "ocs";
@@ -41,7 +41,7 @@ public class SearchResultMapper {
 
     private static final String ADAPTER_VERSION = "1.0"; // ?
 
-	final de.cxp.ocs.model.result.SearchResult ocsResult;
+    final de.cxp.ocs.model.result.SearchResult ocsResult;
 
     final SearchRequest request;
 
@@ -51,7 +51,7 @@ public class SearchResultMapper {
      * @param ocsResult
      * @param request
      */
-	public SearchResultMapper(final de.cxp.ocs.model.result.SearchResult ocsResult,
+    public SearchResultMapper(final de.cxp.ocs.model.result.SearchResult ocsResult,
             final SearchRequest request) {
         this.ocsResult = ocsResult;
         this.request = request;
@@ -90,7 +90,7 @@ public class SearchResultMapper {
         return searchResult;
     }
 
-	private List<Sort> extractSorts(final de.cxp.ocs.model.result.SearchResult ocsResult,
+    private List<Sort> extractSorts(final de.cxp.ocs.model.result.SearchResult ocsResult,
             final MindshiftSearchRequestBuilder requestBuilder) {
         final List<Sorting> sortOptions = ocsResult.getSortOptions();
 
@@ -102,7 +102,7 @@ public class SearchResultMapper {
                 final Sort s = new Sort();
                 s.setName(sortOption.getField());
 
-				if (sortOption.getSortOrder().equals(SortOrder.DESC)) {
+                if (sortOption.getSortOrder().equals(SortOrder.DESC)) {
                     s.setCode("-" + sortOption.getField());
                     s.setState(requestBuilder.withSort(sortOption.getField() + "-desc"));
                 } else {
@@ -139,61 +139,70 @@ public class SearchResultMapper {
         return resultItems;
     }
 
-	private List<Facet> extractFacets(final de.cxp.ocs.model.result.SearchResult ocsResult,
+    private List<Facet> extractFacets(final de.cxp.ocs.model.result.SearchResult ocsResult,
             final MindshiftSearchRequestBuilder requestBuilder) {
         final List<Facet> facets = new ArrayList<>();
 
-		List<de.cxp.ocs.model.result.Facet> ocsFacets = extractOcsFacet(ocsResult);
+        List<de.cxp.ocs.model.result.Facet> ocsFacets = extractOcsFacet(ocsResult);
 
         if (ocsFacets != null) {
-			for (de.cxp.ocs.model.result.Facet ocsFacet : ocsFacets) {
-				String facetType = ocsFacet.getType();
-				final boolean multiSelect = (boolean) ocsFacet.getMeta().getOrDefault("multiSelect", false);
+            for (de.cxp.ocs.model.result.Facet ocsFacet : ocsFacets) {
+                String facetType = ocsFacet.getType();
+                final boolean multiSelect = (boolean) ocsFacet.getMeta().getOrDefault("multiSelect",
+                        false);
 
-				Facet facet = null;
+                Facet facet = null;
                 switch (facetType) {
-					case "interval":
+                    case "interval":
                         final RangeFacet rangeFacet = new RangeFacet();
-						Optional<String> unit = Optional.ofNullable(ocsFacet.getMeta().get("unit")).map(Object::toString);
+                        Optional<String> unit = Optional.ofNullable(ocsFacet.getMeta().get("unit"))
+                                .map(Object::toString);
 
-						if (ocsFacet.getEntries().isEmpty()) break;
-						IntervalFacetEntry firstInterval = (IntervalFacetEntry) ocsFacet.getEntries().get(0);
-						NumericValue globalMin = new NumericValue().value(((IntervalFacetEntry) firstInterval).getLowerBound().floatValue());
-						unit.ifPresent(globalMin::setUnit);
-						rangeFacet.setGlobalMin(globalMin);
-						rangeFacet.setMin(globalMin);
-						// whats the difference of global and "not global" here?
-						
-						IntervalFacetEntry lastInterval = (IntervalFacetEntry) ocsFacet.getEntries().get(ocsFacet.getEntries().size() - 1);
-						NumericValue globalMax = new NumericValue().value(((IntervalFacetEntry) lastInterval).getUpperBound().floatValue());
-						unit.ifPresent(globalMax::setUnit);
-						rangeFacet.setGlobalMax(globalMax);
-						rangeFacet.setMax(globalMax);
+                        if (ocsFacet.getEntries().isEmpty())
+                            break;
+                        IntervalFacetEntry firstInterval = (IntervalFacetEntry) ocsFacet
+                                .getEntries().get(0);
+                        NumericValue globalMin = new NumericValue().value(
+                                ((IntervalFacetEntry) firstInterval).getLowerBound().floatValue());
+                        unit.ifPresent(globalMin::setUnit);
+                        rangeFacet.setGlobalMin(globalMin);
+                        rangeFacet.setMin(globalMin);
+                        // whats the difference of global and "not global" here?
 
-						boolean hasSelection = false;
-						for (FacetEntry f : ocsFacet.getEntries()) {
-							if (!hasSelection && f.isSelected()) {
-								hasSelection = true;
-								NumericValue min = new NumericValue().value(((IntervalFacetEntry) f).getLowerBound().floatValue());
-								unit.ifPresent(min::setUnit);
-								rangeFacet.setSelectedMin(min);
-								continue;
-							}
-							if (hasSelection && !f.isSelected()) {
-								NumericValue max = new NumericValue().value(((IntervalFacetEntry) f).getLowerBound().floatValue());
-								unit.ifPresent(max::setUnit);
-								rangeFacet.setSelectedMax(max);
-								break;
-							}
-						}
+                        IntervalFacetEntry lastInterval = (IntervalFacetEntry) ocsFacet.getEntries()
+                                .get(ocsFacet.getEntries().size() - 1);
+                        NumericValue globalMax = new NumericValue().value(
+                                ((IntervalFacetEntry) lastInterval).getUpperBound().floatValue());
+                        unit.ifPresent(globalMax::setUnit);
+                        rangeFacet.setGlobalMax(globalMax);
+                        rangeFacet.setMax(globalMax);
+
+                        boolean hasSelection = false;
+                        for (FacetEntry f : ocsFacet.getEntries()) {
+                            if (!hasSelection && f.isSelected()) {
+                                hasSelection = true;
+                                NumericValue min = new NumericValue().value(
+                                        ((IntervalFacetEntry) f).getLowerBound().floatValue());
+                                unit.ifPresent(min::setUnit);
+                                rangeFacet.setSelectedMin(min);
+                                continue;
+                            }
+                            if (hasSelection && !f.isSelected()) {
+                                NumericValue max = new NumericValue().value(
+                                        ((IntervalFacetEntry) f).getLowerBound().floatValue());
+                                unit.ifPresent(max::setUnit);
+                                rangeFacet.setSelectedMax(max);
+                                break;
+                            }
+                        }
 
                         facet = rangeFacet;
                         break;
                     // TODO there are some cases, where single numeric
                     // values are the best suitable facet type
                     // case "special-number-terms":
-					case "hierarchical":
-					case "text":
+                    case "hierarchical":
+                    case "text":
                     default:
                         final TextFacet textFacet = new TextFacet();
                         final List<TextFacetValue> textFacetValues = extractTextValues(
@@ -205,24 +214,25 @@ public class SearchResultMapper {
                         break;
                 }
 
-				if (facet != null) {
-					facet.setCode(ocsFacet.getFieldName());
-					facet.setName(ocsFacet.getMeta().getOrDefault("label", facet.getCode()).toString());
-					facet.setSelector(multiSelect ? SelectorEnum.OR : SelectorEnum.REFINE);
-					facet.setType(facetType);
-					facet.setxPayload(ocsFacet.getMeta());
+                if (facet != null) {
+                    facet.setCode(ocsFacet.getFieldName());
+                    facet.setName(
+                            ocsFacet.getMeta().getOrDefault("label", facet.getCode()).toString());
+                    facet.setSelector(multiSelect ? SelectorEnum.OR : SelectorEnum.REFINE);
+                    facet.setType(facetType);
+                    facet.setxPayload(ocsFacet.getMeta());
 
-					facets.add(facet);
-				}
+                    facets.add(facet);
+                }
             }
         }
 
         return facets;
     }
 
-	private List<de.cxp.ocs.model.result.Facet> extractOcsFacet(
-			final de.cxp.ocs.model.result.SearchResult ocsResult) {
-		List<de.cxp.ocs.model.result.Facet> ocsFacets = null;
+    private List<de.cxp.ocs.model.result.Facet> extractOcsFacet(
+            final de.cxp.ocs.model.result.SearchResult ocsResult) {
+        List<de.cxp.ocs.model.result.Facet> ocsFacets = null;
         for (final SearchResultSlice slice : ocsResult.getSlices()) {
             if (slice.getFacets() != null && !slice.getFacets().isEmpty()) {
                 // only take the facets from the first slice with facets, since

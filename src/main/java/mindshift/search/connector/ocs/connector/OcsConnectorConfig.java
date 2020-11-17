@@ -74,7 +74,7 @@ public class OcsConnectorConfig extends ConnectorConfigSkeleton<OpenCommerceSear
      * @return
      */
     public String getAuthUser() {
-		return get(AUTH_USER);
+        return get(AUTH_USER);
     }
 
     /**
@@ -83,6 +83,6 @@ public class OcsConnectorConfig extends ConnectorConfigSkeleton<OpenCommerceSear
      * @return
      */
     public String getAuthPassword() {
-		return get(AUTH_PASSWORD);
+        return get(AUTH_PASSWORD);
     }
 }

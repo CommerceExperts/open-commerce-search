@@ -1,336 +1,477 @@
 {
-	"tookInMillis": 1182,
+	"tookInMillis": 101,
 	"inputURI": "?q=obuv&price=0.0%2C9.99",
-	"slices": [{
+	"slices": [
+		{
 			"label": null,
-			"matchCount": 171,
+			"matchCount": 108,
 			"nextOffset": 12,
 			"nextLink": null,
 			"resultLink": "?q=obuv&price=0.0%2C9.99",
-			"hits": [{
-					"index": "ocs-10-mind_sk_sk-sk",
+			"hits": [
+				{
+					"index": "ocs-1-mind_sk_sk-sk",
 					"document": {
 						"id": "100265941",
 						"data": {
-							"price": "9.99",
+							"price": "8.99",
 							"description": "S bočným zipsom",
 							"shortDescription": "<p>Mimoriadne m&auml;kk&aacute; hrejiv&aacute; pod&scaron;&iacute;vka</p>",
-							"artNr": ["100265941006", "100265941004", "100265941005", "100265941002", "100265941003", "100265941011", "100265941001", "100265941010"],
+							"artNr": [
+								"100265941004",
+								"100265941002",
+								"100265941003",
+								"100265941001"
+							],
 							"category": "Móda / Obuv / Detská obuv /  Móda / Obuv / Detská obuv / Detská členková a vysoká obuv /  Detský svet / Detská obuv a doplnky / Detská obuv /",
-							"stock": "195",
-							"title": "Chlapčenská členková obuv",
+							"stock": "11",
+							"title": "PEPPERTS® Chlapčenská členková obuv",
 							"brand": "PEPPERTS"
 						},
 						"attributes": null,
 						"categories": null
 					},
-					"matchedQueries": ["default-query((obuv))"]
-				}, {
-					"index": "ocs-10-mind_sk_sk-sk",
+					"matchedQueries": [
+						"default-query((obuv))"
+					]
+				},
+				{
+					"index": "ocs-1-mind_sk_sk-sk",
 					"document": {
 						"id": "100265942",
 						"data": {
-							"price": "9.99",
+							"price": "7.99",
 							"description": "Mimoriadne mäkká hrejivá podšívka",
 							"shortDescription": "<p>Komfortn&eacute; ob&uacute;vanie a vyz&uacute;vanie vďaka bočn&eacute;mu zipsu</p>",
-							"artNr": ["100265942008", "100265942006", "100265942005", "100265942004", "100265942003", "100265942002", "100265942001", "100265942010"],
+							"artNr": [
+								"100265942003",
+								"100265942002",
+								"100265942001"
+							],
 							"category": "Móda / Obuv / Detská obuv /  Móda / Obuv / Detská obuv / Detská členková a vysoká obuv /  Detský svet / Detská obuv a doplnky / Detská obuv /",
-							"stock": "88",
-							"title": "Chlapčenská členková obuv",
+							"stock": "1",
+							"title": "LUPILU® Chlapčenská členková obuv",
 							"brand": "LUPILU"
 						},
 						"attributes": null,
 						"categories": null
 					},
-					"matchedQueries": ["default-query((obuv))"]
-				}, {
-					"index": "ocs-10-mind_sk_sk-sk",
+					"matchedQueries": [
+						"default-query((obuv))"
+					]
+				},
+				{
+					"index": "ocs-1-mind_sk_sk-sk",
 					"document": {
 						"id": "100265943",
 						"data": {
-							"price": "9.99",
+							"price": "8.99",
 							"description": "Pohodlný polster na okraji zvršku",
 							"shortDescription": "<p>Mimoriadne m&auml;kk&aacute; hrejiv&aacute; pod&scaron;&iacute;vka</p>",
-							"artNr": ["100265943010", "100265943009", "100265943008", "100265943007", "100265943006", "100265943005", "100265943004", "100265943003", "100265943002", "100265943012", "100265943001", "100265943011"],
+							"artNr": [
+								"100265943006",
+								"100265943005",
+								"100265943004",
+								"100265943003",
+								"100265943002",
+								"100265943001"
+							],
 							"category": "Móda / Obuv / Detská obuv /  Móda / Obuv / Detská obuv / Detská členková a vysoká obuv /  Detský svet / Detská obuv a doplnky / Detská obuv /",
-							"stock": "208",
-							"title": "Dievčenská obuv",
+							"stock": "68",
+							"title": "PEPPERTS® Dievčenská obuv",
 							"brand": "PEPPERTS"
 						},
 						"attributes": null,
 						"categories": null
 					},
-					"matchedQueries": ["default-query((obuv))"]
-				}, {
-					"index": "ocs-10-mind_sk_sk-sk",
-					"document": {
-						"id": "100265944",
-						"data": {
-							"price": "6.99",
-							"description": "V imitácii baranej kože",
-							"shortDescription": "<p>Pr&iacute;jemne m&auml;kk&aacute;, hrejiv&aacute; pod&scaron;&iacute;vka</p>",
-							"artNr": ["100265944012", "100265944010"],
-							"category": "Móda / Obuv / Dámska obuv / Dámska členková a vysoká obuv /",
-							"stock": "30",
-							"title": "Dámska obuv",
-							"brand": "ESMARA"
-						},
-						"attributes": null,
-						"categories": null
-					},
-					"matchedQueries": ["default-query((obuv))"]
-				}, {
-					"index": "ocs-10-mind_sk_sk-sk",
+					"matchedQueries": [
+						"default-query((obuv))"
+					]
+				},
+				{
+					"index": "ocs-1-mind_sk_sk-sk",
 					"document": {
 						"id": "100265975",
 						"data": {
-							"price": "9.99",
+							"price": "7.99",
 							"description": "Mimoriadne mäkká, hrejivá podšívka",
 							"shortDescription": "<p>Pohodln&eacute; ob&uacute;vanie a vyz&uacute;vanie vďaka bočn&eacute;mu zipsu</p>",
-							"artNr": ["100265975009", "100265975008", "100265975001", "100265975002", "100265975010", "100265975011", "100265975005", "100265975006", "100265975003", "100265975004"],
+							"artNr": [
+								"100265975009",
+								"100265975001",
+								"100265975002",
+								"100265975010",
+								"100265975005",
+								"100265975006",
+								"100265975003",
+								"100265975004"
+							],
 							"category": "Móda / Obuv / Detská obuv /  Móda / Obuv / Detská obuv / Detská členková a vysoká obuv /  Detský svet / Detská obuv a doplnky / Detská obuv /",
-							"stock": "154",
-							"title": "Dievčenská členková obuv",
+							"stock": "63",
+							"title": "LUPILU® Dievčenská členková obuv",
 							"brand": "LUPILU"
 						},
 						"attributes": null,
 						"categories": null
 					},
-					"matchedQueries": ["default-query((obuv))"]
-				}, {
-					"index": "ocs-10-mind_sk_sk-sk",
+					"matchedQueries": [
+						"default-query((obuv))"
+					]
+				},
+				{
+					"index": "ocs-1-mind_sk_sk-sk",
+					"document": {
+						"id": "100265984",
+						"data": {
+							"price": "9.99",
+							"description": "Priedušné, nepremokavé a vetruvzdorné vďaka zapracovanej membráne TEX",
+							"shortDescription": "<p>Lep&scaron;ia viditeľnosť vďaka reflexn&yacute;m prvkom 3M Scotchlite&trade;</p>",
+							"artNr": [
+								"100265984008",
+								"100265984009",
+								"100265984010",
+								"100265984011",
+								"100265984012"
+							],
+							"category": "Móda / Obuv / Detská obuv /  Móda / Obuv / Detská obuv / Detská členková a vysoká obuv /  Detský svet / Detská obuv a doplnky / Detská obuv /",
+							"stock": "352",
+							"title": "PEPPERTS® Chlapčenská nepremokavá zimná obuv",
+							"brand": "PEPPERTS"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": [
+						"default-query((obuv))"
+					]
+				},
+				{
+					"index": "ocs-1-mind_sk_sk-sk",
+					"document": {
+						"id": "100266031",
+						"data": {
+							"price": "9.99",
+							"description": "Priedušné, nepremokavé a vetruvzdorné vďaka zapracovanej membráne TEX",
+							"shortDescription": "<p>R&ocirc;zne farebn&eacute; varianty</p>",
+							"artNr": [
+								"100266031011",
+								"100266031010",
+								"100266031014",
+								"100266031013",
+								"100266031012",
+								"100266031008",
+								"100266031009"
+							],
+							"category": "Móda / Obuv / Detská obuv /  Móda / Obuv / Detská obuv / Detská členková a vysoká obuv /  Detský svet / Detská obuv a doplnky / Detská obuv /",
+							"stock": "800",
+							"title": "PEPPERTS® Dievčenská nepremokavá zimná obuv",
+							"brand": "PEPPERTS"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": [
+						"default-query((obuv))"
+					]
+				},
+				{
+					"index": "ocs-1-mind_sk_sk-sk",
 					"document": {
 						"id": "100266844",
 						"data": {
 							"price": "9.99",
 							"description": "Športová a moderná obuv na voľný čas",
 							"shortDescription": "Príjemný komfort pri nosení vďaka polstrovanému jazyku a okraju zvršku",
-							"artNr": ["100266844011", "100266844010", "100266844002", "100266844012", "100266844001", "100266844004", "100266844003", "100266844006", "100266844005", "100266844008", "100266844007", "100266844009"],
+							"artNr": [
+								"100266844011",
+								"100266844010",
+								"100266844002",
+								"100266844012",
+								"100266844001",
+								"100266844004",
+								"100266844006",
+								"100266844005",
+								"100266844009"
+							],
 							"category": "Móda / Obuv / Pánska obuv / Pánska členková obuv /  Móda / Obuv / Pánska obuv / Pánska vysoká obuv /",
-							"stock": "1436",
-							"title": "Pánska obuv",
+							"stock": "977",
+							"title": "LIVERGY® Pánska obuv",
 							"brand": "LIVERGY"
 						},
 						"attributes": null,
 						"categories": null
 					},
-					"matchedQueries": ["default-query((obuv))"]
-				}, {
-					"index": "ocs-10-mind_sk_sk-sk",
+					"matchedQueries": [
+						"default-query((obuv))"
+					]
+				},
+				{
+					"index": "ocs-1-mind_sk_sk-sk",
 					"document": {
-						"id": "100267389",
-						"data": {
-							"price": "9.99",
-							"description": "S módnym dizajnom",
-							"shortDescription": "<p>Komfortn&eacute; polstrovanie okrajov zvr&scaron;ku</p>",
-							"artNr": ["100267389004", "100267389005", "100267389013", "100267389002", "100267389006", "100267389007"],
-							"category": "Móda / Obuv / Detská obuv / Detská nízka obuv a tenisky /  Móda / Obuv / Detská obuv /  Detský svet / Detská obuv a doplnky / Detská obuv /",
-							"stock": "42",
-							"title": "Chlapčenská obuv",
-							"brand": "PEPPERTS"
-						},
-						"attributes": null,
-						"categories": null
-					},
-					"matchedQueries": ["default-query((obuv))"]
-				}, {
-					"index": "ocs-10-mind_sk_sk-sk",
-					"document": {
-						"id": "100280057",
-						"data": {
-							"price": "6.99",
-							"description": "Preklápací a nastaviteľný pätový remeň s prackou pre bezpečnú stabilitu",
-							"shortDescription": "Z vysokokvalitnej, pevnej kože",
-							"artNr": ["100280057005", "100280057004", "100280057003"],
-							"category": "Móda / Obuv / Dámska obuv / Dámska domáca obuv /",
-							"stock": "407",
-							"title": "Dámska / pánska obuv"
-						},
-						"attributes": null,
-						"categories": null
-					},
-					"matchedQueries": ["default-query((obuv))"]
-				}, {
-					"index": "ocs-10-mind_sk_sk-sk",
-					"document": {
-						"id": "100286899",
-						"data": {
-							"price": "7.99",
-							"description": "Módne a pohodlné v štýle wide-fit",
-							"shortDescription": "Rôzne farebné varianty",
-							"artNr": ["100286899010", "100286899011", "100286899009", "100286899005", "100286899006", "100286899007", "100286899008", "100286899012", "100286899001", "100286899002", "100286899003", "100286899004"],
-							"category": "Móda / Obuv / Dámska obuv / Dámske baleríny /",
-							"stock": "379",
-							"title": "Dámska obuv",
-							"brand": "ESMARA"
-						},
-						"attributes": null,
-						"categories": null
-					},
-					"matchedQueries": ["default-query((obuv))"]
-				}, {
-					"index": "ocs-10-mind_sk_sk-sk",
-					"document": {
-						"id": "100288064",
-						"data": {
-							"price": "8.99",
-							"description": "Mimoriadne pohodlné vďaka zvršku z priedušnej pleteniny",
-							"shortDescription": "Rôzne farebné varianty",
-							"artNr": ["100288064014", "100288064010"],
-							"category": "Šport a voľný čas / Športové oblečenie a doplnky / Športová obuv / Dámska športová obuv /  Móda / Obuv / Dámska obuv / Dámska športová obuv /  Móda / Obuv / Dámska obuv / Dámske tenisky /",
-							"stock": "2",
-							"title": "Dámska obuv",
-							"brand": "ESMARA"
-						},
-						"attributes": null,
-						"categories": null
-					},
-					"matchedQueries": ["default-query((obuv))"]
-				}, {
-					"index": "ocs-10-mind_sk_sk-sk",
-					"document": {
-						"id": "100288113",
+						"id": "100290196",
 						"data": {
 							"price": "5.99",
-							"description": "Kvalitné plátno s imitáciou ľanu",
+							"description": "Z pevného plátna",
 							"shortDescription": "Rôzne farebné varianty",
-							"artNr": ["100288113012", "100288113001", "100288113011", "100288113010", "100288113004", "100288113003", "100288113002", "100288113009", "100288113008", "100288113007"],
+							"artNr": [
+								"100290196003",
+								"100290196002",
+								"100290196005",
+								"100290196004",
+								"100290196010",
+								"100290196012",
+								"100290196001",
+								"100290196011",
+								"100290196007",
+								"100290196006",
+								"100290196009",
+								"100290196008"
+							],
 							"category": "Móda / Obuv / Pánska obuv / Pánska členková obuv /  Móda / Obuv / Pánska obuv / Pánske tenisky /  Móda / Obuv / Pánska obuv / Pánska športová obuv /",
-							"stock": "105",
-							"title": "Pánska obuv",
+							"stock": "404",
+							"title": "LIVERGY® Pánska štýlová voľnočasová obuv",
 							"brand": "LIVERGY"
 						},
 						"attributes": null,
 						"categories": null
 					},
-					"matchedQueries": ["default-query((obuv))"]
-				}, {
-					"index": "ocs-10-mind_sk_sk-sk",
+					"matchedQueries": [
+						"default-query((obuv))"
+					]
+				},
+				{
+					"index": "ocs-1-mind_sk_sk-sk",
 					"document": {
-						"id": "100288448",
+						"id": "100293888",
 						"data": {
-							"price": "3.99",
-							"description": "Príjemný komfort pri nosení vďaka textilnej stielke",
-							"shortDescription": "Rôze farebné varianty",
-							"artNr": ["100288448007", "100288448006"],
+							"price": "4.99",
+							"description": "Vysoký komfort pri nosení vďaka textilnému vnútru",
+							"shortDescription": "Rôzne farebné varianty",
+							"artNr": "100293888009",
 							"category": "Šport a voľný čas / Športové oblečenie a doplnky / Športová obuv / Dámska športová obuv /  Móda / Obuv / Dámska obuv / Dámska športová obuv /  Móda / Obuv / Dámska obuv / Dámske tenisky /",
-							"stock": "11",
-							"title": "Dámska obuv",
+							"stock": "37",
+							"title": "ESMARA® Dámska plátená obuv",
 							"brand": "ESMARA"
 						},
 						"attributes": null,
 						"categories": null
 					},
-					"matchedQueries": ["default-query((obuv))"]
+					"matchedQueries": [
+						"default-query((obuv))"
+					]
+				},
+				{
+					"index": "ocs-1-mind_sk_sk-sk",
+					"document": {
+						"id": "100299474",
+						"data": {
+							"price": "5.99",
+							"description": "Vysoký komfort pri nosení vďaka textilnej vnútornej stielke",
+							"shortDescription": "Rôzne farebné varianty",
+							"artNr": [
+								"100299474001",
+								"100299474010"
+							],
+							"category": "Móda / Obuv / Pánska obuv / Pánska členková obuv /  Móda / Obuv / Pánska obuv / Pánske tenisky /  Móda / Obuv / Pánska obuv / Pánska športová obuv /",
+							"stock": "10",
+							"title": "LIVERGY® Pánska voľnočasová obuv",
+							"brand": "LIVERGY"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": [
+						"default-query((obuv))"
+					]
+				},
+				{
+					"index": "ocs-1-mind_sk_sk-sk",
+					"document": {
+						"id": "100301596",
+						"data": {
+							"price": "9.99",
+							"description": "Zvršok z priedušného textilu",
+							"shortDescription": "Rôzne farebné varianty",
+							"artNr": [
+								"100301596010",
+								"100301596011",
+								"100301596012",
+								"100301596001",
+								"100301596002",
+								"100301596003",
+								"100301596004",
+								"100301596005",
+								"100301596006",
+								"100301596008",
+								"100301596009"
+							],
+							"category": "Móda / Obuv / Pánska obuv / Pánska športová obuv /  Šport a voľný čas / Športové oblečenie a doplnky / Športová obuv / Pánska športová obuv /",
+							"stock": "224",
+							"title": "CRIVIT® Pánska športová obuv",
+							"brand": "CRIVIT"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": [
+						"default-query((obuv))"
+					]
+				},
+				{
+					"index": "ocs-1-mind_sk_sk-sk",
+					"document": {
+						"id": "100301625",
+						"data": {
+							"price": "9.99",
+							"description": "Zvršok z priedušného textilu",
+							"shortDescription": "Rôzne farebné varianty",
+							"artNr": [
+								"100301625008",
+								"100301625009",
+								"100301625006",
+								"100301625007",
+								"100301625001",
+								"100301625010",
+								"100301625004",
+								"100301625005",
+								"100301625002",
+								"100301625003"
+							],
+							"category": "Šport a voľný čas / Športové oblečenie a doplnky / Športová obuv / Dámska športová obuv /  Móda / Obuv / Dámska obuv / Dámska športová obuv /",
+							"stock": "137",
+							"title": "ESMARA® Dámska športová obuv",
+							"brand": "ESMARA"
+						},
+						"attributes": null,
+						"categories": null
+					},
+					"matchedQueries": [
+						"default-query((obuv))"
+					]
 				}
 			],
-			"facets": [{
+			"facets": [
+				{
 					"fieldName": "category",
-					"absoluteFacetCoverage": 1836,
+					"absoluteFacetCoverage": 1462,
 					"isFiltered": false,
-					"entries": [{
+					"entries": [
+						{
 							"type": "hierarchical",
 							"key": "Móda:10000001",
-							"docCount": 250,
+							"docCount": 175,
 							"link": "q=obuv&price=0.0%2C9.99&category=M%C3%B3da%3A10000001",
 							"selected": false,
-							"children": [{
+							"children": [
+								{
 									"type": "hierarchical",
 									"key": "Obuv:10000014",
-									"docCount": 207,
+									"docCount": 133,
 									"link": "q=obuv&price=0.0%2C9.99&category=Obuv%3A10000014",
 									"selected": false,
-									"children": [{
+									"children": [
+										{
 											"type": "hierarchical",
 											"key": "Detská obuv:10000128",
-											"docCount": 79,
+											"docCount": 51,
 											"link": "q=obuv&price=0.0%2C9.99&category=Detsk%C3%A1+obuv%3A10000128",
 											"selected": false,
-											"children": [{
+											"children": [
+												{
 													"type": "hierarchical",
 													"key": "Detská členková a vysoká obuv:10000336",
-													"docCount": 34,
+													"docCount": 36,
 													"link": "q=obuv&price=0.0%2C9.99&category=Detsk%C3%A1+%C4%8Dlenkov%C3%A1+a+vysok%C3%A1+obuv%3A10000336",
 													"selected": false,
 													"children": [],
 													"path": "Móda:10000001/Obuv:10000014/Detská obuv:10000128/Detská členková a vysoká obuv:10000336"
-												}, {
+												},
+												{
 													"type": "hierarchical",
 													"key": "Detská nízka obuv a tenisky:10000337",
-													"docCount": 16,
+													"docCount": 9,
 													"link": "q=obuv&price=0.0%2C9.99&category=Detsk%C3%A1+n%C3%ADzka+obuv+a+tenisky%3A10000337",
 													"selected": false,
 													"children": [],
 													"path": "Móda:10000001/Obuv:10000014/Detská obuv:10000128/Detská nízka obuv a tenisky:10000337"
-												}, {
+												},
+												{
 													"type": "hierarchical",
 													"key": "Detská domáca obuv:10000338",
-													"docCount": 12,
+													"docCount": 5,
 													"link": "q=obuv&price=0.0%2C9.99&category=Detsk%C3%A1+dom%C3%A1ca+obuv%3A10000338",
 													"selected": false,
 													"children": [],
 													"path": "Móda:10000001/Obuv:10000014/Detská obuv:10000128/Detská domáca obuv:10000338"
-												}, {
+												},
+												{
 													"type": "hierarchical",
 													"key": "Detské sandále:10000700",
-													"docCount": 11,
+													"docCount": 1,
 													"link": "q=obuv&price=0.0%2C9.99&category=Detsk%C3%A9+sand%C3%A1le%3A10000700",
 													"selected": false,
 													"children": [],
 													"path": "Móda:10000001/Obuv:10000014/Detská obuv:10000128/Detské sandále:10000700"
-												}, {
-													"type": "hierarchical",
-													"key": "Detská športová obuv:10000340",
-													"docCount": 6,
-													"link": "q=obuv&price=0.0%2C9.99&category=Detsk%C3%A1+%C5%A1portov%C3%A1+obuv%3A10000340",
-													"selected": false,
-													"children": [],
-													"path": "Móda:10000001/Obuv:10000014/Detská obuv:10000128/Detská športová obuv:10000340"
 												}
 											],
 											"path": "Móda:10000001/Obuv:10000014/Detská obuv:10000128"
-										}, {
+										},
+										{
 											"type": "hierarchical",
 											"key": "Dámska obuv:10000126",
-											"docCount": 77,
+											"docCount": 50,
 											"link": "q=obuv&price=0.0%2C9.99&category=D%C3%A1mska+obuv%3A10000126",
 											"selected": false,
-											"children": [{
+											"children": [
+												{
 													"type": "hierarchical",
 													"key": "Dámska členková a vysoká obuv:10000411",
-													"docCount": 26,
+													"docCount": 25,
 													"link": "q=obuv&price=0.0%2C9.99&category=D%C3%A1mska+%C4%8Dlenkov%C3%A1+a+vysok%C3%A1+obuv%3A10000411",
 													"selected": false,
 													"children": [],
 													"path": "Móda:10000001/Obuv:10000014/Dámska obuv:10000126/Dámska členková a vysoká obuv:10000411"
-												}, {
-													"type": "hierarchical",
-													"key": "Dámska domáca obuv:10000409",
-													"docCount": 24,
-													"link": "q=obuv&price=0.0%2C9.99&category=D%C3%A1mska+dom%C3%A1ca+obuv%3A10000409",
-													"selected": false,
-													"children": [],
-													"path": "Móda:10000001/Obuv:10000014/Dámska obuv:10000126/Dámska domáca obuv:10000409"
-												}, {
+												},
+												{
 													"type": "hierarchical",
 													"key": "Dámska športová obuv:10000410",
-													"docCount": 22,
+													"docCount": 12,
 													"link": "q=obuv&price=0.0%2C9.99&category=D%C3%A1mska+%C5%A1portov%C3%A1+obuv%3A10000410",
 													"selected": false,
 													"children": [],
 													"path": "Móda:10000001/Obuv:10000014/Dámska obuv:10000126/Dámska športová obuv:10000410"
-												}, {
+												},
+												{
+													"type": "hierarchical",
+													"key": "Dámska domáca obuv:10000409",
+													"docCount": 11,
+													"link": "q=obuv&price=0.0%2C9.99&category=D%C3%A1mska+dom%C3%A1ca+obuv%3A10000409",
+													"selected": false,
+													"children": [],
+													"path": "Móda:10000001/Obuv:10000014/Dámska obuv:10000126/Dámska domáca obuv:10000409"
+												},
+												{
+													"type": "hierarchical",
+													"key": "Dámske sandále a šlapky:10000604",
+													"docCount": 7,
+													"link": "q=obuv&price=0.0%2C9.99&category=D%C3%A1mske+sand%C3%A1le+a+%C5%A1lapky%3A10000604",
+													"selected": false,
+													"children": [],
+													"path": "Móda:10000001/Obuv:10000014/Dámska obuv:10000126/Dámske sandále a šlapky:10000604"
+												},
+												{
 													"type": "hierarchical",
 													"key": "Dámske tenisky:10000412",
-													"docCount": 9,
+													"docCount": 3,
 													"link": "q=obuv&price=0.0%2C9.99&category=D%C3%A1mske+tenisky%3A10000412",
 													"selected": false,
 													"children": [],
 													"path": "Móda:10000001/Obuv:10000014/Dámska obuv:10000126/Dámske tenisky:10000412"
-												}, {
+												},
+												{
 													"type": "hierarchical",
 													"key": "Dámske baleríny:10000572",
-													"docCount": 5,
+													"docCount": 2,
 													"link": "q=obuv&price=0.0%2C9.99&category=D%C3%A1mske+baler%C3%ADny%3A10000572",
 													"selected": false,
 													"children": [],
@@ -338,82 +479,82 @@
 												}
 											],
 											"path": "Móda:10000001/Obuv:10000014/Dámska obuv:10000126"
-										}, {
+										},
+										{
 											"type": "hierarchical",
 											"key": "Pánska obuv:10000127",
-											"docCount": 51,
+											"docCount": 32,
 											"link": "q=obuv&price=0.0%2C9.99&category=P%C3%A1nska+obuv%3A10000127",
 											"selected": false,
-											"children": [{
+											"children": [
+												{
 													"type": "hierarchical",
 													"key": "Pánska športová obuv:10000416",
-													"docCount": 34,
+													"docCount": 19,
 													"link": "q=obuv&price=0.0%2C9.99&category=P%C3%A1nska+%C5%A1portov%C3%A1+obuv%3A10000416",
 													"selected": false,
 													"children": [],
 													"path": "Móda:10000001/Obuv:10000014/Pánska obuv:10000127/Pánska športová obuv:10000416"
-												}, {
+												},
+												{
 													"type": "hierarchical",
 													"key": "Pánska členková obuv:10000417",
-													"docCount": 31,
+													"docCount": 17,
 													"link": "q=obuv&price=0.0%2C9.99&category=P%C3%A1nska+%C4%8Dlenkov%C3%A1+obuv%3A10000417",
 													"selected": false,
 													"children": [],
 													"path": "Móda:10000001/Obuv:10000014/Pánska obuv:10000127/Pánska členková obuv:10000417"
-												}, {
+												},
+												{
 													"type": "hierarchical",
 													"key": "Pánske tenisky:10000418",
-													"docCount": 21,
+													"docCount": 11,
 													"link": "q=obuv&price=0.0%2C9.99&category=P%C3%A1nske+tenisky%3A10000418",
 													"selected": false,
 													"children": [],
 													"path": "Móda:10000001/Obuv:10000014/Pánska obuv:10000127/Pánske tenisky:10000418"
-												}, {
-													"type": "hierarchical",
-													"key": "Pánska vysoká obuv:10000419",
-													"docCount": 8,
-													"link": "q=obuv&price=0.0%2C9.99&category=P%C3%A1nska+vysok%C3%A1+obuv%3A10000419",
-													"selected": false,
-													"children": [],
-													"path": "Móda:10000001/Obuv:10000014/Pánska obuv:10000127/Pánska vysoká obuv:10000419"
-												}, {
+												},
+												{
 													"type": "hierarchical",
 													"key": "Pánska domáca obuv:10000415",
-													"docCount": 5,
+													"docCount": 6,
 													"link": "q=obuv&price=0.0%2C9.99&category=P%C3%A1nska+dom%C3%A1ca+obuv%3A10000415",
 													"selected": false,
 													"children": [],
 													"path": "Móda:10000001/Obuv:10000014/Pánska obuv:10000127/Pánska domáca obuv:10000415"
-												}, {
+												},
+												{
 													"type": "hierarchical",
-													"key": "Pánske sandále ",
-													"docCount": 2,
-													"link": "q=obuv&price=0.0%2C9.99&category=P%C3%A1nske+sand%C3%A1le+",
+													"key": "Pánska vysoká obuv:10000419",
+													"docCount": 5,
+													"link": "q=obuv&price=0.0%2C9.99&category=P%C3%A1nska+vysok%C3%A1+obuv%3A10000419",
 													"selected": false,
-													"children": [{
-															"type": "hierarchical",
-															"key": " šľapky:10000420",
-															"docCount": 2,
-															"link": "q=obuv&price=0.0%2C9.99&category=+%C5%A1%C4%BEapky%3A10000420",
-															"selected": false,
-															"children": [],
-															"path": "Móda:10000001/Obuv:10000014/Pánska obuv:10000127/Pánske sandále / šľapky:10000420"
-														}
-													],
-													"path": "Móda:10000001/Obuv:10000014/Pánska obuv:10000127/Pánske sandále "
+													"children": [],
+													"path": "Móda:10000001/Obuv:10000014/Pánska obuv:10000127/Pánska vysoká obuv:10000419"
+												},
+												{
+													"type": "hierarchical",
+													"key": "Pánske sandále a šľapky:10000420",
+													"docCount": 1,
+													"link": "q=obuv&price=0.0%2C9.99&category=P%C3%A1nske+sand%C3%A1le+a+%C5%A1%C4%BEapky%3A10000420",
+													"selected": false,
+													"children": [],
+													"path": "Móda:10000001/Obuv:10000014/Pánska obuv:10000127/Pánske sandále a šľapky:10000420"
 												}
 											],
 											"path": "Móda:10000001/Obuv:10000014/Pánska obuv:10000127"
 										}
 									],
 									"path": "Móda:10000001/Obuv:10000014"
-								}, {
+								},
+								{
 									"type": "hierarchical",
 									"key": "Doplnky:10000280",
 									"docCount": 42,
 									"link": "q=obuv&price=0.0%2C9.99&category=Doplnky%3A10000280",
 									"selected": false,
-									"children": [{
+									"children": [
+										{
 											"type": "hierarchical",
 											"key": "Detské doplnky:10000131",
 											"docCount": 42,
@@ -424,27 +565,31 @@
 										}
 									],
 									"path": "Móda:10000001/Doplnky:10000280"
-								}, {
+								},
+								{
 									"type": "hierarchical",
 									"key": "Detská móda:10000013",
-									"docCount": 32,
+									"docCount": 33,
 									"link": "q=obuv&price=0.0%2C9.99&category=Detsk%C3%A1+m%C3%B3da%3A10000013",
 									"selected": false,
-									"children": [{
+									"children": [
+										{
 											"type": "hierarchical",
 											"key": "Móda pre najmenších (2-24 mesiacov):10000123",
-											"docCount": 12,
+											"docCount": 14,
 											"link": "q=obuv&price=0.0%2C9.99&category=M%C3%B3da+pre+najmen%C5%A1%C3%ADch+%282-24+mesiacov%29%3A10000123",
 											"selected": false,
-											"children": [{
+											"children": [
+												{
 													"type": "hierarchical",
 													"key": "Detské doplnky (2-24 m.):10000326",
-													"docCount": 12,
+													"docCount": 14,
 													"link": "q=obuv&price=0.0%2C9.99&category=Detsk%C3%A9+doplnky+%282-24+m.%29%3A10000326",
 													"selected": false,
 													"children": [],
 													"path": "Móda:10000001/Detská móda:10000013/Móda pre najmenších (2-24 mesiacov):10000123/Detské doplnky (2-24 m.):10000326"
-												}, {
+												},
+												{
 													"type": "hierarchical",
 													"key": "Pančuchy (2-24 m.):10000186",
 													"docCount": 2,
@@ -455,16 +600,18 @@
 												}
 											],
 											"path": "Móda:10000001/Detská móda:10000013/Móda pre najmenších (2-24 mesiacov):10000123"
-										}, {
+										},
+										{
 											"type": "hierarchical",
 											"key": "Dievčenská móda (7-12 r.):10000122",
-											"docCount": 7,
+											"docCount": 6,
 											"link": "q=obuv&price=0.0%2C9.99&category=Diev%C4%8Densk%C3%A1+m%C3%B3da+%287-12+r.%29%3A10000122",
 											"selected": false,
-											"children": [{
+											"children": [
+												{
 													"type": "hierarchical",
 													"key": "Dievčenské spodné prádlo (7-12 r.):10000324",
-													"docCount": 7,
+													"docCount": 6,
 													"link": "q=obuv&price=0.0%2C9.99&category=Diev%C4%8Densk%C3%A9+spodn%C3%A9+pr%C3%A1dlo+%287-12+r.%29%3A10000324",
 													"selected": false,
 													"children": [],
@@ -472,13 +619,15 @@
 												}
 											],
 											"path": "Móda:10000001/Detská móda:10000013/Dievčenská móda (7-12 r.):10000122"
-										}, {
+										},
+										{
 											"type": "hierarchical",
 											"key": "Chlapčenská móda (7-12 r.):10000120",
 											"docCount": 5,
 											"link": "q=obuv&price=0.0%2C9.99&category=Chlap%C4%8Densk%C3%A1+m%C3%B3da+%287-12+r.%29%3A10000120",
 											"selected": false,
-											"children": [{
+											"children": [
+												{
 													"type": "hierarchical",
 													"key": "Chlapčenské spodné prádlo (7-12 r.):10000303",
 													"docCount": 5,
@@ -489,13 +638,15 @@
 												}
 											],
 											"path": "Móda:10000001/Detská móda:10000013/Chlapčenská móda (7-12 r.):10000120"
-										}, {
+										},
+										{
 											"type": "hierarchical",
 											"key": "Chlapčenská móda (2-6 r.):10000119",
 											"docCount": 4,
 											"link": "q=obuv&price=0.0%2C9.99&category=Chlap%C4%8Densk%C3%A1+m%C3%B3da+%282-6+r.%29%3A10000119",
 											"selected": false,
-											"children": [{
+											"children": [
+												{
 													"type": "hierarchical",
 													"key": "Chlapčenské spodné prádlo (2-6 r.):10000298",
 													"docCount": 4,
@@ -506,13 +657,15 @@
 												}
 											],
 											"path": "Móda:10000001/Detská móda:10000013/Chlapčenská móda (2-6 r.):10000119"
-										}, {
+										},
+										{
 											"type": "hierarchical",
 											"key": "Dievčenská móda (2-6 r.):10000121",
 											"docCount": 4,
 											"link": "q=obuv&price=0.0%2C9.99&category=Diev%C4%8Densk%C3%A1+m%C3%B3da+%282-6+r.%29%3A10000121",
 											"selected": false,
-											"children": [{
+											"children": [
+												{
 													"type": "hierarchical",
 													"key": "Dievčenské spodné prádlo (2-6 r.):10000314",
 													"docCount": 4,
@@ -526,22 +679,25 @@
 										}
 									],
 									"path": "Móda:10000001/Detská móda:10000013"
-								}, {
+								},
+								{
 									"type": "hierarchical",
 									"key": "Dámska móda:10000009",
-									"docCount": 7,
+									"docCount": 6,
 									"link": "q=obuv&price=0.0%2C9.99&category=D%C3%A1mska+m%C3%B3da%3A10000009",
 									"selected": false,
-									"children": [{
+									"children": [
+										{
 											"type": "hierarchical",
 											"key": "Dámska spodná bielizeň:10000056",
-											"docCount": 7,
+											"docCount": 6,
 											"link": "q=obuv&price=0.0%2C9.99&category=D%C3%A1mska+spodn%C3%A1+bielize%C5%88%3A10000056",
 											"selected": false,
-											"children": [{
+											"children": [
+												{
 													"type": "hierarchical",
 													"key": "Dámske ponožky a pančuchy:10000292",
-													"docCount": 7,
+													"docCount": 6,
 													"link": "q=obuv&price=0.0%2C9.99&category=D%C3%A1mske+pono%C5%BEky+a+pan%C4%8Duchy%3A10000292",
 													"selected": false,
 													"children": [],
@@ -552,86 +708,78 @@
 										}
 									],
 									"path": "Móda:10000001/Dámska móda:10000009"
-								}, {
-									"type": "hierarchical",
-									"key": "Pánska móda:10000011",
-									"docCount": 1,
-									"link": "q=obuv&price=0.0%2C9.99&category=P%C3%A1nska+m%C3%B3da%3A10000011",
-									"selected": false,
-									"children": [{
-											"type": "hierarchical",
-											"key": "Pánska spodná bielize:10000117",
-											"docCount": 1,
-											"link": "q=obuv&price=0.0%2C9.99&category=P%C3%A1nska+spodn%C3%A1+bielize%3A10000117",
-											"selected": false,
-											"children": [],
-											"path": "Móda:10000001/Pánska móda:10000011/Pánska spodná bielize:10000117"
-										}
-									],
-									"path": "Móda:10000001/Pánska móda:10000011"
 								}
 							],
 							"path": "Móda:10000001"
-						}, {
+						},
+						{
 							"type": "hierarchical",
 							"key": "Detský svet:10000007",
-							"docCount": 125,
+							"docCount": 124,
 							"link": "q=obuv&price=0.0%2C9.99&category=Detsk%C3%BD+svet%3A10000007",
 							"selected": false,
-							"children": [{
+							"children": [
+								{
 									"type": "hierarchical",
 									"key": "Detská obuv a doplnky:10000023",
-									"docCount": 125,
+									"docCount": 124,
 									"link": "q=obuv&price=0.0%2C9.99&category=Detsk%C3%A1+obuv+a+doplnky%3A10000023",
 									"selected": false,
-									"children": [{
+									"children": [
+										{
 											"type": "hierarchical",
 											"key": "Detská obuv:10000096",
-											"docCount": 49,
+											"docCount": 45,
 											"link": "q=obuv&price=0.0%2C9.99&category=Detsk%C3%A1+obuv%3A10000096",
 											"selected": false,
 											"children": [],
 											"path": "Detský svet:10000007/Detská obuv a doplnky:10000023/Detská obuv:10000096"
-										}, {
-											"type": "hierarchical",
-											"key": "Detské doplnky:10000098",
-											"docCount": 39,
-											"link": "q=obuv&price=0.0%2C9.99&category=Detsk%C3%A9+doplnky%3A10000098",
-											"selected": false,
-											"children": [],
-											"path": "Detský svet:10000007/Detská obuv a doplnky:10000023/Detské doplnky:10000098"
-										}, {
+										},
+										{
 											"type": "hierarchical",
 											"key": "Detské tašky:10000097",
-											"docCount": 37,
+											"docCount": 43,
 											"link": "q=obuv&price=0.0%2C9.99&category=Detsk%C3%A9+ta%C5%A1ky%3A10000097",
 											"selected": false,
 											"children": [],
 											"path": "Detský svet:10000007/Detská obuv a doplnky:10000023/Detské tašky:10000097"
+										},
+										{
+											"type": "hierarchical",
+											"key": "Detské doplnky:10000098",
+											"docCount": 36,
+											"link": "q=obuv&price=0.0%2C9.99&category=Detsk%C3%A9+doplnky%3A10000098",
+											"selected": false,
+											"children": [],
+											"path": "Detský svet:10000007/Detská obuv a doplnky:10000023/Detské doplnky:10000098"
 										}
 									],
 									"path": "Detský svet:10000007/Detská obuv a doplnky:10000023"
-								}, {
+								},
+								{
 									"type": "hierarchical",
 									"key": "Detské oblečenie:10000022",
-									"docCount": 32,
+									"docCount": 33,
 									"link": "q=obuv&price=0.0%2C9.99&category=Detsk%C3%A9+oble%C4%8Denie%3A10000022",
 									"selected": false,
-									"children": [{
+									"children": [
+										{
 											"type": "hierarchical",
 											"key": "Oblečenie pre najmenších (2-24 mesiacov):10000095",
-											"docCount": 12,
+											"docCount": 14,
 											"link": "q=obuv&price=0.0%2C9.99&category=Oble%C4%8Denie+pre+najmen%C5%A1%C3%ADch+%282-24+mesiacov%29%3A10000095",
 											"selected": false,
-											"children": [{
+											"children": [
+												{
 													"type": "hierarchical",
 													"key": "Detské doplnky (2-24 m.):10000394",
-													"docCount": 12,
+													"docCount": 14,
 													"link": "q=obuv&price=0.0%2C9.99&category=Detsk%C3%A9+doplnky+%282-24+m.%29%3A10000394",
 													"selected": false,
 													"children": [],
 													"path": "Detský svet:10000007/Detské oblečenie:10000022/Oblečenie pre najmenších (2-24 mesiacov):10000095/Detské doplnky (2-24 m.):10000394"
-												}, {
+												},
+												{
 													"type": "hierarchical",
 													"key": "Pančuchy, podkolienky a ponožky (2-24 m.):10000235",
 													"docCount": 2,
@@ -642,16 +790,18 @@
 												}
 											],
 											"path": "Detský svet:10000007/Detské oblečenie:10000022/Oblečenie pre najmenších (2-24 mesiacov):10000095"
-										}, {
+										},
+										{
 											"type": "hierarchical",
 											"key": "Dievčenské oblečenie (7-12 r.):10000094",
-											"docCount": 7,
+											"docCount": 6,
 											"link": "q=obuv&price=0.0%2C9.99&category=Diev%C4%8Densk%C3%A9+oble%C4%8Denie+%287-12+r.%29%3A10000094",
 											"selected": false,
-											"children": [{
+											"children": [
+												{
 													"type": "hierarchical",
 													"key": "Dievčenské spodné prádlo (7-12 r.):10000387",
-													"docCount": 7,
+													"docCount": 6,
 													"link": "q=obuv&price=0.0%2C9.99&category=Diev%C4%8Densk%C3%A9+spodn%C3%A9+pr%C3%A1dlo+%287-12+r.%29%3A10000387",
 													"selected": false,
 													"children": [],
@@ -659,13 +809,15 @@
 												}
 											],
 											"path": "Detský svet:10000007/Detské oblečenie:10000022/Dievčenské oblečenie (7-12 r.):10000094"
-										}, {
+										},
+										{
 											"type": "hierarchical",
 											"key": "Chlapčenské oblečenie (7-12 r.):10000092",
 											"docCount": 5,
 											"link": "q=obuv&price=0.0%2C9.99&category=Chlap%C4%8Densk%C3%A9+oble%C4%8Denie+%287-12+r.%29%3A10000092",
 											"selected": false,
-											"children": [{
+											"children": [
+												{
 													"type": "hierarchical",
 													"key": "Chlapčenské spodné prádlo (7-12 r.):10000366",
 													"docCount": 5,
@@ -676,13 +828,15 @@
 												}
 											],
 											"path": "Detský svet:10000007/Detské oblečenie:10000022/Chlapčenské oblečenie (7-12 r.):10000092"
-										}, {
+										},
+										{
 											"type": "hierarchical",
 											"key": "Chlapčenské oblečenie (2-6 r.):10000091",
 											"docCount": 4,
 											"link": "q=obuv&price=0.0%2C9.99&category=Chlap%C4%8Densk%C3%A9+oble%C4%8Denie+%282-6+r.%29%3A10000091",
 											"selected": false,
-											"children": [{
+											"children": [
+												{
 													"type": "hierarchical",
 													"key": "Chlapčenské spodné prádlo (2-6 r.):10000361",
 													"docCount": 4,
@@ -693,13 +847,15 @@
 												}
 											],
 											"path": "Detský svet:10000007/Detské oblečenie:10000022/Chlapčenské oblečenie (2-6 r.):10000091"
-										}, {
+										},
+										{
 											"type": "hierarchical",
 											"key": "Dievčenské oblečenie (2-6 r.):10000093",
 											"docCount": 4,
 											"link": "q=obuv&price=0.0%2C9.99&category=Diev%C4%8Densk%C3%A9+oble%C4%8Denie+%282-6+r.%29%3A10000093",
 											"selected": false,
-											"children": [{
+											"children": [
+												{
 													"type": "hierarchical",
 													"key": "Dievčenské spodné prádlo (2-6 r.):10000377",
 													"docCount": 4,
@@ -713,16 +869,18 @@
 										}
 									],
 									"path": "Detský svet:10000007/Detské oblečenie:10000022"
-								}, {
+								},
+								{
 									"type": "hierarchical",
 									"key": "Zábava a vzdelávanie:10000025",
-									"docCount": 3,
+									"docCount": 6,
 									"link": "q=obuv&price=0.0%2C9.99&category=Z%C3%A1bava+a+vzdel%C3%A1vanie%3A10000025",
 									"selected": false,
-									"children": [{
+									"children": [
+										{
 											"type": "hierarchical",
 											"key": "Do školy:10000851",
-											"docCount": 3,
+											"docCount": 6,
 											"link": "q=obuv&price=0.0%2C9.99&category=Do+%C5%A1koly%3A10000851",
 											"selected": false,
 											"children": [],
@@ -733,36 +891,50 @@
 								}
 							],
 							"path": "Detský svet:10000007"
-						}, {
+						},
+						{
 							"type": "hierarchical",
 							"key": "Šport a voľný čas:10000004",
-							"docCount": 69,
+							"docCount": 57,
 							"link": "q=obuv&price=0.0%2C9.99&category=%C5%A0port+a+vo%C4%BEn%C3%BD+%C4%8Das%3A10000004",
 							"selected": false,
-							"children": [{
+							"children": [
+								{
+									"type": "hierarchical",
+									"key": "Cestovné tašky a kufre:10000012",
+									"docCount": 37,
+									"link": "q=obuv&price=0.0%2C9.99&category=Cestovn%C3%A9+ta%C5%A1ky+a+kufre%3A10000012",
+									"selected": false,
+									"children": [],
+									"path": "Šport a voľný čas:10000004/Cestovné tašky a kufre:10000012"
+								},
+								{
 									"type": "hierarchical",
 									"key": "Športové oblečenie a doplnky:10000276",
-									"docCount": 35,
+									"docCount": 20,
 									"link": "q=obuv&price=0.0%2C9.99&category=%C5%A0portov%C3%A9+oble%C4%8Denie+a+doplnky%3A10000276",
 									"selected": false,
-									"children": [{
+									"children": [
+										{
 											"type": "hierarchical",
 											"key": "Športová obuv:10000137",
-											"docCount": 35,
+											"docCount": 20,
 											"link": "q=obuv&price=0.0%2C9.99&category=%C5%A0portov%C3%A1+obuv%3A10000137",
 											"selected": false,
-											"children": [{
+											"children": [
+												{
 													"type": "hierarchical",
 													"key": "Dámska športová obuv:10000229",
-													"docCount": 22,
+													"docCount": 12,
 													"link": "q=obuv&price=0.0%2C9.99&category=D%C3%A1mska+%C5%A1portov%C3%A1+obuv%3A10000229",
 													"selected": false,
 													"children": [],
 													"path": "Šport a voľný čas:10000004/Športové oblečenie a doplnky:10000276/Športová obuv:10000137/Dámska športová obuv:10000229"
-												}, {
+												},
+												{
 													"type": "hierarchical",
 													"key": "Pánska športová obuv:10000230",
-													"docCount": 13,
+													"docCount": 8,
 													"link": "q=obuv&price=0.0%2C9.99&category=P%C3%A1nska+%C5%A1portov%C3%A1+obuv%3A10000230",
 													"selected": false,
 													"children": [],
@@ -773,33 +945,28 @@
 										}
 									],
 									"path": "Šport a voľný čas:10000004/Športové oblečenie a doplnky:10000276"
-								}, {
-									"type": "hierarchical",
-									"key": "Cestovné tašky a kufre:10000012",
-									"docCount": 34,
-									"link": "q=obuv&price=0.0%2C9.99&category=Cestovn%C3%A9+ta%C5%A1ky+a+kufre%3A10000012",
-									"selected": false,
-									"children": [],
-									"path": "Šport a voľný čas:10000004/Cestovné tašky a kufre:10000012"
 								}
 							],
 							"path": "Šport a voľný čas:10000004"
-						}, {
+						},
+						{
 							"type": "hierarchical",
 							"key": "Dielňa a záhrada:10000003",
-							"docCount": 4,
+							"docCount": 3,
 							"link": "q=obuv&price=0.0%2C9.99&category=Diel%C5%88a+a+z%C3%A1hrada%3A10000003",
 							"selected": false,
-							"children": [{
+							"children": [
+								{
 									"type": "hierarchical",
 									"key": "Pracovné oblečenie:10000029",
-									"docCount": 4,
+									"docCount": 3,
 									"link": "q=obuv&price=0.0%2C9.99&category=Pracovn%C3%A9+oble%C4%8Denie%3A10000029",
 									"selected": false,
-									"children": [{
+									"children": [
+										{
 											"type": "hierarchical",
 											"key": "Pracovná obuv:10000072",
-											"docCount": 4,
+											"docCount": 3,
 											"link": "q=obuv&price=0.0%2C9.99&category=Pracovn%C3%A1+obuv%3A10000072",
 											"selected": false,
 											"children": [],
@@ -819,99 +986,80 @@
 						"order": 1
 					},
 					"filtered": false
-				}, {
+				},
+				{
 					"fieldName": "brand",
-					"absoluteFacetCoverage": 279,
+					"absoluteFacetCoverage": 211,
 					"isFiltered": false,
-					"entries": [{
+					"entries": [
+						{
 							"type": "text",
 							"key": "LUPILU",
-							"docCount": 59,
+							"docCount": 48,
 							"link": "q=obuv&price=0.0%2C9.99&brand=LUPILU",
 							"selected": false
-						}, {
-							"type": "text",
-							"key": "ESMARA",
-							"docCount": 46,
-							"link": "q=obuv&price=0.0%2C9.99&brand=ESMARA",
-							"selected": false
-						}, {
-							"type": "text",
-							"key": "PEPPERTS",
-							"docCount": 45,
-							"link": "q=obuv&price=0.0%2C9.99&brand=PEPPERTS",
-							"selected": false
-						}, {
-							"type": "text",
-							"key": "LIVERGY",
-							"docCount": 38,
-							"link": "q=obuv&price=0.0%2C9.99&brand=LIVERGY",
-							"selected": false
-						}, {
+						},
+						{
 							"type": "text",
 							"key": "TOPMOVE",
-							"docCount": 34,
+							"docCount": 41,
 							"link": "q=obuv&price=0.0%2C9.99&brand=TOPMOVE",
 							"selected": false
-						}, {
+						},
+						{
+							"type": "text",
+							"key": "ESMARA",
+							"docCount": 32,
+							"link": "q=obuv&price=0.0%2C9.99&brand=ESMARA",
+							"selected": false
+						},
+						{
+							"type": "text",
+							"key": "PEPPERTS",
+							"docCount": 32,
+							"link": "q=obuv&price=0.0%2C9.99&brand=PEPPERTS",
+							"selected": false
+						},
+						{
+							"type": "text",
+							"key": "LIVERGY",
+							"docCount": 23,
+							"link": "q=obuv&price=0.0%2C9.99&brand=LIVERGY",
+							"selected": false
+						},
+						{
 							"type": "text",
 							"key": "CRIVIT",
-							"docCount": 32,
+							"docCount": 22,
 							"link": "q=obuv&price=0.0%2C9.99&brand=CRIVIT",
 							"selected": false
-						}, {
+						},
+						{
 							"type": "text",
 							"key": "Footflexx",
-							"docCount": 8,
+							"docCount": 7,
 							"link": "q=obuv&price=0.0%2C9.99&brand=Footflexx",
 							"selected": false
-						}, {
-							"type": "text",
-							"key": "Mistral",
-							"docCount": 4,
-							"link": "q=obuv&price=0.0%2C9.99&brand=Mistral",
-							"selected": false
-						}, {
+						},
+						{
 							"type": "text",
 							"key": "PARKSIDE",
 							"docCount": 3,
 							"link": "q=obuv&price=0.0%2C9.99&brand=PARKSIDE",
 							"selected": false
-						}, {
+						},
+						{
 							"type": "text",
 							"key": "FLORABEST",
 							"docCount": 2,
 							"link": "q=obuv&price=0.0%2C9.99&brand=FLORABEST",
 							"selected": false
-						}, {
+						},
+						{
 							"type": "text",
 							"key": "HERLITZ",
-							"docCount": 2,
+							"docCount": 1,
 							"link": "q=obuv&price=0.0%2C9.99&brand=HERLITZ",
-							"selected": false
-						}, {
-							"type": "text",
-							"key": "MEXX",
-							"docCount": 2,
-							"link": "q=obuv&price=0.0%2C9.99&brand=MEXX",
-							"selected": false
-						}, {
-							"type": "text",
-							"key": "adidas",
-							"docCount": 2,
-							"link": "q=obuv&price=0.0%2C9.99&brand=adidas",
-							"selected": false
-						}, {
-							"type": "text",
-							"key": "-",
-							"docCount": 1,
-							"link": "q=obuv&price=0.0%2C9.99&brand=-",
-							"selected": false
-						}, {
-							"type": "text",
-							"key": "POWERFIX",
-							"docCount": 1,
-							"link": "q=obuv&price=0.0%2C9.99&brand=POWERFIX",
 							"selected": false
 						}
 					],
@@ -922,42 +1070,38 @@
 						"order": 2
 					},
 					"filtered": false
-				}, {
+				},
+				{
 					"fieldName": "price",
-					"absoluteFacetCoverage": 258,
+					"absoluteFacetCoverage": 184,
 					"isFiltered": true,
-					"entries": [{
+					"entries": [
+						{
 							"type": "interval",
-							"key": "0.0-4.99",
-							"docCount": 73,
-							"link": "q=obuv&price=0.0%2C4.99",
-							"selected": false,
+							"key": "0.0-9.99",
+							"docCount": 108,
+							"link": "q=obuv",
+							"selected": true,
 							"lowerBound": 0.0,
-							"upperBound": 4.99
-						}, {
-							"type": "interval",
-							"key": "5.0-9.99",
-							"docCount": 98,
-							"link": "q=obuv&price=5.0%2C9.99",
-							"selected": false,
-							"lowerBound": 5.0,
 							"upperBound": 9.99
-						}, {
+						},
+						{
 							"type": "interval",
 							"key": "10.0-14.99",
-							"docCount": 52,
+							"docCount": 45,
 							"link": "q=obuv&price=10.0%2C14.99",
 							"selected": false,
 							"lowerBound": 10.0,
 							"upperBound": 14.99
-						}, {
+						},
+						{
 							"type": "interval",
-							"key": "15.0-59.99",
-							"docCount": 35,
-							"link": "q=obuv&price=15.0%2C59.99",
+							"key": "15.0-49.99",
+							"docCount": 31,
+							"link": "q=obuv&price=15.0%2C49.99",
 							"selected": false,
 							"lowerBound": 15.0,
-							"upperBound": 59.99
+							"upperBound": 49.99
 						}
 					],
 					"type": "interval",

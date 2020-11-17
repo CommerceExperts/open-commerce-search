@@ -9,7 +9,7 @@
   </parent>
 
   <artifactId>search-ocs-connector</artifactId>
-  <version>0.5.1</version>
+  <version>0.6.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Search - OCS Connector</name>
 
@@ -39,13 +39,44 @@
       <version>${search-commons-java.version}</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
 
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>2.10.0.pr3</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.10.0.pr3</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.github.openfeign</groupId>
+      <artifactId>feign-core</artifactId>
+      <version>11.0</version>
+    </dependency>
+    <dependency>
+      <groupId>de.cxp.ocs</groupId>
+      <artifactId>open-commerce-search-api</artifactId>
+      <version>0.5</version>
+    </dependency>
     <dependency>
       <groupId>de.cxp.ocs</groupId>
       <artifactId>ocs-java-client</artifactId>
       <version>0.1</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>jackson-module-parameter-names</artifactId>
+          <groupId>com.fasterxml.jackson.module</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
-    
+
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
@@ -69,5 +100,4 @@
       <url>https://nexus.commerce-experts.com/content/repositories/searchhub-external/</url>
     </repository>
   </repositories>
-
 </project>

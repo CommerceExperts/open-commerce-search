@@ -22,7 +22,7 @@ public class OcsSearchServiceAdapter {
 
     final Logger log = LoggerFactory.getLogger(OcsSearchServiceAdapter.class);
 
-	private final SearchClient searchService;
+    private final SearchClient searchService;
 
     /**
      * Constructor of the OCS Adapter.
@@ -30,15 +30,15 @@ public class OcsSearchServiceAdapter {
      * @param config
      */
     public OcsSearchServiceAdapter(final OcsConnectorConfig config) {
-		if (config.getAuthUser() != null && config.getAuthPassword() != null) {
-			searchService = new SearchClient(config.getSearchEndpoint(), clientBuilder -> {
-				clientBuilder.decoder(ObjectMapperFactory.createJacksonDecoder());
-				clientBuilder.requestInterceptor(new BasicAuthRequestInterceptor(config.getAuthUser(), config.getAuthPassword()));
-			});
-		}
-		else {
-			searchService = new SearchClient(config.getSearchEndpoint());
-		}
+        if (config.getAuthUser() != null && config.getAuthPassword() != null) {
+            searchService = new SearchClient(config.getSearchEndpoint(), clientBuilder -> {
+                clientBuilder.decoder(ObjectMapperFactory.createJacksonDecoder());
+                clientBuilder.requestInterceptor(new BasicAuthRequestInterceptor(
+                        config.getAuthUser(), config.getAuthPassword()));
+            });
+        } else {
+            searchService = new SearchClient(config.getSearchEndpoint());
+        }
     }
 
     /**
@@ -54,13 +54,12 @@ public class OcsSearchServiceAdapter {
         SearchQueryMapper queryMapper = new SearchQueryMapper(request);
 
         try {
-			de.cxp.ocs.model.result.SearchResult ocsResult = searchService.search(indexName,
+            de.cxp.ocs.model.result.SearchResult ocsResult = searchService.search(indexName,
                     queryMapper.getOcsQuery(), queryMapper.getOcsFilters());
 
             SearchResultMapper resultMapper = new SearchResultMapper(ocsResult, request);
             return resultMapper.toMindshiftResult();
-		}
-		catch (Exception e) {
+        } catch (Exception e) {
             String pattern = "Failure while processing requesting OCS Search Service! Root cause is `%s`.";
             String message = Messages
                     .format(pattern, com.google.common.base.Throwables.getRootCause(e)).get();
