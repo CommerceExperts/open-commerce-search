@@ -1,17 +1,12 @@
 package de.cxp.ocs.preprocessor.util;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.util.CollectionUtils;
-
-import de.cxp.ocs.config.Field;
 
 /**
  * Takes a list of <code>/</code> separated category paths and splits them into
@@ -23,8 +18,6 @@ public class CategorySearchData {
 	public static final String	CATEGORY_LVL_SUFFIX		= "_lvl_";
 	public static final String	PATH_SEPARATOR			= " ";
 
-	private static final String SLASH = "/";
-
 	final Map<Integer, Set<String>>	categoryLvl;
 	final Set<String>				categoryLeaf;
 
@@ -35,28 +28,20 @@ public class CategorySearchData {
 	 * @param paths
 	 *        the list of paths to split.
 	 */
-	public CategorySearchData(final List<String> paths) {
-		if (CollectionUtils.isEmpty(paths)) {
-			categoryLvl = Collections.emptyMap();
-			categoryLeaf = Collections.emptySet();
-		}
-		else {
-			categoryLvl = new LinkedHashMap<>(paths.size());
-			categoryLeaf = new LinkedHashSet<>(paths.size());
-			processPaths(paths);
-		}
+	public CategorySearchData() {
+		categoryLvl = new LinkedHashMap<>();
+		categoryLeaf = new LinkedHashSet<>();
 	}
 
-	private void processPaths(final List<String> paths) {
-		for (int i = 0; i < paths.size(); i++) {
-			String path = paths.get(i);
-			String[] pathLvls = path.split(SLASH);
+	public void add(Collection<String[]> categoryPaths) {
+		categoryPaths.forEach(this::add);
+	}
 
-			for (int j = 0; j < pathLvls.length; j++) {
-				categoryLvl.computeIfAbsent(j, k -> new LinkedHashSet<>()).add(pathLvls[j]);
-			}
-			categoryLeaf.add(pathLvls[pathLvls.length - 1]);
+	private void add(String[] pathLvls) {
+		for (int j = 0; j < pathLvls.length; j++) {
+			categoryLvl.computeIfAbsent(j, k -> new LinkedHashSet<>()).add(pathLvls[j]);
 		}
+		categoryLeaf.add(pathLvls[pathLvls.length - 1]);
 	}
 
 	/**
@@ -110,19 +95,19 @@ public class CategorySearchData {
 	 *        the category field which is used to obtain the name of the stored
 	 *        fields.
 	 */
-	public void toSourceItem(final Map<String, Object> sourceData, final Field categoryField) {
+	public void toSourceItem(final Map<String, Object> sourceData, final String categoryFieldName) {
 		for (int i = 0; i < categoryLvl.size(); i++) {
-			sourceData.put(getFieldLevelName(categoryField, i), StringUtils.join(categoryLvl.get(i),
+			sourceData.put(getFieldLevelName(categoryFieldName, i), StringUtils.join(categoryLvl.get(i),
 					PATH_SEPARATOR));
 		}
-		sourceData.put(getFieldLeafName(categoryField), StringUtils.join(categoryLeaf, PATH_SEPARATOR));
+		sourceData.put(getFieldLeafName(categoryFieldName), StringUtils.join(categoryLeaf, PATH_SEPARATOR));
 	}
 
-	private String getFieldLevelName(final Field categoryField, int i) {
-		return new StringBuilder(categoryField.getName()).append(CATEGORY_LVL_SUFFIX).append(i).toString();
+	private String getFieldLevelName(final String categoryFieldName, int i) {
+		return new StringBuilder(categoryFieldName).append(CATEGORY_LVL_SUFFIX).append(i).toString();
 	}
 
-	private String getFieldLeafName(final Field categoryField) {
-		return categoryField.getName().concat(CATEGORY_LEAF_SUFFIX);
+	private String getFieldLeafName(final String categoryFieldName) {
+		return categoryFieldName.concat(CATEGORY_LEAF_SUFFIX);
 	}
 }

@@ -29,6 +29,15 @@ hs_err_pid*
 **/.classpath
 **/.factorypath
 
+# idea files
+.idea
+*.iml
+
 # maven
 target
 bin
+
+# custom application properties for testing
+application-*properties
+application-*yml
+application-*yaml

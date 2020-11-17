@@ -1,6 +1,9 @@
 package de.cxp.ocs.client.deserializer;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -114,7 +117,7 @@ public class SerializationTest {
 
 				new ImportSession("foo-bar", "foo-bar-20191203"),
 
-				new Sorting("title", SortOrder.ASC, "sort=title"),
+				new Sorting("title", SortOrder.ASC, false, "sort=title"),
 
 				new SearchQuery()
 						.setQ("foo")

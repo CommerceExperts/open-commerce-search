@@ -1,13 +1,16 @@
 package de.cxp.ocs.preprocessor.impl;
 
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import de.cxp.ocs.conf.IndexConfiguration;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldType;
+import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.preprocessor.DataPreProcessor;
 import de.cxp.ocs.preprocessor.util.CategorySearchData;
@@ -48,8 +51,10 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor
 public class ExtractCategoryLevelDataProcessor implements DataPreProcessor {
 
-	private Optional<Field> categoryField;
+	private static final String	SLASH	= "/";
+	private Optional<Field>		categoryField;
 
+	@SuppressWarnings("deprecation")
 	public void configure(final IndexConfiguration properties) {
 		categoryField = properties.getFieldConfiguration().getField(FieldType.category);
 	}
@@ -57,28 +62,105 @@ public class ExtractCategoryLevelDataProcessor implements DataPreProcessor {
 	@Override
 	public boolean process(Document document, boolean visible) {
 		if (isExtract(document)) {
-			addCategoryValuesToSource(document.getData());
+			addCategoryValuesToSource(document);
 		}
 		return visible;
 	}
 
 	private boolean isExtract(Document doc) {
-		return categoryField.isPresent() && doc.getData().containsKey(categoryField.get().getName());
+		return categoryField.isPresent() || (doc.getCategories() != null && doc.getCategories().size() > 0);
 	}
 
-	private void addCategoryValuesToSource(final Map<String, Object> sourceData) {
-		Object categoryPathValue = sourceData.get(categoryField.get().getName());
-		if (categoryPathValue instanceof List<?>) {
-			@SuppressWarnings("unchecked")
-			CategorySearchData categorySearchData = new CategorySearchData((List<String>) categoryPathValue);
-			categorySearchData.toSourceItem(sourceData, categoryField.get());
+	/**
+	 * Extract category values from all possible sources.
+	 * 
+	 * @param document
+	 */
+	private void addCategoryValuesToSource(final Document document) {
+		CategorySearchData categorySearchData = new CategorySearchData();
+		String categoryFieldName = "category";
+
+		if (categoryField.isPresent()) {
+			categoryFieldName = categoryField.get().getName();
+			Object categoryPathValue = document.getData().get(categoryFieldName);
+			if (categoryPathValue != null) {
+				categorySearchData.add(extractCategoryLevels(document, categoryPathValue));
+			}
+
+			for (String sourceField : categoryField.get().getSourceNames()) {
+				categoryPathValue = document.getData().get(sourceField);
+				if (categoryPathValue != null) {
+					categorySearchData.add(extractCategoryLevels(document, categoryPathValue));
+				}
+			}
+		}
+
+		if (document.getCategories() != null) {
+			categorySearchData.add(extractCategoryLevels(document, document.getCategories()));
+		}
+
+		categorySearchData.toSourceItem(document.getData(), categoryFieldName);
+	}
+
+	@SuppressWarnings("unchecked")
+	private Collection<String[]> extractCategoryLevels(Document document, Object categoryPathValue) {
+		if (categoryPathValue == null) return Collections.emptyList();
+
+		if (categoryPathValue instanceof Collection<?>) {
+			if (((Collection<?>) categoryPathValue).isEmpty()) return Collections.emptyList();
+
+			Object object0 = ((Collection<?>) categoryPathValue).iterator().next();
+			if (object0 instanceof String) {
+				return splitAllStringPaths((Collection<String>) categoryPathValue);
+			}
+			else if (object0 instanceof Category[]) {
+				return extractAllCategoryPathNames((Collection<Category[]>) categoryPathValue);
+			}
+			else {
+				OnceInAWhileRunner.runAgainAfter(() -> log.warn(
+						"Expected category path to be a collection of String or Category[], instead got '{}' for document with id '{}'",
+						categoryPathValue.getClass().getName(), document.getId()),
+						this.getClass().getSimpleName(), ChronoUnit.SECONDS, 60);
+			}
+		}
+		else if (categoryPathValue instanceof String) {
+			return Collections.singletonList(((String) categoryPathValue).split(SLASH));
+		}
+		else if (categoryPathValue instanceof Category[]) {
+			return Collections.singletonList(extractCategoryPathNames((Category[]) categoryPathValue));
 		}
 		else {
 			OnceInAWhileRunner.runAgainAfter(() -> log.warn(
-					"Expected category path to be an list, instead got '{}' for record '{}'", categoryPathValue != null
-							? categoryPathValue.getClass().getName()
-							: "null", sourceData), this.getClass().getSimpleName(), ChronoUnit.SECONDS,
-					60);
+					"Expected category path to be a String or Category[], instead got '{}' for document with id '{}'",
+					categoryPathValue.getClass().getName(), document.getId()),
+					this.getClass().getSimpleName(), ChronoUnit.SECONDS, 60);
 		}
+
+		return Collections.emptyList();
+	}
+
+	private List<String[]> splitAllStringPaths(final Collection<String> paths) {
+		List<String[]> splitPaths = new ArrayList<>();
+		for (String path : paths) {
+			String[] pathLvls = path.split(SLASH);
+			splitPaths.add(pathLvls);
+		}
+		return splitPaths;
+	}
+
+	private Collection<String[]> extractAllCategoryPathNames(Collection<Category[]> paths) {
+		List<String[]> splitPaths = new ArrayList<>();
+		for (Category[] path : paths) {
+			splitPaths.add(extractCategoryPathNames(path));
+		}
+		return splitPaths;
+	}
+
+	private String[] extractCategoryPathNames(Category[] path) {
+		String[] pathLvls = new String[path.length];
+		for (int i = 0; i < path.length; i++) {
+			pathLvls[i] = path[i].getName();
+		}
+		return pathLvls;
 	}
 }

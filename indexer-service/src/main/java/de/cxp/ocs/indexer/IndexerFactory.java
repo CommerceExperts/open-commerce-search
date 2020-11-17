@@ -27,7 +27,7 @@ public class IndexerFactory {
 		for (String processorName : indexConfiguration.getDataProcessorConfiguration().getProcessors()) {
 			try {
 				Class<?> processorClass = Class.forName(dataPreProcessorImplPackage + processorName);
-				if (processorClass != null && processorClass.isAssignableFrom(DataPreProcessor.class)) {
+				if (processorClass != null && DataPreProcessor.class.isAssignableFrom(processorClass)) {
 					DataPreProcessor processor = (DataPreProcessor) processorClass.newInstance();
 					processor.configure(indexConfiguration);
 					dataProcessors.add(processor);

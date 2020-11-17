@@ -1,6 +1,9 @@
 package de.cxp.ocs.indexer.model;
 
-import static de.cxp.ocs.util.Util.*;
+import static de.cxp.ocs.util.Util.collectObjects;
+import static de.cxp.ocs.util.Util.toNumberCollection;
+import static de.cxp.ocs.util.Util.toStringCollection;
+import static de.cxp.ocs.util.Util.tryToParseAsNumber;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -16,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.FieldUsage;
+import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.util.MinMaxSet;
 import io.micrometer.core.lang.NonNull;
@@ -28,6 +32,12 @@ public class FieldUsageApplier {
 	public static void handleSearchField(final DataItem record, final Field field, Object value) {
 		if (isEmpty(value)) {
 			return;
+		}
+
+		String fieldName = field.getName();
+		if (value instanceof Attribute) {
+			fieldName = ((Attribute) value).getLabel();
+			value = ((Attribute) value).getValue();
 		}
 
 		if (FieldType.category.equals(field.getType())) {
@@ -65,10 +75,9 @@ public class FieldUsageApplier {
 			}
 		}
 
-		record.getSearchData().compute(field.getName(), joinSearchDataValue(value));
+		record.getSearchData().compute(fieldName, joinDataValueFunction(value));
 		if (record instanceof VariantItem) {
-			((VariantItem) record).getMaster().getSearchData().compute(field.getName(), joinSearchDataValue(
-					value));
+			((VariantItem) record).getMaster().getSearchData().compute(fieldName, joinDataValueFunction(value));
 		}
 	};
 
@@ -76,7 +85,13 @@ public class FieldUsageApplier {
 		if (FieldType.category.equals(field.getType())) {
 			value = convertCategoryData(value, FieldUsageApplier::toCategoryPathString);
 		}
-		record.getResultData().compute(field.getName(), joinSearchDataValue(value));
+
+		String fieldName = field.getName();
+		if (value instanceof Attribute) {
+			fieldName = ((Attribute) value).getLabel();
+		}
+
+		record.getResultData().compute(fieldName, joinDataValueFunction(value));
 	};
 
 	public static void handleSortField(final DataItem record, final Field field, Object value) {
@@ -84,18 +99,24 @@ public class FieldUsageApplier {
 			return;
 		}
 
+		String fieldName = field.getName();
+		if (value instanceof Attribute) {
+			fieldName = ((Attribute) value).getLabel();
+			value = ((Attribute) value).getValue();
+		}
+
 		value = ensureCorrectValueType(field, value);
 
-		Object previousValue = record.getSortData().putIfAbsent(field.getName(), new MinMaxSet<>(value));
+		Object previousValue = record.getSortData().putIfAbsent(fieldName, new MinMaxSet<>(value));
 		if (previousValue != null) {
-			record.getSortData().compute(field.getName(), joinSearchDataValue(value));
+			record.getSortData().compute(fieldName, joinDataValueFunction(value));
 		}
 
 		if (record instanceof VariantItem) {
 			previousValue = ((VariantItem) record).getMaster().getSortData()
-					.putIfAbsent(field.getName(), new MinMaxSet<>(value));
+					.putIfAbsent(fieldName, new MinMaxSet<>(value));
 			if (previousValue != null) {
-				((VariantItem) record).getMaster().getSortData().compute(field.getName(), joinSearchDataValue(
+				((VariantItem) record).getMaster().getSortData().compute(fieldName, joinDataValueFunction(
 						value));
 			}
 		}
@@ -150,6 +171,12 @@ public class FieldUsageApplier {
 					record.getNumberFacetData().add(new FacetEntry<Number>(field.getName()).withValues(
 							numberValues));
 				}
+				else if (value instanceof Attribute) {
+					Attribute attr = ((Attribute) value);
+					Optional<Number> numberValue = tryToParseAsNumber(attr.getValue());
+					numberValue.map(numVal -> record.getNumberFacetData().add(new FacetEntry<>(attr.getLabel(),
+							attr.getId(), numVal, attr.getCode())));
+				}
 				else {
 					Optional<Number> numberValue = tryToParseAsNumber(String.valueOf(value));
 					numberValue.map(numVal -> record.getNumberFacetData().add(new FacetEntry<>(field.getName(),
@@ -158,8 +185,17 @@ public class FieldUsageApplier {
 				break;
 			case category:
 				if (record instanceof IndexableItem) {
+					String fieldName = field.getName();
+
+					// very unlikely, but who knows...
+					if (value instanceof Attribute) {
+						Attribute attr = ((Attribute) value);
+						fieldName = attr.getLabel();
+						value = new Category(attr.getCode(), attr.getValue());
+					}
+
 					((IndexableItem) record).getCategories()
-							.computeIfAbsent(field.getName(), n -> new HashSet<>())
+							.computeIfAbsent(fieldName, n -> new HashSet<>())
 							.addAll(convertCategoryData(value, FieldUsageApplier::toCategoryPathString));
 				}
 				break;
@@ -167,6 +203,10 @@ public class FieldUsageApplier {
 				if (value instanceof Collection || value.getClass().isArray()) {
 					Collection<String> stringValues = toStringCollection(value);
 					record.getTermFacetData().add(new FacetEntry<String>(field.getName()).withValues(stringValues));
+				}
+				else if (value instanceof Attribute) {
+					Attribute attr = (Attribute) value;
+					record.getTermFacetData().add(new FacetEntry<>(attr.getLabel(), attr.getId(), attr.getValue(), attr.getCode()));
 				}
 				else {
 					record.getTermFacetData().add(new FacetEntry<>(field.getName(), String.valueOf(value)));
@@ -176,7 +216,9 @@ public class FieldUsageApplier {
 	};
 
 	public static void handleScoreField(final DataItem record, final Field field, final Object value) {
-		final Optional<Number> numValue;
+		Optional<Number> numValue;
+		String fieldName = field.getName();
+
 		if (value instanceof Number) {
 			numValue = Optional.of((Number) value);
 		}
@@ -186,11 +228,16 @@ public class FieldUsageApplier {
 			}
 			return;
 		}
+		else if (value instanceof Attribute) {
+			fieldName = ((Attribute) value).getLabel();
+			numValue = tryToParseAsNumber(((Attribute) value).getValue());
+		}
 		else {
 			numValue = tryToParseAsNumber(String.valueOf(value));
 		}
+
 		if (numValue.isPresent()) {
-			record.getScores().compute(field.getName(), joinScoreDataValue(numValue.get()));
+			record.getScores().compute(fieldName, joinScoreDataValue(numValue.get()));
 
 			if (record instanceof VariantItem) {
 				((VariantItem) record).getMaster().getScores()
@@ -203,7 +250,7 @@ public class FieldUsageApplier {
 
 	};
 
-	protected static BiFunction<? super String, ? super Object, ? extends Object> joinSearchDataValue(
+	protected static BiFunction<? super String, ? super Object, ? extends Object> joinDataValueFunction(
 			final Object value) {
 		return (name, oldVal) -> collectObjects(oldVal, value);
 	}
@@ -270,6 +317,8 @@ public class FieldUsageApplier {
 			return Collections.singletonList(StringUtils.join((String[]) value, '/'));
 		}
 		else {
+			// FIXME: this does not make much sense for category facets
+			// in case the user wants to filter by category ids only
 			return Collections.singletonList(value.toString());
 		}
 	}

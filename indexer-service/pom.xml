@@ -6,8 +6,8 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.4</version>
-		<relativePath>../</relativePath>
+		<version>0.6</version>
+		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<artifactId>indexer-service</artifactId>

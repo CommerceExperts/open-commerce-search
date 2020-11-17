@@ -1,18 +1,18 @@
 package de.cxp.ocs.indexer;
 
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Map.Entry;
+import java.util.function.Function;
 
 import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldType;
+import de.cxp.ocs.config.FieldConfigIndex;
+import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.indexer.model.DataItem;
 import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.indexer.model.MasterItem;
 import de.cxp.ocs.indexer.model.VariantItem;
+import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -22,51 +22,26 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class IndexItemConverter {
 
-	@NonNull
-	private final Map<String, Field>	fields;
-	private final Optional<Field>		categoryField;
+	private FieldConfigIndex fieldConfigIndex;
 
-	public IndexItemConverter(Map<String, Field> fields) {
-		this.fields = fields;
-		categoryField = determineDefaultCategoryField(fields);
+	/**
+	 * Constructor of the converter that prepares the given field configurations
+	 * for converting Documents into {@link IndexableItem}.
+	 * 
+	 * @param standardFields
+	 * @param dynamicFields
+	 */
+	public IndexItemConverter(FieldConfiguration fieldConfiguration) {
+		fieldConfigIndex = new FieldConfigIndex(fieldConfiguration);
 	}
 
-	private Optional<Field> determineDefaultCategoryField(Map<String, Field> fields) {
-		Map<String, Field> categoryFields = fields.values().stream()
-				.filter(v -> FieldType.category.equals(v.getType()))
-				.collect(Collectors.toMap(Field::getName, v -> v));
-		// if there are several fields of type category, try to determine which
-		// one is the most suitable for Document::categories
-		if (categoryFields.size() > 1) {
-			// best case: one of the fields has one of these preferred names:
-			for (String preferedCatFieldName : new String[] { "categories", "category" }) {
-				if (categoryFields.containsKey(preferedCatFieldName)) {
-					categoryFields.entrySet().removeIf(e -> !e.getKey().equals(preferedCatFieldName));
-					log.warn("Multiple category fields defined! Will index Document::categories into field with prefered name '{}'!", preferedCatFieldName);
-					break;
-				}
-			}
-
-			// alternative case: if one field has no "source field names",
-			// it should be the categories field.
-			if (categoryFields.size() > 1) {
-				categoryFields.entrySet().removeIf(e -> e.getValue().getSourceNames().size() > 0);
-				if (categoryFields.isEmpty()) {
-					log.warn("Multiple category fields defined, but none with one of the prefered names (categories/category) or without source names found!"
-							+ " Won't index Document::categories data!");
-				}
-			}
-
-			// last case: we don't know which one is the most suitable one.
-			// Don't index categories at all.
-			if (categoryFields.size() > 1) {
-				categoryFields.clear();
-				log.warn("Multiple category fields defined, but none has unique characteristic! Won't index Document::categories data!");
-			}
-		}
-		return categoryFields.isEmpty() ? Optional.empty() : Optional.of(categoryFields.values().iterator().next());
-	}
-
+	/**
+	 * Converts a Document coming in via the REST API into the Indexable Item
+	 * for Elasticsearch.
+	 * 
+	 * @param doc
+	 * @return
+	 */
 	public IndexableItem toIndexableItem(Document doc) {
 		// TODO: validate document (e.g. require IDs etc.)
 		IndexableItem indexableItem;
@@ -94,24 +69,43 @@ public class IndexItemConverter {
 	}
 
 	private void extractSourceValues(Document sourceDoc, final DataItem targetItem) {
-		boolean isVariant = (targetItem instanceof VariantItem);
-		final Map<String, Object> sourceData = sourceDoc.getData();
-		for (final Field field : fields.values()) {
-			if ((field.isVariantLevel() && !isVariant) || (field.isMasterLevel() && isVariant)) {
-				continue;
-			}
+		final boolean isVariant = (targetItem instanceof VariantItem);
+		Function<Field, Field> fieldAtCorrectDocLevelMapper = isVariant ? this::isFieldAtVariantLevel : this::isFieldAtMasterLevel;
 
-			Object value = sourceData.get(field.getName());
-			targetItem.setValue(field, value);
-			
-			if (field.getSourceNames() != null) {
-				for (int i = 0; i < field.getSourceNames().size(); i++) {
-					targetItem.setValue(field, sourceData.get(field.getSourceNames().get(i)));
-				}
+		if (sourceDoc.getData() != null) {
+			for (Entry<String, Object> dataField : sourceDoc.getData().entrySet()) {
+				fieldConfigIndex.getMatchingField(dataField.getKey(), dataField.getValue())
+						.map(fieldAtCorrectDocLevelMapper)
+						.ifPresent(field -> targetItem.setValue(field, dataField.getValue()));
 			}
 		}
-		
-		categoryField.ifPresent(f -> targetItem.setValue(f, sourceDoc.getCategories()));
+
+		if (sourceDoc.getAttributes() != null) {
+			for (Attribute attribute : sourceDoc.getAttributes()) {
+				fieldConfigIndex.getMatchingField(attribute.getLabel(), attribute)
+						.map(fieldAtCorrectDocLevelMapper)
+						.ifPresent(field -> targetItem.setValue(field, attribute));
+			}
+		}
+
+		fieldConfigIndex.getCategoryField().ifPresent(f -> targetItem.setValue(f, sourceDoc.getCategories()));
 	}
 
+	private Field isFieldAtVariantLevel(Field field) {
+		if (field.isBothLevel() || field.isVariantLevel()) {
+			return field;
+		}
+		else {
+			return null;
+		}
+	}
+
+	private Field isFieldAtMasterLevel(Field field) {
+		if (field.isBothLevel() || field.isMasterLevel()) {
+			return field;
+		}
+		else {
+			return null;
+		}
+	}
 }
