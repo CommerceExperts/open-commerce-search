@@ -6,7 +6,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.6</version>
+	<version>0.6.1</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -27,7 +27,7 @@
 		<dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
 
 		<ocs-api.version>0.5</ocs-api.version>
-		<ocs-commons.version>0.2</ocs-commons.version>
+		<ocs-commons.version>0.2.1</ocs-commons.version>
 
 		<elasticsearch.version>7.5.0</elasticsearch.version>
 		<spring-boot.version>1.5.22.RELEASE</spring-boot.version>
@@ -174,8 +174,9 @@
 			<plugins>
 				<!-- Set up JAR manifest -->
 				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-jar-plugin</artifactId>
-					<version>3.0.2</version>
+					<version>3.2.0</version>
 					<configuration>
 						<archive>
 							<manifest>
@@ -190,8 +191,9 @@
 
 				<!-- Copy Maven dependencies into target/lib/ -->
 				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-dependency-plugin</artifactId>
-					<version>3.0.2</version>
+					<version>3.1.2</version>
 					<executions>
 						<execution>
 							<phase>package</phase>
@@ -264,14 +266,12 @@
 				</configuration>
 			</plugin>
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-deploy-plugin</artifactId>
-				<version>3.0.0-M1</version>
-			</plugin>
-			<plugin>
 				<groupId>org.honton.chas</groupId>
 				<artifactId>exists-maven-plugin</artifactId>
 				<version>0.3.0</version>
+				<configuration>
+					<artifact>${project.artifactId}-${project.version}.${project.packaging}</artifact>
+				</configuration>
 				<executions>
 					<execution>
 						<goals>
