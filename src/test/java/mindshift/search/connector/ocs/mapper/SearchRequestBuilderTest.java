@@ -11,43 +11,43 @@ import mindshift.search.connector.ocs.mapper.MindshiftSearchRequestBuilder;
 
 public class SearchRequestBuilderTest {
 
-	@Test
-	public void testClone() {
-		SearchRequest request = getFullyLoadedSearchRequest();
-		
-		MindshiftSearchRequestBuilder underTest = new MindshiftSearchRequestBuilder(request);
-		// use same sort param, so the objects still should be equals
-		SearchRequest clone = underTest.withSort(request.getSort());
+    @Test
+    public void testClone() {
+        SearchRequest request = getFullyLoadedSearchRequest();
 
-		assertFalse(clone == request);
-		assertEquals(request, clone);
-	}
-	
-	@Test
-	public void testChangingSortParameter() {
-		SearchRequest request = getFullyLoadedSearchRequest();
-		
-		MindshiftSearchRequestBuilder underTest = new MindshiftSearchRequestBuilder(request);
-		SearchRequest clone = underTest.withSort("title");
+        MindshiftSearchRequestBuilder underTest = new MindshiftSearchRequestBuilder(request);
+        // use same sort param, so the objects still should be equals
+        SearchRequest clone = underTest.withSort(request.getSort());
 
-		assertTrue(clone.getSort().equals("title"));
-		assertFalse(request.getSort().equals(clone.getSort()));
-		assertFalse(clone == request);
-	}
+        assertFalse(clone == request);
+        assertEquals(request, clone);
+    }
 
-	private SearchRequest getFullyLoadedSearchRequest() {
-		SearchRequest request = new SearchRequest();
-		request.setAssortment("mind_sk_SK");
-		request.setFetchsize(12);
-		request.setFilters(Collections.singletonMap("price", "34-59"));
-		request.setId("125264zghs");
-		request.setLocale("sk");
-		request.setOffset(6L);
-		request.setQ("foobar");
-		request.setSort("relevance");
-		request.setType("product");
-		request.setSubtype("what");
-		return request;
-	}
-	
+    @Test
+    public void testChangingSortParameter() {
+        SearchRequest request = getFullyLoadedSearchRequest();
+
+        MindshiftSearchRequestBuilder underTest = new MindshiftSearchRequestBuilder(request);
+        SearchRequest clone = underTest.withSort("title");
+
+        assertTrue(clone.getSort().equals("title"));
+        assertFalse(request.getSort().equals(clone.getSort()));
+        assertFalse(clone == request);
+    }
+
+    private SearchRequest getFullyLoadedSearchRequest() {
+        SearchRequest request = new SearchRequest();
+        request.setAssortment("mind_sk_SK");
+        request.setFetchsize(12);
+        request.setFilters(Collections.singletonMap("price", "34-59"));
+        request.setId("125264zghs");
+        request.setLocale("sk");
+        request.setOffset(6L);
+        request.setQ("foobar");
+        request.setSort("relevance");
+        request.setType("product");
+        request.setSubtype("what");
+        return request;
+    }
+
 }

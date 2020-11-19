@@ -13,39 +13,76 @@ import mindshift.search.connector.api.v2.ConnectorConfigSkeleton;
  */
 public class OcsConnectorConfig extends ConnectorConfigSkeleton<OpenCommerceSearchConnector> {
 
-	private static final long serialVersionUID = -6152063938985309750L;
+    private static final long serialVersionUID = -6152063938985309750L;
 
-	public static final String SEARCH_SERVICE_ENDPOINT = "ocs.search.endpoint";
-	public static final String SUGGEST_SERVICE_ENDPOINT = "ocs.suggest.endpoint";
+    public static final String SEARCH_SERVICE_ENDPOINT = "ocs.search.endpoint";
 
-	public static final String	AUTH_USER		= "ocs.auth.user";
-	public static final String	AUTH_PASSWORD	= "ocs.auth.password";
+    public static final String SUGGEST_SERVICE_ENDPOINT = "ocs.suggest.endpoint";
 
-	public OcsConnectorConfig(Map<String, String> data) {
-		super(data);
-	}
+    public static final String AUTH_USER = "ocs.auth.user";
 
-	public OcsConnectorConfig(Properties properties) {
-		super(properties);
-	}
+    public static final String AUTH_PASSWORD = "ocs.auth.password";
 
-	public OcsConnectorConfig(InputStream stream) {
-		super(stream);
-	}
+    /**
+     * Constructor from map data.
+     * 
+     * @param data
+     */
+    public OcsConnectorConfig(final Map<String, String> data) {
+        super(data);
+    }
 
-	public String getSearchEndpoint() {
-		return getRequiredProperty(SEARCH_SERVICE_ENDPOINT);
-	}
+    /**
+     * Constructor from properties.
+     * 
+     * @param properties
+     */
+    public OcsConnectorConfig(final Properties properties) {
+        super(properties);
+    }
 
-	public String getSuggestEndpoint() {
-		return getRequiredProperty(SUGGEST_SERVICE_ENDPOINT);
-	}
+    /**
+     * Constructor from stream.
+     * 
+     * @param stream
+     */
+    public OcsConnectorConfig(final InputStream stream) {
+        super(stream);
+    }
 
-	public String getAuthUser() {
-		return getRequiredProperty(AUTH_USER);
-	}
+    /**
+     * Get Search Endpoint.
+     * 
+     * @return
+     */
+    public String getSearchEndpoint() {
+        return getRequiredProperty(SEARCH_SERVICE_ENDPOINT);
+    }
 
-	public String getAuthPassword() {
-		return getRequiredProperty(AUTH_PASSWORD);
-	}
+    /**
+     * Get Suggest Endpoint.
+     * 
+     * @return
+     */
+    public String getSuggestEndpoint() {
+        return getRequiredProperty(SUGGEST_SERVICE_ENDPOINT);
+    }
+
+    /**
+     * Get Auth User. Could be null or empty string.
+     * 
+     * @return
+     */
+    public String getAuthUser() {
+        return get(AUTH_USER);
+    }
+
+    /**
+     * Get Auth Password. Could be null or empty string.
+     * 
+     * @return
+     */
+    public String getAuthPassword() {
+        return get(AUTH_PASSWORD);
+    }
 }
