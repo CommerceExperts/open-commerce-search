@@ -1,0 +1,13 @@
+steps:
+  - script: |
+      CACHE_ID=$(date '+%m%d')
+      echo "##vso[task.setvariable variable=cache-id;]$CACHE_ID"
+    displayName: Calculate cache ID
+  - task: Cache@2
+    inputs:
+      key: '$(cache-id) | "$(Agent.OS)"'
+      restoreKeys: |
+        $(cache-id) | "$(Agent.OS)"
+          $(cache-id)
+      path: $(Pipeline.Workspace)/.m2/repository
+    displayName: Cache Maven local repo

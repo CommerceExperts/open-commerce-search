@@ -1,0 +1,6 @@
+steps:
+  - template: build-info.yml
+  - template: integrations/teams/main.yaml@templates-global
+    parameters:
+      webhookURL: $(webhookURL)
+      title: '$(Agent.JobStatus) - $(Build.DefinitionName) - $(Agent.JobName) | $(version) | $(commit) | $(Build.BuildId)'

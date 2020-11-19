@@ -1,0 +1,12 @@
+steps:
+  - script: |
+      version=$(cat ./target/classes/git.properties | grep -w "git.build.version" | cut -d'=' -f2)
+      commit=$(cat ./target/classes/git.properties | grep -w "git.commit.id.abbrev" | cut -d'=' -f2)
+      tag=$version'_'$commit'_'$(Build.BuildId)
+      echo $version
+      echo $commit
+      echo $tag
+      echo "##vso[task.setvariable variable=version;]$version"
+      echo "##vso[task.setvariable variable=commit;]$commit"
+      echo "##vso[task.setvariable variable=docker-image-tag;]$tag"
+    displayName: Collect build info ...

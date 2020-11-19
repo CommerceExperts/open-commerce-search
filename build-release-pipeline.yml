@@ -1,0 +1,208 @@
+# Maven
+# Build your Java project and run tests with Apache Maven.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+
+trigger:
+  batch: true
+  branches:
+    include:
+      - develop
+      - support/*
+    exclude:
+      - master
+      - feature/*
+      - bugfix/*
+      - release/*
+      - hotfix/*
+
+schedules:
+  - cron: "0 7-20 * * 1-5"
+    displayName: Every Hour
+    branches:
+      include:
+        - develop
+      exclude:
+        - feature/*
+        - bugfix/*
+        - release/*
+        - hotfix/*
+        - master/*
+    always: true
+
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      ref: 'refs/heads/master'
+      name: schwarzit.odj-pipeline-templates/odj-deliver-templates
+    - repository: templates-global
+      type: git
+      name: schwarzit.odj-pipeline-templates/global
+    - repository: configuration
+      type: git
+      ref: 'refs/heads/master'
+      name: search.configuration
+  pipelines:
+    - pipeline: search-connector-api   # Name of the pipeline resource
+      source: ConnectorApi_Build&Release # Name of the pipeline referenced by the pipeline resource
+      trigger:
+        branches:
+          - support/*
+    - pipeline: search-ff-connector   # Name of the pipeline resource
+      source: FFConnector_Build&Release # Name of the pipeline referenced by the pipeline resource
+      trigger:
+        branches:
+          - support/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+parameters:
+  - name: release
+    displayName: Build a Release
+    type: boolean
+    default: false
+    values:
+      - true
+      - false
+
+
+variables:
+  - group: odj-technical-product-properties     # library variable group
+  - name: MAVEN_CACHE_FOLDER
+    value: $(Pipeline.Workspace)/.m2/repository
+  - name: MAVEN_OPTS
+    value: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+  - name: version
+    value: $(mvn org.apache.maven.plugins:maven-help-plugin:3.1.0:evaluate -Dmaven.repo.local=$(MAVEN_CACHE_FOLDER) -Dexpression=project.version -q -DforceStdout)
+  - name: commit
+    value: $(git rev-parse --verify --short HEAD)
+  - name: cache-id
+    value: maven
+
+
+jobs:
+
+  - ${{ if eq(parameters.release, false) }}:
+      - job: ContinousBuild
+        condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+        steps:
+          - checkout: self
+            persistCredentials: true
+          - script: |
+              git config --global user.email "schwarzit.odj.search@schwarzit.com" && git config --global user.name "Azure DevOps"
+              git checkout develop
+              git pull -r
+            displayName: Switch to develop
+          - template: azure/templates/cache.yml
+          - script: |
+              mvn --settings .m2/settings-ado.xml -U -DjfrogUser=$(artifactory_technical_user_name) -DjfrogPassword=$(artifactory_technical_user_token) versions:update-properties
+              if [ -z "$(git status --porcelain)" ]; then
+                echo "Nothing to commit"
+              else
+                echo "Committing and pushing changes ..."
+                git add -u
+                git commit -m "Mindshift versions update"
+                git push
+                COMMIT=$(git rev-parse --verify --short HEAD)
+                echo "##vso[task.setvariable variable=commit;]$COMMIT"
+              fi
+            displayName: Update Mindshift Dependencies
+          - task: Maven@3
+            inputs:
+              mavenPomFile: 'pom.xml'
+              mavenOptions: '-Xmx3072m $(MAVEN_OPTS)'
+              javaHomeOption: 'JDKVersion'
+              jdkVersionOption: '1.11'
+              jdkArchitectureOption: 'x64'
+              publishJUnitResults: true
+              testResultsFiles: '**/surefire-reports/TEST-*.xml'
+              options: '--settings .m2/settings-ado.xml -DjfrogUser=$(artifactory_technical_user_name) -DjfrogPassword=$(artifactory_technical_user_token)'
+              goals: 'clean initialize formatter:validate impsort:check install'
+
+          - template: azure/templates/notify.yaml
+
+
+  - job: PullRequestBuild
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/pull/'))
+    steps:
+      - checkout: self
+        persistCredentials: true
+      - template: azure/templates/cache.yml
+      - task: Maven@3
+        inputs:
+          mavenPomFile: 'pom.xml'
+          mavenOptions: '-Xmx3072m $(MAVEN_OPTS)'
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: '1.11'
+          jdkArchitectureOption: 'x64'
+          publishJUnitResults: true
+          testResultsFiles: '**/surefire-reports/TEST-*.xml'
+          options: '--settings .m2/settings-ado.xml -DjfrogUser=$(artifactory_technical_user_name) -DjfrogPassword=$(artifactory_technical_user_token)'
+          goals: 'clean initialize formatter:validate impsort:check install'
+      - template: azure/templates/notify.yaml
+
+
+  - ${{ if eq(parameters.release, true) }}:
+      - job: PrepareRelease
+        condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+        steps:
+          - checkout: self
+            persistCredentials: true
+          - task: CmdLine@2
+            inputs:
+              script: 'git config --global user.email "schwarzit.odj.search@schwarzit.com" && git config --global user.name "Azure DevOps"'
+          - template: azure/templates/cache.yml
+          - task: Maven@3
+            inputs:
+               mavenPomFile: 'pom.xml'
+               mavenOptions: '-Xmx3072m $(MAVEN_OPTS)'
+               javaHomeOption: 'JDKVersion'
+               jdkVersionOption: '1.11'
+               jdkArchitectureOption: 'x64'
+               publishJUnitResults: true
+               testResultsFiles: '**/surefire-reports/TEST-*.xml'
+               options: '--settings .m2/settings-ado.xml -DjfrogUser=$(artifactory_technical_user_name) -DjfrogPassword=$(artifactory_technical_user_token)'
+               goals: 'clean initialize formatter:validate impsort:check install'
+          - task: Maven@3
+            inputs:
+              mavenPomFile: 'pom.xml'
+              mavenOptions: '-Xmx3072m $(MAVEN_OPTS)'
+              javaHomeOption: 'JDKVersion'
+              jdkVersionOption: '1.11'
+              jdkArchitectureOption: 'x64'
+              publishJUnitResults: true
+              testResultsFiles: '**/surefire-reports/TEST-*.xml'
+              options: '--settings .m2/settings-ado.xml -DjfrogUser=$(artifactory_technical_user_name) -DjfrogPassword=$(artifactory_technical_user_token) --batch-mode -Prelease --non-recursive'
+              goals: 'clean compile'
+          - template: azure/templates/notify.yaml
+
+  - job: PublishRelease
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/heads/support/'))
+    steps:
+      - checkout: self
+        persistCredentials: true
+      - template: azure/templates/cache.yml
+      - template: templates/support/create-scoped-npmrc/create-scoped-npmrc.yml@templates
+        parameters:
+          scope: 'mindshift'
+          target_path: '.'
+      - task: CopyFiles@2
+        inputs:
+          contents: '.npmrc'
+          targetFolder: 'rest-api/src/main/resources'
+      - task: Maven@3
+        inputs:
+          mavenPomFile: 'pom.xml'
+          mavenOptions: '-Xmx3072m $(MAVEN_OPTS)'
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: '1.11'
+          jdkArchitectureOption: 'x64'
+          publishJUnitResults: true
+          testResultsFiles: '**/surefire-reports/TEST-*.xml'
+          options: '--settings .m2/settings-ado.xml -DjfrogUser=$(artifactory_technical_user_name) -DjfrogPassword=$(artifactory_technical_user_token) -Ptypescript'
+          goals: 'clean initialize formatter:validate deploy'
+      - template: azure/templates/notify.yaml
+
+
