@@ -1,0 +1,119 @@
+# Maven
+# Build your Java project and run tests with Apache Maven.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+
+trigger:
+  batch: true
+  branches:
+    include:
+      - master
+      - develop
+      - support/*
+    exclude:
+      - feature/*
+      - bugfix/*
+      - release/*
+      - hotfix/*
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+parameters:
+  - name: release
+    displayName: Build a Release
+    type: boolean
+    default: false
+    values:
+      - true
+      - false
+
+variables:
+  - group: odj-technical-product-properties     # library variable group
+  - name : MAVEN_CACHE_FOLDER
+    value: $(Pipeline.Workspace)/.m2/repository
+  - name : MAVEN_OPTS
+    value: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+
+
+jobs:
+
+  - ${{ if eq(parameters.release, false) }}:
+    - job: ContinousBuild
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+      steps:
+        - task: Cache@2
+          inputs:
+            key: 'maven | "$(Agent.OS)" | **/pom.xml'
+            restoreKeys: |
+              maven | "$(Agent.OS)"
+                maven
+            path: $(MAVEN_CACHE_FOLDER)
+            displayName: Cache Maven local repo
+        - task: Maven@3
+          inputs:
+            mavenPomFile: 'pom.xml'
+            mavenOptions: '-Xmx3072m $(MAVEN_OPTS)'
+            javaHomeOption: 'JDKVersion'
+            jdkVersionOption: '1.11'
+            jdkArchitectureOption: 'x64'
+            publishJUnitResults: true
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            options: '--settings .m2/settings-ado.xml -DjfrogUser=$(artifactory_technical_user_name) -DjfrogPassword=$(artifactory_technical_user_token)'
+            goals: 'clean install'
+        - task: CmdLine@2
+          inputs:
+            script: 'git status'
+
+
+  - ${{ if eq(parameters.release, true) }}:
+    - job: PrepareRelease
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+      steps:
+        - checkout: self
+          persistCredentials: true
+        - task: CmdLine@2
+          inputs:
+              script: 'git config --global user.email "schwarzit.odj.search@schwarzit.com" && git config --global user.name "Azure DevOps"'
+        - task: Cache@2
+          inputs:
+            key: 'maven | "$(Agent.OS)" | **/pom.xml'
+            restoreKeys: |
+              maven | "$(Agent.OS)"
+                maven
+            path: $(MAVEN_CACHE_FOLDER)
+            displayName: Cache Maven local repo
+        - task: Maven@3
+          inputs:
+            mavenPomFile: 'pom.xml'
+            mavenOptions: '-Xmx3072m $(MAVEN_OPTS)'
+            javaHomeOption: 'JDKVersion'
+            jdkVersionOption: '1.11'
+            jdkArchitectureOption: 'x64'
+            publishJUnitResults: true
+            testResultsFiles: '**/surefire-reports/TEST-*.xml'
+            options: '--settings .m2/settings-ado.xml -DjfrogUser=$(artifactory_technical_user_name) -DjfrogPassword=$(artifactory_technical_user_token) --batch-mode -Prelease --non-recursive'
+            goals: 'clean compile'
+
+  - job: PublishRelease
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/heads/support/'))
+    steps:
+      - task: Cache@2
+        inputs:
+          key: 'maven | "$(Agent.OS)" | **/pom.xml'
+          restoreKeys: |
+            maven | "$(Agent.OS)"
+            maven
+          path: $(MAVEN_CACHE_FOLDER)
+        displayName: Cache Maven local repo
+      - task: Maven@3
+        inputs:
+          mavenPomFile: 'pom.xml'
+          mavenOptions: '-Xmx3072m $(MAVEN_OPTS)'
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: '1.11'
+          jdkArchitectureOption: 'x64'
+          publishJUnitResults: true
+          testResultsFiles: '**/surefire-reports/TEST-*.xml'
+          options: '--settings .m2/settings-ado.xml -DjfrogUser=$(artifactory_technical_user_name) -DjfrogPassword=$(artifactory_technical_user_token)'
+          goals: 'clean deploy'
