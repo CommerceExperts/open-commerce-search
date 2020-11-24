@@ -1,6 +1,9 @@
 package de.cxp.ocs.elasticsearch.query.builder;
 
-import static de.cxp.ocs.config.QueryBuildingSetting.*;
+import static de.cxp.ocs.config.QueryBuildingSetting.acceptNoResult;
+import static de.cxp.ocs.config.QueryBuildingSetting.minShouldMatch;
+import static de.cxp.ocs.config.QueryBuildingSetting.multimatch_type;
+import static de.cxp.ocs.config.QueryBuildingSetting.tieBreaker;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,6 +26,7 @@ import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.Util;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,29 +45,27 @@ public class NgramQueryBuilder implements ESQueryBuilder {
 	@Setter
 	private String name;
 
-	public NgramQueryBuilder(Map<QueryBuildingSetting, String> settings, Map<String, Float> searchableFields,
+	public NgramQueryBuilder(Map<QueryBuildingSetting, String> settings, @NonNull Map<String, Float> searchableFields,
 			Map<String, Field> fields) {
 		this.querySettings = settings;
-		if (searchableFields != null) {
-			for (Entry<String, Float> fieldAndWeight : searchableFields.entrySet()) {
-				String fieldName = fieldAndWeight.getKey().split("\\.")[0].replaceAll("[^a-zA-Z0-9-_]", "");
-				Field fieldConf = fields.get(fieldName);
-				if (fieldConf == null) {
-					log.warn("field with stripped name {} (from {}) not found. Ignoring.", fieldName, fieldAndWeight
-							.getKey());
-					continue;
+		for (Entry<String, Float> fieldAndWeight : searchableFields.entrySet()) {
+			String fieldName = fieldAndWeight.getKey().split("\\.")[0].replaceAll("[^a-zA-Z0-9-_]", "");
+			Field fieldConf = fields.get(fieldName);
+			if (fieldConf == null) {
+				log.warn("field with stripped name {} (from {}) not found. Ignoring.", fieldName, fieldAndWeight
+						.getKey());
+				continue;
+			}
+			if (fieldConf.getUsage().contains(FieldUsage.Search)) {
+				if (fieldConf.isVariantLevel()) {
+					variantFields.put(
+							FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + "." + fieldName + ".ngram",
+							fieldAndWeight.getValue());
 				}
-				if (fieldConf.getUsage().contains(FieldUsage.Search)) {
-					if (fieldConf.isVariantLevel()) {
-						variantFields.put(
-								FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + "." + fieldName + ".ngram",
-								fieldAndWeight.getValue());
-					}
-					if (fieldConf.isMasterLevel()) {
-						masterFields.put(
-								FieldConstants.SEARCH_DATA + "." + fieldName + ".ngram",
-								fieldAndWeight.getValue());
-					}
+				if (fieldConf.isMasterLevel()) {
+					masterFields.put(
+							FieldConstants.SEARCH_DATA + "." + fieldName + ".ngram",
+							fieldAndWeight.getValue());
 				}
 			}
 		}

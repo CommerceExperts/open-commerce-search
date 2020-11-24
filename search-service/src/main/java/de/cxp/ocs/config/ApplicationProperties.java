@@ -26,15 +26,4 @@ public class ApplicationProperties {
 	@NestedConfigurationProperty
 	private final Map<String, TenantSearchConfiguration> tenantConfig = new HashMap<>();
 
-	// same index configuration as used at restful-indexer
-
-	@NestedConfigurationProperty
-	IndexConfiguration defaultIndexConfig = new IndexConfiguration();
-
-	/**
-	 * key = index name
-	 */
-	@NestedConfigurationProperty
-	private final Map<String, IndexConfiguration> indexConfig = new HashMap<>();
-
 }

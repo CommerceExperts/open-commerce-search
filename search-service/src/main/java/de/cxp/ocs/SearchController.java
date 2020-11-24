@@ -4,6 +4,7 @@ import static de.cxp.ocs.util.SearchParamsParser.parseFilters;
 import static de.cxp.ocs.util.SearchParamsParser.parseSortings;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -32,8 +33,9 @@ import com.google.common.cache.CacheBuilder;
 
 import de.cxp.ocs.api.searcher.SearchService;
 import de.cxp.ocs.config.ApplicationProperties;
+import de.cxp.ocs.config.FieldConfigFetcher;
 import de.cxp.ocs.config.FieldConfigIndex;
-import de.cxp.ocs.config.IndexConfiguration;
+import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.config.TenantSearchConfiguration;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
@@ -155,10 +157,18 @@ public class SearchController implements SearchService {
 			mergedConfig.setIndexName(tenant);
 		}
 
-		IndexConfiguration indexConfig = getIndexConfiguration(mergedConfig.getIndexName());
+		FieldConfiguration fieldConfig;
+		try {
+			fieldConfig = new FieldConfigFetcher(esBuilder.getRestHLClient()).fetchConfig(mergedConfig.getIndexName());
+		}
+		catch (IOException e) {
+			log.error("couldn't fetch field configuration from index {}", mergedConfig.getIndexName());
+			throw new UncheckedIOException(e);
+		}
+
 		// TODO: check which fields actually exist at the ES Index
 		// (using _mappings endpoint)
-		mergedConfig.setIndexedFieldConfig(new FieldConfigIndex(indexConfig.getFieldConfiguration()));
+		mergedConfig.setIndexedFieldConfig(new FieldConfigIndex(fieldConfig));
 
 		if (specificConfig != null && !specificConfig.getFacetConfiguration().getFacets().isEmpty()) {
 			// only set specific facet config, if a specific config exists and
@@ -188,10 +198,6 @@ public class SearchController implements SearchService {
 		return mergedConfig;
 	}
 
-	private IndexConfiguration getIndexConfiguration(String indexName) {
-		return properties.getIndexConfig().getOrDefault(indexName, properties.getDefaultIndexConfig());
-	}
-
 	@ExceptionHandler({ ElasticsearchStatusException.class })
 	public ResponseEntity<ExceptionResponse> handleElasticsearchExceptions(ElasticsearchStatusException e) {
 		if (e.getMessage().contains("type=index_not_found_exception")) {
@@ -205,7 +211,7 @@ public class SearchController implements SearchService {
 		return handleInternalErrors(e);
 	}
 
-	@ExceptionHandler({ ExecutionException.class, IOException.class, RuntimeException.class, ClassNotFoundException.class })
+	@ExceptionHandler({ ExecutionException.class, IOException.class, UncheckedIOException.class, RuntimeException.class, ClassNotFoundException.class })
 	public ResponseEntity<ExceptionResponse> handleInternalErrors(Exception e) {
 		final String errorId = UUID.randomUUID().toString();
 		log.error("Internal Server Error " + errorId, e);

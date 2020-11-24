@@ -2,6 +2,7 @@ package de.cxp.ocs.config;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -104,7 +105,7 @@ public class Field {
 		return this;
 	}
 
-	public Field setUsage(final List<FieldUsage> usages) {
+	public Field setUsage(final Collection<FieldUsage> usages) {
 		usage = new ArrayList<>(usages);
 		return this;
 	}
