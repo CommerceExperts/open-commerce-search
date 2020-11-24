@@ -1,15 +1,19 @@
 package de.cxp.ocs.util;
 
-import static de.cxp.ocs.util.SearchQueryBuilder.*;
-import static org.apache.commons.lang3.StringUtils.*;
+import static de.cxp.ocs.util.SearchQueryBuilder.SORT_DESC_PREFIX;
+import static de.cxp.ocs.util.SearchQueryBuilder.VALUE_DELIMITER;
+import static org.apache.commons.lang3.StringUtils.split;
+import static org.apache.commons.lang3.StringUtils.splitPreserveAllTokens;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import de.cxp.ocs.config.Field;
+import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
@@ -26,7 +30,7 @@ public class SearchParamsParser {
 	 * @param params
 	 * @return
 	 */
-	public static List<InternalResultFilter> parseFilters(Map<String, String> filterValues, final Map<String, Field> fields) {
+	public static List<InternalResultFilter> parseFilters(Map<String, String> filterValues, FieldConfigIndex fieldConfig) {
 		List<InternalResultFilter> filters = new ArrayList<>();
 
 		for (Entry<String, String> p : filterValues.entrySet()) {
@@ -37,12 +41,10 @@ public class SearchParamsParser {
 			String paramName = p.getKey();
 			String paramValue = p.getValue();
 
-			Field field = fields.get(paramName);
+			Optional<Field> matchingField = fieldConfig.getMatchingField(paramName, paramValue);
 
-			// TODO: facets should be generated dynamically
-			// => dynamic field config required
-			// => add possibility to filter on such dynamic fields
-			if (field != null && field.getUsage().contains(FieldUsage.Facet)) {
+			if (matchingField.map(f -> f.getUsage().contains(FieldUsage.Facet)).orElse(false)) {
+				Field field = matchingField.get();
 				switch (field.getType()) {
 					case category:
 						filters.add(new PathResultFilter(field.getName(), Arrays.asList(split(paramValue, VALUE_DELIMITER))));
@@ -64,18 +66,20 @@ public class SearchParamsParser {
 		return filters;
 	}
 
-	public static List<Sorting> parseSortings(String paramValue, final Map<String, Field> fields) {
+	public static List<Sorting> parseSortings(String paramValue, FieldConfigIndex fields) {
 		String[] paramValueSplit = split(paramValue, VALUE_DELIMITER);
 		List<Sorting> sortings = new ArrayList<>(paramValueSplit.length);
 		for (String rawSortValue : paramValueSplit) {
 			String fieldName = rawSortValue;
-			SortOrder sortOrder = SortOrder.ASC;
-			if (rawSortValue.startsWith(SORT_DESC_PREFIX)) {
-				fieldName = rawSortValue.substring(1);
-				sortOrder = SortOrder.DESC;
-			}
-			Field fieldConf = fields.get(fieldName);
-			if (fieldConf != null && fieldConf.getUsage().contains(FieldUsage.Sort)) {
+			Optional<Field> matchingField = fields.getMatchingField(fieldName);
+			if (matchingField.map(f -> f.getUsage().contains(FieldUsage.Sort)).orElse(false)) {
+
+				SortOrder sortOrder = SortOrder.ASC;
+				if (rawSortValue.startsWith(SORT_DESC_PREFIX)) {
+					fieldName = rawSortValue.substring(1);
+					sortOrder = SortOrder.DESC;
+				}
+
 				sortings.add(new Sorting(fieldName, sortOrder, true, null));
 			}
 		}

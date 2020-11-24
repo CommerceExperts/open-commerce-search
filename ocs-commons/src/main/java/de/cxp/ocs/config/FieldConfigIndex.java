@@ -38,9 +38,12 @@ public class FieldConfigIndex {
 		}
 	}
 
+	@Getter
 	private final Map<String, Field> fields = new HashMap<>();
 
 	private final Map<String, Field> generatedFields = new HashMap<>();
+
+	private final Map<FieldUsage, Map<String, Field>> fieldsByUsage = new HashMap<>();
 
 	@Getter
 	private final Optional<Field> categoryField;
@@ -57,16 +60,20 @@ public class FieldConfigIndex {
 	public FieldConfigIndex(FieldConfiguration fieldConfiguration) {
 
 		// create name based index of standard fields
+		fields.putAll(fieldConfiguration.getFields());
+
+		// also remember all category typed fields
 		Map<String, Field> categoryFields = new HashMap<>();
 		for (Field field : fieldConfiguration.getFields().values()) {
-			fields.put(field.getName(), field);
 
 			if (FieldType.category.equals(field.getType())) {
 				categoryFields.put(field.getName(), field);
 			}
 
+			updateFieldsByUsage(field);
+
 			for (String sourceName : field.getSourceNames()) {
-				Field conflictingField = fields.put(sourceName, field);
+				Field conflictingField = fields.putIfAbsent(sourceName, field);
 				if (conflictingField != null && conflictingField != field) {
 					log.warn("double usage of sourceName {} at fields {} and {}", sourceName, field.getName(),
 							conflictingField.getName());
@@ -119,6 +126,21 @@ public class FieldConfigIndex {
 		categoryField = determineDefaultCategoryField(categoryFields);
 	}
 
+	private void updateFieldsByUsage(Field f) {
+		for(FieldUsage usage : f.getUsage()) {
+			fieldsByUsage.computeIfAbsent(usage, x -> new HashMap<>())
+					.put(f.getName(), f);
+		}
+	}
+
+	public Map<String, Field> getFieldsByUsage(FieldUsage usage) {
+		Map<String, Field> fields = fieldsByUsage.get(usage);
+		if (fields == null) {
+			fields = Collections.emptyMap();
+		}
+		return fields;
+	}
+
 	private Optional<Field> determineDefaultCategoryField(Map<String, Field> categoryFields) {
 		// if there are several fields of type category, try to determine which
 		// one is the most suitable for Document::categories
@@ -152,6 +174,18 @@ public class FieldConfigIndex {
 		return categoryFields.isEmpty() ? Optional.empty() : Optional.of(categoryFields.values().iterator().next());
 	}
 
+	public Optional<Field> getMatchingField(String fieldName) {
+		Field field = fields.get(fieldName);
+		// exact matching field name
+		if (field != null) return Optional.of(field);
+
+		field = generatedFields.get(fieldName);
+		if (field != null) return Optional.of(field);
+
+		// no result
+		return Optional.empty();
+	}
+
 	public Optional<Field> getMatchingField(String fieldName, Object value) {
 		Field field = fields.get(fieldName);
 		// exact matching field name
@@ -166,6 +200,7 @@ public class FieldConfigIndex {
 				Field generatedField = cloneField(dynamicFieldConf.fieldConfig);
 				generatedField.setName(fieldName);
 				generatedFields.put(fieldName, generatedField);
+				updateFieldsByUsage(generatedField);
 				return Optional.of(generatedField);
 			}
 		}

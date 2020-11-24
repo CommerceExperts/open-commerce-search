@@ -11,7 +11,7 @@ import java.util.function.Predicate;
 import org.elasticsearch.client.RestHighLevelClient;
 
 import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.config.QueryConfiguration;
@@ -120,7 +120,7 @@ public class ESQueryBuilderFactory {
 				return new NgramQueryBuilder(
 						queryConf.getSettings(),
 						loadFields(queryConf.getWeightedFields()),
-						config.getFieldConfiguration().getFields());
+						config.getIndexedFieldConfig().getFieldsByUsage(FieldUsage.Search));
 			case DefaultQuery:
 			default:
 				return new DefaultQueryBuilder();
@@ -129,7 +129,7 @@ public class ESQueryBuilderFactory {
 
 	private Map<String, Float> loadFields(Map<String, Float> weightedFields) {
 		Map<String, Float> validatedFields = new HashMap<>();
-		FieldConfiguration fieldConfig = config.getFieldConfiguration();
+		FieldConfigIndex fieldConfig = config.getIndexedFieldConfig();
 		weightedFields.forEach((fieldNamePattern, weight) -> {
 			if (isSearchableField(fieldConfig, fieldNamePattern)) {
 				validatedFields.put(fieldNamePattern, weight);
@@ -141,21 +141,20 @@ public class ESQueryBuilderFactory {
 		return validatedFields;
 	}
 
-	private boolean isSearchableField(FieldConfiguration fieldConfig, String fieldNamePattern) {
+	private boolean isSearchableField(FieldConfigIndex fieldConfig, String fieldNamePattern) {
 		String fieldName = fieldNamePattern.split("[\\.]")[0];
 		Field fieldConf = null;
 		if (fieldName.endsWith("*")) {
-			for (Field field : fieldConfig.getFields().values()) {
+			for (Field field : fieldConfig.getFieldsByUsage(FieldUsage.Search).values()) {
 				if (field != null && field.getName() != null
-						&& field.getName().startsWith(fieldName.substring(0, fieldName.length() - 1))
-						&& field.getUsage().contains(FieldUsage.Search)) {
+						&& field.getName().startsWith(fieldName.substring(0, fieldName.length() - 1))) {
 					fieldConf = field;
 					break;
 				}
 			}
 		}
 		else {
-			fieldConf = config.getFieldConfiguration().getField(fieldName);
+			fieldConf = fieldConfig.getMatchingField(fieldName).orElse(null);
 		}
 		return (fieldConf != null && fieldConf.getUsage().contains(FieldUsage.Search));
 	}

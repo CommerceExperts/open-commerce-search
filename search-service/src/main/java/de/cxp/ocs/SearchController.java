@@ -1,6 +1,7 @@
 package de.cxp.ocs;
 
-import static de.cxp.ocs.util.SearchParamsParser.*;
+import static de.cxp.ocs.util.SearchParamsParser.parseFilters;
+import static de.cxp.ocs.util.SearchParamsParser.parseSortings;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import com.google.common.cache.CacheBuilder;
 
 import de.cxp.ocs.api.searcher.SearchService;
 import de.cxp.ocs.config.ApplicationProperties;
+import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.IndexConfiguration;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.config.TenantSearchConfiguration;
@@ -90,15 +92,20 @@ public class SearchController implements SearchService {
 		parameters.limit = searchQuery.limit;
 		parameters.offset = searchQuery.offset;
 		if (searchQuery.sort != null) {
-			parameters.sortings = parseSortings(searchQuery.sort, searchConfig.getFieldConfiguration().getFields());
+			parameters.sortings = parseSortings(searchQuery.sort, searchConfig.getIndexedFieldConfig());
 		}
-		parameters.filters = parseFilters(filters, searchConfig.getFieldConfiguration().getFields());
+		parameters.filters = parseFilters(filters, searchConfig.getIndexedFieldConfig());
 
 		try {
 			final Searcher searcher = searchClientCache.get(tenant, () -> new Searcher(esBuilder.getRestHLClient(), searchConfig, registry));
 			return searcher.find(parameters);
 		}
 		catch (ElasticsearchStatusException esx) {
+			// TODO: in case an index was requested where it fails because
+			// fields are missing (so the application field configuration is not
+			// in sync with the fields indexed into ES)
+			// => try to re-build the configuration by validating the fields
+			// against ES _mapping endpoint
 			if (esx.getMessage().contains("type=index_not_found_exception")) {
 				// don't keep objects for invalid tenants
 				searchConfigs.remove(tenant);
@@ -149,7 +156,9 @@ public class SearchController implements SearchService {
 		}
 
 		IndexConfiguration indexConfig = getIndexConfiguration(mergedConfig.getIndexName());
-		mergedConfig.setFieldConfiguration(indexConfig.getFieldConfiguration());
+		// TODO: check which fields actually exist at the ES Index
+		// (using _mappings endpoint)
+		mergedConfig.setIndexedFieldConfig(new FieldConfigIndex(indexConfig.getFieldConfiguration()));
 
 		if (specificConfig != null && !specificConfig.getFacetConfiguration().getFacets().isEmpty()) {
 			// only set specific facet config, if a specific config exists and

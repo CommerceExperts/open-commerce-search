@@ -2,7 +2,6 @@ package de.cxp.ocs.elasticsearch;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,12 +33,7 @@ public class ScoringCreator {
 
 	public ScoringCreator(SearchConfiguration config) {
 		scoreConf = config.getScoring();
-		Map<String, Field> tempScoreFields = new HashMap<>();
-		for (Field field : config.getFieldConfiguration().getFields().values()) {
-			if (field.getUsage().contains(FieldUsage.Score)) {
-				tempScoreFields.put(field.getName(), field);
-			}
-		}
+		Map<String, Field> tempScoreFields = config.getIndexedFieldConfig().getFieldsByUsage(FieldUsage.Score);
 		scoreFields = Collections.unmodifiableMap(tempScoreFields);
 	}
 

@@ -17,6 +17,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.Field;
+import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilterAdapter;
@@ -30,7 +31,7 @@ import de.cxp.ocs.elasticsearch.query.filter.TermResultFilterAdapter;
 public class FiltersBuilder {
 
 	private final Set<String>	postFilterFacets	= new HashSet<>();
-	private final Set<String>	variantFields		= new HashSet<>();
+	private FieldConfigIndex	indexedFieldConfig;
 
 	private Map<String, QueryBuilder> filterQueries = new HashMap<>();
 
@@ -48,9 +49,11 @@ public class FiltersBuilder {
 		for (FacetConfig facet : searchConfig.getFacetConfiguration().getFacets()) {
 			if (facet.isMultiSelect() || facet.isShowUnselectedOptions()) postFilterFacets.add(facet.getSourceField());
 		}
-		for (Field field : searchConfig.getFieldConfiguration().getFields().values()) {
-			if (field.isVariantLevel()) variantFields.add(field.getName());
-		}
+		indexedFieldConfig = searchConfig.getIndexedFieldConfig();
+		// TODO: replace stateful approach by "builder approach":
+		// FiltersBuilder should be initialized once and transform the
+		// InternalResultFilter list into a "FilterContext" or something like
+		// that where it has all the ES specific filter queries
 		prepareFilters(filters);
 	}
 
@@ -140,7 +143,7 @@ public class FiltersBuilder {
 	}
 
 	private boolean isVariantField(String field) {
-		return variantFields.contains(field);
+		return indexedFieldConfig.getMatchingField(field).map(Field::isVariantLevel).orElse(false);
 	}
 
 }

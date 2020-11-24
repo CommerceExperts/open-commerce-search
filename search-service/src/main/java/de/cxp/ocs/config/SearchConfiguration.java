@@ -15,7 +15,7 @@ public class SearchConfiguration {
 	private String indexName;
 
 	@NonNull
-	private FieldConfiguration fieldConfiguration = new FieldConfiguration();
+	private FieldConfigIndex indexedFieldConfig;
 
 	@NonNull
 	private FacetConfiguration facetConfiguration = new FacetConfiguration();

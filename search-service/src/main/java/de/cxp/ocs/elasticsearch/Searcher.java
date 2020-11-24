@@ -14,6 +14,8 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -141,22 +143,12 @@ public class Searcher {
 	}
 
 	private SpellCorrector initSpellCorrection() {
-		List<String> spellCorrectionFields = new ArrayList<>();
-		for (Field field : config.getFieldConfiguration().getFields().values()) {
-			if (field.getName() != null && field.getUsage().contains(FieldUsage.Search)) {
-				spellCorrectionFields.add(field.getName());
-			}
-		}
+		Set<String> spellCorrectionFields = config.getIndexedFieldConfig().getFieldsByUsage(FieldUsage.Search).keySet();
 		return new SpellCorrector(spellCorrectionFields.toArray(new String[spellCorrectionFields.size()]));
 	}
 
 	private Map<String, Field> initSorting() {
-		Map<String, Field> tempSortFields = new HashMap<>();
-		for (Field field : config.getFieldConfiguration().getFields().values()) {
-			if (field.getUsage().contains(FieldUsage.Sort)) {
-				tempSortFields.put(field.getName(), field);
-			}
-		}
+		Map<String, Field> tempSortFields = config.getIndexedFieldConfig().getFieldsByUsage(FieldUsage.Sort);
 		return Collections.unmodifiableMap(tempSortFields);
 	}
 
@@ -187,8 +179,8 @@ public class Searcher {
 		// VariantFacetCreator(variantFacetCreatorsMap.values()));
 
 		for (FacetConfig fc : config.getFacetConfiguration().getFacets()) {
-			Field facetField = config.getFieldConfiguration().getFields().get(fc.getSourceField());
-			if (facetField != null && FieldType.category.equals(facetField.getType())) {
+			Optional<Field> facetField = config.getIndexedFieldConfig().getMatchingField(fc.getSourceField());
+			if (facetField.map(f -> FieldType.category.equals(f.getType())).orElse(false)) {
 				facetCreators.add(new CategoryFacetCreator(fc));
 				break;
 			}
@@ -571,17 +563,17 @@ public class Searcher {
 		// TODO: Only for development purposes, remove in production to save
 		// performance!!
 		resultFields.entrySet().stream().sorted(
-				Comparator.comparing(entry -> config.getFieldConfiguration().getField(entry.getKey()), (f1, f2) -> {
-					if (f1 == null) {
+				Comparator.comparing(entry -> config.getIndexedFieldConfig().getMatchingField(entry.getKey()), (f1, f2) -> {
+					if (!f1.isPresent()) {
 						return 1;
-					} else if (f2 == null) {
+					} else if (!f2.isPresent()) {
 						return -1;
 					}
-					int o1 = f1.getUsage().contains(FieldUsage.Score) ? 1 : 0;
-					int o2 = f2.getUsage().contains(FieldUsage.Score) ? 1 : 0;
+					int o1 = f1.get().getUsage().contains(FieldUsage.Score) ? 1 : 0;
+					int o2 = f2.get().getUsage().contains(FieldUsage.Score) ? 1 : 0;
 
 					if (o1 == 0 && o1 == o2) {
-						return String.CASE_INSENSITIVE_ORDER.compare(f1.getName(), f2.getName());
+						return String.CASE_INSENSITIVE_ORDER.compare(f1.get().getName(), f2.get().getName());
 					}
 					return Integer.compare(o2, o1);
 				})).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue,
