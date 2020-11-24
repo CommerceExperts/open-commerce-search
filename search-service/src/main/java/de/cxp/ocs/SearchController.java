@@ -76,6 +76,25 @@ public class SearchController implements SearchService {
 			.expireAfterWrite(5, TimeUnit.MINUTES)
 			.build();
 
+	@GetMapping("/flushConfig/{tenant}")
+	public ResponseEntity<HttpStatus> flushConfig(@PathVariable("tenant") String tenant) {
+		HttpStatus status;
+		brokenTenantsCache.invalidate(tenant);
+		SearchConfiguration oldConfig = searchConfigs.put(tenant, getConfigForTenant(tenant));
+		if (oldConfig == null) {
+			status = HttpStatus.CREATED;
+		}
+		else if (oldConfig.equals(searchConfigs.get(tenant))) {
+			status = HttpStatus.NOT_MODIFIED;
+		}
+		else {
+			status = HttpStatus.OK;
+			searchClientCache.invalidate(tenant);
+		}
+
+		return new ResponseEntity<>(status, status);
+	}
+
 	@GetMapping("/search/{tenant}")
 	@Override
 	public SearchResult search(@PathVariable("tenant") String tenant, SearchQuery searchQuery, @RequestParam Map<String, String> filters) throws Exception {
