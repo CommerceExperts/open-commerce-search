@@ -29,8 +29,8 @@ public class HierarchialFacetEntry extends FacetEntry {
 
 	public String path;
 
-	public HierarchialFacetEntry(String key, long docCount, String link, boolean isSelected) {
-		super(key, docCount, link, isSelected);
+	public HierarchialFacetEntry(String key, String id, long docCount, String link, boolean isSelected) {
+		super(key, id, docCount, link, isSelected);
 	}
 
 	public HierarchialFacetEntry addChild(final FacetEntry child) {

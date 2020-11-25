@@ -5,6 +5,7 @@ import static de.cxp.ocs.util.Util.toNumberCollection;
 import static de.cxp.ocs.util.Util.toStringCollection;
 import static de.cxp.ocs.util.Util.tryToParseAsNumber;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -27,6 +28,7 @@ import io.micrometer.core.lang.NonNull;
 /**
  * Enum describing the usage of an field that will be indexed.
  */
+@SuppressWarnings("unchecked")
 public class FieldUsageApplier {
 
 	public static void handleSearchField(final DataItem record, final Field field, Object value) {
@@ -42,10 +44,11 @@ public class FieldUsageApplier {
 
 		if (FieldType.category.equals(field.getType())) {
 			// for search only extract category names
-			value = convertCategoryData(value, catPath -> {
+			value = convertCategoryDataToString(value, catPath -> {
 				StringBuilder searchableCategoryPath = new StringBuilder();
 				for (Category c : catPath) {
-					searchableCategoryPath.append(c.getName()).append(" / ");
+					if (searchableCategoryPath.length() > 0) searchableCategoryPath.append(" / ");
+					searchableCategoryPath.append(c.getName());
 				}
 				return searchableCategoryPath.toString();
 			});
@@ -83,7 +86,7 @@ public class FieldUsageApplier {
 
 	public static void handleResultField(final DataItem record, final Field field, Object value) {
 		if (FieldType.category.equals(field.getType())) {
-			value = convertCategoryData(value, FieldUsageApplier::toCategoryPathString);
+			value = convertCategoryDataToString(value, FieldUsageApplier::toCategoryPathString);
 		}
 
 		String fieldName = field.getName();
@@ -143,7 +146,7 @@ public class FieldUsageApplier {
 			}
 		}
 		if (FieldType.category.equals(field.getType())) {
-			parsedValue = convertCategoryData(value, FieldUsageApplier::toCategoryPathString);
+			parsedValue = convertCategoryDataToString(value, FieldUsageApplier::toCategoryPathString);
 		}
 		return parsedValue;
 	}
@@ -166,54 +169,78 @@ public class FieldUsageApplier {
 
 		switch (field.getType()) {
 			case number:
-				if (value instanceof Collection || value.getClass().isArray()) {
-					Collection<Number> numberValues = toNumberCollection(value);
-					record.getNumberFacetData().add(new FacetEntry<Number>(field.getName()).withValues(
-							numberValues));
-				}
-				else if (value instanceof Attribute) {
-					Attribute attr = ((Attribute) value);
-					Optional<Number> numberValue = tryToParseAsNumber(attr.getValue());
-					numberValue.map(numVal -> record.getNumberFacetData().add(new FacetEntry<>(attr.getLabel(),
-							attr.getId(), numVal, attr.getCode())));
-				}
-				else {
-					Optional<Number> numberValue = tryToParseAsNumber(String.valueOf(value));
-					numberValue.map(numVal -> record.getNumberFacetData().add(new FacetEntry<>(field.getName(),
-							numVal)));
-				}
+				handleNumberFacetData(record, field, value);
 				break;
 			case category:
-				if (record instanceof IndexableItem) {
-					String fieldName = field.getName();
-
-					// very unlikely, but who knows...
-					if (value instanceof Attribute) {
-						Attribute attr = ((Attribute) value);
-						fieldName = attr.getLabel();
-						value = new Category(attr.getCode(), attr.getValue());
-					}
-
-					((IndexableItem) record).getCategories()
-							.computeIfAbsent(fieldName, n -> new HashSet<>())
-							.addAll(convertCategoryData(value, FieldUsageApplier::toCategoryPathString));
-				}
+				handleCategoryFacetData(record, field, value);
 				break;
 			default:
-				if (value instanceof Collection || value.getClass().isArray()) {
-					Collection<String> stringValues = toStringCollection(value);
-					record.getTermFacetData().add(new FacetEntry<String>(field.getName()).withValues(stringValues));
-				}
-				else if (value instanceof Attribute) {
-					Attribute attr = (Attribute) value;
-					record.getTermFacetData().add(new FacetEntry<>(attr.getLabel(), attr.getId(), attr.getValue(), attr.getCode()));
-				}
-				else {
-					record.getTermFacetData().add(new FacetEntry<>(field.getName(), String.valueOf(value)));
-				}
+				handleTermFacetData(record, field, value);
 		}
 
+	}
+
+	private static void handleNumberFacetData(final DataItem record, final Field field, Object value) {
+		if (value instanceof Collection || value.getClass().isArray()) {
+			Collection<Number> numberValues = toNumberCollection(value);
+			record.getNumberFacetData().add(new FacetEntry<Number>(field.getName()).withValues(
+					numberValues));
+		}
+		else if (value instanceof Attribute) {
+			Attribute attr = ((Attribute) value);
+			Optional<Number> numberValue = tryToParseAsNumber(attr.getValue());
+			numberValue.map(numVal -> record.getNumberFacetData().add(new FacetEntry<>(attr.getLabel(),
+					attr.getId(), numVal, attr.getCode())));
+		}
+		else {
+			Optional<Number> numberValue = tryToParseAsNumber(String.valueOf(value));
+			numberValue.map(numVal -> record.getNumberFacetData().add(new FacetEntry<>(field.getName(),
+					numVal)));
+		}
 	};
+
+	private static void handleCategoryFacetData(final DataItem record, final Field field, Object value) {
+		if (record instanceof IndexableItem) {
+			List<FacetEntry<String>> categories = ((IndexableItem) record).getPathFacetData();
+			String fieldName = field.getName();
+
+			if (value instanceof Collection) {
+				if (((Collection<?>) value).iterator().next() instanceof Category[]) {
+					for (Category[] catPath : ((Collection<Category[]>) value)) {
+						categories.addAll(toPathFacetEntries(fieldName, catPath));
+					}
+				}
+				else {
+					for (Object catPath : ((Collection<?>) value)) {
+						categories.addAll(toPathFacetEntry(fieldName, StringUtils.split(catPath.toString(), '/')));
+					}
+				}
+			}
+			else if (value instanceof Category[]) {
+				categories.addAll(toPathFacetEntries(fieldName, (Category[]) value));
+			}
+			else if (value instanceof String[]) {
+				categories.addAll(toPathFacetEntry(fieldName, (String[]) value));
+			}
+			else {
+				categories.addAll(toPathFacetEntry(fieldName, StringUtils.split(value.toString(), '/')));
+			}
+		}
+	}
+
+	private static void handleTermFacetData(final DataItem record, final Field field, Object value) {
+		if (value instanceof Collection || value.getClass().isArray()) {
+			Collection<String> stringValues = toStringCollection(value);
+			record.getTermFacetData().add(new FacetEntry<String>(field.getName()).withValues(stringValues));
+		}
+		else if (value instanceof Attribute) {
+			Attribute attr = (Attribute) value;
+			record.getTermFacetData().add(new FacetEntry<>(attr.getLabel(), attr.getId(), attr.getValue(), attr.getCode()));
+		}
+		else {
+			record.getTermFacetData().add(new FacetEntry<>(field.getName(), String.valueOf(value)));
+		}
+	}
 
 	public static void handleScoreField(final DataItem record, final Field field, final Object value) {
 		Optional<Number> numValue;
@@ -288,8 +315,7 @@ public class FieldUsageApplier {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private static Collection<String> convertCategoryData(Object value, Function<Category[], String> toStringMethod) {
+	private static Collection<String> convertCategoryDataToString(Object value, Function<Category[], String> toStringMethod) {
 		if (value instanceof Category[]) {
 			return Collections.singletonList(toStringMethod.apply((Category[]) value));
 		}
@@ -328,8 +354,31 @@ public class FieldUsageApplier {
 		for (Category c : categories) {
 			if (categoryPath.length() > 0) categoryPath.append('/');
 			categoryPath.append(c.getName().replace("/", "%2F"));
-			if (c.getId() != null) categoryPath.append(':').append(c.getId());
 		}
 		return categoryPath.toString();
 	}
+
+	private static List<FacetEntry<String>> toPathFacetEntries(String fieldName, Category[] catPath) {
+		List<FacetEntry<String>> catFacetEntries = new ArrayList<>();
+		StringBuilder pathString = new StringBuilder();
+		for (Category cat : catPath) {
+			if (pathString.length() > 0) pathString.append('/');
+			pathString.append(cat.getName().replace("/", "%2F"));
+			catFacetEntries.add(new FacetEntry<>(fieldName, pathString.toString()).setId(cat.getId()));
+		}
+		return catFacetEntries;
+	}
+
+	private static List<FacetEntry<String>> toPathFacetEntry(String fieldName, String[] catPath) {
+		List<FacetEntry<String>> catFacetEntries = new ArrayList<>();
+		StringBuilder pathString = new StringBuilder();
+		for (String cat : catPath) {
+			if (pathString.length() > 0) pathString.append('/');
+			pathString.append(cat.replace("/", "%2F"));
+
+			catFacetEntries.add(new FacetEntry<>(fieldName, pathString.toString()));
+		}
+		return catFacetEntries;
+	}
+
 }

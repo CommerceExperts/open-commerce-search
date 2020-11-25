@@ -14,7 +14,7 @@ public final class FieldConstants {
 	public final static String	VARIANTS			= "variants";
 	public final static String	TERM_FACET_DATA		= "termFacetData";
 	public final static String	NUMBER_FACET_DATA	= "numberFacetData";
-	public final static String	CATEGORY_FACET_DATA	= "categories";
+	public final static String	PATH_FACET_DATA		= "pathFacetData";
 
 	public final static String FIELD_NAME_ATTRIBUTES = "attributes";
 

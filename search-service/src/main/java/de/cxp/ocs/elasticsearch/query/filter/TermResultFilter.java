@@ -13,6 +13,8 @@ public class TermResultFilter implements InternalResultFilter {
 
 	private final String[] values;
 
+	private String fieldPrefix = FieldConstants.TERM_FACET_DATA;
+
 	public TermResultFilter(String name, String... inputValues) {
 		field = name;
 		values = inputValues;
@@ -26,11 +28,6 @@ public class TermResultFilter implements InternalResultFilter {
 	public String getValue(int index) {
 		if (values.length > index) return values[index];
 		return null;
-	}
-
-	@Override
-	public String getFieldPrefix() {
-		return FieldConstants.TERM_FACET_DATA;
 	}
 
 	@Override

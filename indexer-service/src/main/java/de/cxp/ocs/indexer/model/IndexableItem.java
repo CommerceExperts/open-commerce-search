@@ -1,8 +1,7 @@
 package de.cxp.ocs.indexer.model;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,6 +21,6 @@ public class IndexableItem extends DataItem {
 	/**
 	 * A list of categories a item belongs to.
 	 */
-	private final Map<String, Set<String>> categories = new HashMap<>();
+	private final List<FacetEntry<String>> pathFacetData = new ArrayList<>();
 
 }

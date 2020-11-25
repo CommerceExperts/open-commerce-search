@@ -26,6 +26,11 @@ public class FacetEntry {
 	public String key;
 
 	/**
+	 * optional associated filter value.
+	 */
+	public String id;
+
+	/**
 	 * Estimated amount of documents that will be returned, if this facet entry
 	 * is picked as filter.
 	 */

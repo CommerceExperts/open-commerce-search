@@ -23,8 +23,6 @@ import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilterAdapter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilterAdapter;
-import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
-import de.cxp.ocs.elasticsearch.query.filter.PathResultFilterAdapter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilterAdapter;
 
@@ -41,7 +39,6 @@ public class FiltersBuilder {
 	private static Map<Class<? extends InternalResultFilter>, InternalResultFilterAdapter<? extends InternalResultFilter>> filterAdapters = new HashMap<>(3);
 	static {
 		filterAdapters.put(NumberResultFilter.class, new NumberResultFilterAdapter());
-		filterAdapters.put(PathResultFilter.class, new PathResultFilterAdapter());
 		filterAdapters.put(TermResultFilter.class, new TermResultFilterAdapter());
 	}
 

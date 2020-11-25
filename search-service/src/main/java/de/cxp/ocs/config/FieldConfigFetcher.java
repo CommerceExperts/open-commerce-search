@@ -1,6 +1,7 @@
 package de.cxp.ocs.config;
 
 import static de.cxp.ocs.config.FieldConstants.NUMBER_FACET_DATA;
+import static de.cxp.ocs.config.FieldConstants.PATH_FACET_DATA;
 import static de.cxp.ocs.config.FieldConstants.TERM_FACET_DATA;
 import static de.cxp.ocs.config.FieldConstants.VARIANTS;
 
@@ -48,8 +49,6 @@ public class FieldConfigFetcher {
 		modifyFields(resultFields, getProperties(mappings, "sortData").keySet(), f -> f.setUsage(FieldUsage.Sort));
 		modifyFields(resultFields, getProperties(mappings, "scores").keySet(), f -> f.setUsage(FieldUsage.Score).setType(FieldType.number));
 
-		modifyFields(resultFields, getProperties(mappings, "categories").keySet(), f -> f.setUsage(FieldUsage.Facet).setType(FieldType.category));
-
 		Map<String, Object> variantMappings = getProperties(mappings, "variants");
 		modifyVariantFields(resultFields, getProperties(variantMappings, "searchData").keySet(), f -> f.setUsage(FieldUsage.Search));
 		modifyVariantFields(resultFields, getProperties(variantMappings, "resultData").keySet(), f -> f.setUsage(FieldUsage.Result));
@@ -61,6 +60,8 @@ public class FieldConfigFetcher {
 				.size(0)
 				.aggregation(AggregationBuilders.nested("_master_term_facets", TERM_FACET_DATA)
 						.subAggregation(AggregationBuilders.terms("_names").field(TERM_FACET_DATA + ".name").size(1000)))
+				.aggregation(AggregationBuilders.nested("_master_path_facets", PATH_FACET_DATA)
+						.subAggregation(AggregationBuilders.terms("_names").field(PATH_FACET_DATA + ".name").size(1000)))
 				.aggregation(AggregationBuilders.nested("_master_number_facets", NUMBER_FACET_DATA)
 						.subAggregation(AggregationBuilders.terms("_names").field(NUMBER_FACET_DATA + ".name").size(1000)))
 				.aggregation(AggregationBuilders.nested("_variant_term_facets", VARIANTS + "." + TERM_FACET_DATA)
@@ -73,6 +74,7 @@ public class FieldConfigFetcher {
 
 		// use facet names to set according field information
 		modifyFields(resultFields, extractFacetFields(searchResponse, "_master_term_facets"), f -> f.setUsage(FieldUsage.Facet));
+		modifyFields(resultFields, extractFacetFields(searchResponse, "_master_path_facets"), f -> f.setUsage(FieldUsage.Facet).setType(FieldType.category));
 		modifyFields(resultFields, extractFacetFields(searchResponse, "_master_number_facets"), f -> f.setUsage(FieldUsage.Facet).setType(FieldType.number));
 		modifyVariantFields(resultFields, extractFacetFields(searchResponse, "_variant_term_facets"), f -> f.setUsage(FieldUsage.Facet));
 		modifyVariantFields(resultFields, extractFacetFields(searchResponse, "_variant_number_facets"), f -> f.setUsage(FieldUsage.Facet).setType(FieldType.number));

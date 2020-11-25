@@ -185,18 +185,6 @@
           }
         }
       },
-	  {
-	    "categories_data": {
-		  "path_match": "categories.*",
-		  "mapping": {
-			"type": "text",
-			"analyzer": "category_analyzer",
-			"fielddata": "true",
-			"eager_global_ordinals": true,
-			"norms": false
-		  }
-		}
-	  },
       {
         "search_data": {
           "path_match": "*searchData.*",
@@ -240,6 +228,12 @@
       "termFacetData": {
         "type": "nested",
         "properties": {
+          "id": {
+            "type": "keyword"
+          },
+          "code": {
+            "type": "keyword"
+          },
           "name": {
             "type": "keyword",
             "eager_global_ordinals": true
@@ -253,12 +247,37 @@
       "numberFacetData": {
         "type": "nested",
         "properties": {
+          "id": {
+            "type": "keyword"
+          },
+          "code": {
+            "type": "keyword"
+          },
           "name": {
             "type": "keyword",
             "eager_global_ordinals": true
           },
           "value": {
             "type": "float"
+          }
+        }
+      },
+      "pathFacetData": {
+        "type": "nested",
+        "properties": {
+          "id": {
+            "type": "keyword"
+          },
+          "code": {
+            "type": "keyword"
+          },
+          "name": {
+            "type": "keyword",
+            "eager_global_ordinals": true
+          },
+          "value": {
+            "type": "keyword",
+            "eager_global_ordinals": true
           }
         }
       },

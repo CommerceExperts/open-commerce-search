@@ -149,7 +149,7 @@ public class FieldConfigIndex {
 			for (String preferedCatFieldName : new String[] { "categories", "category" }) {
 				if (categoryFields.containsKey(preferedCatFieldName)) {
 					categoryFields.entrySet().removeIf(e -> !e.getKey().equals(preferedCatFieldName));
-					log.warn("Multiple category fields defined! Will index Document::categories into field with prefered name '{}'!", preferedCatFieldName);
+					log.info("Multiple category fields defined! Will index Document::categories into field with prefered name '{}'!", preferedCatFieldName);
 					break;
 				}
 			}
@@ -159,7 +159,7 @@ public class FieldConfigIndex {
 			if (categoryFields.size() > 1) {
 				categoryFields.entrySet().removeIf(e -> e.getValue().getSourceNames().size() > 0);
 				if (categoryFields.isEmpty()) {
-					log.warn("Multiple category fields defined, but none with one of the prefered names (categories/category) or without source names found!"
+					log.info("Multiple category fields defined, but none with one of the prefered names (categories/category) or without source names found!"
 							+ " Won't index Document::categories data!");
 				}
 			}

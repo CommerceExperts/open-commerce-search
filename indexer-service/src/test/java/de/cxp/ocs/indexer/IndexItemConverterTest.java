@@ -12,8 +12,10 @@ import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.FieldUsage;
+import de.cxp.ocs.indexer.model.FacetEntry;
 import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.model.index.Attribute;
+import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.util.MinMaxSet;
 
@@ -30,7 +32,7 @@ public class IndexItemConverterTest {
 		IndexableItem result = underTest.toIndexableItem(new Document("1").set("title", "foo"));
 		assertEquals("foo", result.getSearchData().get("title"));
 
-		assertTrue(result.getCategories().isEmpty());
+		assertTrue(result.getPathFacetData().isEmpty());
 		assertTrue(result.getNumberFacetData().isEmpty());
 		assertTrue(result.getResultData().isEmpty());
 		assertTrue(result.getScores().isEmpty());
@@ -49,7 +51,7 @@ public class IndexItemConverterTest {
 		assertEquals(34, result.getNumberFacetData().get(0).getValue());
 
 		assertTrue(result.getSearchData().isEmpty());
-		assertTrue(result.getCategories().isEmpty());
+		assertTrue(result.getPathFacetData().isEmpty());
 		assertTrue(result.getResultData().isEmpty());
 		assertTrue(result.getScores().isEmpty());
 		assertTrue(result.getTermFacetData().isEmpty());
@@ -68,7 +70,7 @@ public class IndexItemConverterTest {
 		assertEquals("fancy", result.getTermFacetData().get(0).getValue());
 
 		assertTrue(result.getSearchData().isEmpty());
-		assertTrue(result.getCategories().isEmpty());
+		assertTrue(result.getPathFacetData().isEmpty());
 		assertTrue(result.getNumberFacetData().isEmpty());
 		assertTrue(result.getScores().isEmpty());
 		assertTrue(result.getSortData().isEmpty());
@@ -84,7 +86,7 @@ public class IndexItemConverterTest {
 		assertEquals(4.56f, result.getScores().get("rating"));
 
 		assertTrue(result.getSearchData().isEmpty());
-		assertTrue(result.getCategories().isEmpty());
+		assertTrue(result.getPathFacetData().isEmpty());
 		assertTrue(result.getNumberFacetData().isEmpty());
 		assertTrue(result.getResultData().isEmpty());
 		assertTrue(result.getTermFacetData().isEmpty());
@@ -108,7 +110,7 @@ public class IndexItemConverterTest {
 		assertEquals(99.5f, result.getNumberFacetData().get(0).getValue());
 
 		assertTrue(result.getSearchData().isEmpty());
-		assertTrue(result.getCategories().isEmpty());
+		assertTrue(result.getPathFacetData().isEmpty());
 		assertTrue(result.getResultData().isEmpty());
 		assertTrue(result.getScores().isEmpty());
 		assertTrue(result.getTermFacetData().isEmpty());
@@ -148,7 +150,7 @@ public class IndexItemConverterTest {
 
 		assertEquals("1", result.getId());
 
-		assertTrue(result.getCategories().isEmpty());
+		assertTrue(result.getPathFacetData().isEmpty());
 		assertTrue(result.getTermFacetData().isEmpty());
 	}
 
@@ -251,7 +253,105 @@ public class IndexItemConverterTest {
 				.setAttributes(new Attribute().setLabel("color").setValue("red")));
 
 		assertTrue(result.getSearchData().isEmpty());
-		assertTrue(result.getCategories().isEmpty());
+		assertTrue(result.getPathFacetData().isEmpty());
+		assertTrue(result.getResultData().isEmpty());
+		assertTrue(result.getScores().isEmpty());
+		assertTrue(result.getTermFacetData().isEmpty());
+		assertTrue(result.getNumberFacetData().isEmpty());
+	}
+
+	@Test
+	public void testStandardFieldAsCategoryField() {
+		underTest = new IndexItemConverter(
+				new FieldConfiguration()
+						.addField(new Field("category").setUsage(FieldUsage.Facet).setType(FieldType.category)));
+
+		IndexableItem result = underTest.toIndexableItem(new Document("1")
+				.set("category", "foo/bar"));
+
+		assertEquals(result.getPathFacetData().get(0), new FacetEntry<>("category", "foo"));
+		assertEquals(result.getPathFacetData().get(1), new FacetEntry<>("category", "foo/bar"));
+		assertEquals(result.getPathFacetData().size(), 2);
+
+		assertTrue(result.getSearchData().isEmpty());
+		assertTrue(result.getResultData().isEmpty());
+		assertTrue(result.getScores().isEmpty());
+		assertTrue(result.getTermFacetData().isEmpty());
+		assertTrue(result.getNumberFacetData().isEmpty());
+	}
+
+	@Test
+	public void testDocumentCategoriesWithId() {
+		underTest = new IndexItemConverter(
+				new FieldConfiguration()
+						.addField(new Field("category").setUsage(FieldUsage.Facet).setType(FieldType.category)));
+
+		IndexableItem result = underTest.toIndexableItem(new Document("1")
+				.addCategory(
+						new Category().setName("foo").setId("12"),
+						new Category().setName("bar").setId("23")));
+
+		assertEquals(result.getPathFacetData().size(), 2);
+		assertEquals(result.getPathFacetData().get(0), new FacetEntry<>("category", "foo").setId("12"));
+		assertEquals(result.getPathFacetData().get(1), new FacetEntry<>("category", "foo/bar").setId("23"));
+
+		assertTrue(result.getSearchData().isEmpty());
+		assertTrue(result.getResultData().isEmpty());
+		assertTrue(result.getScores().isEmpty());
+		assertTrue(result.getTermFacetData().isEmpty());
+		assertTrue(result.getNumberFacetData().isEmpty());
+	}
+
+	@Test
+	public void testMutlipleCategoryPathsWithId() {
+		underTest = new IndexItemConverter(
+				new FieldConfiguration()
+						.addField(new Field("category").setUsage(FieldUsage.Facet).setType(FieldType.category)));
+
+		IndexableItem result = underTest.toIndexableItem(new Document("1")
+				.addCategory(
+						new Category().setName("foo").setId("12"),
+						new Category().setName("bar").setId("23"))
+				.addCategory(
+						new Category().setName("another").setId("7"),
+						new Category().setName("one").setId("8"),
+						new Category().setName("as well").setId("9")));
+
+		assertEquals(result.getPathFacetData().size(), 5);
+		assertEquals(result.getPathFacetData().get(0), new FacetEntry<>("category", "foo").setId("12"));
+		assertEquals(result.getPathFacetData().get(1), new FacetEntry<>("category", "foo/bar").setId("23"));
+		assertEquals(result.getPathFacetData().get(2), new FacetEntry<>("category", "another").setId("7"));
+		assertEquals(result.getPathFacetData().get(3), new FacetEntry<>("category", "another/one").setId("8"));
+		assertEquals(result.getPathFacetData().get(4), new FacetEntry<>("category", "another/one/as well").setId("9"));
+
+		assertTrue(result.getSearchData().isEmpty());
+		assertTrue(result.getResultData().isEmpty());
+		assertTrue(result.getScores().isEmpty());
+		assertTrue(result.getTermFacetData().isEmpty());
+		assertTrue(result.getNumberFacetData().isEmpty());
+	}
+
+	@Test
+	public void testMutlipleCategoryFields() {
+		underTest = new IndexItemConverter(
+				new FieldConfiguration()
+						.addField(new Field("category").setUsage(FieldUsage.Facet).setType(FieldType.category))
+						.addField(new Field("color").setUsage(FieldUsage.Facet).setType(FieldType.category)));
+
+		IndexableItem result = underTest.toIndexableItem(new Document("1")
+				.set("color", "red/dark red/bordeaux")
+				.addCategory(
+						new Category().setName("foo").setId("12"),
+						new Category().setName("bar").setId("23")));
+
+		assertEquals(result.getPathFacetData().size(), 5);
+		assertEquals(result.getPathFacetData().get(0), new FacetEntry<>("color", "red"));
+		assertEquals(result.getPathFacetData().get(1), new FacetEntry<>("color", "red/dark red"));
+		assertEquals(result.getPathFacetData().get(2), new FacetEntry<>("color", "red/dark red/bordeaux"));
+		assertEquals(result.getPathFacetData().get(3), new FacetEntry<>("category", "foo").setId("12"));
+		assertEquals(result.getPathFacetData().get(4), new FacetEntry<>("category", "foo/bar").setId("23"));
+
+		assertTrue(result.getSearchData().isEmpty());
 		assertTrue(result.getResultData().isEmpty());
 		assertTrue(result.getScores().isEmpty());
 		assertTrue(result.getTermFacetData().isEmpty());

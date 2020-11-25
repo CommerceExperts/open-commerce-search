@@ -140,6 +140,7 @@ public class TermFacetCreator implements NestedFacetCreator {
 		boolean isSelected = linkBuilder.isFilterSelected(facetConfig, filterValue);
 		return new FacetEntry(
 				filterValue,
+				null, // TODO: fetch IDS
 				docCount,
 				isSelected ? linkBuilder.withoutFilterAsLink(facetConfig, filterValue) : linkBuilder.withFilterAsLink(facetConfig, filterValue),
 				isSelected);

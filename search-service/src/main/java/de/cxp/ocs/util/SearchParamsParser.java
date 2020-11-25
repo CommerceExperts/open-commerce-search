@@ -6,7 +6,6 @@ import static org.apache.commons.lang3.StringUtils.split;
 import static org.apache.commons.lang3.StringUtils.splitPreserveAllTokens;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -14,10 +13,10 @@ import java.util.Optional;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
+import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
-import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.result.SortOrder;
 import de.cxp.ocs.model.result.Sorting;
@@ -47,7 +46,9 @@ public class SearchParamsParser {
 				Field field = matchingField.get();
 				switch (field.getType()) {
 					case category:
-						filters.add(new PathResultFilter(field.getName(), Arrays.asList(split(paramValue, VALUE_DELIMITER))));
+						TermResultFilter catFilter = new TermResultFilter(field.getName(), split(paramValue, VALUE_DELIMITER));
+						catFilter.setFieldPrefix(FieldConstants.PATH_FACET_DATA);
+						filters.add(catFilter);
 						break;
 					case number:
 						String[] paramValues = splitPreserveAllTokens(paramValue, VALUE_DELIMITER);
