@@ -12,7 +12,7 @@ public class TermResultFilterAdapter implements InternalResultFilterAdapter<Term
 	public QueryBuilder getAsQuery(String fieldPrefix, TermResultFilter filter) {
 		return QueryBuilders.boolQuery()
 				.must(QueryBuilders.termQuery(fieldPrefix + "name", filter.getField()))
-				.must(QueryBuilders.termsQuery(fieldPrefix + "value", filter.getValues()));
+				.must(QueryBuilders.termsQuery(fieldPrefix + (filter.isFilterOnId() ? "id" : "value"), filter.getValues()));
 	}
 
 

@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -21,6 +22,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilde
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
@@ -77,6 +79,10 @@ public class CategoryFacetCreator implements FacetCreator {
 		List<? extends Bucket> catBuckets = categoryAgg.getBuckets();
 		if (catBuckets.size() == 0) return Collections.emptyList();
 
+		Optional<TermResultFilter> filter = filters.stream()
+				.filter(f -> categoryFieldName.equals(f.getField()) && f instanceof TermResultFilter)
+				.map(f -> (TermResultFilter) f)
+				.findFirst();
 		Facet facet = FacetFactory.create(categoryFacetConfig, "hierarchical");
 
 		Map<String, HierarchialFacetEntry> entries = new LinkedHashMap<>(catBuckets.size());
@@ -104,10 +110,21 @@ public class CategoryFacetCreator implements FacetCreator {
 			absDocCount += docCount;
 			lastLevelEntry.setDocCount(docCount);
 			lastLevelEntry.setPath(categoryPath);
-			
+
 			Terms idsAgg = (Terms) categoryBucket.getAggregations().get("_ids");
 			if (idsAgg != null && idsAgg.getBuckets().size() > 0) {
 				lastLevelEntry.setId(idsAgg.getBuckets().get(0).getKeyAsString());
+
+				if (filter.isPresent() && filter.get().isFilterOnId()) {
+					// TODO: support filtering on multiple ids
+					lastLevelEntry.setSelected(lastLevelEntry.getId().equals(filter.get().getSingleValue()));
+				}
+			}
+
+			if (lastLevelEntry.isSelected()) {
+				for (int i = 0; i < categories.length - 1; i++) {
+					entries.get(categories[i]).setSelected(true);
+				}
 			}
 		}
 		facet.setAbsoluteFacetCoverage(absDocCount);

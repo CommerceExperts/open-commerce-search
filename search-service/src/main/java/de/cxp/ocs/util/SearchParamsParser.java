@@ -40,15 +40,21 @@ public class SearchParamsParser {
 			String paramName = p.getKey();
 			String paramValue = p.getValue();
 
+			boolean isIdFilter = false;
+			if (paramName.endsWith(".id")) {
+				isIdFilter = true;
+				paramName = paramName.substring(0, paramName.length() - 3);
+			}
+
 			Optional<Field> matchingField = fieldConfig.getMatchingField(paramName, paramValue);
 
 			if (matchingField.map(f -> f.getUsage().contains(FieldUsage.Facet)).orElse(false)) {
 				Field field = matchingField.get();
 				switch (field.getType()) {
 					case category:
-						TermResultFilter catFilter = new TermResultFilter(field.getName(), split(paramValue, VALUE_DELIMITER));
-						catFilter.setFieldPrefix(FieldConstants.PATH_FACET_DATA);
-						filters.add(catFilter);
+						filters.add(new TermResultFilter(field.getName(), split(paramValue, VALUE_DELIMITER))
+										.setFieldPrefix(FieldConstants.PATH_FACET_DATA)
+										.setFilterOnId(isIdFilter));
 						break;
 					case number:
 						String[] paramValues = splitPreserveAllTokens(paramValue, VALUE_DELIMITER);
@@ -59,7 +65,8 @@ public class SearchParamsParser {
 								Util.tryToParseAsNumber(paramValues[1]).orElse(null)));
 						break;
 					default:
-						filters.add(new TermResultFilter(field.getName(), split(paramValue, VALUE_DELIMITER)));
+						filters.add(new TermResultFilter(field.getName(), split(paramValue, VALUE_DELIMITER))
+								.setFilterOnId(isIdFilter));
 				}
 			}
 		}

@@ -2,16 +2,20 @@ package de.cxp.ocs.elasticsearch.query.filter;
 
 import de.cxp.ocs.config.FieldConstants;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
  * used for exact filtering of one or more values.
  */
+@Accessors(chain = true)
 @Data
 public class TermResultFilter implements InternalResultFilter {
 
 	private final String field;
 
 	private final String[] values;
+
+	private boolean filterOnId = false;
 
 	private String fieldPrefix = FieldConstants.TERM_FACET_DATA;
 
