@@ -125,14 +125,14 @@ public class SerializationTest {
 						.setOffset(42)
 						.setSort("margin"),
 
-				new FacetEntry("red", 2, null, false),
+				new FacetEntry("red", null, 2, null, false),
 
 				new Facet("brand").addEntry("nike", 13, "brand=nike"),
 				new Facet("price").setMeta(Collections.singletonMap("multiSelect", "true"))
 						.setType("interval")
 						.addEntry(new IntervalFacetEntry(10, 19.99, 123, "price=10,19.99", true)),
 				new Facet("categories")
-						.addEntry(new HierarchialFacetEntry("a", 50, "categories=a", true).addChild(new FacetEntry("aa", 23, "categories=aa", false))),
+						.addEntry(new HierarchialFacetEntry("a", null, 50, "categories=a", true).addChild(new FacetEntry("aa", null, 23, "categories=aa", false))),
 
 				new ResultHit()
 						.setDocument(new Document("12").setData(Collections.singletonMap("title", "nice stuff")))
@@ -143,11 +143,11 @@ public class SerializationTest {
 						.setMatchCount(42)
 						.setNextOffset(8)
 						.setFacets(Arrays.asList(
-								new Facet("brand").addEntry(new FacetEntry("puma", 9292, "q=shoes", true)),
+								new Facet("brand").addEntry(new FacetEntry("puma", null, 9292, "q=shoes", true)),
 								new Facet("fake").setFiltered(true),
 								new Facet("asd").setAbsoluteFacetCoverage(124)
-										.addEntry(new HierarchialFacetEntry("Shoes", 124, "cat=shoes", false)
-												.addChild(new FacetEntry("Sneakers", 12, "cat=shoes,sneakers", false))))),
+										.addEntry(new HierarchialFacetEntry("Shoes", null, 124, "cat=shoes", false)
+												.addChild(new FacetEntry("Sneakers", null, 12, "cat=shoes,sneakers", false))))),
 
 				new SearchResult(),
 

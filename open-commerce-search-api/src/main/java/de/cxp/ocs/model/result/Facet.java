@@ -63,7 +63,7 @@ public class Facet {
 	 * @return
 	 */
 	public Facet addEntry(String key, long docCount, String link) {
-		entries.add(new FacetEntry(key, docCount, link, false));
+		entries.add(new FacetEntry(key, null, docCount, link, false));
 		return this;
 	}
 
