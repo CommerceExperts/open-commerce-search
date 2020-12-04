@@ -140,7 +140,7 @@ public class FiltersBuilder {
 	}
 
 	private boolean isVariantField(String field) {
-		return indexedFieldConfig.getMatchingField(field).map(Field::isVariantLevel).orElse(false);
+		return indexedFieldConfig.getField(field).map(Field::isVariantLevel).orElse(false);
 	}
 
 }

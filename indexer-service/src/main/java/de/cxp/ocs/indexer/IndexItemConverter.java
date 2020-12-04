@@ -74,17 +74,19 @@ public class IndexItemConverter {
 
 		if (sourceDoc.getData() != null) {
 			for (Entry<String, Object> dataField : sourceDoc.getData().entrySet()) {
-				fieldConfigIndex.getMatchingField(dataField.getKey(), dataField.getValue())
+				fieldConfigIndex.getMatchingFields(dataField.getKey(), dataField.getValue())
+						.stream()
 						.map(fieldAtCorrectDocLevelMapper)
-						.ifPresent(field -> targetItem.setValue(field, dataField.getValue()));
+						.forEach(field -> targetItem.setValue(field, dataField.getValue()));
 			}
 		}
 
 		if (sourceDoc.getAttributes() != null) {
 			for (Attribute attribute : sourceDoc.getAttributes()) {
-				fieldConfigIndex.getMatchingField(attribute.getLabel(), attribute)
+				fieldConfigIndex.getMatchingFields(attribute.getLabel(), attribute)
+						.stream()
 						.map(fieldAtCorrectDocLevelMapper)
-						.ifPresent(field -> targetItem.setValue(field, attribute));
+						.forEach(field -> targetItem.setValue(field, attribute));
 			}
 		}
 
