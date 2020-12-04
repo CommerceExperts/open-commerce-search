@@ -6,12 +6,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.7</version>
+		<version>0.8-SNAPSHOT</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>ocs-java-client</artifactId>
-	<version>0.2</version>
+	<version>0.2.1</version>
 	<packaging>jar</packaging>
 
 	<description>A ready to use client for the OCS API</description>
@@ -47,5 +47,12 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+	
+	<repositories>
+		<repository>
+			<id>cxp-public-releases</id>
+			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-external/</url>
+		</repository>
+	</repositories>
 
 </project>
