@@ -54,7 +54,9 @@ public abstract class DataItem {
 	public void setValue(final Field field, final Object value) {
 		if (value == null
 				|| (value instanceof String && ((String) value).isEmpty())
-				|| (value instanceof Collection<?> && ((Collection<?>) value).isEmpty())) {
+				|| (value instanceof Collection<?> && ((Collection<?>) value).isEmpty())
+				|| field.getUsage() == null
+				|| field.getUsage().isEmpty()) {
 			return;
 		}
 
