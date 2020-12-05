@@ -90,10 +90,6 @@ public class FieldUsageApplier {
 		}
 
 		String fieldName = field.getName();
-		if (value instanceof Attribute) {
-			fieldName = ((Attribute) value).getLabel();
-		}
-
 		record.getResultData().compute(fieldName, joinDataValueFunction(value));
 	};
 
@@ -104,7 +100,6 @@ public class FieldUsageApplier {
 
 		String fieldName = field.getName();
 		if (value instanceof Attribute) {
-			fieldName = ((Attribute) value).getLabel();
 			value = ((Attribute) value).getValue();
 		}
 
@@ -189,7 +184,7 @@ public class FieldUsageApplier {
 		else if (value instanceof Attribute) {
 			Attribute attr = ((Attribute) value);
 			Optional<Number> numberValue = tryToParseAsNumber(attr.getValue());
-			numberValue.map(numVal -> record.getNumberFacetData().add(new FacetEntry<>(attr.getLabel(),
+			numberValue.map(numVal -> record.getNumberFacetData().add(new FacetEntry<>(field.getName(),
 					attr.getId(), numVal, attr.getCode())));
 		}
 		else {
@@ -235,7 +230,7 @@ public class FieldUsageApplier {
 		}
 		else if (value instanceof Attribute) {
 			Attribute attr = (Attribute) value;
-			record.getTermFacetData().add(new FacetEntry<>(attr.getLabel(), attr.getId(), attr.getValue(), attr.getCode()));
+			record.getTermFacetData().add(new FacetEntry<>(field.getName(), attr.getId(), attr.getValue(), attr.getCode()));
 		}
 		else {
 			record.getTermFacetData().add(new FacetEntry<>(field.getName(), String.valueOf(value)));
