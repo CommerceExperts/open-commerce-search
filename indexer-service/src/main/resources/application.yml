@@ -24,6 +24,9 @@ ocs:
     
   # default minimal configuration
   default-index-config:
+    data-processor-configuration:
+      processors:
+        - ExtractCategoryLevelDataProcessor
     field-configuration:
       fields:
         id:
@@ -96,8 +99,22 @@ ocs:
             - CategoryPath
           usage:
             - Result
-            - Search
             - Facet
+        category_leaf:
+          name: category_leaf
+          type: string
+          usage:
+            - Search
+        search_combi:
+          name: search_combi
+          source-names:
+            - color
+            - size
+            - category_leaf
+            - title
+            - brand
+          usage:
+            - Search
         shortDescription:
           name: shortDescription
           source-names:
@@ -150,6 +167,11 @@ ocs:
             - .*
           usage:
             - Facet
+        - name: category_levels
+          source-names:
+            - category_.*
+          usage:
+            - Search
         - name: others
           source-names:
             - .*
