@@ -1,7 +1,7 @@
 package de.cxp.ocs.indexer;
 
 import java.util.Map.Entry;
-import java.util.function.Function;
+import java.util.function.Predicate;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
@@ -70,13 +70,13 @@ public class IndexItemConverter {
 
 	private void extractSourceValues(Document sourceDoc, final DataItem targetItem) {
 		final boolean isVariant = (targetItem instanceof VariantItem);
-		Function<Field, Field> fieldAtCorrectDocLevelMapper = isVariant ? this::isFieldAtVariantLevel : this::isFieldAtMasterLevel;
+		Predicate<Field> fieldAtCorrectDocLevelPredicate = isVariant ? this::isFieldAtVariantLevel : this::isFieldAtMasterLevel;
 
 		if (sourceDoc.getData() != null) {
 			for (Entry<String, Object> dataField : sourceDoc.getData().entrySet()) {
 				fieldConfigIndex.getMatchingFields(dataField.getKey(), dataField.getValue())
 						.stream()
-						.map(fieldAtCorrectDocLevelMapper)
+						.filter(fieldAtCorrectDocLevelPredicate)
 						.forEach(field -> targetItem.setValue(field, dataField.getValue()));
 			}
 		}
@@ -85,7 +85,7 @@ public class IndexItemConverter {
 			for (Attribute attribute : sourceDoc.getAttributes()) {
 				fieldConfigIndex.getMatchingFields(attribute.getLabel(), attribute)
 						.stream()
-						.map(fieldAtCorrectDocLevelMapper)
+						.filter(fieldAtCorrectDocLevelPredicate)
 						.forEach(field -> targetItem.setValue(field, attribute));
 			}
 		}
@@ -93,21 +93,21 @@ public class IndexItemConverter {
 		fieldConfigIndex.getCategoryField().ifPresent(f -> targetItem.setValue(f, sourceDoc.getCategories()));
 	}
 
-	private Field isFieldAtVariantLevel(Field field) {
+	private boolean isFieldAtVariantLevel(Field field) {
 		if (field.isBothLevel() || field.isVariantLevel()) {
-			return field;
+			return true;
 		}
 		else {
-			return null;
+			return false;
 		}
 	}
 
-	private Field isFieldAtMasterLevel(Field field) {
+	private boolean isFieldAtMasterLevel(Field field) {
 		if (field.isBothLevel() || field.isMasterLevel()) {
-			return field;
+			return true;
 		}
 		else {
-			return null;
+			return false;
 		}
 	}
 }
