@@ -94,20 +94,10 @@ public class IndexItemConverter {
 	}
 
 	private boolean isFieldAtVariantLevel(Field field) {
-		if (field.isBothLevel() || field.isVariantLevel()) {
-			return true;
-		}
-		else {
-			return false;
-		}
+		return (field.isBothLevel() || field.isVariantLevel());
 	}
 
 	private boolean isFieldAtMasterLevel(Field field) {
-		if (field.isBothLevel() || field.isMasterLevel()) {
-			return true;
-		}
-		else {
-			return false;
-		}
+		return (field.isBothLevel() || field.isMasterLevel());
 	}
 }
