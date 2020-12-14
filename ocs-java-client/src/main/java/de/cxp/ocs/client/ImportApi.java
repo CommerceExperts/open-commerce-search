@@ -21,11 +21,11 @@ interface ImportApi {
 	void cancel(ImportSession session);
 
 	@RequestLine("PATCH /indexer-api/v1/update/{indexName}")
-	void patchDocument(@Param("indexName") String indexName, Document doc);
+	boolean patchDocument(@Param("indexName") String indexName, Document doc);
 
 	@RequestLine("PUT /indexer-api/v1/update/{indexName}?replaceExisting={replaceExisting}")
-	void putDocument(@Param("indexName") String indexName, @Param("replaceExisting") Boolean replaceExisting, Document doc);
+	boolean putDocument(@Param("indexName") String indexName, @Param("replaceExisting") Boolean replaceExisting, Document doc);
 
 	@RequestLine("DELETE /indexer-api/v1/update/{indexName}?id=id")
-	void deleteDocument(@Param("indexName") String indexName, String id);
+	boolean deleteDocument(@Param("indexName") String indexName, String id);
 }
