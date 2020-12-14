@@ -28,8 +28,7 @@ public class IndexItemConverter {
 	 * Constructor of the converter that prepares the given field configurations
 	 * for converting Documents into {@link IndexableItem}.
 	 * 
-	 * @param standardFields
-	 * @param dynamicFields
+	 * @param fieldConfiguration
 	 */
 	public IndexItemConverter(FieldConfiguration fieldConfiguration) {
 		fieldConfigIndex = new FieldConfigIndex(fieldConfiguration);

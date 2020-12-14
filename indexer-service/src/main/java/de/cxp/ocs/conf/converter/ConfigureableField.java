@@ -1,23 +1,20 @@
 package de.cxp.ocs.conf.converter;
 
-import java.util.Map;
-
-import de.cxp.ocs.conf.DataProcessorConfiguration;
-import de.cxp.ocs.preprocessor.ConfigureableDataprocessor;
+import de.cxp.ocs.config.Field;
 
 /**
- * {@link ConfigureableDataprocessor} implementations manipulate, extract,
+ * ConfigureableDataprocessor implementations manipulate, extract,
  * enrich, ... fields. As the configuration of that implementations has a huge
  * diversity, the configuration is done via YAML through the
- * {@link DataProcessorConfiguration}. To enable more type save programming than
- * working on a {@link Map}, the {@link ConfigureableDataprocessor} parses that
- * map into {@link ConfigureableField} implementations for specifig
- * {@link ConfigureableDataprocessor} implementations.
+ * DataProcessorConfiguration. To enable more type save programming than
+ * working on a Map, the ConfigureableDataprocessor parses that
+ * map into ConfigureableField implementations for specifying
+ * ConfigureableDataprocessor implementations.
  */
 public interface ConfigureableField {
 
 	/**
-	 * Gets the name of the field the {@link ConfigureableDataprocessor} is
+	 * Gets the name of the field the ConfigureableDataprocessor is
 	 * working on. This field is used the extract the record value before
 	 * passing it to further processing steps.
 	 * 

@@ -102,6 +102,8 @@ public interface FullIndexationService {
 	 *        bulk data which consist of the {@link ImportSession} and one or
 	 *        more products that should be added to that index.
 	 * @return the amount of documents that were successfully added to the index
+	 * @throws Exception
+	 *         in case import session is invalid
 	 */
 	@POST
 	@Path("add")

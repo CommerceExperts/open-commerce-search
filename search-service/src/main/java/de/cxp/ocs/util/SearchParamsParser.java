@@ -24,9 +24,8 @@ import de.cxp.ocs.model.result.Sorting;
 public class SearchParamsParser {
 
 	/**
-	 * @throws IllegalArgumentException
-	 *         if a parameter has an unexpected value
-	 * @param params
+	 * @param filterValues
+	 * @param fieldConfig
 	 * @return
 	 */
 	public static List<InternalResultFilter> parseFilters(Map<String, String> filterValues, FieldConfigIndex fieldConfig) {

@@ -58,8 +58,8 @@ public class FieldConfigIndex {
 	 * Constructor of the Field Index that prepares the given field
 	 * configurations to match static and dynamic fields.
 	 * 
-	 * @param standardFields
-	 * @param dynamicFields
+	 * @param fieldConfiguration
+	 *        full field configuration
 	 */
 	public FieldConfigIndex(FieldConfiguration fieldConfiguration) {
 

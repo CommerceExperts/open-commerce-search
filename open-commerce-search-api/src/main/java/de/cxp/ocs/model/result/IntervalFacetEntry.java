@@ -38,7 +38,7 @@ public class IntervalFacetEntry extends FacetEntry {
 	 *        the amount of documents covered by that interval
 	 * @param link
 	 *        the link to toggle the filter state of the related result
-	 * @param isSelect
+	 * @param isSelected
 	 *        true if the related result is currently filtered by that interval
 	 */
 	public IntervalFacetEntry(Number lowerBound, Number upperBound, long docCount, String link, boolean isSelected) {

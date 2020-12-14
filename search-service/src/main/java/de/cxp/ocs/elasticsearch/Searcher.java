@@ -209,9 +209,9 @@ public class Searcher {
 
 	/**
 	 * 
-	 * @param userQuery
 	 * @param parameters
-	 * @return
+	 *        internal validated state of the parameters
+	 * @return search result
 	 * @throws IOException
 	 */
 	// @Timed(value = "find", percentiles = { 0.5, 0.8, 0.95, 0.98 })
@@ -249,6 +249,9 @@ public class Searcher {
 		if (aggregators != null && aggregators.size() > 0) {
 			aggregators.forEach(searchSourceBuilder::aggregation);
 		}
+
+		// TODO: add a "hint" to the params for follow-up searches or at least a
+		// cache to pick the correct query for known search terms
 
 		// staged search: try each query builder until we get a result
 		// + try and use spell correction with first query
