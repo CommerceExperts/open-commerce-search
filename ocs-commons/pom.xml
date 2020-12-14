@@ -7,12 +7,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.8-SNAPSHOT</version>
+		<version>0.8</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>ocs-commons</artifactId>
-	<version>0.3-SNAPSHOT</version>
+	<version>0.3</version>
 	<packaging>jar</packaging>
 
 	<description>Library that contains common models and utility for the open-commerce-search stack</description>
