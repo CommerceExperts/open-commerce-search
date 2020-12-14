@@ -22,10 +22,18 @@ public class SearchQuery {
 	}
 
 	/**
-	 * example:
-	 * sort=price
-	 * sort=-price (=> descendending)
-	 * sort=price,-name (=> price asc and name descending)
+	 * <p>
+	 * Full sorting parameter value. This is the name of the sorting and
+	 * optionally a dash as prefix, thats means the sorting should be
+	 * descending. Several sorting criterion can be defined by separating the
+	 * values using comma.
+	 * </p>
+	 * examples:
+	 * <ul>
+	 * <li>sort=price (ascending by price)</li>
+	 * <li>sort=-price (descendending by price)</li>
+	 * <li>sort=price,-name (price asc and name descending)</li>
+	 * </ul>
 	 */
 	public String sort;
 
@@ -36,8 +44,9 @@ public class SearchQuery {
 	public int offset = 0;
 
 	/**
-	 * flag to specify if facets are necessary. Should be set to false in case
-	 * only the next batch of hits is requests (e.g. for endless scrolling).
+	 * flag to specify if facets should be returned with the requested response.
+	 * Should be set to false in case only the next batch of hits is requested
+	 * (e.g. for endless scrolling).
 	 */
 	public boolean withFacets = true;
 
