@@ -24,9 +24,6 @@ public class CategorySearchData {
 	/**
 	 * Creates a new instance and splits the category paths into levels and
 	 * leafs.
-	 * 
-	 * @param paths
-	 *        the list of paths to split.
 	 */
 	public CategorySearchData() {
 		categoryLvl = new LinkedHashMap<>();
@@ -61,8 +58,8 @@ public class CategorySearchData {
 	 * @return the category.
 	 * 
 	 * @throws IndexOutOfBoundsException
-	 *         if the level is <code><0</code> or
-	 *         <code>>{@link CategorySearchData#getCategoryLvlDepth()}</code>
+	 *         if the level is lower than 0 or greater than
+	 *         <code>{@link CategorySearchData#getCategoryLvlDepth()}</code>
 	 */
 	public Collection<String> getCategory(int lvl) {
 		if (lvl < 0 || lvl > getCategoryLvlDepth()) {
@@ -81,7 +78,7 @@ public class CategorySearchData {
 	}
 
 	/**
-	 * Converts this instance into a {@link SourceItem}. The name of the
+	 * Copies the data of this instance into the sourceData map. The name of the
 	 * category field is used as prefix, followed by either
 	 * <ol>
 	 * <li>_lvl_x</li>
@@ -89,9 +86,9 @@ public class CategorySearchData {
 	 * </ol>
 	 * for each level and once for all leafs.
 	 * 
-	 * @param importItem
+	 * @param sourceData
 	 *        the source item where the data will be stored.
-	 * @param categoryField
+	 * @param categoryFieldName
 	 *        the category field which is used to obtain the name of the stored
 	 *        fields.
 	 */

@@ -154,7 +154,7 @@ public class ESQueryBuilderFactory {
 			}
 		}
 		else {
-			fieldConf = fieldConfig.getMatchingField(fieldName).orElse(null);
+			fieldConf = fieldConfig.getField(fieldName).orElse(null);
 		}
 		return (fieldConf != null && fieldConf.getUsage().contains(FieldUsage.Search));
 	}

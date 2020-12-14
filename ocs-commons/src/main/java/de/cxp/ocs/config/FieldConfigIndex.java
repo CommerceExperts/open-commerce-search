@@ -5,9 +5,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -41,6 +43,8 @@ public class FieldConfigIndex {
 	@Getter
 	private final Map<String, Field> fields = new HashMap<>();
 
+	private final Map<String, List<Field>> fieldsBySource = new HashMap<>();
+
 	private final Map<String, Field> generatedFields = new HashMap<>();
 
 	private final Map<FieldUsage, Map<String, Field>> fieldsByUsage = new HashMap<>();
@@ -54,8 +58,8 @@ public class FieldConfigIndex {
 	 * Constructor of the Field Index that prepares the given field
 	 * configurations to match static and dynamic fields.
 	 * 
-	 * @param standardFields
-	 * @param dynamicFields
+	 * @param fieldConfiguration
+	 *        full field configuration
 	 */
 	public FieldConfigIndex(FieldConfiguration fieldConfiguration) {
 
@@ -73,11 +77,7 @@ public class FieldConfigIndex {
 			updateFieldsByUsage(field);
 
 			for (String sourceName : field.getSourceNames()) {
-				Field conflictingField = fields.putIfAbsent(sourceName, field);
-				if (conflictingField != null && conflictingField != field) {
-					log.warn("double usage of sourceName {} at fields {} and {}", sourceName, field.getName(),
-							conflictingField.getName());
-				}
+				fieldsBySource.computeIfAbsent(sourceName, n -> new ArrayList<Field>(1)).add(field);
 			}
 		}
 
@@ -127,7 +127,7 @@ public class FieldConfigIndex {
 	}
 
 	private void updateFieldsByUsage(Field f) {
-		for(FieldUsage usage : f.getUsage()) {
+		for (FieldUsage usage : f.getUsage()) {
 			fieldsByUsage.computeIfAbsent(usage, x -> new HashMap<>())
 					.put(f.getName(), f);
 		}
@@ -174,39 +174,102 @@ public class FieldConfigIndex {
 		return categoryFields.isEmpty() ? Optional.empty() : Optional.of(categoryFields.values().iterator().next());
 	}
 
-	public Optional<Field> getMatchingField(String fieldName) {
-		Field field = fields.get(fieldName);
-		// exact matching field name
-		if (field != null) return Optional.of(field);
-
-		field = generatedFields.get(fieldName);
-		if (field != null) return Optional.of(field);
-
-		// no result
-		return Optional.empty();
+	/**
+	 * Get field by unique field name.
+	 * 
+	 * @param fieldName
+	 * @return
+	 */
+	public Optional<Field> getField(String fieldName) {
+		return fields.containsKey(fieldName) ? Optional.of(fields.get(fieldName)) : Optional.ofNullable(generatedFields.get(fieldName));
 	}
 
-	public Optional<Field> getMatchingField(String fieldName, Object value) {
-		Field field = fields.get(fieldName);
-		// exact matching field name
-		if (field != null) return Optional.of(field);
+	/**
+	 * Get all fields that have the the specified name as field-name or
+	 * source-field. If source-fields are not given at initialization (such at
+	 * the search service), this function works similar to
+	 * {@code getField(String)}
+	 * 
+	 * @param fieldName
+	 * @return
+	 */
+	public Set<Field> getMatchingFields(String fieldName) {
+		IdentityHashMap<Field, Void> matchingFields = new IdentityHashMap<>();
 
-		field = generatedFields.get(fieldName);
-		if (field != null) return Optional.of(field);
+		getField(fieldName).ifPresent(f -> matchingFields.put(f, null));
+
+		List<Field> bySource = fieldsBySource.get(fieldName);
+		if (bySource != null && !bySource.isEmpty()) {
+			bySource.forEach(f -> matchingFields.put(f, null));
+		}
+
+		return matchingFields.keySet();
+	}
+
+	/**
+	 * Similar to {@code getMatchingField(String)} but additionally filtered by
+	 * fields that have the specified {@link FieldUsage}
+	 * 
+	 * @param fieldName
+	 * @param usage
+	 * @return
+	 */
+	public Optional<Field> getMatchingField(String fieldName, FieldUsage usage) {
+		return getMatchingFields(fieldName)
+				.stream()
+				.filter(f -> f.getUsage().contains(FieldUsage.Facet))
+				.findFirst();
+	}
+
+	/**
+	 * Similar to {@code getMatchingField(String)} but additionally tries to
+	 * generate a field configuration based on the dynamic fields. If no dynamic
+	 * fields are configured (such as at the search-service), no field configs
+	 * are generated.
+	 * 
+	 * @param fieldName
+	 * @param value
+	 * @return
+	 */
+	public Set<Field> getMatchingFields(String fieldName, Object value) {
+		Set<Field> matchingFields = getMatchingFields(fieldName);
+		if (!matchingFields.isEmpty()) {
+			return matchingFields;
+		}
 
 		// return first matching dynamic field
-		for (DynamicFieldConfig dynamicFieldConf : dynamicFields) {
-			if (dynamicFieldConf.matches(fieldName, value)) {
-				Field generatedField = cloneField(dynamicFieldConf.fieldConfig);
-				generatedField.setName(fieldName);
-				generatedFields.put(fieldName, generatedField);
-				updateFieldsByUsage(generatedField);
-				return Optional.of(generatedField);
+		Field generatedField = null;
+		if (dynamicFields != null) {
+			for (DynamicFieldConfig dynamicFieldConf : dynamicFields) {
+				if (dynamicFieldConf.matches(fieldName, value)) {
+					generatedField = cloneField(dynamicFieldConf.fieldConfig);
+					generatedField.setName(fieldName);
+					generatedFields.put(fieldName, generatedField);
+					updateFieldsByUsage(generatedField);
+					break;
+				}
 			}
 		}
 
-		// no result
-		return Optional.empty();
+		return generatedField == null ? Collections.emptySet() : Collections.singleton(generatedField);
+	}
+
+	/**
+	 * /**
+	 * Similar to {@code getMatchingField(String, Object)} but additionally
+	 * tries to generate a field configuration based on the dynamic fields.
+	 * Those fields are then filtered by the specified {@link FieldUsage}.
+	 * 
+	 * @param fieldName
+	 * @param value
+	 * @param usage
+	 * @return
+	 */
+	public Optional<Field> getMatchingField(String fieldName, Object value, FieldUsage usage) {
+		return getMatchingFields(fieldName, value)
+				.stream()
+				.filter(f -> f.getUsage().contains(FieldUsage.Facet))
+				.findFirst();
 	}
 
 	private static Field cloneField(final Field original) {

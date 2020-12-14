@@ -19,7 +19,8 @@ public enum ScoreOption {
 	 * default is now. Date math (for example now-1h) is supported for
 	 * origin.
 	 * 
-	 * @see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-decay
+	 * see
+	 * https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-decay
 	 */
 	origin,
 
@@ -32,7 +33,8 @@ public enum ScoreOption {
 	 * For date fields: Can to be defined as a number+unit ("1h", "10d",…).
 	 * Default unit is milliseconds. For numeric field: Any number.
 	 * 
-	 * @see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-decay
+	 * see
+	 * https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-decay
 	 */
 	scale,
 

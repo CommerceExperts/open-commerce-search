@@ -31,7 +31,7 @@ public class FacetConfigurationApplyer {
 	public FacetConfigurationApplyer(SearchConfiguration config) {
 		maxFacets = config.getFacetConfiguration().getMaxFacets();
 		for (FacetConfig facetConfig : config.getFacetConfiguration().getFacets()) {
-			Optional<Field> sourceField = config.getIndexedFieldConfig().getMatchingField(facetConfig.getSourceField());
+			Optional<Field> sourceField = config.getIndexedFieldConfig().getField(facetConfig.getSourceField());
 
 			if (sourceField.isPresent()) {
 				if (facetsBySourceField.put(facetConfig.getSourceField(), facetConfig) != null) {

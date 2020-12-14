@@ -58,15 +58,27 @@ public class Facet {
 	 * TextFacets.
 	 * 
 	 * @param key
+	 *        key of the facet entry to add
 	 * @param docCount
+	 *        related document count of the facet entry to add
 	 * @param link
+	 *        related link of the facet entry to add
 	 * @return
+	 *         the changed facet
 	 */
 	public Facet addEntry(String key, long docCount, String link) {
 		entries.add(new FacetEntry(key, null, docCount, link, false));
 		return this;
 	}
 
+	/**
+	 * Add facet entry to facet.
+	 * 
+	 * @param entry
+	 *        the facet entry to add
+	 * @return
+	 *         the changed facet
+	 */
 	public Facet addEntry(FacetEntry entry) {
 		entries.add(entry);
 		return this;

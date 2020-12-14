@@ -24,7 +24,15 @@ import de.cxp.ocs.model.index.Product;
  * <pre>
  * searchable_combi where ease the source fields are: title, brand, category_leaf
  * </pre>
+ * 
+ * @deprecated fields with multiple source field names are treated in the same
+ *             way + they also handle attributes. However this preprocessor
+ *             joins the fields to one string and cares about removing duplicate
+ *             adjoined tokens.
+ *             TODO: Add post-processor architecture for IndexableItems where
+ *             for example searchable fields can be improved in the same way.
  */
+@Deprecated
 public class CombiFieldBuilder {
 
 	private static final String	WHITESPACE			= " ";

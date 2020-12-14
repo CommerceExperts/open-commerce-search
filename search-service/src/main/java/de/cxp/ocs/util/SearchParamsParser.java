@@ -24,9 +24,8 @@ import de.cxp.ocs.model.result.Sorting;
 public class SearchParamsParser {
 
 	/**
-	 * @throws IllegalArgumentException
-	 *         if a parameter has an unexpected value
-	 * @param params
+	 * @param filterValues
+	 * @param fieldConfig
 	 * @return
 	 */
 	public static List<InternalResultFilter> parseFilters(Map<String, String> filterValues, FieldConfigIndex fieldConfig) {
@@ -46,9 +45,9 @@ public class SearchParamsParser {
 				paramName = paramName.substring(0, paramName.length() - 3);
 			}
 
-			Optional<Field> matchingField = fieldConfig.getMatchingField(paramName, paramValue);
+			Optional<Field> matchingField = fieldConfig.getMatchingField(paramName, paramValue, FieldUsage.Facet);
 
-			if (matchingField.map(f -> f.getUsage().contains(FieldUsage.Facet)).orElse(false)) {
+			if (matchingField.isPresent()) {
 				Field field = matchingField.get();
 				switch (field.getType()) {
 					case category:
@@ -79,9 +78,8 @@ public class SearchParamsParser {
 		List<Sorting> sortings = new ArrayList<>(paramValueSplit.length);
 		for (String rawSortValue : paramValueSplit) {
 			String fieldName = rawSortValue;
-			Optional<Field> matchingField = fields.getMatchingField(fieldName);
-			if (matchingField.map(f -> f.getUsage().contains(FieldUsage.Sort)).orElse(false)) {
-
+			Optional<Field> matchingField = fields.getMatchingField(fieldName, FieldUsage.Sort);
+			if (matchingField.isPresent()) {
 				SortOrder sortOrder = SortOrder.ASC;
 				if (rawSortValue.startsWith(SORT_DESC_PREFIX)) {
 					fieldName = rawSortValue.substring(1);

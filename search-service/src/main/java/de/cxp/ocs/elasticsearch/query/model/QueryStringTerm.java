@@ -7,6 +7,11 @@ import org.apache.commons.lang3.StringUtils;
  */
 public interface QueryStringTerm {
 
+	/**
+	 * Prepare the term for a query-string-query.
+	 * 
+	 * @return term in query-string-query format.
+	 */
 	String toQueryString();
 
 	/**
@@ -15,7 +20,9 @@ public interface QueryStringTerm {
 	String getWord();
 
 	/**
-	 * @see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#_reserved_characters
+	 * see
+	 * https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#_reserved_characters
+	 * 
 	 * @param text
 	 * @return
 	 */

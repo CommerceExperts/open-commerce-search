@@ -61,7 +61,12 @@ public interface FullIndexationService {
 	 * to be passed to all following calls.
 	 * 
 	 * @param indexName
+	 *        index name, that should match the regular expression '[a-z0-9_-]+'
+	 * @param locale
+	 *        used for language dependent settings
 	 * @return
+	 *         {@link ImportSession} that should be used for follow up requests
+	 *         to add data to that new index
 	 * @throws IllegalStateException
 	 *         in case there is already a full-import running for that index.
 	 */
@@ -93,8 +98,12 @@ public interface FullIndexationService {
 	/**
 	 * Add one or more documents to a running import session.
 	 * 
-	 * @param session
-	 * @param p
+	 * @param data
+	 *        bulk data which consist of the {@link ImportSession} and one or
+	 *        more products that should be added to that index.
+	 * @return the amount of documents that were successfully added to the index
+	 * @throws Exception
+	 *         in case import session is invalid
 	 */
 	@POST
 	@Path("add")
@@ -117,7 +126,11 @@ public interface FullIndexationService {
 	 * Finishes the import, flushing the new index and (in case there is
 	 * already an index with the initialized name) replacing the old one.
 	 * 
-	 * @return
+	 * @param session
+	 *        ImportSession that should be closed.
+	 * @return true on success, otherwise false
+	 * @throws Exception
+	 *         if import session is invalid
 	 */
 	@POST
 	@Path("done")
@@ -134,10 +147,13 @@ public interface FullIndexationService {
 	boolean done(@RequestBody ImportSession session) throws Exception;
 
 	/**
-	 * cancels import which results in a deletion of the temporary index.
+	 * Cancels import which results in a deletion of the temporary index.
 	 * 
 	 * @param session
-	 * @return
+	 *        ImportSession that contains the information, which index should be
+	 *        dropped.
+	 * @throws Exception
+	 *         if import session is invalid
 	 */
 	@POST
 	@Path("cancel")
@@ -150,8 +166,6 @@ public interface FullIndexationService {
 					@ApiResponse(responseCode = "202"),
 					@ApiResponse(responseCode = "400", description = "indexation was already confirmed or import session is invalid")
 			})
-	void cancel(@RequestBody ImportSession session);
-
-	// TODO add option to clear non-finished index session
+	void cancel(@RequestBody ImportSession session) throws Exception;
 
 }

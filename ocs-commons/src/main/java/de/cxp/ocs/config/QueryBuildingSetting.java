@@ -24,7 +24,8 @@ public enum QueryBuildingSetting {
 	 * one of CROSS_FIELDS (default), BEST_FIELDS, MOST_FIELDS, PHRASE,
 	 * PHRASE_PREFIX
 	 * 
-	 * @see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html#multi-match-types
+	 * see
+	 * https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html#multi-match-types
 	 */
 	multimatch_type,
 
@@ -54,8 +55,8 @@ public enum QueryBuildingSetting {
 	allowParallelSpellcheck,
 
 	/**
-	 * used for {@link ConfigurableQueryBuilder} to enable shingle creation of
-	 * input queries.
+	 * boolean setting to enable the creation and searching for combined terms
+	 * (shingles)
 	 */
 	isQueryWithShingles,
 

@@ -40,7 +40,10 @@ public interface UpdateIndexService {
 	 * </p>
 	 * 
 	 * @param indexName
-	 * @param p
+	 *        name of the index that should receive that update
+	 * @param doc
+	 *        Full or partial document that carries the data for the update
+	 * @return true, if product was patched successful
 	 */
 	@PATCH
 	@Operation(
@@ -53,21 +56,29 @@ public interface UpdateIndexService {
 					@ApiResponse(responseCode = "200", description = "document successfuly patched"),
 					@ApiResponse(responseCode = "404", description = "index does not exist or document not found")
 			})
-	void patchDocument(@PathParam("indexName") String indexName, @RequestBody Document doc);
+	boolean patchDocument(@PathParam("indexName") String indexName, @RequestBody Document doc);
 
 	/**
+	 * <p>
 	 * Puts a document to the index. If document does not exist, it will be
 	 * added.
-	 * 
+	 * </p>
+	 * <p>
 	 * An existing product will be overwritten unless the parameter
 	 * "replaceExisting" is set to "false".
-	 * 
+	 * </p>
+	 * <p>
 	 * Provided document should be a complete object, partial updates should be
 	 * done using the updateDocument method.
+	 * </p>
 	 * 
 	 * @param indexName
+	 *        name of the index that should receive that update
 	 * @param doc
+	 *        The document that should be added or updated at the index.
 	 * @param replaceExisting
+	 *        set to false to avoid overriding a document with that ID. Defaults
+	 *        to 'true'
 	 * @return true, if product was replaced or added.
 	 */
 	@PUT
@@ -80,7 +91,7 @@ public interface UpdateIndexService {
 					@ApiResponse(responseCode = "404", description = "index does not exist"),
 					@ApiResponse(responseCode = "409", description = "Document already exists but replaceExisting is set to false")
 			})
-	void putDocument(
+	boolean putDocument(
 			@Parameter(
 					in = ParameterIn.PATH,
 					name = "indexName",
@@ -98,8 +109,11 @@ public interface UpdateIndexService {
 	 * 404.
 	 * 
 	 * @param indexName
-	 * @param p
-	 * @return
+	 *        name of the index that should receive that update
+	 * @param id
+	 *        ID of the document that should be deleted
+	 * @return true if document was not found or deleted. If deletion fails for
+	 *         some reason, false is returned.
 	 */
 	@DELETE
 	@Operation(
@@ -109,6 +123,6 @@ public interface UpdateIndexService {
 					@ApiResponse(responseCode = "304", description = "document not found"),
 					@ApiResponse(responseCode = "404", description = "index does not exist")
 			})
-	void deleteDocument(@PathParam("indexName") String indexName, @QueryParam("id") String id);
+	boolean deleteDocument(@PathParam("indexName") String indexName, @QueryParam("id") String id);
 
 }

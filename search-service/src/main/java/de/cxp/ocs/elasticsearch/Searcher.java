@@ -179,7 +179,7 @@ public class Searcher {
 		// VariantFacetCreator(variantFacetCreatorsMap.values()));
 
 		for (FacetConfig fc : config.getFacetConfiguration().getFacets()) {
-			Optional<Field> facetField = config.getIndexedFieldConfig().getMatchingField(fc.getSourceField());
+			Optional<Field> facetField = config.getIndexedFieldConfig().getField(fc.getSourceField());
 			if (facetField.map(f -> FieldType.category.equals(f.getType())).orElse(false)) {
 				facetCreators.add(new CategoryFacetCreator(fc));
 				break;
@@ -209,9 +209,9 @@ public class Searcher {
 
 	/**
 	 * 
-	 * @param userQuery
 	 * @param parameters
-	 * @return
+	 *        internal validated state of the parameters
+	 * @return search result
 	 * @throws IOException
 	 */
 	// @Timed(value = "find", percentiles = { 0.5, 0.8, 0.95, 0.98 })
@@ -249,6 +249,9 @@ public class Searcher {
 		if (aggregators != null && aggregators.size() > 0) {
 			aggregators.forEach(searchSourceBuilder::aggregation);
 		}
+
+		// TODO: add a "hint" to the params for follow-up searches or at least a
+		// cache to pick the correct query for known search terms
 
 		// staged search: try each query builder until we get a result
 		// + try and use spell correction with first query
@@ -563,7 +566,7 @@ public class Searcher {
 		// TODO: Only for development purposes, remove in production to save
 		// performance!!
 		resultFields.entrySet().stream().sorted(
-				Comparator.comparing(entry -> config.getIndexedFieldConfig().getMatchingField(entry.getKey()), (f1, f2) -> {
+				Comparator.comparing(entry -> config.getIndexedFieldConfig().getField(entry.getKey()), (f1, f2) -> {
 					if (!f1.isPresent()) {
 						return 1;
 					} else if (!f2.isPresent()) {

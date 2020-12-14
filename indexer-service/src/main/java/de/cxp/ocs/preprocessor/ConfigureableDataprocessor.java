@@ -101,10 +101,10 @@ public abstract class ConfigureableDataprocessor<T extends ConfigureableField> i
 	 * Returns a {@link BiConsumer} whose input is the configured
 	 * {@link ConfigureableField} with the value of the currently processed
 	 * record. The consumer gets called in the
-	 * {@link DataPreProcessor#process(Map, boolean)} method for each configured
-	 * key.
+	 * {@link DataPreProcessor#process(Document, boolean)} method for each
+	 * configured key.
 	 * 
-	 * @param sourceData
+	 * @param sourceDocument
 	 *        the record data
 	 * @param visible
 	 *        the current visibility of the record
@@ -114,12 +114,13 @@ public abstract class ConfigureableDataprocessor<T extends ConfigureableField> i
 	protected abstract BiConsumer<T, Object> getProcessConsumer(Document sourceDocument, boolean visible);
 
 	/**
-	 * Called on each {@link DataPreProcessor#process(Map, boolean)} run after
-	 * {@link ConfigureableDataprocessor#getProcessConsumer(Map, boolean)}
+	 * Called on each {@link DataPreProcessor#process(Document, boolean)} run
+	 * after
+	 * {@link ConfigureableDataprocessor#getProcessConsumer(Document, boolean)}
 	 * is has run for every {@link ConfigureableField}, to determine weather the
 	 * record should be visible or not.
 	 * 
-	 * @param sourceData
+	 * @param sourceDocument
 	 *        the record data
 	 * @param visible
 	 *        the current visibility of the record

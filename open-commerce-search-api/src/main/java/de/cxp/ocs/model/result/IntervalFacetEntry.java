@@ -5,9 +5,14 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
+/**
+ * Facet entry that describes a numerical interval.
+ * If only the lower value or only the upper value is set,
+ * this means it's an open ended interval, e.g. '&lt; 100' for upper bound only.
+ */
 @Data
+@EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
-@EqualsAndHashCode(callSuper = true)
 @Schema(
 		allOf = { FacetEntry.class },
 		description = "Facet entry that describes a numerical interval. "
@@ -24,11 +29,17 @@ public class IntervalFacetEntry extends FacetEntry {
 	/**
 	 * 
 	 * @param lowerBound
-	 *        Nullable
+	 *        lower bound of interval represented by that facet entry. Can be
+	 *        null if upper bound exists.
 	 * @param upperBound
-	 *        Nullable
+	 *        upper bound of interval represented by that facet entry. Can be
+	 *        null if lower bound exists.
 	 * @param docCount
+	 *        the amount of documents covered by that interval
 	 * @param link
+	 *        the link to toggle the filter state of the related result
+	 * @param isSelected
+	 *        true if the related result is currently filtered by that interval
 	 */
 	public IntervalFacetEntry(Number lowerBound, Number upperBound, long docCount, String link, boolean isSelected) {
 		super(getLabel(lowerBound, upperBound), null, docCount, link, isSelected);
@@ -40,7 +51,9 @@ public class IntervalFacetEntry extends FacetEntry {
 	 * simple label that considers nullable lower or upper bound value.
 	 * 
 	 * @param from
+	 *        lower bound
 	 * @param to
+	 *        upper bound
 	 * @return
 	 */
 	private static String getLabel(Number from, Number to) {
@@ -52,37 +65,6 @@ public class IntervalFacetEntry extends FacetEntry {
 			return "> " + from.toString();
 		}
 		return from.toString() + "-" + to.toString();
-	}
-
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = super.hashCode();
-		result = prime * result + ((lowerBound == null) ? 0 : lowerBound.hashCode());
-		result = prime * result + ((type == null) ? 0 : type.hashCode());
-		result = prime * result + ((upperBound == null) ? 0 : upperBound.hashCode());
-		return result;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) return true;
-		if (!super.equals(obj)) return false;
-		if (getClass() != obj.getClass()) return false;
-		IntervalFacetEntry other = (IntervalFacetEntry) obj;
-		if (lowerBound == null) {
-			if (other.lowerBound != null) return false;
-		}
-		else if (!lowerBound.equals(other.lowerBound)) return false;
-		if (type == null) {
-			if (other.type != null) return false;
-		}
-		else if (!type.equals(other.type)) return false;
-		if (upperBound == null) {
-			if (other.upperBound != null) return false;
-		}
-		else if (!upperBound.equals(other.upperBound)) return false;
-		return true;
 	}
 
 }

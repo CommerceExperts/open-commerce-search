@@ -93,11 +93,10 @@ public class IndexerController {
 	/**
 	 * Add products to import into current session.
 	 * 
-	 * @param indexName
-	 * @param temporaryIndexName
-	 *        that should be retrieved from ImportSession that was created at
-	 *        the start of the import
-	 * @param documents
+	 * @param data
+	 *        {@link BulkImportData} that contains the ImportSession that was
+	 *        created at the start of the import plus one or more documents to
+	 *        be indexed
 	 * @throws Exception
 	 */
 	@PostMapping("/add")

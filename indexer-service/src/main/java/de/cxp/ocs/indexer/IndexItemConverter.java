@@ -1,7 +1,7 @@
 package de.cxp.ocs.indexer;
 
 import java.util.Map.Entry;
-import java.util.function.Function;
+import java.util.function.Predicate;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
@@ -28,8 +28,7 @@ public class IndexItemConverter {
 	 * Constructor of the converter that prepares the given field configurations
 	 * for converting Documents into {@link IndexableItem}.
 	 * 
-	 * @param standardFields
-	 * @param dynamicFields
+	 * @param fieldConfiguration
 	 */
 	public IndexItemConverter(FieldConfiguration fieldConfiguration) {
 		fieldConfigIndex = new FieldConfigIndex(fieldConfiguration);
@@ -70,42 +69,34 @@ public class IndexItemConverter {
 
 	private void extractSourceValues(Document sourceDoc, final DataItem targetItem) {
 		final boolean isVariant = (targetItem instanceof VariantItem);
-		Function<Field, Field> fieldAtCorrectDocLevelMapper = isVariant ? this::isFieldAtVariantLevel : this::isFieldAtMasterLevel;
+		Predicate<Field> fieldAtCorrectDocLevelPredicate = isVariant ? this::isFieldAtVariantLevel : this::isFieldAtMasterLevel;
 
 		if (sourceDoc.getData() != null) {
 			for (Entry<String, Object> dataField : sourceDoc.getData().entrySet()) {
-				fieldConfigIndex.getMatchingField(dataField.getKey(), dataField.getValue())
-						.map(fieldAtCorrectDocLevelMapper)
-						.ifPresent(field -> targetItem.setValue(field, dataField.getValue()));
+				fieldConfigIndex.getMatchingFields(dataField.getKey(), dataField.getValue())
+						.stream()
+						.filter(fieldAtCorrectDocLevelPredicate)
+						.forEach(field -> targetItem.setValue(field, dataField.getValue()));
 			}
 		}
 
 		if (sourceDoc.getAttributes() != null) {
 			for (Attribute attribute : sourceDoc.getAttributes()) {
-				fieldConfigIndex.getMatchingField(attribute.getLabel(), attribute)
-						.map(fieldAtCorrectDocLevelMapper)
-						.ifPresent(field -> targetItem.setValue(field, attribute));
+				fieldConfigIndex.getMatchingFields(attribute.getLabel(), attribute)
+						.stream()
+						.filter(fieldAtCorrectDocLevelPredicate)
+						.forEach(field -> targetItem.setValue(field, attribute));
 			}
 		}
 
 		fieldConfigIndex.getCategoryField().ifPresent(f -> targetItem.setValue(f, sourceDoc.getCategories()));
 	}
 
-	private Field isFieldAtVariantLevel(Field field) {
-		if (field.isBothLevel() || field.isVariantLevel()) {
-			return field;
-		}
-		else {
-			return null;
-		}
+	private boolean isFieldAtVariantLevel(Field field) {
+		return (field.isBothLevel() || field.isVariantLevel());
 	}
 
-	private Field isFieldAtMasterLevel(Field field) {
-		if (field.isBothLevel() || field.isMasterLevel()) {
-			return field;
-		}
-		else {
-			return null;
-		}
+	private boolean isFieldAtMasterLevel(Field field) {
+		return (field.isBothLevel() || field.isMasterLevel());
 	}
 }

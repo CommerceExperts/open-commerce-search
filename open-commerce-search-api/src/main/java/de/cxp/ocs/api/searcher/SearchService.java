@@ -36,7 +36,9 @@ public interface SearchService {
 	 * use the same indexes. This is defined by the underlying configuration.
 	 * 
 	 * @param tenant
+	 *        the name that correlates to the index configuration
 	 * @param searchQuery
+	 *        the user's search terms
 	 * @param filters
 	 *        Any other parameters are used as filters. They are validated
 	 *        according to the actual data and configuration.
@@ -52,18 +54,18 @@ public interface SearchService {
 	 *        brand=adidas
 	 *        </li>
 	 *        <li>
-	 *        brand=adidas,nike (=> products from adidas OR nike are shown)
+	 *        brand=adidas,nike (products from adidas OR nike are shown)
 	 *        </li>
 	 *        <li>
-	 *        category=men,shoes,sneaker (=> if category would be configured as
+	 *        category=men,shoes,sneaker (if category would be configured as
 	 *        path, these values are used for hierarchical filtering)
 	 *        </li>
 	 *        <li>
-	 *        price=10,99.99 (=> if price is configured as numeric field, these
+	 *        price=10,99.99 (if price is configured as numeric field, these
 	 *        values are used as range filters)
 	 *        </li>
 	 *        <li>
-	 *        color=red,black (=> if that field is configured to be used for
+	 *        color=red,black (if that field is configured to be used for
 	 *        "exclusive filtering" only products would be shown that are
 	 *        available in red AND black)
 	 *        </li>
@@ -71,9 +73,15 @@ public interface SearchService {
 	 *        optional for the future also negations could be supported, e.g.
 	 *        color=red,!black
 	 *        </li>
+	 *        </ul>
 	 * 
 	 * @return
+	 *         the result of that search request
 	 * @throws Exception
+	 *         <ul>
+	 *         <li>if tenant can't be accessed</li>
+	 *         <li>if according index does not exist</li>
+	 *         </ul>
 	 */
 	@GET
 	@Path("search/{tenant}")
