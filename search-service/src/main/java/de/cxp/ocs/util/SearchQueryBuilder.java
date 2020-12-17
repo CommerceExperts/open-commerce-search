@@ -205,9 +205,9 @@ public class SearchQueryBuilder {
 	}
 
 	public boolean isFilterSelected(FacetConfig facetConfig, String filterValue) {
-		return searchQueryLink.getQuery() != null && searchQueryLink.getQuery().matches("(^|.*?&)"
-				+ Pattern.quote(facetConfig.getSourceField()) + "=[^&]*?"
-				+ Pattern.quote(filterValue) + "($|[&,]).*");
+		return searchQueryLink.getQuery() != null && searchQueryLink.getRawQuery().matches("(^|.*?&)"
+				+ Pattern.quote(urlEncodeValue(facetConfig.getSourceField())) + "=[^&]*?"
+				+ Pattern.quote(urlEncodeValue(filterValue)) + "($|&|%2C).*");
 	}
 
 	private String urlEncodeValue(String value) {
