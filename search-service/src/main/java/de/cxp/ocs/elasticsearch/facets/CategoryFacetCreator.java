@@ -142,9 +142,15 @@ public class CategoryFacetCreator implements FacetCreator {
 	}
 
 	private HierarchialFacetEntry toFacetEntry(String value, String categoryPath, SearchQueryBuilder linkBuilder) {
-		return new HierarchialFacetEntry(value, null, 0,
-				linkBuilder.withFilterAsLink(categoryFacetConfig, categoryPath),
-				linkBuilder.isFilterSelected(categoryFacetConfig, categoryPath));
+		boolean isSelected = linkBuilder.isFilterSelected(categoryFacetConfig, categoryPath);
+		String link;
+		if (isSelected) {
+			link = linkBuilder.withoutFilterAsLink(categoryFacetConfig, categoryPath);
+		}
+		else {
+			link = linkBuilder.withFilterAsLink(categoryFacetConfig, categoryPath);
+		}
+		return new HierarchialFacetEntry(value, null, 0, link, isSelected);
 	}
 
 }

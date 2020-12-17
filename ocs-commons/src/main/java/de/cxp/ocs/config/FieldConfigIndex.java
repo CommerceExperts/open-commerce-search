@@ -207,18 +207,14 @@ public class FieldConfigIndex {
 	}
 
 	/**
-	 * Similar to {@code getMatchingField(String)} but additionally filtered by
-	 * fields that have the specified {@link FieldUsage}
+	 * Get field with that name and the specified usage.
 	 * 
 	 * @param fieldName
 	 * @param usage
 	 * @return
 	 */
 	public Optional<Field> getMatchingField(String fieldName, FieldUsage usage) {
-		return getMatchingFields(fieldName)
-				.stream()
-				.filter(f -> f.getUsage().contains(FieldUsage.Facet))
-				.findFirst();
+		return Optional.ofNullable(getFieldsByUsage(usage).get(fieldName));
 	}
 
 	/**
