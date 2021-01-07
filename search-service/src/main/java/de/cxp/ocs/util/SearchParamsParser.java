@@ -57,7 +57,17 @@ public class SearchParamsParser {
 						break;
 					case number:
 						String[] paramValues = splitPreserveAllTokens(paramValue, VALUE_DELIMITER);
-						if (paramValues.length != 2) throw new IllegalArgumentException("unexpected numeric filter value: " + paramValue);
+						if (paramValues.length != 2) {
+							// Fallback logic to allow numeric filter values
+							// separated by dash, e.g. "50 - 100"
+							// however this is error prone, because dash is
+							// also used as minus for negative values. In such
+							// case this will simply fail
+							paramValues = splitPreserveAllTokens(paramValue, '-');
+							if (paramValues.length != 2) {
+								throw new IllegalArgumentException("unexpected numeric filter value: " + paramValue);
+							}
+						}
 						filters.add(new NumberResultFilter(
 								field.getName(),
 								Util.tryToParseAsNumber(paramValues[0]).orElse(null),

@@ -24,7 +24,7 @@ public final class Util {
 		if (numVal == null) return Optional.empty();
 		if (numVal instanceof Number) return Optional.of((Number) numVal);
 
-		String value = numVal.toString();
+		String value = numVal.toString().trim();
 		final Matcher numMatcher = numPattern.matcher(value);
 		if (numMatcher.matches()) {
 			if (numMatcher.group(1) == null && numMatcher.group(2) == null && numMatcher.group(3) == null) {
