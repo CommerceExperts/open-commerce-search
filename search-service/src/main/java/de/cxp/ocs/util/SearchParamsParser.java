@@ -88,14 +88,14 @@ public class SearchParamsParser {
 		List<Sorting> sortings = new ArrayList<>(paramValueSplit.length);
 		for (String rawSortValue : paramValueSplit) {
 			String fieldName = rawSortValue;
-			Optional<Field> matchingField = fields.getMatchingField(fieldName, FieldUsage.Sort);
-			if (matchingField.isPresent()) {
-				SortOrder sortOrder = SortOrder.ASC;
-				if (rawSortValue.startsWith(SORT_DESC_PREFIX)) {
-					fieldName = rawSortValue.substring(1);
-					sortOrder = SortOrder.DESC;
-				}
+			SortOrder sortOrder = SortOrder.ASC;
 
+			if (rawSortValue.startsWith(SORT_DESC_PREFIX)) {
+				fieldName = rawSortValue.substring(1);
+				sortOrder = SortOrder.DESC;
+			}
+
+			if (fields.getMatchingField(fieldName, FieldUsage.Sort).isPresent()) {
 				sortings.add(new Sorting(fieldName, sortOrder, true, null));
 			}
 		}
