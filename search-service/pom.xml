@@ -12,7 +12,7 @@
 	</parent>
 
 	<artifactId>search-service</artifactId>
-	<version>0.5.1</version>
+	<version>0.5.2</version>
 	<packaging>jar</packaging>
 
 	<!-- Import dependency management from Spring Boot -->
@@ -43,6 +43,7 @@
 		<dependency>
 			<groupId>de.cxp.ocs</groupId>
 			<artifactId>ocs-commons</artifactId>
+			<version>0.3.2</version>
 		</dependency>
 
 		<dependency>
