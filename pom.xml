@@ -28,7 +28,7 @@
 		<dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
 
 		<ocs-api.version>0.6</ocs-api.version>
-		<ocs-commons.version>0.3.1</ocs-commons.version>
+		<ocs-commons.version>0.3.2</ocs-commons.version>
 
 		<elasticsearch.version>7.5.0</elasticsearch.version>
 		<spring-boot.version>1.5.22.RELEASE</spring-boot.version>
