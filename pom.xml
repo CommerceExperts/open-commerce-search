@@ -7,7 +7,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.8.1</version>
+	<version>0.8.2</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -326,4 +326,15 @@
 			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-public-snapshots/</url>
 		</snapshotRepository>
 	</distributionManagement>
+
+	<repositories>
+		<repository>
+			<id>cxp-public-releases</id>
+			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-external/</url>
+		</repository>
+		<repository>
+			<id>cxp-public-snapshots</id>
+			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-public-snapshots/</url>
+		</repository>
+	</repositories>
 </project>
