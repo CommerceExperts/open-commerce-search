@@ -36,7 +36,8 @@ public class FieldConfigIndex {
 		Field				fieldConfig;
 
 		public boolean matches(String fieldName, Object value) {
-			return fieldNamePredicate.test(fieldName) && valuePredicate.test(value);
+			return (fieldNamePredicate == null || fieldNamePredicate.test(fieldName))
+					&& (valuePredicate == null || valuePredicate.test(value));
 		}
 	}
 
