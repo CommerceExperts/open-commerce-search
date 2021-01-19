@@ -1,0 +1,4 @@
+spring:
+  logging:
+    level:
+      de.cxp.ocs: DEBUG
