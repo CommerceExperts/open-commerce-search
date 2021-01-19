@@ -91,12 +91,12 @@ public class QuerySuggestManager implements AutoCloseable {
 
 		/**
 		 * Sets the root path where the indices for the different tenants
-		 * will be stored
+		 * will be stored. Required for LUCENE engine.
 		 *
 		 * @param indexFolder
 		 *        the root path where the indices for the different tenants
-		 *        will be stored
-		 * @return {@code this} instance, for chaining
+		 *        will be stored.
+		 * @return the changed builder
 		 */
 		public QuerySuggestManagerBuilder indexFolder(Path indexFolder) {
 			this.suggestIndexFolder = indexFolder;
@@ -109,6 +109,8 @@ public class QuerySuggestManager implements AutoCloseable {
 		 * Default: 60
 		 * 
 		 * @param seconds
+		 *        positive integer
+		 * @return the changed builder
 		 */
 		public QuerySuggestManagerBuilder updateRate(int seconds) {
 			if (seconds > 3600) seconds = 3600;
@@ -119,10 +121,11 @@ public class QuerySuggestManager implements AutoCloseable {
 
 		/**
 		 * Changes the engine that should be used generate the suggestions.
-		 * Per default {@link SuggesterEngine::LUCENE} is used.
+		 * Per default {@code SuggesterEngine::LUCENE} is used.
 		 * 
 		 * @param engine
-		 * @return
+		 *        engine to use
+		 * @return the changed builder
 		 */
 		public QuerySuggestManagerBuilder engine(SuggesterEngine engine) {
 			this.engine = engine;
@@ -133,8 +136,11 @@ public class QuerySuggestManager implements AutoCloseable {
 		 * specify indexes that should be loaded immediately after
 		 * initialization.
 		 * 
-		 * @param tenants
+		 * @param indexNames
+		 *        list of index names to be initialized synchronously when
+		 *        calling 'build()'
 		 * @return
+		 *         the changed builder
 		 */
 		public QuerySuggestManagerBuilder preloadIndexes(String... indexNames) {
 			for (String indexName : indexNames) {
@@ -145,11 +151,12 @@ public class QuerySuggestManager implements AutoCloseable {
 
 		/**
 		 * Optionally add micrometer.io MeterRegistry. An internal adapter is
-		 * used in order to avoid ClassNotFound exception in case micrometer is
+		 * used in order to avoid ClassNotFound exception in case Micrometer is
 		 * not on the classpath.
 		 * 
 		 * @param reg
-		 * @return
+		 *        adapter with the wanted meter registry
+		 * @return the changed builder
 		 */
 		public QuerySuggestManagerBuilder addMetricsRegistryAdapter(MeterRegistryAdapter reg) {
 			this.metricsRegistry = reg;
@@ -238,13 +245,14 @@ public class QuerySuggestManager implements AutoCloseable {
 
 	/**
 	 * Retrieves the query suggester for the given indexName. Initializes a new
-	 * query
-	 * suggester if non exists yet, for that client.
+	 * query suggester if non exists yet, for that client.
 	 * A background job ensures the data of that query suggester
 	 * get's updated regularly.
 	 * 
 	 * @param indexName
+	 *        index name of the wanted suggester
 	 * @return
+	 *         initialized query suggester
 	 */
 	public QuerySuggester getQuerySuggester(@NonNull String indexName) {
 		return getQuerySuggester(indexName, false);
