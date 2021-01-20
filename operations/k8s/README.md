@@ -37,4 +37,4 @@ If you want to create an customized deployment, just create an kustomize overlay
 ```
 kustomize build base/overlays/example | kubectl apply -f -
 ```
-The files under `base/overlays` would not be commited into git.
+The files under `overlays` would not be commited into git.
