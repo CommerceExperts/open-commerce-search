@@ -82,6 +82,7 @@ public class IndexItemConverter {
 
 		if (sourceDoc.getAttributes() != null) {
 			for (Attribute attribute : sourceDoc.getAttributes()) {
+				if (attribute == null || attribute.value == null || attribute.label == null) continue;
 				fieldConfigIndex.getMatchingFields(attribute.getLabel(), attribute)
 						.stream()
 						.filter(fieldAtCorrectDocLevelPredicate)
