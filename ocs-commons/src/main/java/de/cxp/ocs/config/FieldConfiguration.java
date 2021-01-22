@@ -5,7 +5,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -41,20 +40,6 @@ public class FieldConfiguration {
 	}
 
 	/**
-	 * Returns the first field with {@link FieldType#id}.
-	 * 
-	 * @return an <code>Optional</code> containing the first found ID field,
-	 *         or an empty <code>Optional</code> if no such field could be
-	 *         found.
-	 * @deprecated This method is OK for a single usage, but it's not efficient
-	 *             to use it regularly in the code. Consider storing the ID
-	 *             field instead somewhere.
-	 */
-	public Optional<Field> getIdField() {
-		return fields.values().stream().filter(f -> FieldType.id.equals(f.getType())).findFirst();
-	}
-
-	/**
 	 * Gets a Field by it's name.
 	 * 
 	 * @param name
@@ -64,21 +49,6 @@ public class FieldConfiguration {
 	 */
 	public Field getField(final String name) {
 		return fields.get(name);
-	}
-
-	/**
-	 * Returns the first field whos source name list contains the passed source
-	 * name.
-	 * 
-	 * @param sourceName
-	 *        the source name to check.
-	 * @return an optional containing the found field, if any.
-	 * @deprecated This method is OK for a single usage, but it's not efficient
-	 *             to use it regularly in the code. Consider build an according
-	 *             index instead.
-	 */
-	public Optional<Field> getFieldBySourceName(final String sourceName) {
-		return fields.values().stream().filter(f -> f.getSourceNames().contains(sourceName)).findFirst();
 	}
 
 	/**
@@ -93,20 +63,6 @@ public class FieldConfiguration {
 	 */
 	public Optional<Field> getField(final FieldType type) {
 		return fields.values().stream().filter(f -> type.equals(f.getType())).findFirst();
-	}
-
-	/**
-	 * Returns all fields of the specified type.
-	 * 
-	 * @param type
-	 *        the type of the fields to return.
-	 * @return a list containing all fields of the specified type.
-	 * @deprecated This method is OK for a single usage, but it's not efficient
-	 *             to use it regularly in the code. Consider storing and
-	 *             according index instead.
-	 */
-	public List<Field> getFieldsByType(@NonNull FieldType type) {
-		return fields.values().stream().filter(f -> type.equals(f.getType())).collect(Collectors.toList());
 	}
 
 	/**
