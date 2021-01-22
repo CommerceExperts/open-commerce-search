@@ -41,7 +41,12 @@ spec:
         env:
         - name: ES_HOSTS
           value: "http://ocs-es-http:9200"
+        - name: ES_AUTH_PW
+          valueFrom:
+            secretKeyRef:
+              name: ocs-es-elastic-user
+              key: elastic
         - name: ES_AUTH
-          value: "elastic:$(ELASTICSEARCH_PASSWORD)"
+          value: "elastic:$(ES_AUTH_PW)"
         - name: JAVA_OPTS
           value: "-XX:MaxRAMPercentage=90.0"
