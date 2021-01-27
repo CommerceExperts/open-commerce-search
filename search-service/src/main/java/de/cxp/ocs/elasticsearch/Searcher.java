@@ -238,17 +238,17 @@ public class Searcher {
 		SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource().size(parameters.limit)
 				.from(parameters.offset);
 
-		MasterVariantQuery basicFilters = filtersBuilder.buildBasicFilters();
+		MasterVariantQuery basicFilters = filtersBuilder.getJoinedBasicFilters();
 
 		List<SortBuilder<?>> variantSortings = applySorting(parameters.sortings, searchSourceBuilder);
 		setFetchSources(searchSourceBuilder, variantSortings);
 
-		QueryBuilder postFilter = filtersBuilder.buildPostFilters();
+		QueryBuilder postFilter = filtersBuilder.getJoinedPostFilters();
 		if (postFilter != null) {
 			searchSourceBuilder.postFilter(postFilter);
 		}
 
-		List<AggregationBuilder> aggregators = buildAggregators(parameters);
+		List<AggregationBuilder> aggregators = buildAggregators(filtersBuilder);
 		if (aggregators != null && aggregators.size() > 0) {
 			aggregators.forEach(searchSourceBuilder::aggregation);
 		}
@@ -603,12 +603,12 @@ public class Searcher {
 		}
 	}
 
-	private List<AggregationBuilder> buildAggregators(InternalSearchParams parameters) {
+	private List<AggregationBuilder> buildAggregators(FiltersBuilder filterBuilder) {
 		// TODO: instead passing the search params, the filters-builder should
 		// be enough
 		List<AggregationBuilder> aggregators = new ArrayList<>();
 		for (FacetCreator fc : facetCreators) {
-			AbstractAggregationBuilder<?> aggregationBuilder = fc.buildAggregation(parameters);
+			AbstractAggregationBuilder<?> aggregationBuilder = fc.buildAggregation(filterBuilder);
 			if (aggregationBuilder != null) {
 				aggregators.add(aggregationBuilder);
 			}

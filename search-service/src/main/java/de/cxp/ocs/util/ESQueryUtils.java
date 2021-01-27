@@ -67,11 +67,11 @@ public class ESQueryUtils {
 		else if (q2 == null) {
 			return q1;
 		}
-		else if (q1 instanceof BoolQueryBuilder) {
+		else if (q1 instanceof BoolQueryBuilder && ((BoolQueryBuilder) q1).must().size() > 0) {
 			((BoolQueryBuilder) q1).must(q2);
 			return q1;
 		}
-		else if (q2 instanceof BoolQueryBuilder) {
+		else if (q2 instanceof BoolQueryBuilder && ((BoolQueryBuilder) q2).must().size() > 0) {
 			((BoolQueryBuilder) q2).must(q1);
 			return q2;
 		}

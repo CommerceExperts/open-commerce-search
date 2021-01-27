@@ -9,6 +9,8 @@ import java.util.Map;
 import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator.KeyedFilter;
+import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilters;
 import org.elasticsearch.search.aggregations.bucket.nested.Nested;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
@@ -17,11 +19,11 @@ import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilde
 import de.cxp.ocs.config.FacetConfiguration;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FieldConstants;
+import de.cxp.ocs.elasticsearch.query.FiltersBuilder;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
-import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.SearchQueryBuilder;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -49,33 +51,47 @@ public class TermFacetCreator implements NestedFacetCreator {
 	private NestedFacetCountCorrector nestedFacetCorrector = null;
 
 	@Override
-	public AbstractAggregationBuilder<?> buildAggregation(InternalSearchParams parameters) {
+	public AbstractAggregationBuilder<?> buildAggregation(FiltersBuilder filters) {
 		// TODO: for multi-select facets, filter facets accordingly
 
 		String nestedPathPrefix = "";
 		if (nestedFacetCorrector != null) nestedPathPrefix = nestedFacetCorrector.getNestedPathPrefix();
+		nestedPathPrefix += FieldConstants.TERM_FACET_DATA;
 
 		TermsAggregationBuilder valueAggBuilder = AggregationBuilders.terms(FACET_VALUES_AGG)
-				.field(nestedPathPrefix + FieldConstants.TERM_FACET_DATA + ".value")
+				.field(nestedPathPrefix + ".value")
 				.size(maxFacetValues);
 		if (nestedFacetCorrector != null) nestedFacetCorrector.correctValueAggBuilder(valueAggBuilder);
 
-		return AggregationBuilders.nested(GENERAL_TERM_FACET_AGG, nestedPathPrefix + FieldConstants.TERM_FACET_DATA)
+		List<KeyedFilter> facetFilters = NestedFacetCreator.getAggregationFilters(filters, nestedPathPrefix + ".name");
+
+		return AggregationBuilders.nested(GENERAL_TERM_FACET_AGG, nestedPathPrefix)
 				.subAggregation(
-						AggregationBuilders.terms(FACET_NAMES_AGG)
-								.field(nestedPathPrefix + FieldConstants.TERM_FACET_DATA + ".name")
-								.size(maxFacets)
-								.subAggregation(valueAggBuilder));
+						AggregationBuilders.filters(FILTERED_AGG, facetFilters.toArray(new KeyedFilter[0]))
+								.subAggregation(
+										AggregationBuilders.terms(FACET_NAMES_AGG)
+												.field(nestedPathPrefix + ".name")
+												.size(maxFacets)
+												.subAggregation(valueAggBuilder)));
 	}
 
 	@Override
 	public Collection<Facet> createFacets(List<InternalResultFilter> filters, Aggregations aggResult, SearchQueryBuilder linkBuilder) {
-		Terms facetNames = ((Nested) aggResult.get(GENERAL_TERM_FACET_AGG))
-				.getAggregations().get(FACET_NAMES_AGG);
-
 		// TODO: optimize SearchParams object to avoid such index creation!
 		Map<String, InternalResultFilter> filtersByName = new HashMap<>();
 		filters.forEach(p -> filtersByName.put(p.getField(), p));
+
+		ParsedFilters filtersAgg = ((Nested) aggResult.get(GENERAL_TERM_FACET_AGG)).getAggregations().get(FILTERED_AGG);
+		List<Facet> extractedFacets = new ArrayList<>();
+		for (org.elasticsearch.search.aggregations.bucket.filter.Filters.Bucket filterBucket : filtersAgg.getBuckets()) {
+			Terms facetNames = filterBucket.getAggregations().get(FACET_NAMES_AGG);
+			extractedFacets.addAll(extractTermFacets(facetNames, filtersByName, linkBuilder));
+		}
+
+		return extractedFacets;
+	}
+
+	private List<Facet> extractTermFacets(Terms facetNames, Map<String, InternalResultFilter> filtersByName, SearchQueryBuilder linkBuilder) {
 
 		List<Facet> termFacets = new ArrayList<>();
 		for (Bucket facetNameBucket : facetNames.getBuckets()) {

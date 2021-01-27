@@ -9,7 +9,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -21,12 +23,12 @@ import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilde
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FieldConstants;
+import de.cxp.ocs.elasticsearch.query.FiltersBuilder;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
-import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.SearchQueryBuilder;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -35,6 +37,7 @@ import lombok.experimental.Accessors;
 public class CategoryFacetCreator implements FacetCreator {
 
 	private static final String AGGREGATION_NAME_PREFIX = "_category";
+	private static final String	AGGREGATION_FILTER_NAME	= "_filter";
 
 	private final FacetConfig	categoryFacetConfig;
 	private final String		aggregationName;
@@ -53,7 +56,7 @@ public class CategoryFacetCreator implements FacetCreator {
 	}
 
 	@Override
-	public AbstractAggregationBuilder<?> buildAggregation(InternalSearchParams parameters) {
+	public AbstractAggregationBuilder<?> buildAggregation(FiltersBuilder filters) {
 		// other than the TermFacetCreator, the CategoryFacetCreator does the
 		// aggregation on a specific "field", this is why a filter is used here
 		// this could be changed in case category-type fields would be used more
@@ -66,16 +69,35 @@ public class CategoryFacetCreator implements FacetCreator {
 						.size(1));
 		nestedFacetCorrector.correctValueAggBuilder(valuesAgg);
 
-		return AggregationBuilders.nested(aggregationName, FieldConstants.PATH_FACET_DATA)
+		TermQueryBuilder categoryNameFilter = QueryBuilders.termQuery(FieldConstants.PATH_FACET_DATA + ".name", categoryFieldName);
+		QueryBuilder joinedPostFilters = filters.getJoinedPostFilters();
+		if (joinedPostFilters == null) {
+			joinedPostFilters = QueryBuilders.matchAllQuery();
+		}
+
+		return AggregationBuilders.filter(aggregationName + "_filtered", joinedPostFilters)
 				.subAggregation(
-						AggregationBuilders.filter("_field", QueryBuilders.termQuery(FieldConstants.PATH_FACET_DATA + ".name", categoryFieldName))
-								.subAggregation(valuesAgg));
+						AggregationBuilders.nested(aggregationName, FieldConstants.PATH_FACET_DATA)
+								.subAggregation(
+										AggregationBuilders.filter(AGGREGATION_FILTER_NAME, categoryNameFilter)
+												.subAggregation(valuesAgg)));
+
+		// return AggregationBuilders.nested(aggregationName,
+		// FieldConstants.PATH_FACET_DATA)
+		// .subAggregation(
+		// AggregationBuilders.filter(AGGREGATION_FILTER_NAME,
+		// aggregationFilter)
+		// .subAggregation(valuesAgg));
 	}
 
 	@Override
 	public Collection<Facet> createFacets(List<InternalResultFilter> filters, Aggregations aggResult, SearchQueryBuilder linkBuilder) {
-		// unwrapping these nested value aggregation
-		Terms categoryAgg = ((Filter) ((Nested) aggResult.get(aggregationName)).getAggregations().get("_field")).getAggregations().get("_values");
+		// unwrapping these nested value aggregation. you could write them in
+		// one line, but with all the casting this becomes unreadable. trust me.
+		Filter filteredAgg = aggResult.get(aggregationName + "_filtered");
+		Nested nestedAgg = filteredAgg.getAggregations().get(aggregationName);
+		Filter nameFilterAgg = nestedAgg.getAggregations().get(AGGREGATION_FILTER_NAME);
+		Terms categoryAgg = nameFilterAgg.getAggregations().get("_values");
 		List<? extends Bucket> catBuckets = categoryAgg.getBuckets();
 		if (catBuckets.size() == 0) return Collections.emptyList();
 

@@ -9,6 +9,8 @@ import java.util.Map;
 import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator.KeyedFilter;
+import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilters;
 import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
 import org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Bucket;
 import org.elasticsearch.search.aggregations.bucket.histogram.HistogramAggregationBuilder;
@@ -18,12 +20,12 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import de.cxp.ocs.config.FacetConfiguration;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FieldConstants;
+import de.cxp.ocs.elasticsearch.query.FiltersBuilder;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.IntervalFacetEntry;
-import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.SearchQueryBuilder;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -32,9 +34,9 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class NumberFacetCreator implements NestedFacetCreator {
 
-	private static String	GENERAL_NUMBER_FACET_AGG	= "_number_facet";
-	private static String	FACET_NAMES_AGG				= "_names";
-	private static String	FACET_VALUES_AGG			= "_values";
+	static final String	GENERAL_NUMBER_FACET_AGG	= "_number_facet";
+	static final String	FACET_NAMES_AGG				= "_names";
+	static final String	FACET_VALUES_AGG			= "_values";
 
 	private final Map<String, FacetConfig> facetsBySourceField = new HashMap<>();
 
@@ -59,36 +61,51 @@ public class NumberFacetCreator implements NestedFacetCreator {
 	private NestedFacetCountCorrector nestedFacetCorrector = null;
 
 	@Override
-	public AbstractAggregationBuilder<?> buildAggregation(InternalSearchParams parameters) {
-		// TODO: for multi-select facets, filter facets accordingly
-
+	public AbstractAggregationBuilder<?> buildAggregation(FiltersBuilder filters) {
 		String nestedPathPrefix = "";
 		if (nestedFacetCorrector != null) nestedPathPrefix = nestedFacetCorrector.getNestedPathPrefix();
+		nestedPathPrefix += FieldConstants.NUMBER_FACET_DATA;
 
+		// create value aggregation
 		HistogramAggregationBuilder valueAggBuilder = AggregationBuilders.histogram(FACET_VALUES_AGG)
-				.field(nestedPathPrefix + FieldConstants.NUMBER_FACET_DATA + ".value")
+				.field(nestedPathPrefix + ".value")
 				.interval(interval)
 				.minDocCount(1);
+
+		// pass value aggregation to corrector to get the correct document
+		// counts
 		if (nestedFacetCorrector != null) nestedFacetCorrector.correctValueAggBuilder(valueAggBuilder);
 
-		return AggregationBuilders.nested(GENERAL_NUMBER_FACET_AGG, nestedPathPrefix + FieldConstants.NUMBER_FACET_DATA)
+		List<KeyedFilter> facetFilters = NestedFacetCreator.getAggregationFilters(filters, nestedPathPrefix + ".name");
+
+		return AggregationBuilders.nested(GENERAL_NUMBER_FACET_AGG, nestedPathPrefix)
 				.subAggregation(
-						AggregationBuilders.terms(FACET_NAMES_AGG)
-								.field(nestedPathPrefix + FieldConstants.NUMBER_FACET_DATA + ".name")
-								.size(maxFacets)
-								.subAggregation(valueAggBuilder));
+						AggregationBuilders.filters(FILTERED_AGG, facetFilters.toArray(new KeyedFilter[0]))
+								.subAggregation(
+										AggregationBuilders.terms(FACET_NAMES_AGG)
+												.field(nestedPathPrefix + ".name")
+												.size(maxFacets)
+												.subAggregation(valueAggBuilder)));
 	}
 
 	@Override
 	public Collection<Facet> createFacets(List<InternalResultFilter> filters, Aggregations aggResult, SearchQueryBuilder linkBuilder) {
-		Terms facetNames = ((Nested) aggResult.get(GENERAL_NUMBER_FACET_AGG))
-				.getAggregations().get(FACET_NAMES_AGG);
-
 		// TODO: optimize SearchParams object to avoid such index creation!
 		Map<String, InternalResultFilter> filtersByName = new HashMap<>();
 		filters.forEach(p -> filtersByName.put(p.getField(), p));
 
-		List<Facet> termFacets = new ArrayList<>();
+		ParsedFilters filtersAgg = ((Nested) aggResult.get(GENERAL_NUMBER_FACET_AGG)).getAggregations().get(FILTERED_AGG);
+		List<Facet> extractedFacets = new ArrayList<>();
+		for (org.elasticsearch.search.aggregations.bucket.filter.Filters.Bucket filterBucket : filtersAgg.getBuckets()) {
+			Terms facetNames = filterBucket.getAggregations().get(FACET_NAMES_AGG);
+			extractedFacets.addAll(extractIntervalFacets(facetNames, filtersByName, linkBuilder));
+		}
+
+		return extractedFacets;
+	}
+
+	private List<Facet> extractIntervalFacets(Terms facetNames, Map<String, InternalResultFilter> filtersByName, SearchQueryBuilder linkBuilder) {
+		List<Facet> facets = new ArrayList<>();
 		for (Terms.Bucket facetNameBucket : facetNames.getBuckets()) {
 			String facetName = facetNameBucket.getKeyAsString();
 
@@ -121,10 +138,9 @@ public class NumberFacetCreator implements NestedFacetCreator {
 				// unfiltered facet
 				fillFacet(facetNameBucket, facet, facetConfig, linkBuilder, null);
 			}
-			termFacets.add(facet);
+			facets.add(facet);
 		}
-
-		return termFacets;
+		return facets;
 	}
 
 	private long getDocCount(Terms.Bucket facetNameBucket) {

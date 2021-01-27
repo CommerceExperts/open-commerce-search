@@ -11,9 +11,9 @@ import org.elasticsearch.search.aggregations.bucket.nested.Nested;
 import org.elasticsearch.search.aggregations.bucket.nested.NestedAggregationBuilder;
 
 import de.cxp.ocs.config.FieldConstants;
+import de.cxp.ocs.elasticsearch.query.FiltersBuilder;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.model.result.Facet;
-import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.SearchQueryBuilder;
 
 public class VariantFacetCreator implements FacetCreator {
@@ -31,11 +31,11 @@ public class VariantFacetCreator implements FacetCreator {
 	}
 
 	@Override
-	public AbstractAggregationBuilder<?> buildAggregation(InternalSearchParams parameters) {
+	public AbstractAggregationBuilder<?> buildAggregation(FiltersBuilder filters) {
 		if (innerCreators.size() == 0) return null;
 		NestedAggregationBuilder nestedAggBuilder = AggregationBuilders.nested("_variants", FieldConstants.VARIANTS);
 		innerCreators.forEach(creator -> {
-			nestedAggBuilder.subAggregation(creator.buildAggregation(parameters));
+			nestedAggBuilder.subAggregation(creator.buildAggregation(filters));
 		});
 		return nestedAggBuilder;
 	}
