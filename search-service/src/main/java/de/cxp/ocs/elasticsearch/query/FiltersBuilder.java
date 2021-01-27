@@ -109,28 +109,35 @@ public class FiltersBuilder {
 		// TODO: very error prone code. Do this
 		boolean buildVariantQueryAfterwards = false;
 		for (InternalResultFilter filter : filters) {
-			String fieldPrefix = filter.getFieldPrefix();
-
-			if (isVariantField(filter.getField())) {
-				fieldPrefix = VARIANTS + "." + fieldPrefix;
-				if (isBasicQuery(filter.getField())) {
-					buildVariantQueryAfterwards = true;
-				}
+			if (!buildVariantQueryAfterwards && isBasicQuery(filter.getField())) {
+				buildVariantQueryAfterwards = true;
 			}
+
 			@SuppressWarnings("unchecked")
 			InternalResultFilterAdapter<? super InternalResultFilter> filterAdapter = (InternalResultFilterAdapter<? super InternalResultFilter>) filterAdapters
 					.get(filter.getClass());
+			String fieldPrefix = filter.getFieldPrefix();
 
-			if (filter.isNestedFilter()) {
-				filterQueries.put(filter.getField(),
-						QueryBuilders.nestedQuery(
-								fieldPrefix,
-								filterAdapter.getAsQuery(fieldPrefix + ".", filter),
-								ScoreMode.None));
+			QueryBuilder filterQuery = null;
+			if (isMasterField(filter.getField())) {
+				filterQuery = toFilterQuery(filter, fieldPrefix, filterAdapter);
 			}
-			else {
-				filterQueries.put(filter.getField(), filterAdapter.getAsQuery(fieldPrefix, filter));
+
+			if (isVariantField(filter.getField())) {
+				fieldPrefix = VARIANTS + "." + fieldPrefix;
+				if (filterQuery == null) {
+					filterQuery = toFilterQuery(filter, fieldPrefix, filterAdapter);
+				}
+				else {
+					// if a filter applies to both levels, then build a
+					// boolean-should query (both field matches are wanted)
+					filterQuery = QueryBuilders.boolQuery()
+							.should(filterQuery)
+							.should(toFilterQuery(filter, fieldPrefix, filterAdapter));
+				}
 			}
+
+			filterQueries.put(filter.getField(), filterQuery);
 		}
 
 		// call buildBasicFilters() to generate variant query
@@ -139,8 +146,24 @@ public class FiltersBuilder {
 		}
 	}
 
+	private QueryBuilder toFilterQuery(InternalResultFilter filter, String fieldPrefix, InternalResultFilterAdapter<? super InternalResultFilter> filterAdapter) {
+		if (filter.isNestedFilter()) {
+			return QueryBuilders.nestedQuery(
+					fieldPrefix,
+					filterAdapter.getAsQuery(fieldPrefix + ".", filter),
+					ScoreMode.None);
+		}
+		else {
+			return filterAdapter.getAsQuery(fieldPrefix, filter);
+		}
+	}
+
 	private boolean isVariantField(String field) {
 		return indexedFieldConfig.getField(field).map(Field::isVariantLevel).orElse(false);
+	}
+
+	private boolean isMasterField(String field) {
+		return indexedFieldConfig.getField(field).map(Field::isMasterLevel).orElse(false);
 	}
 
 }
