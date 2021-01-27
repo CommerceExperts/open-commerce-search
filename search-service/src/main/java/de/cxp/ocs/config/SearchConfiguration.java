@@ -1,6 +1,8 @@
 package de.cxp.ocs.config;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import lombok.Data;
@@ -26,5 +28,6 @@ public class SearchConfiguration {
 	@NonNull
 	private final Map<String, QueryConfiguration> queryConfigs = new LinkedHashMap<>();
 
-
+	@NonNull
+	private final List<SortOptionConfiguration> sortConfigs = new ArrayList<>();
 }

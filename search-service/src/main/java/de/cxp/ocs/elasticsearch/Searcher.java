@@ -49,6 +49,7 @@ import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.config.SearchConfiguration;
+import de.cxp.ocs.config.SortOptionConfiguration;
 import de.cxp.ocs.elasticsearch.facets.CategoryFacetCreator;
 import de.cxp.ocs.elasticsearch.facets.FacetConfigurationApplyer;
 import de.cxp.ocs.elasticsearch.facets.FacetCreator;
@@ -99,6 +100,7 @@ public class Searcher {
 	private final ConditionalQueryBuilder queryBuilder;
 
 	private final Map<String, Field> sortFields;
+	private final Map<String, SortOptionConfiguration>	sortFieldConfig;
 
 	private ScoringCreator scoringCreator;
 
@@ -130,7 +132,8 @@ public class Searcher {
 
 		facetApplier = new FacetConfigurationApplyer(config);
 		scoringCreator = new ScoringCreator(config);
-		sortFields = initSorting();
+		sortFields = fetchSortFields();
+		sortFieldConfig = config.getSortConfigs().stream().collect(Collectors.toMap(SortOptionConfiguration::getField, s -> s));
 		spellCorrector = initSpellCorrection();
 		initializeFacetCreators(config);
 
@@ -147,7 +150,7 @@ public class Searcher {
 		return new SpellCorrector(spellCorrectionFields.toArray(new String[spellCorrectionFields.size()]));
 	}
 
-	private Map<String, Field> initSorting() {
+	private Map<String, Field> fetchSortFields() {
 		Map<String, Field> tempSortFields = config.getIndexedFieldConfig().getFieldsByUsage(FieldUsage.Sort);
 		return Collections.unmodifiableMap(tempSortFields);
 	}
@@ -363,9 +366,13 @@ public class Searcher {
 	private List<Sorting> buildSortOptions(SearchQueryBuilder linkBuilder) {
 		List<Sorting> sortings = new ArrayList<>();
 		for (Field sortField : sortFields.values()) {
-			if (sortField.isBothLevel())
-				continue;
-			for (de.cxp.ocs.model.result.SortOrder order : de.cxp.ocs.model.result.SortOrder.values()) {
+			// XXX check why both level might not work
+			// if (sortField.isBothLevel())
+			// continue;
+			SortOptionConfiguration sortOptionConfiguration = sortFieldConfig.get(sortField.getName());
+			de.cxp.ocs.model.result.SortOrder[] sortOrders = sortOptionConfiguration == null ? de.cxp.ocs.model.result.SortOrder.values()
+					: sortOptionConfiguration.getShownOrders();
+			for (de.cxp.ocs.model.result.SortOrder order : sortOrders) {
 				sortings.add(new Sorting(sortField.getName(), order, linkBuilder.isSortingActive(sortField, order),
 						linkBuilder.withSortingLink(sortField, order)));
 			}
@@ -400,16 +407,19 @@ public class Searcher {
 			for (Sorting sorting : sortings) {
 				Field sortField = sortFields.get(sorting.field);
 				if (sortField != null) {
+					SortOptionConfiguration sortConf = sortFieldConfig.get(sortField.getName());
+					String missingParam = sortConf != null ? sortConf.getMissing() : null;
+
 					searchSourceBuilder.sort(SortBuilders.fieldSort(FieldConstants.SORT_DATA + "." + sorting.field)
-							.order(sorting.sortOrder == null ? SortOrder.ASC
-									: SortOrder.fromString(sorting.sortOrder.name())));
+							.order(sorting.sortOrder == null ? SortOrder.ASC : SortOrder.fromString(sorting.sortOrder.name()))
+							.missing(missingParam));
 
 					if (sortField.isVariantLevel()) {
-						variantSortings.add(SortBuilders
-								.fieldSort(
-										FieldConstants.VARIANTS + "." + FieldConstants.SORT_DATA + "." + sorting.field)
-								.order(sorting.sortOrder == null ? SortOrder.ASC
-										: SortOrder.fromString(sorting.sortOrder.name())));
+						variantSortings.add(
+								SortBuilders
+										.fieldSort(FieldConstants.VARIANTS + "." + FieldConstants.SORT_DATA + "." + sorting.field)
+										.order(sorting.sortOrder == null ? SortOrder.ASC : SortOrder.fromString(sorting.sortOrder.name()))
+										.missing(missingParam));
 					}
 				} else {
 					log.debug("tried to sort by an unsortable field {}", sorting.field);

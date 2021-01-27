@@ -1,6 +1,8 @@
 package de.cxp.ocs.config;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
@@ -40,5 +42,8 @@ public class TenantSearchConfiguration {
 
 	@NestedConfigurationProperty
 	private final Map<String, QueryConfiguration> queryConfiguration = new LinkedHashMap<>();
+
+	@NestedConfigurationProperty
+	private final List<SortOptionConfiguration> sortConfigs = new ArrayList<>();
 
 }

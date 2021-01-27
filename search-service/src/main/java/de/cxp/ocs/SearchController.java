@@ -214,6 +214,10 @@ public class SearchController implements SearchService {
 			mergedConfig.setScoring(defaultConfig.getScoringConfiguration());
 		}
 
+		if (specificConfig != null && specificConfig.getSortConfigs().isEmpty() && !defaultConfig.getSortConfigs().isEmpty()) {
+			mergedConfig.getSortConfigs().addAll(defaultConfig.getSortConfigs());
+		}
+
 		return mergedConfig;
 	}
 
