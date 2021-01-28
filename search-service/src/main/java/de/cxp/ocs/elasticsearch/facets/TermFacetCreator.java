@@ -38,7 +38,6 @@ public class TermFacetCreator extends NestedFacetCreator {
 		Facet facet = FacetFactory.create(facetConfig, "text");
 		if (facetFilter != null && facetFilter instanceof TermResultFilter) {
 			facet.setFiltered(true);
-			// FIXME: create deselect links for selected facet entry
 			if (facetConfig.isMultiSelect() || facetConfig.isShowUnselectedOptions()) {
 				fillFacet(facet, facetNameBucket, facetConfig, linkBuilder);
 			}

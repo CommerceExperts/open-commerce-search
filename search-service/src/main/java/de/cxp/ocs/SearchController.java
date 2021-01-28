@@ -185,8 +185,6 @@ public class SearchController implements SearchService {
 			throw new UncheckedIOException(e);
 		}
 
-		// TODO: check which fields actually exist at the ES Index
-		// (using _mappings endpoint)
 		mergedConfig.setIndexedFieldConfig(new FieldConfigIndex(fieldConfig));
 
 		if (specificConfig != null && !specificConfig.getFacetConfiguration().getFacets().isEmpty()) {
