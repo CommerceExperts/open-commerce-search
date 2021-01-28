@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -81,17 +80,10 @@ public class CategoryFacetCreator implements FacetCreator {
 								.subAggregation(
 										AggregationBuilders.filter(AGGREGATION_FILTER_NAME, categoryNameFilter)
 												.subAggregation(valuesAgg)));
-
-		// return AggregationBuilders.nested(aggregationName,
-		// FieldConstants.PATH_FACET_DATA)
-		// .subAggregation(
-		// AggregationBuilders.filter(AGGREGATION_FILTER_NAME,
-		// aggregationFilter)
-		// .subAggregation(valuesAgg));
 	}
 
 	@Override
-	public Collection<Facet> createFacets(List<InternalResultFilter> filters, Aggregations aggResult, SearchQueryBuilder linkBuilder) {
+	public Collection<Facet> createFacets(Aggregations aggResult, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
 		// unwrapping these nested value aggregation. you could write them in
 		// one line, but with all the casting this becomes unreadable. trust me.
 		Filter filteredAgg = aggResult.get(aggregationName + "_filtered");
@@ -101,10 +93,16 @@ public class CategoryFacetCreator implements FacetCreator {
 		List<? extends Bucket> catBuckets = categoryAgg.getBuckets();
 		if (catBuckets.size() == 0) return Collections.emptyList();
 
-		Optional<TermResultFilter> filter = filters.stream()
-				.filter(f -> categoryFieldName.equals(f.getField()) && f instanceof TermResultFilter)
-				.map(f -> (TermResultFilter) f)
-				.findFirst();
+		InternalResultFilter internalResultFilter = filterContext.getInternalFilters().get(categoryFieldName);
+		TermResultFilter filter;
+		if (internalResultFilter instanceof TermResultFilter) {
+			filter = (TermResultFilter) internalResultFilter;
+		}
+		else {
+			// log warning?
+			filter = null;
+		}
+
 		Facet facet = FacetFactory.create(categoryFacetConfig, "hierarchical");
 
 		Map<String, HierarchialFacetEntry> entries = new LinkedHashMap<>(catBuckets.size());
@@ -137,9 +135,9 @@ public class CategoryFacetCreator implements FacetCreator {
 			if (idsAgg != null && idsAgg.getBuckets().size() > 0) {
 				lastLevelEntry.setId(idsAgg.getBuckets().get(0).getKeyAsString());
 
-				if (filter.isPresent() && filter.get().isFilterOnId()) {
+				if (filter != null && filter.isFilterOnId()) {
 					// TODO: support filtering on multiple ids
-					lastLevelEntry.setSelected(lastLevelEntry.getId().equals(filter.get().getSingleValue()));
+					lastLevelEntry.setSelected(lastLevelEntry.getId().equals(filter.getSingleValue()));
 				}
 			}
 

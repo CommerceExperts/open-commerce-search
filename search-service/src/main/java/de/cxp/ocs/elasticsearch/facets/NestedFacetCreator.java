@@ -1,23 +1,83 @@
 package de.cxp.ocs.elasticsearch.facets;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator.KeyedFilter;
+import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilters;
+import org.elasticsearch.search.aggregations.bucket.nested.Nested;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
+import de.cxp.ocs.config.FacetConfiguration;
+import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
+import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
+import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.model.result.Facet;
+import de.cxp.ocs.util.SearchQueryBuilder;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
-public interface NestedFacetCreator extends FacetCreator {
-
-	NestedFacetCreator setNestedFacetCorrector(NestedFacetCountCorrector c);
+@Accessors(chain = true)
+public abstract class NestedFacetCreator implements FacetCreator {
 
 	static final String	FILTERED_AGG			= "_filtered";
 	static final String	ALL_BUT_FILTER_PREFIX	= "_all_but_";
 	static final String	ALL_FILTER_NAME			= "_all";
+
+	static final String	FACET_NAMES_AGG		= "_names";
+	static final String	FACET_VALUES_AGG	= "_values";
+
+	@Setter
+	private int maxFacets = 2;
+
+	@Setter
+	protected NestedFacetCountCorrector nestedFacetCorrector = null;
+
+	@Setter
+	private String uniqueAggregationName = this.getClass().getSimpleName() + "Aggregation";
+
+	private final Map<String, FacetConfig> facetsBySourceField = new HashMap<>();
+
+	public NestedFacetCreator(FacetConfiguration facetConf) {
+		facetConf.getFacets().forEach(fc -> facetsBySourceField.put(fc.getSourceField(), fc));
+	}
+
+	protected abstract AggregationBuilder getNestedValueAggregation(String nestedPathPrefix);
+
+	protected abstract Facet createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, SearchQueryBuilder linkBuilder);
+
+	@Override
+	public AbstractAggregationBuilder<?> buildAggregation(FilterContext filters) {
+		String nestedPathPrefix = "";
+		if (nestedFacetCorrector != null) nestedPathPrefix = nestedFacetCorrector.getNestedPathPrefix();
+		nestedPathPrefix += FieldConstants.TERM_FACET_DATA;
+
+		AggregationBuilder valueAggBuilder = getNestedValueAggregation(nestedPathPrefix);
+		if (nestedFacetCorrector != null) nestedFacetCorrector.correctValueAggBuilder(valueAggBuilder);
+
+		List<KeyedFilter> facetFilters = getAggregationFilters(filters, nestedPathPrefix + ".name");
+
+		return AggregationBuilders.nested(uniqueAggregationName, nestedPathPrefix)
+				.subAggregation(
+						AggregationBuilders.filters(FILTERED_AGG, facetFilters.toArray(new KeyedFilter[0]))
+								.subAggregation(
+										AggregationBuilders.terms(FACET_NAMES_AGG)
+												.field(nestedPathPrefix + ".name")
+												.size(maxFacets)
+												.subAggregation(valueAggBuilder)));
+	}
 
 	/**
 	 * <p>
@@ -67,7 +127,7 @@ public interface NestedFacetCreator extends FacetCreator {
 	 * @return
 	 *         list of keyed filters
 	 */
-	static List<KeyedFilter> getAggregationFilters(FilterContext filters, String nestedFilterNamePath) {
+	private List<KeyedFilter> getAggregationFilters(FilterContext filters, String nestedFilterNamePath) {
 		// for facets that are currently filtered
 		List<KeyedFilter> facetFilters = new ArrayList<>();
 		Map<String, QueryBuilder> postFilters = filters.getPostFilterQueries();
@@ -86,6 +146,37 @@ public interface NestedFacetCreator extends FacetCreator {
 
 		facetFilters.add(new KeyedFilter(ALL_FILTER_NAME, allFilter));
 		return facetFilters;
+	}
+
+	@Override
+	public Collection<Facet> createFacets(Aggregations aggResult, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
+		ParsedFilters filtersAgg = ((Nested) aggResult.get(uniqueAggregationName)).getAggregations().get(FILTERED_AGG);
+		List<Facet> extractedFacets = new ArrayList<>();
+		for (org.elasticsearch.search.aggregations.bucket.filter.Filters.Bucket filterBucket : filtersAgg.getBuckets()) {
+			Terms facetNamesAggregation = filterBucket.getAggregations().get(FACET_NAMES_AGG);
+			extractedFacets.addAll(extractFacets(facetNamesAggregation, filterContext, linkBuilder));
+		}
+
+		return extractedFacets;
+	}
+
+	protected List<Facet> extractFacets(Terms facetNames, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
+		List<Facet> facets = new ArrayList<>();
+		for (Terms.Bucket facetNameBucket : facetNames.getBuckets()) {
+			String facetName = facetNameBucket.getKeyAsString();
+
+			// XXX: using a dynamic string as source field might be a bad
+			// idea for link creation
+			// either log warnings when indexing such attributes or map them to
+			// some internal URL friendly name
+			FacetConfig facetConfig = facetsBySourceField.get(facetName);
+			if (facetConfig == null) facetConfig = new FacetConfig(facetName, facetName);
+
+			InternalResultFilter facetFilter = filterContext.getInternalFilters().get(facetName);
+
+			facets.add(createFacet(facetNameBucket, facetConfig, facetFilter, linkBuilder));
+		}
+		return facets;
 	}
 
 }

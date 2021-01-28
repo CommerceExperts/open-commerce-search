@@ -159,32 +159,7 @@ public class Searcher {
 		return Collections.unmodifiableMap(tempSortFields);
 	}
 
-	// TODO: extract into utility/factory
 	private void initializeFacetCreators(SearchConfiguration config) {
-		// TODO: for multi-select facets, add collect specialized facetCreators
-		// and exclude explicit facets from general facet creators
-		// Map<FieldType, FacetCreator> facetCreatorsMap = new HashMap<>();
-		// Map<FieldType, FacetCreator> variantFacetCreatorsMap = new
-		// HashMap<>();
-
-		// List<String> explicitTermFacets = new ArrayList<>();
-		// List<String> explicitNumberFacets = new ArrayList<>();
-		// for (FacetConfig facetConfig :
-		// config.getFacetConfiguration().getFacets()) {
-		// Field sourceField =
-		// config.getFieldConfiguration().getFields().get(facetConfig.getSourceField());
-		// FacetCreator explicitFacetCreator =
-		// createExplicitFacetCreator(sourceField);
-		// explicitFacetCreator.setFacetConfig(...);
-		// explicitFacetCreator.setExplicitFacet(...);
-		// facetCreators.add(explicitFacetCreator); ..or for variant facets
-		// explicitTermFacets.add(facetName);
-		// }
-
-		// facetCreators.addAll(facetCreatorsMap.values());
-		// facetCreators.add(new
-		// VariantFacetCreator(variantFacetCreatorsMap.values()));
-
 		for (FacetConfig fc : config.getFacetConfiguration().getFacets()) {
 			Optional<Field> facetField = config.getIndexedFieldConfig().getField(fc.getSourceField());
 			if (facetField.map(f -> FieldType.category.equals(f.getType())).orElse(false)) {
@@ -200,19 +175,6 @@ public class Searcher {
 				Arrays.asList(new TermFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()),
 						new NumberFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()))));
 	}
-
-	// private FacetCreator createExplicitFacetCreator(Field field) {
-	// switch (type) {
-	// case number:
-	// return new NumberFacetCreator();
-	// case string:
-	// return new TermFacetCreator();
-	// case category:
-	// return new CategoryFacetCreator();
-	// default:
-	// return null;
-	// }
-	// }
 
 	/**
 	 * 
@@ -325,7 +287,7 @@ public class Searcher {
 		sqbSample.stop(sqbTimer);
 		summary.record(i);
 
-		SearchResult searchResult = buildResult(parameters, searchResponse, new SearchQueryBuilder(parameters));
+		SearchResult searchResult = buildResult(parameters, filterContext, searchResponse);
 		searchResult.tookInMillis = System.currentTimeMillis() - start;
 
 		findTimer.record(searchResult.tookInMillis, TimeUnit.MILLISECONDS);
@@ -345,8 +307,8 @@ public class Searcher {
 		return searchResponse;
 	}
 
-	private SearchResult buildResult(InternalSearchParams parameters, SearchResponse searchResponse,
-			SearchQueryBuilder linkBuilder) {
+	private SearchResult buildResult(InternalSearchParams parameters, FilterContext filterContext, SearchResponse searchResponse) {
+		SearchQueryBuilder linkBuilder = new SearchQueryBuilder(parameters);
 		SearchResult searchResult = new SearchResult();
 		searchResult.inputURI = SearchQueryBuilder.toLink(parameters).toString();
 		searchResult.slices = new ArrayList<>(1);
@@ -355,7 +317,7 @@ public class Searcher {
 			if (searchResponse != null) {
 				SearchResultSlice searchResultSlice = toSearchResult(searchResponse, parameters);
 				searchResultSlice.facets = facetApplier.getFacets(searchResponse.getAggregations(), facetCreators,
-						searchResultSlice.matchCount, parameters.filters, linkBuilder);
+						searchResultSlice.matchCount, filterContext, linkBuilder);
 				searchResult.slices.add(searchResultSlice);
 			}
 		});

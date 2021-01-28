@@ -18,6 +18,9 @@ public class FilterContext {
 	private static final Map<String, QueryBuilder> NO_FILTER = Collections.emptyMap();
 
 	@Getter
+	private final Map<String, InternalResultFilter> internalFilters;
+
+	@Getter
 	private final Map<String, QueryBuilder> basicFilterQueries;
 
 	@Getter
@@ -29,8 +32,8 @@ public class FilterContext {
 	@Getter
 	private final QueryBuilder joinedPostFilters;
 
-	public FilterContext() {
-		this(NO_FILTER, NO_FILTER, null, null);
+	public FilterContext(Map<String, InternalResultFilter> internalFilters) {
+		this(internalFilters, NO_FILTER, NO_FILTER, null, null);
 	}
 
 	public QueryBuilder allWithPostFilterNamesExcluded(String filterNamePath) {

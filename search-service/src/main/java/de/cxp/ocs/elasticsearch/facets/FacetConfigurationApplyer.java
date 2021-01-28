@@ -17,7 +17,7 @@ import org.elasticsearch.search.aggregations.Aggregations;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.SearchConfiguration;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.util.SearchQueryBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -44,17 +44,16 @@ public class FacetConfigurationApplyer {
 	}
 
 	public List<Facet> getFacets(Aggregations aggregations, List<FacetCreator> facetCreators, long matchCount,
-			List<InternalResultFilter> filters, SearchQueryBuilder linkBuilder) {
+			FilterContext filterContext, SearchQueryBuilder linkBuilder) {
 		List<Facet> facets = new ArrayList<>();
 		int actualMaxFacets = maxFacets;
 		Set<String> duplicateFacets = new HashSet<>();
 
 		// get filtered facets
-		Set<String> appliedFilters = new HashSet<>();
-		filters.forEach(rf -> appliedFilters.add(rf.getField()));
+		Set<String> appliedFilters = filterContext.getInternalFilters().keySet();
 
 		for (FacetCreator fc : facetCreators) {
-			Collection<Facet> createdFacets = fc.createFacets(filters, aggregations, linkBuilder);
+			Collection<Facet> createdFacets = fc.createFacets(aggregations, filterContext, linkBuilder);
 			for (Facet f : createdFacets) {
 				// skip facets with the identical name
 				if (!duplicateFacets.add(getLabel(f))) {

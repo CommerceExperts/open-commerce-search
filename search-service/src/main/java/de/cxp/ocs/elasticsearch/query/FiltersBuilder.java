@@ -10,10 +10,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+
+import com.google.common.base.Functions;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.Field;
@@ -47,7 +50,9 @@ public class FiltersBuilder {
 	}
 
 	public FilterContext buildFilterContext(List<InternalResultFilter> filters) {
-		if (filters.isEmpty()) return new FilterContext();
+		Map<String, InternalResultFilter> filtersByName = filters.stream().collect(Collectors.toMap(InternalResultFilter::getField, Functions.identity()));
+
+		if (filters.isEmpty()) return new FilterContext(filtersByName);
 
 		Map<String, QueryBuilder> basicFilterQueries = new HashMap<>();
 		Map<String, QueryBuilder> postFilterQueries = new HashMap<>();
@@ -91,6 +96,7 @@ public class FiltersBuilder {
 				.getVariantLevelQuery());
 
 		return new FilterContext(
+				filtersByName,
 				Collections.unmodifiableMap(basicFilterQueries),
 				Collections.unmodifiableMap(postFilterQueries),
 				buildFilters(basicFilterQueries),
