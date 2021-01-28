@@ -33,8 +33,9 @@ public interface NestedFacetCreator extends FacetCreator {
 	 * For facets that should stay the same, even if one of its filters was
 	 * selected ("multi-select-facets"), the post filtering feature is used.
 	 * This way such facets can be created without their active filter. See
-	 * {@link
-	 * https://www.elastic.co/guide/en/elasticsearch/reference/current/filter-search-results.html#post-filter}.
+	 * <a href=
+	 * "https://www.elastic.co/guide/en/elasticsearch/reference/current/filter-search-results.html#post-filter">Elasticsearch
+	 * post filter documentation</a>
 	 * </p>
 	 * <p>
 	 * However this leads to the problem, that other facets are also not
@@ -59,10 +60,12 @@ public interface NestedFacetCreator extends FacetCreator {
 	 * 
 	 * 
 	 * @param filters
+	 *        the container that holds the filter queries
 	 * @param nestedFilterNamePath
 	 *        The nested path that should be used to exclude the post-filter
 	 *        names.
 	 * @return
+	 *         list of keyed filters
 	 */
 	static List<KeyedFilter> getAggregationFilters(FiltersBuilder filters, String nestedFilterNamePath) {
 		// for facets that are currently filtered

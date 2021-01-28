@@ -20,11 +20,13 @@ public interface QueryStringTerm {
 	String getWord();
 
 	/**
-	 * see
-	 * https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#_reserved_characters
+	 * see <a href=
+	 * "https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#_reserved_characters">reserved
+	 * characters at Elastic documentation</a>
 	 * 
 	 * @param text
-	 * @return
+	 *        that should be escaped
+	 * @return that text with the reserved characters escaped
 	 */
 	public static String escape(String text) {
 		return StringUtils.replaceEach(text,

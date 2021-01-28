@@ -27,6 +27,12 @@ public class ESQueryUtils {
 		return queryString.toString();
 	}
 
+	/**
+	 * @param termsUnique
+	 *        a list of {@link QueryStringTerm}s
+	 * @return
+	 *         a string that can be used to label a ES query
+	 */
 	public static String getQueryLabel(Collection<QueryStringTerm> termsUnique) {
 		StringBuilder queryLabel = new StringBuilder();
 		for (QueryStringTerm qst : termsUnique) {
@@ -53,12 +59,16 @@ public class ESQueryUtils {
 
 	/**
 	 * Make sure both queries are combined as a boolean query with must-clauses.
-	 * If one of them already is a boolean query, the other one will be appended
-	 * to it.
+	 * If one of them already is a boolean query with must clauses, the other
+	 * one will be appended to it.
 	 * 
 	 * @param q1
+	 *        first query
 	 * @param q2
+	 *        second query
 	 * @return
+	 *         q1 or q2 if one of them is null, otherwise a
+	 *         {@link BoolQueryBuilder}
 	 */
 	public static QueryBuilder mergeQueries(QueryBuilder q1, QueryBuilder q2) {
 		if (q1 == null) {

@@ -21,12 +21,20 @@ import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.result.SortOrder;
 import de.cxp.ocs.model.result.Sorting;
 
+/**
+ * Utility class to parse search parameters
+ */
 public class SearchParamsParser {
 
 	/**
+	 * Checks the parameter map for valid filters and extracts them into
+	 * InternalResultFilter objects.
+	 * 
 	 * @param filterValues
+	 *        parameters as sent in the request
 	 * @param fieldConfig
-	 * @return
+	 *        the field configuration
+	 * @return validated and enriched filter values for internal usage
 	 */
 	public static List<InternalResultFilter> parseFilters(Map<String, String> filterValues, FieldConfigIndex fieldConfig) {
 		List<InternalResultFilter> filters = new ArrayList<>();
@@ -83,6 +91,15 @@ public class SearchParamsParser {
 		return filters;
 	}
 
+	/**
+	 * Parses the sorting parameter into a list of enriched Sorting objects.
+	 * 
+	 * @param paramValue
+	 *        the sorting parameter value
+	 * @param fields
+	 *        the field configuration
+	 * @return list of validated sortings
+	 */
 	public static List<Sorting> parseSortings(String paramValue, FieldConfigIndex fields) {
 		String[] paramValueSplit = split(paramValue, VALUE_DELIMITER);
 		List<Sorting> sortings = new ArrayList<>(paramValueSplit.length);
