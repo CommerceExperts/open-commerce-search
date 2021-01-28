@@ -9,7 +9,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator.KeyedFilter;
 
-import de.cxp.ocs.elasticsearch.query.FiltersBuilder;
+import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 
 public interface NestedFacetCreator extends FacetCreator {
 
@@ -67,7 +67,7 @@ public interface NestedFacetCreator extends FacetCreator {
 	 * @return
 	 *         list of keyed filters
 	 */
-	static List<KeyedFilter> getAggregationFilters(FiltersBuilder filters, String nestedFilterNamePath) {
+	static List<KeyedFilter> getAggregationFilters(FilterContext filters, String nestedFilterNamePath) {
 		// for facets that are currently filtered
 		List<KeyedFilter> facetFilters = new ArrayList<>();
 		Map<String, QueryBuilder> postFilters = filters.getPostFilterQueries();
@@ -75,7 +75,7 @@ public interface NestedFacetCreator extends FacetCreator {
 			// create a filter that filters on the name of the post filter and
 			// all the other post filters
 			facetFilters.add(new KeyedFilter(ALL_BUT_FILTER_PREFIX + postFilter.getKey(), QueryBuilders.boolQuery()
-					.must(FiltersBuilder.allButOne(postFilter.getKey(), postFilters))
+					.must(FilterContext.allButOne(postFilter.getKey(), postFilters))
 					.must(QueryBuilders.termQuery(nestedFilterNamePath, postFilter.getKey()))));
 		}
 

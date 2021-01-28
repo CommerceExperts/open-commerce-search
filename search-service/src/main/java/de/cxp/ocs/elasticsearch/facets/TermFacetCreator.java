@@ -19,7 +19,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilde
 import de.cxp.ocs.config.FacetConfiguration;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.elasticsearch.query.FiltersBuilder;
+import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.result.Facet;
@@ -51,7 +51,7 @@ public class TermFacetCreator implements NestedFacetCreator {
 	private NestedFacetCountCorrector nestedFacetCorrector = null;
 
 	@Override
-	public AbstractAggregationBuilder<?> buildAggregation(FiltersBuilder filters) {
+	public AbstractAggregationBuilder<?> buildAggregation(FilterContext filters) {
 		// TODO: for multi-select facets, filter facets accordingly
 
 		String nestedPathPrefix = "";

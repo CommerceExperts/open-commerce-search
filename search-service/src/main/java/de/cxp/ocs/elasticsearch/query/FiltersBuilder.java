@@ -12,7 +12,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.lucene.search.join.ScoreMode;
-import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 
@@ -20,6 +19,7 @@ import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.SearchConfiguration;
+import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilterAdapter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
@@ -32,11 +32,6 @@ public class FiltersBuilder {
 	private final Set<String>	postFilterFacets	= new HashSet<>();
 	private FieldConfigIndex	indexedFieldConfig;
 
-	private Map<String, QueryBuilder>	basicFilterQueries	= new HashMap<>();
-	private Map<String, QueryBuilder>	postFilterQueries	= new HashMap<>();
-
-	private MasterVariantQuery	joinedBasicFilters;
-	private QueryBuilder		joinedPostFilters;
 
 	private static Map<Class<? extends InternalResultFilter>, InternalResultFilterAdapter<? extends InternalResultFilter>> filterAdapters = new HashMap<>(3);
 	static {
@@ -44,114 +39,20 @@ public class FiltersBuilder {
 		filterAdapters.put(TermResultFilter.class, new TermResultFilterAdapter());
 	}
 
-	public FiltersBuilder(SearchConfiguration searchConfig, List<InternalResultFilter> filters) {
+	public FiltersBuilder(SearchConfiguration searchConfig) {
 		for (FacetConfig facet : searchConfig.getFacetConfiguration().getFacets()) {
 			if (facet.isMultiSelect() || facet.isShowUnselectedOptions()) postFilterFacets.add(facet.getSourceField());
 		}
 		indexedFieldConfig = searchConfig.getIndexedFieldConfig();
-		// TODO: replace stateful approach by "builder approach":
-		// FiltersBuilder should be initialized once and transform the
-		// InternalResultFilter list into a "FilterContext" or something like
-		// that where it has all the ES specific filter queries
-		prepareFilters(filters);
 	}
 
+	public FilterContext buildFilterContext(List<InternalResultFilter> filters) {
+		if (filters.isEmpty()) return new FilterContext();
 
-	public MasterVariantQuery getJoinedBasicFilters() {
-		if (joinedBasicFilters == null) {
-			joinedBasicFilters = buildFilters(basicFilterQueries);
-		}
-		return joinedBasicFilters;
-	}
-
-	public QueryBuilder getJoinedPostFilters() {
-		if (joinedPostFilters == null) {
-			MasterVariantQuery separatedPostFilters = buildFilters(postFilterQueries);
-			joinedPostFilters = mergeQueries(separatedPostFilters.getMasterLevelQuery(), separatedPostFilters
-					.getVariantLevelQuery());
-		}
-		return joinedPostFilters;
-	}
-
-	public Map<String, QueryBuilder> getPostFilterQueries() {
-		return Collections.unmodifiableMap(postFilterQueries);
-	}
-
-	public QueryBuilder allWithPostFilterNamesExcluded(String filterNamePath) {
-		QueryBuilder allFilter;
-		if (postFilterQueries.isEmpty()) {
-			allFilter = QueryBuilders.matchAllQuery();
-		}
-		else {
-			allFilter = getJoinedPostFilters();
-			if (!(allFilter instanceof BoolQueryBuilder)) {
-				allFilter = QueryBuilders.boolQuery().must(allFilter);
-			}
-			((BoolQueryBuilder) allFilter).mustNot(QueryBuilders.termsQuery(filterNamePath, postFilterQueries.keySet()));
-		}
-		return allFilter;
-	}
-
-	public static QueryBuilder allButOne(String exclude, Map<String, QueryBuilder> filterQueries) {
-		// don't use "remove" or similar on filterQueries,
-		// because filterQueries is an UnmodifiableMap
-		if (filterQueries.size() == 1 && filterQueries.containsKey(exclude)) {
-			return QueryBuilders.matchAllQuery();
-		}
-		// if there are exactly 2 entries and one is the excluded, set
-		// finalQuery to the remaining query later. Setting it to "null" here is
-		// the "marker" for this behavior
-		QueryBuilder finalQuery;
-		if (filterQueries.size() == 2 && filterQueries.containsKey(exclude)) {
-			finalQuery = null;
-		}
-		else {
-			finalQuery = QueryBuilders.boolQuery();
-		}
-
-		for (Entry<String, QueryBuilder> fq : filterQueries.entrySet()) {
-			if (fq.getKey().equals(exclude)) continue;
-			// only null if there is only one matching QueryBuilder
-			if (finalQuery == null) {
-				finalQuery = fq.getValue();
-				break;
-			}
-			else {
-				((BoolQueryBuilder) finalQuery).must(fq.getValue());
-			}
-		}
-		return finalQuery;
-	}
-
-	private MasterVariantQuery buildFilters(Map<String, QueryBuilder> filterQueries) {
-		// collect filters and combine into master and variant filters
-		QueryBuilder variantFilters = null;
-		QueryBuilder masterFilters = null;
-		for (Entry<String, QueryBuilder> nestedFieldFilters : filterQueries.entrySet()) {
-			if (isVariantField(nestedFieldFilters.getKey())) {
-				variantFilters = mergeQueries(variantFilters, nestedFieldFilters.getValue());
-			}
-			else {
-				masterFilters = mergeQueries(masterFilters, nestedFieldFilters.getValue());
-			}
-		}
-
-		return new MasterVariantQuery(masterFilters, variantFilters, false, true);
-	}
-
-	private boolean isBasicQuery(String fieldName) {
-		return !postFilterFacets.contains(fieldName);
-	}
-
-	private boolean isPostFilterQuery(String fieldName) {
-		return postFilterFacets.contains(fieldName);
-	}
-
-	private void prepareFilters(List<InternalResultFilter> filters) {
-		if (filters.isEmpty()) return;
+		Map<String, QueryBuilder> basicFilterQueries = new HashMap<>();
+		Map<String, QueryBuilder> postFilterQueries = new HashMap<>();
 
 		// collect filter queries on master and variant level
-		// TODO: very error prone code. Do this
 		boolean buildVariantQueryAfterwards = false;
 		for (InternalResultFilter filter : filters) {
 			@SuppressWarnings("unchecked")
@@ -185,6 +86,35 @@ public class FiltersBuilder {
 				postFilterQueries.put(filter.getField(), filterQuery);
 			}
 		}
+		MasterVariantQuery postFilterQuery = buildFilters(postFilterQueries);
+		QueryBuilder joinedPostFilters = mergeQueries(postFilterQuery.getMasterLevelQuery(), postFilterQuery
+				.getVariantLevelQuery());
+
+		return new FilterContext(
+				Collections.unmodifiableMap(basicFilterQueries),
+				Collections.unmodifiableMap(postFilterQueries),
+				buildFilters(basicFilterQueries),
+				joinedPostFilters);
+	}
+
+	private boolean isBasicQuery(String fieldName) {
+		return !postFilterFacets.contains(fieldName);
+	}
+
+	private MasterVariantQuery buildFilters(Map<String, QueryBuilder> filterQueries) {
+		// collect filters and combine into master and variant filters
+		QueryBuilder variantFilters = null;
+		QueryBuilder masterFilters = null;
+		for (Entry<String, QueryBuilder> nestedFieldFilters : filterQueries.entrySet()) {
+			if (isVariantField(nestedFieldFilters.getKey())) {
+				variantFilters = mergeQueries(variantFilters, nestedFieldFilters.getValue());
+			}
+			else {
+				masterFilters = mergeQueries(masterFilters, nestedFieldFilters.getValue());
+			}
+		}
+
+		return new MasterVariantQuery(masterFilters, variantFilters, false, true);
 	}
 
 	private QueryBuilder toFilterQuery(InternalResultFilter filter, String fieldPrefix, InternalResultFilterAdapter<? super InternalResultFilter> filterAdapter) {

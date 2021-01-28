@@ -62,6 +62,7 @@ import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueryBuilder;
 import de.cxp.ocs.elasticsearch.query.builder.ESQueryBuilder;
 import de.cxp.ocs.elasticsearch.query.builder.ESQueryBuilderFactory;
 import de.cxp.ocs.elasticsearch.query.builder.MatchAllQueryBuilder;
+import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
 import de.cxp.ocs.model.index.Document;
@@ -97,6 +98,8 @@ public class Searcher {
 
 	private final FacetConfigurationApplyer facetApplier;
 
+	private final FiltersBuilder filtersBuilder;
+
 	private final ConditionalQueryBuilder queryBuilder;
 
 	private final Map<String, Field> sortFields;
@@ -131,6 +134,7 @@ public class Searcher {
 				.register(registry);
 
 		facetApplier = new FacetConfigurationApplyer(config);
+		filtersBuilder = new FiltersBuilder(config);
 		scoringCreator = new ScoringCreator(config);
 		sortFields = fetchSortFields();
 		sortFieldConfig = config.getSortConfigs().stream().collect(Collectors.toMap(SortOptionConfiguration::getField, s -> s));
@@ -222,8 +226,6 @@ public class Searcher {
 
 		long start = System.currentTimeMillis();
 
-		FiltersBuilder filtersBuilder = new FiltersBuilder(config, parameters.filters);
-
 		Iterator<ESQueryBuilder> stagedQueryBuilders;
 		List<QueryStringTerm> searchWords;
 		if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
@@ -238,17 +240,16 @@ public class Searcher {
 		SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource().size(parameters.limit)
 				.from(parameters.offset);
 
-		MasterVariantQuery basicFilters = filtersBuilder.getJoinedBasicFilters();
-
 		List<SortBuilder<?>> variantSortings = applySorting(parameters.sortings, searchSourceBuilder);
 		setFetchSources(searchSourceBuilder, variantSortings);
 
-		QueryBuilder postFilter = filtersBuilder.getJoinedPostFilters();
+		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters);
+		QueryBuilder postFilter = filterContext.getJoinedPostFilters();
 		if (postFilter != null) {
 			searchSourceBuilder.postFilter(postFilter);
 		}
 
-		List<AggregationBuilder> aggregators = buildAggregators(filtersBuilder);
+		List<AggregationBuilder> aggregators = buildAggregators(filterContext);
 		if (aggregators != null && aggregators.size() > 0) {
 			aggregators.forEach(searchSourceBuilder::aggregation);
 		}
@@ -286,7 +287,7 @@ public class Searcher {
 				searchSourceBuilder.suggest(null);
 			}
 
-			searchSourceBuilder.query(buildFinalQuery(searchQuery, basicFilters, variantSortings));
+			searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
 			searchResponse = executeSearchRequest(searchSourceBuilder);
 
 			if (log.isDebugEnabled()) {
@@ -309,7 +310,7 @@ public class Searcher {
 				// account, then try again with corrected words
 				if (correctedWords.size() > 0 && !searchQuery.isWithSpellCorrection()) {
 					searchQuery = stagedQueryBuilder.buildQuery(searchWords);
-					searchSourceBuilder.query(buildFinalQuery(searchQuery, basicFilters, variantSortings));
+					searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
 					searchResponse = executeSearchRequest(searchSourceBuilder);
 				}
 				correctedWordsSample.stop(correctedWordsTimer);
@@ -603,12 +604,12 @@ public class Searcher {
 		}
 	}
 
-	private List<AggregationBuilder> buildAggregators(FiltersBuilder filterBuilder) {
+	private List<AggregationBuilder> buildAggregators(FilterContext filterContext) {
 		// TODO: instead passing the search params, the filters-builder should
 		// be enough
 		List<AggregationBuilder> aggregators = new ArrayList<>();
 		for (FacetCreator fc : facetCreators) {
-			AbstractAggregationBuilder<?> aggregationBuilder = fc.buildAggregation(filterBuilder);
+			AbstractAggregationBuilder<?> aggregationBuilder = fc.buildAggregation(filterContext);
 			if (aggregationBuilder != null) {
 				aggregators.add(aggregationBuilder);
 			}
