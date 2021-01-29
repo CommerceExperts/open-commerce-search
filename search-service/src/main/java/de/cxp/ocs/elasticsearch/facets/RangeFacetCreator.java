@@ -11,6 +11,7 @@ import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.IntervalFacetEntry;
 import de.cxp.ocs.util.SearchQueryBuilder;
@@ -51,6 +52,11 @@ public class RangeFacetCreator extends NestedFacetCreator {
 	@Override
 	protected boolean correctedNestedDocumentCount() {
 		return false;
+	}
+
+	@Override
+	protected boolean isMatchingFilterType(InternalResultFilter internalResultFilter) {
+		return internalResultFilter instanceof NumberResultFilter;
 	}
 
 	@Override

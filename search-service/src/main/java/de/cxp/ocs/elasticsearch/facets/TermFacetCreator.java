@@ -43,6 +43,11 @@ public class TermFacetCreator extends NestedFacetCreator {
 	}
 
 	@Override
+	protected boolean isMatchingFilterType(InternalResultFilter internalResultFilter) {
+		return internalResultFilter instanceof TermResultFilter;
+	}
+
+	@Override
 	protected AggregationBuilder getNestedValueAggregation(String nestedPathPrefix) {
 		return AggregationBuilders.terms(FACET_VALUES_AGG)
 				.field(nestedPathPrefix + ".value")

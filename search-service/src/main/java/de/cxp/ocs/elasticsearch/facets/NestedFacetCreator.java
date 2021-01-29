@@ -2,15 +2,15 @@ package de.cxp.ocs.elasticsearch.facets;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.TermsQueryBuilder;
 import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -26,6 +26,7 @@ import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.util.SearchQueryBuilder;
+import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
@@ -50,6 +51,10 @@ public abstract class NestedFacetCreator implements FacetCreator {
 
 	private final Map<String, FacetConfig> facetConfigs;
 
+	@Setter
+	@NonNull
+	private Set<String> excludeFields = Collections.emptySet();
+
 	public NestedFacetCreator(Map<String, FacetConfig> facetConfigs) {
 		this.facetConfigs = facetConfigs;
 	}
@@ -61,6 +66,8 @@ public abstract class NestedFacetCreator implements FacetCreator {
 	protected abstract boolean onlyFetchAggregationsForConfiguredFacets();
 
 	protected abstract boolean correctedNestedDocumentCount();
+
+	protected abstract boolean isMatchingFilterType(InternalResultFilter internalResultFilter);
 
 	protected abstract Facet createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, SearchQueryBuilder linkBuilder);
 
@@ -138,35 +145,51 @@ public abstract class NestedFacetCreator implements FacetCreator {
 		List<KeyedFilter> facetFilters = new ArrayList<>();
 		Map<String, QueryBuilder> postFilters = filters.getPostFilterQueries();
 		for (final Entry<String, QueryBuilder> postFilter : postFilters.entrySet()) {
+			if (excludeFields.contains(postFilter.getKey())
+					|| !isMatchingFilterType(filters.getInternalFilters().get(postFilter.getKey())))
+				continue;
+
 			// create a filter that filters on the name of the post filter and
 			// all the other post filters
 			facetFilters.add(new KeyedFilter(ALL_BUT_FILTER_PREFIX + postFilter.getKey(), QueryBuilders.boolQuery()
-					.must(FilterContext.allButOne(postFilter.getKey(), postFilters))
+					.must(FilterContext.joinAllButOne(postFilter.getKey(), postFilters))
 					.must(QueryBuilders.termQuery(nestedFilterNamePath, postFilter.getKey()))));
 		}
 
 		// always filter for all post filters
 		// also exclude the facets that handled separately
 		// (or match all if there are no post filters)
-		QueryBuilder allFilter = filters.allWithPostFilterNamesExcluded(nestedFilterNamePath);
-
-		// if facet creator should only create the configured facets, filter the
-		// names accordingly
-		if (onlyFetchAggregationsForConfiguredFacets()) {
-			TermsQueryBuilder onlyConfiguredFacets = QueryBuilders.termsQuery(nestedFilterNamePath, facetConfigs.keySet());
-			if (allFilter instanceof BoolQueryBuilder) {
-				((BoolQueryBuilder) allFilter).must(onlyConfiguredFacets);
-			}
-			else if (allFilter instanceof MatchAllQueryBuilder) {
-				allFilter = onlyConfiguredFacets;
-			}
-			else {
-				allFilter = QueryBuilders.boolQuery().must(allFilter).must(onlyConfiguredFacets);
-			}
-		}
+		QueryBuilder allFilter = getFilterForTheGenericAggregations(filters, nestedFilterNamePath);
 
 		facetFilters.add(new KeyedFilter(ALL_FILTER_NAME, allFilter));
 		return facetFilters;
+	}
+
+
+	public QueryBuilder getFilterForTheGenericAggregations(FilterContext filters, String nestedFilterNamePath) {
+		QueryBuilder allFilter;
+		if (!filters.getPostFilterQueries().isEmpty() || onlyFetchAggregationsForConfiguredFacets() || !excludeFields.isEmpty()) {
+			allFilter = QueryBuilders.boolQuery();
+			// exclude facets that are currently active trough post filtering
+			if (!filters.getPostFilterQueries().isEmpty()) {
+				((BoolQueryBuilder) allFilter).must(filters.getJoinedPostFilters());
+			}
+
+			// if facet creator should only create the configured facets, filter
+			// the names accordingly
+			if (onlyFetchAggregationsForConfiguredFacets()) {
+				((BoolQueryBuilder) allFilter).must(QueryBuilders.termsQuery(nestedFilterNamePath, facetConfigs.keySet()));
+			}
+
+			// if facet creator should exclude some facets, this is done here
+			if (!excludeFields.isEmpty()) {
+				((BoolQueryBuilder) allFilter).mustNot(QueryBuilders.termsQuery(nestedFilterNamePath, excludeFields));
+			}
+		}
+		else {
+			allFilter = QueryBuilders.matchAllQuery();
+		}
+		return allFilter;
 	}
 
 	@Override
@@ -199,5 +222,6 @@ public abstract class NestedFacetCreator implements FacetCreator {
 		}
 		return facets;
 	}
+
 
 }

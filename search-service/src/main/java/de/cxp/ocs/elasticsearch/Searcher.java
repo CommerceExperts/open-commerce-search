@@ -55,6 +55,7 @@ import de.cxp.ocs.elasticsearch.facets.FacetConfigurationApplyer;
 import de.cxp.ocs.elasticsearch.facets.FacetCreator;
 import de.cxp.ocs.elasticsearch.facets.FacetCreatorFactory;
 import de.cxp.ocs.elasticsearch.facets.IntervalFacetCreator;
+import de.cxp.ocs.elasticsearch.facets.NestedFacetCreator;
 import de.cxp.ocs.elasticsearch.facets.RangeFacetCreator;
 import de.cxp.ocs.elasticsearch.facets.TermFacetCreator;
 import de.cxp.ocs.elasticsearch.facets.VariantFacetCreator;
@@ -223,18 +224,21 @@ public class Searcher {
 		}
 		int maxFacets = facetConfig.getMaxFacets();
 		facetCreators.add(new TermFacetCreator(termFacets).setMaxFacets(maxFacets));
-		facetCreators.add(new IntervalFacetCreator(intervalFacets).setMaxFacets(maxFacets));
+		NestedFacetCreator intervalFacetCreator = new IntervalFacetCreator(intervalFacets).setMaxFacets(maxFacets);
 		if (!rangeFacets.isEmpty()) {
 			// TODO: FacetCreators that run on the same nested field, should be
 			// grouped to use a single nested-aggregation for their aggregations
 			facetCreators.add(new RangeFacetCreator(rangeFacets).setMaxFacets(maxFacets));
+			intervalFacetCreator.setExcludeFields(rangeFacets.keySet());
 		}
+		facetCreators.add(intervalFacetCreator);
 
 		List<FacetCreator> variantFacetCreators = new ArrayList<>();
 		variantFacetCreators.add(new TermFacetCreator(variantTermFacets).setMaxFacets(maxFacets));
-		variantFacetCreators.add(new IntervalFacetCreator(variantIntervalFacets).setMaxFacets(maxFacets));
+		NestedFacetCreator variantIntervalFacetCreator = new IntervalFacetCreator(variantIntervalFacets).setMaxFacets(maxFacets);
 		if (!variantRangeFacets.isEmpty()) {
 			variantFacetCreators.add(new RangeFacetCreator(variantRangeFacets).setMaxFacets(maxFacets));
+			variantIntervalFacetCreator.setExcludeFields(variantRangeFacets.keySet());
 		}
 		facetCreators.add(new VariantFacetCreator(variantFacetCreators));
 	}

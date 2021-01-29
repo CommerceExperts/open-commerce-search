@@ -38,22 +38,17 @@ public class FilterContext {
 		this(internalFilters, NO_FILTER, NO_FILTER, NO_QUERY, null);
 	}
 
-	public QueryBuilder allWithPostFilterNamesExcluded(String filterNamePath) {
-		QueryBuilder allFilter;
-		if (postFilterQueries.isEmpty()) {
-			allFilter = QueryBuilders.matchAllQuery();
-		}
-		else {
-			allFilter = getJoinedPostFilters();
-			if (!(allFilter instanceof BoolQueryBuilder)) {
-				allFilter = QueryBuilders.boolQuery().must(allFilter);
-			}
-			((BoolQueryBuilder) allFilter).mustNot(QueryBuilders.termsQuery(filterNamePath, postFilterQueries.keySet()));
-		}
-		return allFilter;
-	}
-
-	public static QueryBuilder allButOne(String exclude, Map<String, QueryBuilder> filterQueries) {
+	/**
+	 * Join filterQueries to a single QueryBuilder but exclude
+	 * the one specified with "exclude".
+	 * 
+	 * @param exclude
+	 *        the filter query that should not be joined.
+	 * @param filterQueries
+	 *        all the filter queries that should be joined
+	 * @return
+	 */
+	public static QueryBuilder joinAllButOne(String exclude, Map<String, QueryBuilder> filterQueries) {
 		// don't use "remove" or similar on filterQueries,
 		// because filterQueries is an UnmodifiableMap
 		if (filterQueries.size() == 1 && filterQueries.containsKey(exclude)) {

@@ -51,6 +51,11 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 	}
 
 	@Override
+	protected boolean isMatchingFilterType(InternalResultFilter internalResultFilter) {
+		return internalResultFilter instanceof NumberResultFilter;
+	}
+
+	@Override
 	protected AggregationBuilder getNestedValueAggregation(String nestedPathPrefix) {
 		// create value aggregation
 		return AggregationBuilders.histogram(FACET_VALUES_AGG)
