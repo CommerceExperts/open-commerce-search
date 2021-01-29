@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.8.3</version>
+		<version>0.8.4</version>
 		<relativePath>../</relativePath>
 	</parent>
 
@@ -169,5 +169,17 @@
 			</dependencies>
 		</profile>
 	</profiles>
+	
+	<!-- copy repos from parent, which is necessary otherwise older versions of parent won't be found during public build -->
+	<repositories>
+		<repository>
+			<id>cxp-public-releases</id>
+			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-external/</url>
+		</repository>
+		<repository>
+			<id>cxp-public-snapshots</id>
+			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-public-snapshots/</url>
+		</repository>
+	</repositories>
 
 </project>
