@@ -68,10 +68,9 @@ public class RangeFacetCreator extends NestedFacetCreator {
 	@Override
 	protected Facet createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, SearchQueryBuilder linkBuilder) {
 		ParsedStats stats = facetNameBucket.getAggregations().get(AGGREGATION_NAME);
-		Facet facet = FacetFactory.create(facetConfig, FacetType.range.name());
-		boolean isSelected = facetFilter != null;
-		facet.addEntry(new IntervalFacetEntry(stats.getMin(), stats.getMax(), -1, linkBuilder.toString(), isSelected));
-		return facet;
+		return FacetFactory.create(facetConfig, FacetType.range.name())
+				.setAbsoluteFacetCoverage(stats.getCount())
+				.addEntry(new IntervalFacetEntry(stats.getMin(), stats.getMax(), stats.getCount(), linkBuilder.toString(), facetFilter != null));
 	}
 
 }
