@@ -1,6 +1,7 @@
 package de.cxp.ocs.elasticsearch.facets;
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -55,7 +56,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 	}
 
 	@Override
-	protected Facet createFacet(Terms.Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter,
+	protected Optional<Facet> createFacet(Terms.Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter,
 			SearchQueryBuilder linkBuilder) {
 		Facet facet = FacetFactory.create(facetConfig, "text");
 		if (facetFilter != null && facetFilter instanceof TermResultFilter) {
@@ -72,7 +73,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 			fillFacet(facet, facetNameBucket, facetConfig, linkBuilder);
 		}
 
-		return facet;
+		return facet.entries.isEmpty() ? Optional.empty() : Optional.of(facet);
 	}
 
 	private void fillSingleSelectFacet(Bucket facetNameBucket, Facet facet, TermResultFilter facetFilter, FacetConfig facetConfig,

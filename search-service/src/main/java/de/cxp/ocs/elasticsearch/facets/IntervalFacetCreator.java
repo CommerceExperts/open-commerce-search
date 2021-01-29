@@ -2,6 +2,7 @@ package de.cxp.ocs.elasticsearch.facets;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -65,7 +66,7 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 	}
 
 	@Override
-	protected Facet createFacet(Terms.Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter,
+	protected Optional<Facet> createFacet(Terms.Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter,
 			SearchQueryBuilder linkBuilder) {
 		Facet facet = FacetFactory.create(facetConfig, "interval");
 		if (facetFilter != null && facetFilter instanceof NumberResultFilter) {
@@ -87,7 +88,7 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 			// unfiltered facet
 			fillFacet(facetNameBucket, facet, facetConfig, linkBuilder, null);
 		}
-		return facet;
+		return facet.entries.isEmpty() ? Optional.empty() : Optional.of(facet);
 	}
 
 

@@ -63,11 +63,6 @@ public class FacetConfigurationApplyer {
 				if (appliedFilters.contains(f.getFieldName())) {
 					f.setFiltered(true);
 				}
-				else if (f.getEntries().size() == 1
-						&& f.getAbsoluteFacetCoverage() == matchCount) {
-							log.debug("removed facet with label {} because its only element covered the whole result", getLabel(f));
-							continue;
-						}
 
 				FacetConfig facetConfig = facetsBySourceField.get(f.getFieldName());
 				if (facetConfig != null) {

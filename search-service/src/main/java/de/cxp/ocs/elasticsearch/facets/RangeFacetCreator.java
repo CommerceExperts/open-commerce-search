@@ -1,6 +1,7 @@
 package de.cxp.ocs.elasticsearch.facets;
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -32,7 +33,7 @@ import de.cxp.ocs.util.SearchQueryBuilder;
 public class RangeFacetCreator extends NestedFacetCreator {
 
 	public final static String AGGREGATION_NAME = "_stats";
-	
+
 	public RangeFacetCreator(Map<String, FacetConfig> facetConfigs) {
 		super(facetConfigs);
 		// ensure the according filters are applied as post filters
@@ -66,11 +67,17 @@ public class RangeFacetCreator extends NestedFacetCreator {
 	}
 
 	@Override
-	protected Facet createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, SearchQueryBuilder linkBuilder) {
+	protected Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, SearchQueryBuilder linkBuilder) {
 		ParsedStats stats = facetNameBucket.getAggregations().get(AGGREGATION_NAME);
-		return FacetFactory.create(facetConfig, FacetType.range.name())
-				.setAbsoluteFacetCoverage(stats.getCount())
-				.addEntry(new IntervalFacetEntry(stats.getMin(), stats.getMax(), stats.getCount(), linkBuilder.toString(), facetFilter != null));
+		if (stats.getMin() == stats.getMax() || stats.getCount() == 1) {
+			return Optional.empty();
+		}
+		else {
+			return Optional.of(
+					FacetFactory.create(facetConfig, FacetType.range.name())
+							.setAbsoluteFacetCoverage(stats.getCount())
+							.addEntry(new IntervalFacetEntry(stats.getMin(), stats.getMax(), stats.getCount(), linkBuilder.toString(), facetFilter != null)));
+		}
 	}
 
 }

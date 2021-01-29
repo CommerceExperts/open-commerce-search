@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -69,7 +70,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 
 	protected abstract boolean isMatchingFilterType(InternalResultFilter internalResultFilter);
 
-	protected abstract Facet createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, SearchQueryBuilder linkBuilder);
+	protected abstract Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, SearchQueryBuilder linkBuilder);
 
 	@Override
 	public AbstractAggregationBuilder<?> buildAggregation(FilterContext filters) {
@@ -218,7 +219,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 
 			InternalResultFilter facetFilter = filterContext.getInternalFilters().get(facetName);
 
-			facets.add(createFacet(facetNameBucket, facetConfig, facetFilter, linkBuilder));
+			createFacet(facetNameBucket, facetConfig, facetFilter, linkBuilder).ifPresent(facets::add);
 		}
 		return facets;
 	}
