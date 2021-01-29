@@ -53,7 +53,7 @@ import de.cxp.ocs.config.SortOptionConfiguration;
 import de.cxp.ocs.elasticsearch.facets.CategoryFacetCreator;
 import de.cxp.ocs.elasticsearch.facets.FacetConfigurationApplyer;
 import de.cxp.ocs.elasticsearch.facets.FacetCreator;
-import de.cxp.ocs.elasticsearch.facets.NumberFacetCreator;
+import de.cxp.ocs.elasticsearch.facets.IntervalFacetCreator;
 import de.cxp.ocs.elasticsearch.facets.TermFacetCreator;
 import de.cxp.ocs.elasticsearch.facets.VariantFacetCreator;
 import de.cxp.ocs.elasticsearch.query.FiltersBuilder;
@@ -170,10 +170,10 @@ public class Searcher {
 
 		FacetConfiguration facetConf = config.getFacetConfiguration();
 		facetCreators.add(new TermFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()));
-		facetCreators.add(new NumberFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()));
+		facetCreators.add(new IntervalFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()));
 		facetCreators.add(new VariantFacetCreator(
 				Arrays.asList(new TermFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()),
-						new NumberFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()))));
+						new IntervalFacetCreator(facetConf).setMaxFacets(facetConf.getMaxFacets()))));
 	}
 
 	/**

@@ -22,7 +22,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 @Accessors(chain = true)
-public class NumberFacetCreator extends NestedFacetCreator {
+public class IntervalFacetCreator extends NestedFacetCreator {
 
 	private int wishedFacetSize = 5;
 
@@ -31,7 +31,7 @@ public class NumberFacetCreator extends NestedFacetCreator {
 	@Setter
 	private int interval = 5;
 
-	public NumberFacetCreator(FacetConfiguration facetConf) {
+	public IntervalFacetCreator(FacetConfiguration facetConf) {
 		super(facetConf);
 	}
 
