@@ -21,7 +21,6 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
 import de.cxp.ocs.config.FacetConfiguration;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
-import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.model.result.Facet;
@@ -54,6 +53,8 @@ public abstract class NestedFacetCreator implements FacetCreator {
 		facetConf.getFacets().forEach(fc -> facetsBySourceField.put(fc.getSourceField(), fc));
 	}
 
+	protected abstract String getNestedPath();
+
 	protected abstract AggregationBuilder getNestedValueAggregation(String nestedPathPrefix);
 
 	protected abstract Facet createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, SearchQueryBuilder linkBuilder);
@@ -62,7 +63,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 	public AbstractAggregationBuilder<?> buildAggregation(FilterContext filters) {
 		String nestedPathPrefix = "";
 		if (nestedFacetCorrector != null) nestedPathPrefix = nestedFacetCorrector.getNestedPathPrefix();
-		nestedPathPrefix += FieldConstants.TERM_FACET_DATA;
+		nestedPathPrefix += getNestedPath();
 
 		AggregationBuilder valueAggBuilder = getNestedValueAggregation(nestedPathPrefix);
 		if (nestedFacetCorrector != null) nestedFacetCorrector.correctValueAggBuilder(valueAggBuilder);

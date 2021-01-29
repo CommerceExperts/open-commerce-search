@@ -7,6 +7,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
 import de.cxp.ocs.config.FacetConfiguration;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
+import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.result.Facet;
@@ -23,6 +24,11 @@ public class TermFacetCreator extends NestedFacetCreator {
 
 	public TermFacetCreator(FacetConfiguration facetConf) {
 		super(facetConf);
+	}
+
+	@Override
+	protected String getNestedPath() {
+		return FieldConstants.TERM_FACET_DATA;
 	}
 
 	@Override

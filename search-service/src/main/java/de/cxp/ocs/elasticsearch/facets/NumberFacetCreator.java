@@ -10,6 +10,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
 import de.cxp.ocs.config.FacetConfiguration;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
+import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.model.result.Facet;
@@ -32,6 +33,11 @@ public class NumberFacetCreator extends NestedFacetCreator {
 
 	public NumberFacetCreator(FacetConfiguration facetConf) {
 		super(facetConf);
+	}
+
+	@Override
+	protected String getNestedPath() {
+		return FieldConstants.NUMBER_FACET_DATA;
 	}
 
 	@Override

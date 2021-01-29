@@ -15,7 +15,9 @@ import lombok.Getter;
 @AllArgsConstructor
 public class FilterContext {
 
-	private static final Map<String, QueryBuilder> NO_FILTER = Collections.emptyMap();
+	private final static Map<String, QueryBuilder> NO_FILTER = Collections.emptyMap();
+
+	private final static MasterVariantQuery NO_QUERY = new MasterVariantQuery(null, null, false, true);
 
 	@Getter
 	private final Map<String, InternalResultFilter> internalFilters;
@@ -33,7 +35,7 @@ public class FilterContext {
 	private final QueryBuilder joinedPostFilters;
 
 	public FilterContext(Map<String, InternalResultFilter> internalFilters) {
-		this(internalFilters, NO_FILTER, NO_FILTER, null, null);
+		this(internalFilters, NO_FILTER, NO_FILTER, NO_QUERY, null);
 	}
 
 	public QueryBuilder allWithPostFilterNamesExcluded(String filterNamePath) {
