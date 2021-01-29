@@ -1,11 +1,12 @@
 package de.cxp.ocs.elasticsearch.facets;
 
+import java.util.Map;
+
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
-import de.cxp.ocs.config.FacetConfiguration;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
@@ -22,13 +23,23 @@ public class TermFacetCreator extends NestedFacetCreator {
 	@Setter
 	private int maxFacetValues = 100;
 
-	public TermFacetCreator(FacetConfiguration facetConf) {
-		super(facetConf);
+	public TermFacetCreator(Map<String, FacetConfig> facetConfigs) {
+		super(facetConfigs);
 	}
 
 	@Override
 	protected String getNestedPath() {
 		return FieldConstants.TERM_FACET_DATA;
+	}
+
+	@Override
+	protected boolean onlyFetchAggregationsForConfiguredFacets() {
+		return false;
+	}
+
+	@Override
+	protected boolean correctedNestedDocumentCount() {
+		return true;
 	}
 
 	@Override

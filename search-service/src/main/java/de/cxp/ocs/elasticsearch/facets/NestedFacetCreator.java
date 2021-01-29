@@ -2,13 +2,15 @@ package de.cxp.ocs.elasticsearch.facets;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.TermsQueryBuilder;
 import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -19,7 +21,6 @@ import org.elasticsearch.search.aggregations.bucket.nested.Nested;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
-import de.cxp.ocs.config.FacetConfiguration;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
@@ -47,15 +48,19 @@ public abstract class NestedFacetCreator implements FacetCreator {
 	@Setter
 	private String uniqueAggregationName = this.getClass().getSimpleName() + "Aggregation";
 
-	private final Map<String, FacetConfig> facetsBySourceField = new HashMap<>();
+	private final Map<String, FacetConfig> facetConfigs;
 
-	public NestedFacetCreator(FacetConfiguration facetConf) {
-		facetConf.getFacets().forEach(fc -> facetsBySourceField.put(fc.getSourceField(), fc));
+	public NestedFacetCreator(Map<String, FacetConfig> facetConfigs) {
+		this.facetConfigs = facetConfigs;
 	}
 
 	protected abstract String getNestedPath();
 
 	protected abstract AggregationBuilder getNestedValueAggregation(String nestedPathPrefix);
+
+	protected abstract boolean onlyFetchAggregationsForConfiguredFacets();
+
+	protected abstract boolean correctedNestedDocumentCount();
 
 	protected abstract Facet createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, SearchQueryBuilder linkBuilder);
 
@@ -66,7 +71,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 		nestedPathPrefix += getNestedPath();
 
 		AggregationBuilder valueAggBuilder = getNestedValueAggregation(nestedPathPrefix);
-		if (nestedFacetCorrector != null) nestedFacetCorrector.correctValueAggBuilder(valueAggBuilder);
+		if (nestedFacetCorrector != null && correctedNestedDocumentCount()) nestedFacetCorrector.correctValueAggBuilder(valueAggBuilder);
 
 		List<KeyedFilter> facetFilters = getAggregationFilters(filters, nestedPathPrefix + ".name");
 
@@ -145,6 +150,21 @@ public abstract class NestedFacetCreator implements FacetCreator {
 		// (or match all if there are no post filters)
 		QueryBuilder allFilter = filters.allWithPostFilterNamesExcluded(nestedFilterNamePath);
 
+		// if facet creator should only create the configured facets, filter the
+		// names accordingly
+		if (onlyFetchAggregationsForConfiguredFacets()) {
+			TermsQueryBuilder onlyConfiguredFacets = QueryBuilders.termsQuery(nestedFilterNamePath, facetConfigs.keySet());
+			if (allFilter instanceof BoolQueryBuilder) {
+				((BoolQueryBuilder) allFilter).must(onlyConfiguredFacets);
+			}
+			else if (allFilter instanceof MatchAllQueryBuilder) {
+				allFilter = onlyConfiguredFacets;
+			}
+			else {
+				allFilter = QueryBuilders.boolQuery().must(allFilter).must(onlyConfiguredFacets);
+			}
+		}
+
 		facetFilters.add(new KeyedFilter(ALL_FILTER_NAME, allFilter));
 		return facetFilters;
 	}
@@ -170,7 +190,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 			// idea for link creation
 			// either log warnings when indexing such attributes or map them to
 			// some internal URL friendly name
-			FacetConfig facetConfig = facetsBySourceField.get(facetName);
+			FacetConfig facetConfig = facetConfigs.get(facetName);
 			if (facetConfig == null) facetConfig = new FacetConfig(facetName, facetName);
 
 			InternalResultFilter facetFilter = filterContext.getInternalFilters().get(facetName);

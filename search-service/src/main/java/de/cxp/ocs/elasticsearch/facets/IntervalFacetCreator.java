@@ -1,6 +1,7 @@
 package de.cxp.ocs.elasticsearch.facets;
 
 import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -8,7 +9,6 @@ import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
 import org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Bucket;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
-import de.cxp.ocs.config.FacetConfiguration;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
@@ -31,13 +31,23 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 	@Setter
 	private int interval = 5;
 
-	public IntervalFacetCreator(FacetConfiguration facetConf) {
-		super(facetConf);
+	public IntervalFacetCreator(Map<String, FacetConfig> facetConfigs) {
+		super(facetConfigs);
 	}
 
 	@Override
 	protected String getNestedPath() {
 		return FieldConstants.NUMBER_FACET_DATA;
+	}
+
+	@Override
+	protected boolean onlyFetchAggregationsForConfiguredFacets() {
+		return false;
+	}
+
+	@Override
+	protected boolean correctedNestedDocumentCount() {
+		return true;
 	}
 
 	@Override
@@ -104,10 +114,6 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 				currentEntryBuilder.lowerBound = (Double) valueBucket.getKey();
 			}
 			Double value = (Double) valueBucket.getKey();
-
-			if (selectedFilter != null && selectedFilter.getLowerBound().equals(value)) {
-
-			}
 
 			long docCount = nestedFacetCorrector != null
 					? nestedFacetCorrector.getCorrectedDocumentCount(valueBucket)

@@ -32,6 +32,19 @@ public class FacetConfiguration {
 		@NonNull
 		private String sourceField;
 
+		/**
+		 * Optional type that relates to the available FacetCreators.
+		 * If not set, it uses the default type of the related field.
+		 * From some field-types different facet types can be generated:
+		 * <ul>
+		 * <li>numeric fields generate "interval" facets per default, but can be
+		 * set to "range"</li>
+		 * <li>TODO: custom facet creators can support their own facet
+		 * types</li>
+		 * </ul>
+		 */
+		private String type;
+
 		private final Map<String, Object> metaData = new HashMap<>();
 
 		/**
