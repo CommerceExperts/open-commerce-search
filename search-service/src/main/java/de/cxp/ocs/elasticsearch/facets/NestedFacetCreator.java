@@ -3,6 +3,7 @@ package de.cxp.ocs.elasticsearch.facets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -171,9 +172,12 @@ public abstract class NestedFacetCreator implements FacetCreator {
 		QueryBuilder allFilter;
 		if (!filters.getPostFilterQueries().isEmpty() || onlyFetchAggregationsForConfiguredFacets() || !excludeFields.isEmpty()) {
 			allFilter = QueryBuilders.boolQuery();
+			// apply all post filters and
 			// exclude facets that are currently active trough post filtering
+			Set<String> allExcludeFields = new HashSet<>();
 			if (!filters.getPostFilterQueries().isEmpty()) {
 				((BoolQueryBuilder) allFilter).must(filters.getJoinedPostFilters());
+				allExcludeFields.addAll(filters.getPostFilterQueries().keySet());
 			}
 
 			// if facet creator should only create the configured facets, filter
@@ -183,8 +187,9 @@ public abstract class NestedFacetCreator implements FacetCreator {
 			}
 
 			// if facet creator should exclude some facets, this is done here
-			if (!excludeFields.isEmpty()) {
-				((BoolQueryBuilder) allFilter).mustNot(QueryBuilders.termsQuery(nestedFilterNamePath, excludeFields));
+			allExcludeFields.addAll(excludeFields);
+			if (!allExcludeFields.isEmpty()) {
+				((BoolQueryBuilder) allFilter).mustNot(QueryBuilders.termsQuery(nestedFilterNamePath, allExcludeFields));
 			}
 		}
 		else {

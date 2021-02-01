@@ -12,7 +12,7 @@
 	</parent>
 
 	<artifactId>search-service</artifactId>
-	<version>0.6.0</version>
+	<version>0.6.1</version>
 	<packaging>jar</packaging>
 
 	<!-- Import dependency management from Spring Boot -->
