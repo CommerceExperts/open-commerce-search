@@ -41,7 +41,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 	private int maxFacets = 2;
 
 	@Setter
-	protected NestedFacetCountCorrector nestedFacetCorrector = null;
+	protected NestedFacetCountCorrector nestedFacetCorrector = new NestedFacetCountCorrector("");
 
 	@Setter
 	private String uniqueAggregationName = this.getClass().getSimpleName() + "Aggregation";

@@ -26,8 +26,6 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class CategoryFacetCreator extends NestedFacetCreator {
 
-	private NestedFacetCountCorrector nestedFacetCorrector;
-
 	@Setter
 	private int maxFacetValues = 250;
 
@@ -97,7 +95,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 					lastLevelEntry = newChild;
 				}
 			}
-			long docCount = nestedFacetCorrector.getCorrectedDocumentCount(categoryBucket);
+			long docCount = nestedFacetCorrector != null ? nestedFacetCorrector.getCorrectedDocumentCount(categoryBucket) : categoryBucket.getDocCount();
 			absDocCount += docCount;
 			lastLevelEntry.setDocCount(docCount);
 			lastLevelEntry.setPath(categoryPath);

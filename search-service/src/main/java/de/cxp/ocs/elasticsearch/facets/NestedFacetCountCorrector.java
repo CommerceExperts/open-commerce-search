@@ -15,7 +15,7 @@ class NestedFacetCountCorrector {
 	private final String nestedPath;
 
 	public String getNestedPathPrefix() {
-		return nestedPath + ".";
+		return nestedPath.isEmpty() ? nestedPath : nestedPath + ".";
 	}
 
 	public void correctValueAggBuilder(AggregationBuilder aggBuilder) {
