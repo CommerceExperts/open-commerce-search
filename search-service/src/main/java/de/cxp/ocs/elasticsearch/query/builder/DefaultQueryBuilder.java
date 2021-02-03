@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder.Type;
-import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 
@@ -30,9 +29,9 @@ public class DefaultQueryBuilder implements ESQueryBuilder {
 	@Override
 	public MasterVariantQuery buildQuery(List<QueryStringTerm> searchTerms) {
 		QueryStringQueryBuilder mainQuery = QueryBuilders
-				.queryStringQuery(ESQueryUtils.buildQueryString(searchTerms, Operator.AND.name()))
+				.queryStringQuery(ESQueryUtils.buildQueryString(searchTerms, " "))
 				.defaultField(FieldConstants.SEARCH_DATA + ".*")
-				.analyzer("split")
+				.analyzer("standard")
 				.fuzziness(Fuzziness.AUTO)
 				.minimumShouldMatch("2<80%")
 				.tieBreaker(0.8f)
@@ -41,7 +40,7 @@ public class DefaultQueryBuilder implements ESQueryBuilder {
 
 		QueryStringQueryBuilder variantQuery = QueryBuilders.queryStringQuery(ESQueryUtils.buildQueryString(searchTerms, " "))
 				.minimumShouldMatch("1")
-				.analyzer("split");
+				.analyzer("standard");
 		variantQuery.type(Type.MOST_FIELDS);
 
 		// isWithSpellCorrect=true because we use fuzzy matching
