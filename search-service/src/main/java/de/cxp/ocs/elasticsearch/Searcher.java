@@ -13,7 +13,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -33,7 +32,6 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder.FilterFunctionBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
@@ -41,24 +39,13 @@ import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 
-import de.cxp.ocs.config.FacetConfiguration;
-import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
-import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.config.SortOptionConfiguration;
-import de.cxp.ocs.elasticsearch.facets.CategoryFacetCreator;
 import de.cxp.ocs.elasticsearch.facets.FacetConfigurationApplyer;
-import de.cxp.ocs.elasticsearch.facets.FacetCreator;
-import de.cxp.ocs.elasticsearch.facets.FacetCreatorFactory;
-import de.cxp.ocs.elasticsearch.facets.IntervalFacetCreator;
-import de.cxp.ocs.elasticsearch.facets.NestedFacetCreator;
-import de.cxp.ocs.elasticsearch.facets.RangeFacetCreator;
-import de.cxp.ocs.elasticsearch.facets.TermFacetCreator;
-import de.cxp.ocs.elasticsearch.facets.VariantFacetCreator;
 import de.cxp.ocs.elasticsearch.query.FiltersBuilder;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueryBuilder;
@@ -95,10 +82,6 @@ public class Searcher {
 
 	@NonNull
 	private final MeterRegistry registry;
-
-	private final Map<String, FacetCreatorFactory> facetTypeCreatorFactories = new HashMap<>();
-
-	private final List<FacetCreator> facetCreators = new ArrayList<>();
 
 	private final FacetConfigurationApplyer facetApplier;
 
@@ -143,7 +126,6 @@ public class Searcher {
 		sortFields = fetchSortFields();
 		sortFieldConfig = config.getSortConfigs().stream().collect(Collectors.toMap(SortOptionConfiguration::getField, s -> s));
 		spellCorrector = initSpellCorrection();
-		initializeFacetCreators(config);
 
 		queryBuilder = new ESQueryBuilderFactory(restClient, config.getIndexName(), config).build();
 	}
@@ -161,86 +143,6 @@ public class Searcher {
 	private Map<String, Field> fetchSortFields() {
 		Map<String, Field> tempSortFields = config.getIndexedFieldConfig().getFieldsByUsage(FieldUsage.Sort);
 		return Collections.unmodifiableMap(tempSortFields);
-	}
-
-	private void initializeFacetCreators(SearchConfiguration config) {
-		// TODO: move all that configuration/setup stuff to FacetApplier
-		Map<String, FacetConfig> intervalFacets = new HashMap<>();
-		Map<String, FacetConfig> rangeFacets = new HashMap<>();
-		Map<String, FacetConfig> termFacets = new HashMap<>();
-		Map<String, FacetConfig> variantIntervalFacets = new HashMap<>();
-		Map<String, FacetConfig> variantRangeFacets = new HashMap<>();
-		Map<String, FacetConfig> variantTermFacets = new HashMap<>();
-		FacetConfiguration facetConfig = config.getFacetConfiguration();
-		for (FacetConfig facetConf : facetConfig.getFacets()) {
-			Optional<Field> optFacetField = config.getIndexedFieldConfig().getField(facetConf.getSourceField());
-			if (!optFacetField.isPresent()) {
-				log.warn("facet {} configured for field {}, but that field does not exist. Facet won't be created",
-						facetConf.getLabel(), facetConf.getSourceField());
-				continue;
-			}
-			Field facetField = optFacetField.get();
-
-			if (FieldType.category.equals(facetField.getType())) {
-				facetCreators.add(new CategoryFacetCreator(facetConf));
-				if (facetConf.getType() == null) {
-					facetConf.setType(FacetType.hierarchical.name());
-				}
-				else if (!FacetType.hierarchical.name().equals(facetConf.getType())) {
-					log.warn("facet {} based on *category* field {} was configured as {} facet, but only 'hierarchical' type is supported",
-							facetConf.getLabel(), facetField.getName(), facetConf.getType());
-				}
-			}
-			else if (FieldType.number.equals(facetField.getType())) {
-				if (facetConf.getType() == null) {
-					facetConf.setType(FacetType.interval.name());
-				}
-
-				if (facetConf.getType().equals(FacetType.range.name())) {
-					if (facetField.isMasterLevel()) rangeFacets.put(facetField.getName(), facetConf);
-					if (facetField.isVariantLevel()) variantRangeFacets.put(facetField.getName(), facetConf);
-				}
-				else {
-					if (!facetConf.getType().equals(FacetType.interval.name())) {
-						log.warn("facet {} based on *number* field {} was configured as {} facet, but only 'interval' or 'range' type is supported."
-								+ " To create a 'term' facet on numeric data, the according field has to be indexed as *string* field.",
-								facetConf.getLabel(), facetField.getName(), facetConf.getType());
-					}
-					if (facetField.isMasterLevel()) intervalFacets.put(facetField.getName(), facetConf);
-					if (facetField.isVariantLevel()) variantIntervalFacets.put(facetField.getName(), facetConf);
-				}
-			}
-			else {
-				if (facetConf.getType() == null) {
-					facetConf.setType(FacetType.term.name());
-				}
-				else if (!FacetType.term.name().equals(facetConf.getType())) {
-					log.warn("facet {} based on *{}* field {} was configured as {} facet, but only 'term' type is supported",
-							facetConf.getLabel(), facetField.getType(), facetField.getName(), facetConf.getType());
-				}
-				if (facetField.isVariantLevel()) variantTermFacets.put(facetField.getName(), facetConf);
-				if (facetField.isMasterLevel()) termFacets.put(facetField.getName(), facetConf);
-			}
-		}
-		int maxFacets = facetConfig.getMaxFacets();
-		facetCreators.add(new TermFacetCreator(termFacets).setMaxFacets(maxFacets));
-		NestedFacetCreator intervalFacetCreator = new IntervalFacetCreator(intervalFacets).setMaxFacets(maxFacets);
-		if (!rangeFacets.isEmpty()) {
-			// TODO: FacetCreators that run on the same nested field, should be
-			// grouped to use a single nested-aggregation for their aggregations
-			facetCreators.add(new RangeFacetCreator(rangeFacets).setMaxFacets(maxFacets));
-			intervalFacetCreator.setExcludeFields(rangeFacets.keySet());
-		}
-		facetCreators.add(intervalFacetCreator);
-
-		List<FacetCreator> variantFacetCreators = new ArrayList<>();
-		variantFacetCreators.add(new TermFacetCreator(variantTermFacets).setMaxFacets(maxFacets));
-		NestedFacetCreator variantIntervalFacetCreator = new IntervalFacetCreator(variantIntervalFacets).setMaxFacets(maxFacets);
-		if (!variantRangeFacets.isEmpty()) {
-			variantFacetCreators.add(new RangeFacetCreator(variantRangeFacets).setMaxFacets(maxFacets));
-			variantIntervalFacetCreator.setExcludeFields(variantRangeFacets.keySet());
-		}
-		facetCreators.add(new VariantFacetCreator(variantFacetCreators));
 	}
 
 	/**
@@ -278,7 +180,7 @@ public class Searcher {
 			searchSourceBuilder.postFilter(postFilter);
 		}
 
-		List<AggregationBuilder> aggregators = buildAggregators(filterContext);
+		List<AggregationBuilder> aggregators = facetApplier.buildAggregators(filterContext);
 		if (aggregators != null && aggregators.size() > 0) {
 			aggregators.forEach(searchSourceBuilder::aggregation);
 		}
@@ -383,8 +285,7 @@ public class Searcher {
 		resultTimer.record(() -> {
 			if (searchResponse != null) {
 				SearchResultSlice searchResultSlice = toSearchResult(searchResponse, parameters);
-				searchResultSlice.facets = facetApplier.getFacets(searchResponse.getAggregations(), facetCreators,
-						searchResultSlice.matchCount, filterContext, linkBuilder);
+				searchResultSlice.facets = facetApplier.getFacets(searchResponse.getAggregations(), searchResultSlice.matchCount, filterContext, linkBuilder);
 				searchResult.slices.add(searchResultSlice);
 			}
 		});
@@ -633,16 +534,4 @@ public class Searcher {
 		}
 	}
 
-	private List<AggregationBuilder> buildAggregators(FilterContext filterContext) {
-		// TODO: instead passing the search params, the filters-builder should
-		// be enough
-		List<AggregationBuilder> aggregators = new ArrayList<>();
-		for (FacetCreator fc : facetCreators) {
-			AbstractAggregationBuilder<?> aggregationBuilder = fc.buildAggregation(filterContext);
-			if (aggregationBuilder != null) {
-				aggregators.add(aggregationBuilder);
-			}
-		}
-		return aggregators;
-	}
 }

@@ -55,7 +55,7 @@ public class SearchQueryBuilder {
 		}
 		if (!params.filters.isEmpty()) {
 			for (InternalResultFilter filter : params.filters) {
-				urlParams.put(filter.getField(), joinParameterValues(filter.getValues()));
+				urlParams.put(filter.getField().getName(), joinParameterValues(filter.getValues()));
 			}
 		}
 		if (!params.sortings.isEmpty()) {

@@ -1,10 +1,13 @@
 package de.cxp.ocs.util;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
+import de.cxp.ocs.config.Field;
+import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 
@@ -22,7 +25,7 @@ public class SearchQueryBuilderTest {
 		SearchQueryBuilder underTest = new SearchQueryBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
-						.withFilter(new TermResultFilter("brand", "bar")));
+						.withFilter(new TermResultFilter(new Field("brand"), "bar")));
 		String result = underTest.withoutFilterAsLink(new FacetConfig("Brand", "brand"), "bar");
 		assertFalse(result.contains("brand=bar"), result);
 	}
@@ -32,7 +35,7 @@ public class SearchQueryBuilderTest {
 		SearchQueryBuilder underTest = new SearchQueryBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
-						.withFilter(new TermResultFilter("brand", "apple")));
+						.withFilter(new TermResultFilter(new Field("brand"), "apple")));
 		String result = underTest.withFilterAsLink(
 				new FacetConfig("Brand", "brand").setMultiSelect(true),
 				"orange");
@@ -44,7 +47,7 @@ public class SearchQueryBuilderTest {
 		SearchQueryBuilder underTest = new SearchQueryBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
-						.withFilter(new TermResultFilter("brand", "apple", "orange")));
+						.withFilter(new TermResultFilter(new Field("brand"), "apple", "orange")));
 		String result = underTest.withFilterAsLink(
 				new FacetConfig("Price", "price"), "0", "10");
 		assertTrue(result.contains("brand=apple%2Corange"), result);
@@ -56,7 +59,7 @@ public class SearchQueryBuilderTest {
 		SearchQueryBuilder underTest = new SearchQueryBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
-						.withFilter(new TermResultFilter("brand", "äpple")));
+						.withFilter(new TermResultFilter(new Field("brand"), "äpple")));
 		String result = underTest.withFilterAsLink(
 				new FacetConfig("Category", "cat"), "Männer", "Was für's Köpfchen, Mützen & Schals");
 		assertTrue(result.contains("brand=%C3%A4pple"), result);
@@ -68,7 +71,7 @@ public class SearchQueryBuilderTest {
 		SearchQueryBuilder underTest = new SearchQueryBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
-						.withFilter(new TermResultFilter("brand", "apple", "orange")));
+						.withFilter(new TermResultFilter(new Field("brand"), "apple", "orange")));
 		String result = underTest.withoutFilterAsLink(
 				new FacetConfig("Brand", "brand").setMultiSelect(true),
 				"orange");
@@ -81,8 +84,8 @@ public class SearchQueryBuilderTest {
 		SearchQueryBuilder underTest = new SearchQueryBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
-						.withFilter(new TermResultFilter("brand", "apple", "orange"))
-						.withFilter(new NumberResultFilter("price", 1.23, 4.56)));
+						.withFilter(new TermResultFilter(new Field("brand"), "apple", "orange"))
+						.withFilter(new NumberResultFilter(new Field("price").setType(FieldType.number), 1.23, 4.56)));
 		String baseLink = underTest.toString();
 		assertTrue(baseLink.contains("price=1.23%2C4.56"), baseLink);
 		assertTrue(baseLink.contains("brand=apple%2Corange"), baseLink);

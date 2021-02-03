@@ -1,8 +1,10 @@
 package de.cxp.ocs.elasticsearch.query.filter;
 
+import de.cxp.ocs.config.Field;
+
 public interface InternalResultFilter {
 
-	String getField();
+	Field getField();
 
 	String getFieldPrefix();
 

@@ -1,5 +1,6 @@
 package de.cxp.ocs.elasticsearch.query.filter;
 
+import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -11,7 +12,7 @@ import lombok.experimental.Accessors;
 @Data
 public class TermResultFilter implements InternalResultFilter {
 
-	private final String field;
+	private final Field field;
 
 	private final String[] values;
 
@@ -19,8 +20,8 @@ public class TermResultFilter implements InternalResultFilter {
 
 	private String fieldPrefix = FieldConstants.TERM_FACET_DATA;
 
-	public TermResultFilter(String name, String... inputValues) {
-		field = name;
+	public TermResultFilter(Field field, String... inputValues) {
+		this.field = field;
 		values = inputValues;
 	}
 

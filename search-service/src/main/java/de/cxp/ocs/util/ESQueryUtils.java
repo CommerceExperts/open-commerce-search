@@ -57,6 +57,15 @@ public class ESQueryUtils {
 		return fuzzyTermNotation.toString();
 	}
 
+	public static BoolQueryBuilder mapToBoolQueryBuilder(QueryBuilder query) {
+		if (query instanceof BoolQueryBuilder) {
+			return (BoolQueryBuilder) query;
+		}
+		else {
+			return QueryBuilders.boolQuery().must(query);
+		}
+	}
+
 	/**
 	 * Make sure both queries are combined as a boolean query with must-clauses.
 	 * If one of them already is a boolean query with must clauses, the other

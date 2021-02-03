@@ -59,7 +59,7 @@ public class SearchParamsParser {
 				Field field = matchingField.get();
 				switch (field.getType()) {
 					case category:
-						filters.add(new TermResultFilter(field.getName(), split(paramValue, VALUE_DELIMITER))
+						filters.add(new TermResultFilter(field, split(paramValue, VALUE_DELIMITER))
 										.setFieldPrefix(FieldConstants.PATH_FACET_DATA)
 										.setFilterOnId(isIdFilter));
 						break;
@@ -77,12 +77,12 @@ public class SearchParamsParser {
 							}
 						}
 						filters.add(new NumberResultFilter(
-								field.getName(),
+								field,
 								Util.tryToParseAsNumber(paramValues[0]).orElse(null),
 								Util.tryToParseAsNumber(paramValues[1]).orElse(null)));
 						break;
 					default:
-						filters.add(new TermResultFilter(field.getName(), split(paramValue, VALUE_DELIMITER))
+						filters.add(new TermResultFilter(field, split(paramValue, VALUE_DELIMITER))
 								.setFilterOnId(isIdFilter));
 				}
 			}

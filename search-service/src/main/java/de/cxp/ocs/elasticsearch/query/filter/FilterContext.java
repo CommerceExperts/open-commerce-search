@@ -3,6 +3,7 @@ package de.cxp.ocs.elasticsearch.query.filter;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -48,34 +49,26 @@ public class FilterContext {
 	 *        all the filter queries that should be joined
 	 * @return
 	 */
-	public static QueryBuilder joinAllButOne(String exclude, Map<String, QueryBuilder> filterQueries) {
+	public static Optional<QueryBuilder> joinAllButOne(String exclude, Map<String, QueryBuilder> filterQueries) {
 		// don't use "remove" or similar on filterQueries,
 		// because filterQueries is an UnmodifiableMap
 		if (filterQueries.size() == 1 && filterQueries.containsKey(exclude)) {
-			return QueryBuilders.matchAllQuery();
+			return Optional.empty();
 		}
 		// if there are exactly 2 entries and one is the excluded, set
 		// finalQuery to the remaining query later. Setting it to "null" here is
 		// the "marker" for this behavior
 		QueryBuilder finalQuery;
 		if (filterQueries.size() == 2 && filterQueries.containsKey(exclude)) {
-			finalQuery = null;
+			finalQuery = filterQueries.get(exclude);
 		}
 		else {
 			finalQuery = QueryBuilders.boolQuery();
-		}
-
-		for (Entry<String, QueryBuilder> fq : filterQueries.entrySet()) {
-			if (fq.getKey().equals(exclude)) continue;
-			// only null if there is only one matching QueryBuilder
-			if (finalQuery == null) {
-				finalQuery = fq.getValue();
-				break;
-			}
-			else {
+			for (Entry<String, QueryBuilder> fq : filterQueries.entrySet()) {
+				if (fq.getKey().equals(exclude)) continue;
 				((BoolQueryBuilder) finalQuery).must(fq.getValue());
 			}
 		}
-		return finalQuery;
+		return Optional.of(finalQuery);
 	}
 }

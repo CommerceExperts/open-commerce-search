@@ -50,7 +50,7 @@ public class FiltersBuilder {
 	}
 
 	public FilterContext buildFilterContext(List<InternalResultFilter> filters) {
-		Map<String, InternalResultFilter> filtersByName = filters.stream().collect(Collectors.toMap(InternalResultFilter::getField, Functions.identity()));
+		Map<String, InternalResultFilter> filtersByName = filters.stream().collect(Collectors.toMap(f -> f.getField().getName(), Functions.identity()));
 
 		if (filters.isEmpty()) return new FilterContext(filtersByName);
 
@@ -66,11 +66,11 @@ public class FiltersBuilder {
 			String fieldPrefix = filter.getFieldPrefix();
 
 			QueryBuilder filterQuery = null;
-			if (isMasterField(filter.getField())) {
+			if (filter.getField().isMasterLevel()) {
 				filterQuery = toFilterQuery(filter, fieldPrefix, filterAdapter);
 			}
 
-			if (isVariantField(filter.getField())) {
+			if (filter.getField().isVariantLevel()) {
 				fieldPrefix = VARIANTS + "." + fieldPrefix;
 				if (filterQuery == null) {
 					filterQuery = toFilterQuery(filter, fieldPrefix, filterAdapter);
@@ -84,11 +84,11 @@ public class FiltersBuilder {
 				}
 			}
 
-			if (isBasicQuery(filter.getField())) {
-				basicFilterQueries.put(filter.getField(), filterQuery);
+			if (isBasicQuery(filter.getField().getName())) {
+				basicFilterQueries.put(filter.getField().getName(), filterQuery);
 			}
 			else {
-				postFilterQueries.put(filter.getField(), filterQuery);
+				postFilterQueries.put(filter.getField().getName(), filterQuery);
 			}
 		}
 		MasterVariantQuery postFilterQuery = buildFilters(postFilterQueries);

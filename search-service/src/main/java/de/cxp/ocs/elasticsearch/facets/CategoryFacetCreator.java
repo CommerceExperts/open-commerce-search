@@ -1,28 +1,19 @@
 package de.cxp.ocs.elasticsearch.facets;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.TermQueryBuilder;
-import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.Aggregations;
-import org.elasticsearch.search.aggregations.bucket.filter.Filter;
-import org.elasticsearch.search.aggregations.bucket.nested.Nested;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
-import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
+import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.result.Facet;
@@ -33,77 +24,57 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 @Accessors(chain = true)
-public class CategoryFacetCreator implements FacetCreator {
-
-	private static final String AGGREGATION_NAME_PREFIX = "_category";
-	private static final String	AGGREGATION_FILTER_NAME	= "_filter";
-
-	private final FacetConfig	categoryFacetConfig;
-	private final String		aggregationName;
-	private final String		categoryFieldName;
+public class CategoryFacetCreator extends NestedFacetCreator {
 
 	private NestedFacetCountCorrector nestedFacetCorrector;
 
 	@Setter
 	private int maxFacetValues = 250;
 
-	public CategoryFacetCreator(FacetConfig categoryFacetConfig) {
-		this.categoryFacetConfig = categoryFacetConfig;
-		categoryFieldName = categoryFacetConfig.getSourceField();
-		aggregationName = AGGREGATION_NAME_PREFIX + "_" + categoryFieldName;
-		nestedFacetCorrector = new NestedFacetCountCorrector(FieldConstants.PATH_FACET_DATA + ".value");
+	public CategoryFacetCreator(Map<String, FacetConfig> facetConfigs) {
+		super(facetConfigs);
 	}
 
 	@Override
-	public AbstractAggregationBuilder<?> buildAggregation(FilterContext filters) {
-		// other than the TermFacetCreator, the CategoryFacetCreator does the
-		// aggregation on a specific "field", this is why a filter is used here
-		// this could be changed in case category-type fields would be used more
-		// generic
-		TermsAggregationBuilder valuesAgg = AggregationBuilders.terms("_values")
+	protected String getNestedPath() {
+		return FieldConstants.PATH_FACET_DATA;
+	}
+
+	@Override
+	protected AggregationBuilder getNestedValueAggregation(String nestedPathPrefix) {
+		return AggregationBuilders.terms("_values")
 				.field(FieldConstants.PATH_FACET_DATA + ".value")
 				.size(maxFacetValues)
 				.subAggregation(AggregationBuilders.terms("_ids")
 						.field(FieldConstants.PATH_FACET_DATA + ".id")
 						.size(1));
-		nestedFacetCorrector.correctValueAggBuilder(valuesAgg);
-
-		TermQueryBuilder categoryNameFilter = QueryBuilders.termQuery(FieldConstants.PATH_FACET_DATA + ".name", categoryFieldName);
-		QueryBuilder joinedPostFilters = filters.getJoinedPostFilters();
-		if (joinedPostFilters == null) {
-			joinedPostFilters = QueryBuilders.matchAllQuery();
-		}
-
-		return AggregationBuilders.filter(aggregationName + "_filtered", joinedPostFilters)
-				.subAggregation(
-						AggregationBuilders.nested(aggregationName, FieldConstants.PATH_FACET_DATA)
-								.subAggregation(
-										AggregationBuilders.filter(AGGREGATION_FILTER_NAME, categoryNameFilter)
-												.subAggregation(valuesAgg)));
 	}
 
 	@Override
-	public Collection<Facet> createFacets(Aggregations aggResult, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
-		// unwrapping these nested value aggregation. you could write them in
-		// one line, but with all the casting this becomes unreadable. trust me.
-		Filter filteredAgg = aggResult.get(aggregationName + "_filtered");
-		Nested nestedAgg = filteredAgg.getAggregations().get(aggregationName);
-		Filter nameFilterAgg = nestedAgg.getAggregations().get(AGGREGATION_FILTER_NAME);
-		Terms categoryAgg = nameFilterAgg.getAggregations().get("_values");
+	protected boolean onlyFetchAggregationsForConfiguredFacets() {
+		return true;
+	}
+
+	@Override
+	protected boolean correctedNestedDocumentCount() {
+		return true;
+	}
+
+	@Override
+	protected boolean isMatchingFilterType(InternalResultFilter internalResultFilter) {
+		return FieldType.category.equals(internalResultFilter.getField().getType());
+	}
+
+	@Override
+	protected Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter intFacetFilter, SearchQueryBuilder linkBuilder) {
+		Terms categoryAgg = facetNameBucket.getAggregations().get("_values");
 		List<? extends Bucket> catBuckets = categoryAgg.getBuckets();
-		if (catBuckets.size() == 0) return Collections.emptyList();
+		if (catBuckets.size() == 0) return Optional.empty();
 
-		InternalResultFilter internalResultFilter = filterContext.getInternalFilters().get(categoryFieldName);
-		TermResultFilter filter;
-		if (internalResultFilter instanceof TermResultFilter) {
-			filter = (TermResultFilter) internalResultFilter;
-		}
-		else {
-			// log warning?
-			filter = null;
-		}
+		// let it crash if it's from the wrong type
+		TermResultFilter facetFilter = (TermResultFilter) intFacetFilter;
 
-		Facet facet = FacetFactory.create(categoryFacetConfig, "hierarchical");
+		Facet facet = FacetFactory.create(facetConfig, "hierarchical");
 
 		Map<String, HierarchialFacetEntry> entries = new LinkedHashMap<>(catBuckets.size());
 		long absDocCount = 0;
@@ -114,14 +85,14 @@ public class CategoryFacetCreator implements FacetCreator {
 			String[] categories = StringUtils.split(categoryPath, '/');
 			// TODO: in case a category is filtered, it might be a good idea to
 			// only show the according path
-			HierarchialFacetEntry lastLevelEntry = entries.computeIfAbsent(categories[0], c -> toFacetEntry(c, categoryPath, linkBuilder));
+			HierarchialFacetEntry lastLevelEntry = entries.computeIfAbsent(categories[0], c -> toFacetEntry(c, categoryPath, facetConfig, linkBuilder));
 			for (int i = 1; i < categories.length; i++) {
 				FacetEntry child = getChildByKey(lastLevelEntry, categories[i]);
 				if (child != null) {
 					lastLevelEntry = (HierarchialFacetEntry) child;
 				}
 				else {
-					HierarchialFacetEntry newChild = toFacetEntry(categories[i], categoryPath, linkBuilder);
+					HierarchialFacetEntry newChild = toFacetEntry(categories[i], categoryPath, facetConfig, linkBuilder);
 					lastLevelEntry.addChild(newChild);
 					lastLevelEntry = newChild;
 				}
@@ -135,9 +106,9 @@ public class CategoryFacetCreator implements FacetCreator {
 			if (idsAgg != null && idsAgg.getBuckets().size() > 0) {
 				lastLevelEntry.setId(idsAgg.getBuckets().get(0).getKeyAsString());
 
-				if (filter != null && filter.isFilterOnId()) {
+				if (facetFilter != null && facetFilter.isFilterOnId()) {
 					// TODO: support filtering on multiple ids
-					lastLevelEntry.setSelected(lastLevelEntry.getId().equals(filter.getSingleValue()));
+					lastLevelEntry.setSelected(lastLevelEntry.getId().equals(facetFilter.getSingleValue()));
 				}
 			}
 
@@ -149,7 +120,7 @@ public class CategoryFacetCreator implements FacetCreator {
 		}
 		facet.setAbsoluteFacetCoverage(absDocCount);
 		entries.values().forEach(facet.getEntries()::add);
-		return Arrays.asList(facet);
+		return Optional.of(facet);
 	}
 
 	private FacetEntry getChildByKey(HierarchialFacetEntry entry, String childKey) {
@@ -161,14 +132,14 @@ public class CategoryFacetCreator implements FacetCreator {
 		return null;
 	}
 
-	private HierarchialFacetEntry toFacetEntry(String value, String categoryPath, SearchQueryBuilder linkBuilder) {
-		boolean isSelected = linkBuilder.isFilterSelected(categoryFacetConfig, categoryPath);
+	private HierarchialFacetEntry toFacetEntry(String value, String categoryPath, FacetConfig facetConfig, SearchQueryBuilder linkBuilder) {
+		boolean isSelected = linkBuilder.isFilterSelected(facetConfig, categoryPath);
 		String link;
 		if (isSelected) {
-			link = linkBuilder.withoutFilterAsLink(categoryFacetConfig, categoryPath);
+			link = linkBuilder.withoutFilterAsLink(facetConfig, categoryPath);
 		}
 		else {
-			link = linkBuilder.withFilterAsLink(categoryFacetConfig, categoryPath);
+			link = linkBuilder.withFilterAsLink(facetConfig, categoryPath);
 		}
 		return new HierarchialFacetEntry(value, null, 0, link, isSelected);
 	}

@@ -3,8 +3,10 @@ package de.cxp.ocs.elasticsearch.facets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.nested.Nested;
@@ -21,10 +23,12 @@ public class VariantFacetCreator implements FacetCreator {
 
 	public VariantFacetCreator(Collection<FacetCreator> creators) {
 		innerCreators = creators;
-		NestedFacetCountCorrector facetCorrector = new NestedFacetCountCorrector(FieldConstants.VARIANTS);
 		creators.forEach(c -> {
 			if (c instanceof NestedFacetCreator) {
-				((NestedFacetCreator) c).setNestedFacetCorrector(facetCorrector);
+				String nestedPath = FieldConstants.VARIANTS
+						+ "." + ((NestedFacetCreator) c).getNestedPath()
+						+ ".value";
+				((NestedFacetCreator) c).setNestedFacetCorrector(new NestedFacetCountCorrector(nestedPath));
 			}
 		});
 	}
@@ -35,6 +39,16 @@ public class VariantFacetCreator implements FacetCreator {
 		NestedAggregationBuilder nestedAggBuilder = AggregationBuilders.nested("_variants", FieldConstants.VARIANTS);
 		innerCreators.forEach(creator -> {
 			nestedAggBuilder.subAggregation(creator.buildAggregation(filters));
+		});
+		return nestedAggBuilder;
+	}
+
+	@Override
+	public AggregationBuilder buildAggregationWithNamesExcluded(FilterContext filterContext, Set<String> excludedNames) {
+		if (innerCreators.size() == 0) return null;
+		NestedAggregationBuilder nestedAggBuilder = AggregationBuilders.nested("_variants", FieldConstants.VARIANTS);
+		innerCreators.forEach(creator -> {
+			nestedAggBuilder.subAggregation(creator.buildAggregationWithNamesExcluded(filterContext, excludedNames));
 		});
 		return nestedAggBuilder;
 	}

@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 
@@ -17,7 +16,6 @@ import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
-import org.elasticsearch.search.aggregations.bucket.filter.FiltersAggregator.KeyedFilter;
 import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilters;
 import org.elasticsearch.search.aggregations.bucket.nested.Nested;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
@@ -75,6 +73,11 @@ public abstract class NestedFacetCreator implements FacetCreator {
 
 	@Override
 	public AbstractAggregationBuilder<?> buildAggregation(FilterContext filters) {
+		return buildAggregationWithNamesExcluded(filters, Collections.emptySet());
+	}
+
+	@Override
+	public AbstractAggregationBuilder<?> buildAggregationWithNamesExcluded(FilterContext filterContext, Set<String> excludedNames) {
 		String nestedPathPrefix = "";
 		if (nestedFacetCorrector != null) nestedPathPrefix = nestedFacetCorrector.getNestedPathPrefix();
 		nestedPathPrefix += getNestedPath();
@@ -82,89 +85,22 @@ public abstract class NestedFacetCreator implements FacetCreator {
 		AggregationBuilder valueAggBuilder = getNestedValueAggregation(nestedPathPrefix);
 		if (nestedFacetCorrector != null && correctedNestedDocumentCount()) nestedFacetCorrector.correctValueAggBuilder(valueAggBuilder);
 
-		List<KeyedFilter> facetFilters = getAggregationFilters(filters, nestedPathPrefix + ".name");
+		QueryBuilder facetNameFilter;
+		if (excludedNames.isEmpty()) {
+			facetNameFilter = QueryBuilders.matchAllQuery();
+		}
+		else {
+			facetNameFilter = QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery(nestedPathPrefix + ".name", excludedNames));
+		}
 
 		return AggregationBuilders.nested(uniqueAggregationName, nestedPathPrefix)
 				.subAggregation(
-						AggregationBuilders.filters(FILTERED_AGG, facetFilters.toArray(new KeyedFilter[0]))
+						AggregationBuilders.filter(FILTERED_AGG, facetNameFilter)
 								.subAggregation(
 										AggregationBuilders.terms(FACET_NAMES_AGG)
 												.field(nestedPathPrefix + ".name")
 												.size(maxFacets)
 												.subAggregation(valueAggBuilder)));
-	}
-
-	/**
-	 * <p>
-	 * General utility method for FacetCreators to create aggregation filters
-	 * for a proper postFilter handling. At the result one keyed filter will be
-	 * named with the ALL_FILTER_NAME. For every post-filter a separate filter
-	 * is created with the name of the filters prefixed by
-	 * ALL_BUT_FILTER_PREFIX.
-	 * </p>
-	 * 
-	 * <strong>Background / Details:</strong>
-	 * <p>
-	 * For facets that should stay the same, even if one of its filters was
-	 * selected ("multi-select-facets"), the post filtering feature is used.
-	 * This way such facets can be created without their active filter. See
-	 * <a href=
-	 * "https://www.elastic.co/guide/en/elasticsearch/reference/current/filter-search-results.html#post-filter">Elasticsearch
-	 * post filter documentation</a>
-	 * </p>
-	 * <p>
-	 * However this leads to the problem, that other facets are also not
-	 * filtered, although they should be. Otherwise they may present filters
-	 * that lead to 0 results in combination with the active post filter/s.
-	 * </p>
-	 * <p>
-	 * The (only) solution is to apply the post filters for all those other
-	 * aggregations as well, but of course not for the aggregation of the active
-	 * post filter.
-	 * This gets complicated if there are several post filters for different
-	 * multi-select-facets. In that case each according aggregation needs to be
-	 * filtered with the other post filters but not the related one.
-	 * </p>
-	 * <i>Example:</i>
-	 * <p>
-	 * "brand" and "price" are configured to be multi-select-facets. If for both
-	 * facets a filter is applied, the "brand" aggregation must consider the
-	 * "price" filter and the "price" aggregation must consider the "brand"
-	 * filter. All other aggregations must consider both post filters.
-	 * </p>
-	 * 
-	 * 
-	 * @param filters
-	 *        the container that holds the filter queries
-	 * @param nestedFilterNamePath
-	 *        The nested path that should be used to exclude the post-filter
-	 *        names.
-	 * @return
-	 *         list of keyed filters
-	 */
-	private List<KeyedFilter> getAggregationFilters(FilterContext filters, String nestedFilterNamePath) {
-		// for facets that are currently filtered
-		List<KeyedFilter> facetFilters = new ArrayList<>();
-		Map<String, QueryBuilder> postFilters = filters.getPostFilterQueries();
-		for (final Entry<String, QueryBuilder> postFilter : postFilters.entrySet()) {
-			if (excludeFields.contains(postFilter.getKey())
-					|| !isMatchingFilterType(filters.getInternalFilters().get(postFilter.getKey())))
-				continue;
-
-			// create a filter that filters on the name of the post filter and
-			// all the other post filters
-			facetFilters.add(new KeyedFilter(ALL_BUT_FILTER_PREFIX + postFilter.getKey(), QueryBuilders.boolQuery()
-					.must(FilterContext.joinAllButOne(postFilter.getKey(), postFilters))
-					.must(QueryBuilders.termQuery(nestedFilterNamePath, postFilter.getKey()))));
-		}
-
-		// always filter for all post filters
-		// also exclude the facets that handled separately
-		// (or match all if there are no post filters)
-		QueryBuilder allFilter = getFilterForTheGenericAggregations(filters, nestedFilterNamePath);
-
-		facetFilters.add(new KeyedFilter(ALL_FILTER_NAME, allFilter));
-		return facetFilters;
 	}
 
 

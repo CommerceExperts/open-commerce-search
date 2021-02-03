@@ -1,18 +1,19 @@
 package de.cxp.ocs.elasticsearch.query.filter;
 
+import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
 import lombok.Data;
 
 @Data
 public class NumberResultFilter implements InternalResultFilter {
 
-	private final String field;
+	private final Field field;
 
 	private final Number lowerBound;
 
 	private final Number upperBound;
 
-	public NumberResultFilter(String field, Number lowerBound, Number upperBound) {
+	public NumberResultFilter(Field field, Number lowerBound, Number upperBound) {
 		this.field = field;
 		this.lowerBound = lowerBound;
 		this.upperBound = upperBound;
