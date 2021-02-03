@@ -16,7 +16,7 @@ import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
-import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilters;
+import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilter;
 import org.elasticsearch.search.aggregations.bucket.nested.Nested;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
@@ -33,10 +33,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public abstract class NestedFacetCreator implements FacetCreator {
 
-	static final String	FILTERED_AGG			= "_filtered";
-	static final String	ALL_BUT_FILTER_PREFIX	= "_all_but_";
-	static final String	ALL_FILTER_NAME			= "_all";
-
+	static final String	FILTERED_AGG		= "_filtered";
 	static final String	FACET_NAMES_AGG		= "_names";
 	static final String	FACET_VALUES_AGG	= "_values";
 
@@ -53,7 +50,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 
 	@Setter
 	@NonNull
-	private Set<String> excludeFields = Collections.emptySet();
+	private Set<String> generalExcludedFields = Collections.emptySet();
 
 	public NestedFacetCreator(Map<String, FacetConfig> facetConfigs) {
 		this.facetConfigs = facetConfigs;
@@ -85,13 +82,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 		AggregationBuilder valueAggBuilder = getNestedValueAggregation(nestedPathPrefix);
 		if (nestedFacetCorrector != null && correctedNestedDocumentCount()) nestedFacetCorrector.correctValueAggBuilder(valueAggBuilder);
 
-		QueryBuilder facetNameFilter;
-		if (excludedNames.isEmpty()) {
-			facetNameFilter = QueryBuilders.matchAllQuery();
-		}
-		else {
-			facetNameFilter = QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery(nestedPathPrefix + ".name", excludedNames));
-		}
+		QueryBuilder facetNameFilter = getNameFilter(nestedPathPrefix + ".name", excludedNames);
 
 		return AggregationBuilders.nested(uniqueAggregationName, nestedPathPrefix)
 				.subAggregation(
@@ -104,16 +95,15 @@ public abstract class NestedFacetCreator implements FacetCreator {
 	}
 
 
-	public QueryBuilder getFilterForTheGenericAggregations(FilterContext filters, String nestedFilterNamePath) {
+	public QueryBuilder getNameFilter(String nestedFilterNamePath, Set<String> excludedNames) {
 		QueryBuilder allFilter;
-		if (!filters.getPostFilterQueries().isEmpty() || onlyFetchAggregationsForConfiguredFacets() || !excludeFields.isEmpty()) {
+		if (!excludedNames.isEmpty() || onlyFetchAggregationsForConfiguredFacets() || !generalExcludedFields.isEmpty()) {
 			allFilter = QueryBuilders.boolQuery();
 			// apply all post filters and
 			// exclude facets that are currently active trough post filtering
 			Set<String> allExcludeFields = new HashSet<>();
-			if (!filters.getPostFilterQueries().isEmpty()) {
-				((BoolQueryBuilder) allFilter).must(filters.getJoinedPostFilters());
-				allExcludeFields.addAll(filters.getPostFilterQueries().keySet());
+			if (!excludedNames.isEmpty()) {
+				allExcludeFields.addAll(excludedNames);
 			}
 
 			// if facet creator should only create the configured facets, filter
@@ -123,7 +113,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 			}
 
 			// if facet creator should exclude some facets, this is done here
-			allExcludeFields.addAll(excludeFields);
+			allExcludeFields.addAll(generalExcludedFields);
 			if (!allExcludeFields.isEmpty()) {
 				((BoolQueryBuilder) allFilter).mustNot(QueryBuilders.termsQuery(nestedFilterNamePath, allExcludeFields));
 			}
@@ -136,12 +126,11 @@ public abstract class NestedFacetCreator implements FacetCreator {
 
 	@Override
 	public Collection<Facet> createFacets(Aggregations aggResult, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
-		ParsedFilters filtersAgg = ((Nested) aggResult.get(uniqueAggregationName)).getAggregations().get(FILTERED_AGG);
-		List<Facet> extractedFacets = new ArrayList<>();
-		for (org.elasticsearch.search.aggregations.bucket.filter.Filters.Bucket filterBucket : filtersAgg.getBuckets()) {
-			Terms facetNamesAggregation = filterBucket.getAggregations().get(FACET_NAMES_AGG);
-			extractedFacets.addAll(extractFacets(facetNamesAggregation, filterContext, linkBuilder));
-		}
+		ParsedFilter filtersAgg = ((Nested) aggResult.get(uniqueAggregationName)).getAggregations().get(FILTERED_AGG);
+		if (filtersAgg == null) return Collections.emptyList();
+
+		Terms facetNamesAggregation = filtersAgg.getAggregations().get(FACET_NAMES_AGG);
+		List<Facet> extractedFacets = extractFacets(facetNamesAggregation, filterContext, linkBuilder);
 
 		return extractedFacets;
 	}

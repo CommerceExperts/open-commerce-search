@@ -16,7 +16,6 @@ import java.util.Set;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -178,7 +177,7 @@ public class FacetConfigurationApplyer {
 			facetCreators.add(rangeFacetCreator);
 			facetCreatorsByTypes.put(FacetCreatorClassifier.masterRangeFacet, rangeFacetCreator);
 
-			intervalFacetCreator.setExcludeFields(rangeFacets.keySet());
+			intervalFacetCreator.setGeneralExcludedFields(rangeFacets.keySet());
 		}
 
 		facetCreators.add(intervalFacetCreator);
@@ -198,7 +197,7 @@ public class FacetConfigurationApplyer {
 			variantFacetCreators.add(variantRangeFacetCreator);
 			facetCreatorsByTypes.put(FacetCreatorClassifier.variantRangeFacet, new VariantFacetCreator(Collections.singleton(variantRangeFacetCreator)));
 
-			variantIntervalFacetCreator.setExcludeFields(variantRangeFacets.keySet());
+			variantIntervalFacetCreator.setGeneralExcludedFields(variantRangeFacets.keySet());
 		}
 		// consolidated variant facet creator
 		facetCreators.add(new VariantFacetCreator(variantFacetCreators));
@@ -269,12 +268,12 @@ public class FacetConfigurationApplyer {
 				InternalResultFilter internalFilter = filterContext.getInternalFilters().get(postFilterName);
 				QueryBuilder exclusiveFilterQuery = getExclusivePostFilterQuery(postFilterName, internalFilter, postFilters);
 
-				FacetCreator facetCreator = getResponsibleFacetCreator(internalFilter);
-				AbstractAggregationBuilder<?> facetAggregation = facetCreator.buildAggregation(filterContext);
+				FilterAggregationBuilder filterAgg = AggregationBuilders.filter(EXCLUSIVE_AGG_PREFIX + postFilterName, exclusiveFilterQuery);
+				
+				getResponsibleFacetCreators(internalFilter)
+						.forEach(facetCreator -> filterAgg.subAggregation(facetCreator.buildAggregation(filterContext)));
 
-				aggregators.add(
-						AggregationBuilders.filter(EXCLUSIVE_AGG_PREFIX + postFilterName, exclusiveFilterQuery)
-								.subAggregation(facetAggregation));
+				aggregators.add(filterAgg);
 			}
 
 			// create a filter for all post filters and add all aggregations
@@ -290,6 +289,7 @@ public class FacetConfigurationApplyer {
 				// !filterContext.getPostFilterQueries().keySet().containsAll(creator.getConfiguredFacets().keySet())
 				fullFilteredAgg.subAggregation(creator.buildAggregationWithNamesExcluded(filterContext, filterContext.getPostFilterQueries().keySet()));
 			}
+			aggregators.add(fullFilteredAgg);
 		}
 
 		return aggregators;
@@ -312,7 +312,7 @@ public class FacetConfigurationApplyer {
 		return finalAggFilter;
 	}
 
-	private FacetCreator getResponsibleFacetCreator(InternalResultFilter internalFilter) {
+	private List<FacetCreator> getResponsibleFacetCreators(InternalResultFilter internalFilter) {
 		Field facetField = internalFilter.getField();
 		FacetConfig facetConfig = facetsBySourceField.get(facetField.getName());
 
@@ -321,9 +321,21 @@ public class FacetConfigurationApplyer {
 			facetType = getDefaultFacetType(facetField.getType()).name();
 		}
 
-		// TODO handle facets that need to be created on master and variant
-		// level
-		return facetCreatorsByTypes.get(new FacetCreatorClassifier(facetField.isVariantLevel(), facetType));
+		// handle facets that need to be created on master and variant level
+		List<FacetCreator> facetCreators = new ArrayList<>(facetField.isBothLevel() ? 2 : 1);
+		if (facetField.isVariantLevel()) {
+			FacetCreator facetCreator = facetCreatorsByTypes.get(new FacetCreatorClassifier(true, facetType));
+			if (facetCreator != null) {
+				facetCreators.add(facetCreator);
+			}
+		}
+		if (facetField.isMasterLevel()) {
+			FacetCreator facetCreator = facetCreatorsByTypes.get(new FacetCreatorClassifier(false, facetType));
+			if (facetCreator != null) {
+				facetCreators.add(facetCreator);
+			}
+		}
+		return facetCreators;
 	}
 
 	private FacetType getDefaultFacetType(FieldType type) {
@@ -412,15 +424,19 @@ public class FacetConfigurationApplyer {
 		Map<String, Facet> facets = new HashMap<>();
 
 		Filter filteredAggregation = aggregations.get(FILTERED_AGG_NAME);
-		facetsFromUnfilteredAggregations(filteredAggregation.getAggregations(), filterContext, linkBuilder)
+		if (filteredAggregation != null) {
+			facetsFromUnfilteredAggregations(filteredAggregation.getAggregations(), filterContext, linkBuilder)
 				.forEach(f -> facets.put(getLabel(f), f));
+		}
 
 		for (String postFilterName : filterContext.getPostFilterQueries().keySet()) {
 			Filter exclusiveAgg = aggregations.get(EXCLUSIVE_AGG_PREFIX + postFilterName);
 			if (exclusiveAgg != null && exclusiveAgg.getDocCount() > 0L) {
-				getResponsibleFacetCreator(filterContext.getInternalFilters().get(postFilterName))
-						.createFacets(exclusiveAgg.getAggregations(), filterContext, linkBuilder)
+				List<FacetCreator> matchingFacetCreators = getResponsibleFacetCreators(filterContext.getInternalFilters().get(postFilterName));
+				for (FacetCreator fc : matchingFacetCreators) {
+					fc.createFacets(exclusiveAgg.getAggregations(), filterContext, linkBuilder)
 						.forEach(f -> facets.put(getLabel(f), f));
+				}
 			}
 		}
 

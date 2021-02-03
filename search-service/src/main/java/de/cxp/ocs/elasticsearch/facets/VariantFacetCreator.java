@@ -23,12 +23,10 @@ public class VariantFacetCreator implements FacetCreator {
 
 	public VariantFacetCreator(Collection<FacetCreator> creators) {
 		innerCreators = creators;
+		NestedFacetCountCorrector nestedFacetCountCorrector = new NestedFacetCountCorrector(FieldConstants.VARIANTS);
 		creators.forEach(c -> {
 			if (c instanceof NestedFacetCreator) {
-				String nestedPath = FieldConstants.VARIANTS
-						+ "." + ((NestedFacetCreator) c).getNestedPath()
-						+ ".value";
-				((NestedFacetCreator) c).setNestedFacetCorrector(new NestedFacetCountCorrector(nestedPath));
+				((NestedFacetCreator) c).setNestedFacetCorrector(nestedFacetCountCorrector);
 			}
 		});
 	}
