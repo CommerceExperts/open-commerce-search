@@ -258,13 +258,11 @@ public class FacetConfigurationApplyer {
 	 * </p>
 	 * 
 	 * 
-	 * @param filters
-	 *        the container that holds the filter queries
-	 * @param nestedFilterNamePath
-	 *        The nested path that should be used to exclude the post-filter
-	 *        names.
+	 * @param filterContext
+	 *        context that holds the filter queries
 	 * @return
-	 *         list of keyed filters
+	 *         list of filtered and/or unfiltered aggregation builders depending
+	 *         on the existance of post filters
 	 */
 	public List<AggregationBuilder> buildAggregators(FilterContext filterContext) {
 		List<AggregationBuilder> aggregators = new ArrayList<>();
