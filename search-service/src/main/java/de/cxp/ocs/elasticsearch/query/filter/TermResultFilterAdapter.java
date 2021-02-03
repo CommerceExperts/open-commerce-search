@@ -11,7 +11,7 @@ public class TermResultFilterAdapter implements InternalResultFilterAdapter<Term
 	@Override
 	public QueryBuilder getAsQuery(String fieldPrefix, TermResultFilter filter) {
 		return QueryBuilders.boolQuery()
-				.must(QueryBuilders.termQuery(fieldPrefix + "name", filter.getField()))
+				.must(QueryBuilders.termQuery(fieldPrefix + "name", filter.getField().getName()))
 				.must(QueryBuilders.termsQuery(fieldPrefix + (filter.isFilterOnId() ? "id" : "value"), filter.getValues()));
 	}
 

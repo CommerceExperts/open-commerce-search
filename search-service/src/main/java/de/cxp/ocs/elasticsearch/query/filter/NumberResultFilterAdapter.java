@@ -16,7 +16,7 @@ public class NumberResultFilterAdapter implements InternalResultFilterAdapter<Nu
 		if (filter.getUpperBound() != null) rangeQuery.to(filter.getUpperBound(), true);
 
 		return QueryBuilders.boolQuery()
-				.must(QueryBuilders.termQuery(fieldPrefix + "name", filter.getField()))
+				.must(QueryBuilders.termQuery(fieldPrefix + "name", filter.getField().getName()))
 				.must(rangeQuery);
 	}
 
