@@ -140,10 +140,6 @@ public abstract class NestedFacetCreator implements FacetCreator {
 		for (Terms.Bucket facetNameBucket : facetNames.getBuckets()) {
 			String facetName = facetNameBucket.getKeyAsString();
 
-			// XXX: using a dynamic string as source field might be a bad
-			// idea for link creation
-			// either log warnings when indexing such attributes or map them to
-			// some internal URL friendly name
 			FacetConfig facetConfig = facetConfigs.get(facetName);
 			if (facetConfig == null) facetConfig = new FacetConfig(facetName, facetName);
 
