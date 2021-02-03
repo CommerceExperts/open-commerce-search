@@ -56,11 +56,13 @@ public class FilterContext {
 			return Optional.empty();
 		}
 		// if there are exactly 2 entries and one is the excluded, set
-		// finalQuery to the remaining query later. Setting it to "null" here is
-		// the "marker" for this behavior
+		// finalQuery to the remaining query
 		QueryBuilder finalQuery;
 		if (filterQueries.size() == 2 && filterQueries.containsKey(exclude)) {
-			finalQuery = filterQueries.get(exclude);
+			finalQuery = filterQueries.entrySet().stream()
+					.filter(entry -> !exclude.equals(entry.getKey()))
+					.findFirst()
+					.get().getValue();
 		}
 		else {
 			finalQuery = QueryBuilders.boolQuery();

@@ -30,7 +30,6 @@ import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.model.result.Facet;
-import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.SearchQueryBuilder;
 import lombok.Data;
 import lombok.NonNull;
@@ -290,14 +289,8 @@ public class FacetConfigurationApplyer {
 
 			// create a filter for all post filters and add all aggregations
 			// that are not specialized for all the post filters
-
 			FilterAggregationBuilder fullFilteredAgg = AggregationBuilders.filter(FILTERED_AGG_NAME, filterContext.getJoinedPostFilters());
-
 			for (FacetCreator creator : facetCreators) {
-				// TODO: skip non-generic facet creators if their facets are
-				// filtered
-				// if (creator.isGeneric() ||
-				// !filterContext.getPostFilterQueries().keySet().containsAll(creator.getConfiguredFacets().keySet())
 				fullFilteredAgg.subAggregation(creator.buildAggregationWithNamesExcluded(filterContext, filterContext.getPostFilterQueries().keySet()));
 			}
 			aggregators.add(fullFilteredAgg);
@@ -318,7 +311,8 @@ public class FacetConfigurationApplyer {
 
 		// and combines that with all other post filters
 		QueryBuilder finalAggFilter = FilterContext.joinAllButOne(postFilterName, postFilters)
-				.map(q -> (QueryBuilder) ESQueryUtils.mapToBoolQueryBuilder(q).must(nameFilter))
+				// .map(q -> (QueryBuilder)
+				// ESQueryUtils.mapToBoolQueryBuilder(q).must(nameFilter))
 				.orElse(nameFilter);
 		return finalAggFilter;
 	}
