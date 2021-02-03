@@ -15,8 +15,8 @@ import lombok.experimental.Accessors;
 public class Facet {
 
 	/**
-	 * this is the name coming from the data. If a separate label should be
-	 * used, put that into meta data.
+	 * this is the name of the according data field. If a different label should
+	 * be used, put that into meta data.
 	 */
 	@Schema(description = "This is the name coming from the data. Separate label information should be available in the meta data.")
 	@NonNull
@@ -42,9 +42,9 @@ public class Facet {
 
 	@Schema(
 			description = "The type of the facet, so the kind of FacetEntries it contains. "
-					+ "To build a dynamic range slider, the first and the last entry of a interval facet can be used.",
-			allowableValues = { "text", "hierarchical", "interval" })
-	public String type = "text";
+					+ "See the according FacetEntry variants for more details.",
+			allowableValues = { "term", "hierarchical", "interval", "range" })
+	public String type = "term";
 	
 	/**
 	 * Optional meta data for that facet, e.g. display hints like a label or a

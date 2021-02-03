@@ -11,14 +11,15 @@ import lombok.NoArgsConstructor;
 		discriminatorMapping = {
 				@DiscriminatorMapping(value = "hierarchical", schema = HierarchialFacetEntry.class),
 				@DiscriminatorMapping(value = "interval", schema = IntervalFacetEntry.class),
-				@DiscriminatorMapping(value = "text", schema = FacetEntry.class)
+				@DiscriminatorMapping(value = "range", schema = RangeFacetEntry.class),
+				@DiscriminatorMapping(value = "term", schema = FacetEntry.class)
 		})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class FacetEntry {
 
-	public final String type = "text";
+	public final String type = "term";
 
 	/**
 	 * Associated filter value.

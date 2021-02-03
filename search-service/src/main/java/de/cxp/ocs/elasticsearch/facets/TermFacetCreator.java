@@ -9,6 +9,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
+import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
@@ -58,7 +59,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 	@Override
 	protected Optional<Facet> createFacet(Terms.Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter,
 			SearchQueryBuilder linkBuilder) {
-		Facet facet = FacetFactory.create(facetConfig, "text");
+		Facet facet = FacetFactory.create(facetConfig, FacetType.term);
 		if (facetFilter != null && facetFilter instanceof TermResultFilter) {
 			facet.setFiltered(true);
 			if (facetConfig.isMultiSelect() || facetConfig.isShowUnselectedOptions()) {

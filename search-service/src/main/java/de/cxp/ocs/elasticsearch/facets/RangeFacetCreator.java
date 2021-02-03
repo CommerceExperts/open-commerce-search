@@ -15,6 +15,7 @@ import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.IntervalFacetEntry;
+import de.cxp.ocs.model.result.RangeFacetEntry;
 import de.cxp.ocs.util.SearchQueryBuilder;
 
 /**
@@ -73,10 +74,15 @@ public class RangeFacetCreator extends NestedFacetCreator {
 			return Optional.empty();
 		}
 		else {
+			RangeFacetEntry rangeFacetEntry = new RangeFacetEntry(stats.getMin(), stats.getMax(), stats.getCount(), linkBuilder.toString(), facetFilter != null);
+			if (facetFilter != null && facetFilter instanceof NumberResultFilter) {
+				rangeFacetEntry.setSelectedMin(((NumberResultFilter) facetFilter).getLowerBound());
+				rangeFacetEntry.setSelectedMax(((NumberResultFilter) facetFilter).getUpperBound());
+			}
 			return Optional.of(
-					FacetFactory.create(facetConfig, FacetType.range.name())
+					FacetFactory.create(facetConfig, FacetType.range)
 							.setAbsoluteFacetCoverage(stats.getCount())
-							.addEntry(new IntervalFacetEntry(stats.getMin(), stats.getMax(), stats.getCount(), linkBuilder.toString(), facetFilter != null)));
+							.addEntry(rangeFacetEntry));
 		}
 	}
 

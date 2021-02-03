@@ -12,6 +12,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
+import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
@@ -72,7 +73,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		// let it crash if it's from the wrong type
 		TermResultFilter facetFilter = (TermResultFilter) intFacetFilter;
 
-		Facet facet = FacetFactory.create(facetConfig, "hierarchical");
+		Facet facet = FacetFactory.create(facetConfig, FacetType.hierarchical);
 
 		Map<String, HierarchialFacetEntry> entries = new LinkedHashMap<>(catBuckets.size());
 		long absDocCount = 0;

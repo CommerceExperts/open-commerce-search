@@ -11,6 +11,7 @@ import org.elasticsearch.search.aggregations.bucket.histogram.Histogram.Bucket;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
+import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
@@ -68,7 +69,7 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 	@Override
 	protected Optional<Facet> createFacet(Terms.Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter,
 			SearchQueryBuilder linkBuilder) {
-		Facet facet = FacetFactory.create(facetConfig, "interval");
+		Facet facet = FacetFactory.create(facetConfig, FacetType.interval);
 		if (facetFilter != null && facetFilter instanceof NumberResultFilter) {
 			if (!facetConfig.isMultiSelect() && !facetConfig.isShowUnselectedOptions()) {
 				// filtered single select facet
