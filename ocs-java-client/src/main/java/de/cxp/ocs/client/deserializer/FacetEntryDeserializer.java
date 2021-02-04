@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
 import de.cxp.ocs.model.result.IntervalFacetEntry;
+import de.cxp.ocs.model.result.RangeFacetEntry;
 
 public class FacetEntryDeserializer extends JsonDeserializer<FacetEntry> {
 
@@ -33,6 +34,18 @@ public class FacetEntryDeserializer extends JsonDeserializer<FacetEntry> {
 					parseOptionalNumber((JsonNode) docNode.get("upperBound")),
 					0, "", false);
 		}
+		else if ("range".equals(type)) {
+			entry = new RangeFacetEntry(
+					parseOptionalNumber((JsonNode) docNode.get("lowerBound")),
+					parseOptionalNumber((JsonNode) docNode.get("upperBound")),
+					0, "", false);
+			Number selectedMin = parseOptionalNumber((JsonNode) docNode.get("selectedMin"));
+			Number selectedMax = parseOptionalNumber((JsonNode) docNode.get("selectedMax"));
+			if (selectedMin != null && selectedMax != null) {
+				((RangeFacetEntry) entry).setSelectedMin(selectedMin);
+				((RangeFacetEntry) entry).setSelectedMax(selectedMax);
+			}
+		}
 		else {
 			entry = new FacetEntry();
 		}
@@ -41,8 +54,6 @@ public class FacetEntryDeserializer extends JsonDeserializer<FacetEntry> {
 		Optional.ofNullable((JsonNode) docNode.get("key")).map(JsonNode::textValue).ifPresent(entry::setKey);
 		Optional.ofNullable((JsonNode) docNode.get("link")).map(JsonNode::textValue).ifPresent(entry::setLink);
 		Optional.ofNullable((JsonNode) docNode.get("selected")).map(JsonNode::asBoolean).ifPresent(entry::setSelected);
-		// Optional.ofNullable((JsonNode)
-		// docNode.get("type")).map(JsonNode::textValue).ifPresent(entry::setType);
 		return entry;
 	}
 
