@@ -112,8 +112,15 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 			}
 
 			if (lastLevelEntry.isSelected()) {
-				for (int i = 0; i < categories.length - 1; i++) {
-					entries.get(categories[i]).setSelected(true);
+				// don't confuse with rude child ;)
+				HierarchialFacetEntry rootChild = entries.get(categories[0]);
+				rootChild.setSelected(true);
+				for (int i = 1; i < categories.length - 1; i++) {
+					FacetEntry child = getChildByKey(rootChild, categories[i]);
+					if (child == null) break;
+					child.setSelected(true);
+					// child becomes next rootChild
+					rootChild = (HierarchialFacetEntry) child;
 				}
 			}
 		}
