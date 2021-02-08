@@ -6,7 +6,7 @@ services:
     image: commerceexperts/ocs-indexer-service:latest
     environment:
       - "ES_HOSTS=http://elasticsearch:9200"
-      - "spring_profiles_active=custom"
+      - "spring_profiles_active=preset,custom"
     ports:
       - 8535:8535
     volumes:
@@ -14,14 +14,14 @@ services:
     depends_on:
       - elasticsearch
     networks:
-      - search
+      - ocs
 
   searcher:
     container_name: ocs_searcher
     image: commerceexperts/ocs-search-service:latest
     environment:
       - "ES_HOSTS=http://elasticsearch:9200"
-      - "spring_profiles_active=custom"
+      - "spring_profiles_active=preset,custom"
     ports:
       - 8534:8534
     volumes:
@@ -29,7 +29,7 @@ services:
     depends_on:
       - elasticsearch
     networks:
-      - search
+      - ocs
 
   elasticsearch:
     container_name: ocs_elasticsearch
@@ -41,16 +41,9 @@ services:
       - "http.cors.enabled=true"
       - "http.cors.allow-origin=/https?:\/\/localhost(:[0-9]+)?/"
     networks:
-      - search
+      - ocs
   
 networks:
-  search:
-    name: search
+  ocs:
+    name: ocs
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.60.0.0/16
-
-  default:
-    external:
-      name: search
