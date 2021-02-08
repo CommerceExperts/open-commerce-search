@@ -94,13 +94,22 @@ public class ConfigurableQueryBuilder implements ESQueryBuilder {
 	}
 
 	private String buildQueryString(List<QueryStringTerm> searchTerms) {
-		String queryString;
+		StringBuilder queryStringBuilder = new StringBuilder();
+		queryStringBuilder
+				.append('(')
+				.append(ESQueryUtils.buildQueryString(searchTerms, " "))
+				.append(')');
+		// search for all terms quoted with higher weight,
+		// in order to prefer phrase matches generally
+		queryStringBuilder
+				.append(" OR ")
+				.append('(')
+				.append('"')
+				.append(ESQueryUtils.buildQueryString(searchTerms, " "))
+				.append('"')
+				.append(")^1.5");
+		// build shingle variants if enabled
 		if (querySettings.getOrDefault(isQueryWithShingles, "false").equalsIgnoreCase("true")) {
-			StringBuilder queryStringBuilder = new StringBuilder();
-			queryStringBuilder
-					.append('(')
-					.append(ESQueryUtils.buildQueryString(searchTerms, " "))
-					.append(')');
 			for (int i = 0; i < searchTerms.size() - 1; i++) {
 				List<QueryStringTerm> shingledSearchTerms = new ArrayList<>(searchTerms);
 				QueryStringTerm wordA = shingledSearchTerms.remove(i);
@@ -112,14 +121,12 @@ public class ConfigurableQueryBuilder implements ESQueryBuilder {
 				queryStringBuilder.append(" OR ")
 						.append('(')
 						.append(ESQueryUtils.buildQueryString(shingledSearchTerms, " "))
+						// the whole variant with shingles has a lower weight
+						// than the original terms
 						.append(")^0.9");
 			}
-			queryString = queryStringBuilder.toString();
 		}
-		else {
-			queryString = ESQueryUtils.buildQueryString(searchTerms, " ");
-		}
-		return queryString;
+		return queryStringBuilder.toString();
 	}
 
 	@Override
