@@ -16,7 +16,7 @@
 		<module>ocs-commons</module>
 		<module>indexer-service</module>
 		<module>search-service</module>
-		<module>suggest-service</module>
+		<module>suggest-service-parent</module>
 	</modules>
 
 	<properties>
