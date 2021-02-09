@@ -6,12 +6,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>suggest-service-parent</artifactId>
-		<version>0.8.2</version>
+		<version>0.8.5</version>
 		<relativePath>../</relativePath>
 	</parent>
 
-	<artifactId>smartsuggest-service</artifactId>
-	<version>0.1.7</version>
+	<artifactId>suggest-service</artifactId>
+	<version>0.2.0</version>
 	<packaging>jar</packaging>
 	<name>smartSuggest RESTful Service</name>
 
@@ -84,4 +84,16 @@
 		</profile>
 	</profiles> -->
 
+	<!-- copy repos from parent, which is necessary otherwise older versions of parent won't be found during public build -->
+	<repositories>
+		<repository>
+			<id>cxp-public-releases</id>
+			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-external/</url>
+		</repository>
+		<repository>
+			<id>cxp-public-snapshots</id>
+			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-public-snapshots/</url>
+		</repository>
+	</repositories>
+	
 </project>
