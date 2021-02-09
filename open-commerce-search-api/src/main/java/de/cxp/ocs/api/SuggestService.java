@@ -25,7 +25,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public interface SuggestService {
 
 	@GET
-	@Path("suggest/{indexname}")
+	@Path("{indexname}/suggest")
 	@Operation(
 			summary = "Autocomplete the user input",
 			description = "Runs a suggestion request on the data of a certain index.",
@@ -50,6 +50,11 @@ public interface SuggestService {
 					name = "userQuery",
 					description = "the simple raw query typed by the user",
 					required = true) String userQuery,
+			@Parameter(
+					in = ParameterIn.QUERY,
+					name = "limit",
+					description = "A optional limit for the suggestions",
+					required = false) Integer limit,
 			@Parameter(
 					in = ParameterIn.QUERY,
 					name = "filters",

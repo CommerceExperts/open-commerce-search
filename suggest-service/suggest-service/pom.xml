@@ -18,6 +18,10 @@
 	<dependencies>
 		<dependency>
 			<groupId>de.cxp.ocs</groupId>
+			<artifactId>open-commerce-search-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>de.cxp.ocs</groupId>
 			<artifactId>smartsuggest-lib</artifactId>
 			<version>${smartsuggest-lib.version}</version>
 		</dependency>
@@ -61,6 +65,25 @@
 			</plugin>
 		</plugins>
 	</build>
+	
+	<profiles>
+		<profile>
+			<id>searchhub</id>
+			<dependencies>
+				<dependency>
+					<groupId>io.searchhub</groupId>
+					<artifactId>searchhub-suggest-data-provider</artifactId>
+					<version>0.7.2</version>
+				</dependency>
+			</dependencies>
+			<repositories>
+				<repository>
+					<id>external-releases</id>
+					<url>https://nexus.commerce-experts.com/content/repositories/searchhub-external/</url>
+				</repository>
+			</repositories>
+		</profile>
+	</profiles>
 
 	<!-- at the moment, this project has no suggest-data-provider dependency included, 
 		 so it does not make much sense to build a container image from it. -->
