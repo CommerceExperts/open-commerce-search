@@ -41,7 +41,7 @@ public class Application {
 							String userQuery = req.params().get("userQuery");
 							if (userQuery != null && !userQuery.isEmpty()) {
 								String indexname = req.param("indexname");
-								String filter = req.param("filter");
+								String filter = req.param("filter", null);
 								int limit = Integer.valueOf(req.param("limit", "10"));
 
 								return suggestService.suggest(indexname, userQuery, limit, filter);

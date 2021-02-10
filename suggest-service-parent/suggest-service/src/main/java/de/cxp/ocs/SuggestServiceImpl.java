@@ -43,7 +43,7 @@ public class SuggestServiceImpl implements SuggestService {
 		QuerySuggester qm = querySuggestManager.getQuerySuggester(indexName, false);
 
 		Set<String> tagsFilter;
-		if (filter != null) {
+		if (filter != null && !filter.isEmpty()) {
 			tagsFilter = new HashSet<>(Arrays.asList(filter.split(",")));
 		}
 		else {
