@@ -7,7 +7,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.8.5</version>
+	<version>0.9.0</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -16,7 +16,7 @@
 		<module>ocs-commons</module>
 		<module>indexer-service</module>
 		<module>search-service</module>
-		<module>suggest-service</module>
+		<module>suggest-service-parent</module>
 	</modules>
 
 	<properties>
@@ -26,9 +26,6 @@
 		<docker.repository>commerceexperts</docker.repository>
 		<docker.prefix>ocs-</docker.prefix>
 		<dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
-
-		<ocs-api.version>0.7.0</ocs-api.version>
-		<ocs-commons.version>0.4.0</ocs-commons.version>
 
 		<elasticsearch.version>7.5.0</elasticsearch.version>
 		<spring-boot.version>1.5.22.RELEASE</spring-boot.version>
@@ -42,12 +39,29 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>open-commerce-search-api</artifactId>
-				<version>${ocs-api.version}</version>
+				<version>0.7.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-commons</artifactId>
-				<version>${ocs-commons.version}</version>
+				<version>0.4.0</version>
+			</dependency>
+			<dependency>
+				<groupId>de.cxp.ocs</groupId>
+				<artifactId>indexer-service</artifactId>
+				<version>0.5.0</version>
+			</dependency>
+			<dependency>
+				<groupId>de.cxp.ocs</groupId>
+				<artifactId>search-service</artifactId>
+				<version>0.7.2</version>
+			</dependency>
+			<!-- only including the suggest-service directly,
+			because it depends on the other suggest modules -->
+			<dependency>
+				<groupId>de.cxp.ocs</groupId>
+				<artifactId>suggest-service</artifactId>
+				<version>0.2.0</version>
 			</dependency>
 
 			<dependency>

@@ -1,8 +1,6 @@
 package de.cxp.ocs.api.indexer;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
+import javax.ws.rs.*;
 
 import de.cxp.ocs.model.index.BulkImportData;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,10 +18,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * Run a full import into a new index.
- * 
- * It is recommended to use the getIndexName method to retrieve a proper
- * localized name, which in turn is required to have the correct analyzer be
- * used for the indexed data.
  * 
  * If product and content data should be indexed, consider using different
  * indexes.

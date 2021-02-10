@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>de.cxp.ocs</groupId>
+		<artifactId>suggest-service-parent</artifactId>
+		<version>0.9.0</version>
+		<relativePath>../</relativePath>
+	</parent>
+
+	<artifactId>suggest-service</artifactId>
+	<version>0.2.0</version>
+	<packaging>jar</packaging>
+	<name>smartSuggest RESTful Service</name>
+
+	<dependencies>
+		<dependency>
+			<groupId>de.cxp.ocs</groupId>
+			<artifactId>open-commerce-search-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>de.cxp.ocs</groupId>
+			<artifactId>smartsuggest-lib</artifactId>
+			<version>${smartsuggest-lib.version}</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.rapidoid</groupId>
+		    <artifactId>rapidoid-http-server</artifactId>
+		    <version>5.5.5</version>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+		</dependency>
+
+		<!-- install lombok into your ide to use its power: https://projectlombok.org/download.html -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<finalName>${project.artifactId}</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+	
+	<profiles>
+		<profile>
+			<id>searchhub</id>
+			<dependencies>
+				<dependency>
+					<groupId>io.searchhub</groupId>
+					<artifactId>searchhub-suggest-data-provider</artifactId>
+					<version>0.7.2</version>
+				</dependency>
+			</dependencies>
+			<repositories>
+				<repository>
+					<id>external-releases</id>
+					<url>https://nexus.commerce-experts.com/content/repositories/searchhub-external/</url>
+				</repository>
+			</repositories>
+		</profile>
+	</profiles>
+
+	<!-- at the moment, this project has no suggest-data-provider dependency included, 
+		 so it does not make much sense to build a container image from it. -->
+	<!-- <profiles>
+		<profile>
+			<id>dockerize</id>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-jar-plugin</artifactId>
+					</plugin>
+					<plugin>
+						<artifactId>maven-dependency-plugin</artifactId>
+					</plugin>
+					<plugin>
+						<groupId>com.google.cloud.tools</groupId>
+						<artifactId>jib-maven-plugin</artifactId>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles> -->
+
+	<!-- copy repos from parent, which is necessary otherwise older versions of parent won't be found during public build -->
+	<repositories>
+		<repository>
+			<id>cxp-public-releases</id>
+			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-external/</url>
+		</repository>
+		<repository>
+			<id>cxp-public-snapshots</id>
+			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-public-snapshots/</url>
+		</repository>
+	</repositories>
+	
+</project>
