@@ -1,15 +1,9 @@
 package de.cxp.ocs.smartsuggest;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Random;
+import java.time.Instant;
+import java.util.*;
 
-import de.cxp.ocs.smartsuggest.spi.SuggestData;
-import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
-import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
+import de.cxp.ocs.smartsuggest.spi.*;
 import lombok.Setter;
 
 public class RemoteSuggestDataProviderSimulation implements SuggestDataProvider {
@@ -33,7 +27,7 @@ public class RemoteSuggestDataProviderSimulation implements SuggestDataProvider 
 			throw new IllegalStateException("Service is not available at the moment");
 		}
 
-		loadedSuggestions.put(indexName, new SuggestData("", Locale.ROOT, Collections.emptySet(), suggestions));
+		loadedSuggestions.put(indexName, new SuggestData("", Locale.ROOT, Collections.emptySet(), suggestions, Instant.now().toEpochMilli()));
 		loadedSuggestionTimes.put(indexName, System.currentTimeMillis());
 	}
 

@@ -9,16 +9,10 @@ import java.util.concurrent.TimeUnit;
 import org.apache.lucene.store.AlreadyClosedException;
 
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
-import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
-import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggesterProxy;
-import de.cxp.ocs.smartsuggest.querysuggester.SuggesterFactory;
-import de.cxp.ocs.smartsuggest.spi.SuggestData;
-import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
-import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
+import de.cxp.ocs.smartsuggest.querysuggester.*;
+import de.cxp.ocs.smartsuggest.spi.*;
 import de.cxp.ocs.smartsuggest.util.Util;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.*;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -73,39 +67,49 @@ public class SuggestionsUpdater implements Runnable {
 	}
 
 	private void update() throws IOException {
-		long lastDataModTime = dataProvider.getLastDataModTime(indexName);
-		if (lastDataModTime == -1) {
-			throw new IllegalStateException("no data available for index " + indexName);
+		if (lastUpdate == null && !dataProvider.hasData(indexName)) {
+			throw new IllegalStateException("dataprovider " + dataProvider.getClass().getSimpleName() + " has no data for index " + indexName);
 		}
-		Instant modTime = Instant.ofEpochMilli(lastDataModTime);
-		if (lastUpdate == null || modTime.isAfter(lastUpdate)) {
+
+		Instant remoteModTime = Instant.ofEpochMilli(dataProvider.getLastDataModTime(indexName));
+		if (lastUpdate == null || remoteModTime.isAfter(lastUpdate)) {
 			SuggestData suggestData = dataProvider.loadData(indexName);
 
 			if (suggestData == null) {
 				log.error("Received NULL suggest data from query api service. Unable to update query suggester for index " + indexName);
+				return;
 			}
-			else {
-				List<SuggestRecord> suggestRecords = suggestData.getSuggestRecords();
-				final int count = suggestRecords.size();
-				QuerySuggester querySuggester = factory.getSuggester(suggestData);
-				try {
-					querySuggesterProxy.updateQueryMapper(querySuggester);
-				}
-				catch (AlreadyClosedException ace) {
-					log.info("Suggester Update for index {} canceled, because suggester closed", indexName);
-					querySuggester.destroy();
-					throw ace;
-				}
 
-				log.info("Received suggest data for index {} with {} suggestions", indexName, count);
-				lastUpdate = modTime;
-				updateSuccessCount++;
-				suggestionsCount = count;
+			long dataModTimestamp = suggestData.getModificationTime();
+			if (dataModTimestamp > 0L) {
+				Instant dataModTime = Instant.ofEpochMilli(dataModTimestamp);
+				if (!remoteModTime.equals(dataModTime)) {
+					log.warn("Received data for index {} with the wrong modTime '{}' - expected modTime {}! Will try again with the next update.",
+							indexName, dataModTime, remoteModTime);
+					return;
+				}
 			}
+
+			List<SuggestRecord> suggestRecords = suggestData.getSuggestRecords();
+			final int count = suggestRecords.size();
+			QuerySuggester querySuggester = factory.getSuggester(suggestData);
+			try {
+				querySuggesterProxy.updateQueryMapper(querySuggester);
+			}
+			catch (AlreadyClosedException ace) {
+				log.info("Suggester Update for index {} canceled, because suggester closed", indexName);
+				querySuggester.destroy();
+				throw ace;
+			}
+
+			log.info("Received suggest data for index {} with {} suggestions", indexName, count);
+			lastUpdate = remoteModTime;
+			updateSuccessCount++;
+			suggestionsCount = count;
 		}
 		else {
 			log.trace("No changes for index {}. last update = {}, remote data mod.time = {}",
-					indexName, lastUpdate, modTime);
+					indexName, lastUpdate, remoteModTime);
 		}
 	}
 
