@@ -1,11 +1,10 @@
 package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.lucene.search.suggest.InputIterator;
 import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.util.BytesRef;
@@ -15,6 +14,9 @@ import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 
 abstract class SuggestionIterator implements InputIterator
 {
+
+	private final static BytesRef EMPTY_PAYLOAD = new BytesRef(SerializationUtils.serialize((Serializable) Collections.emptyMap()));
+
     private final Iterator<SuggestRecord> innerIterator;
 
     private SuggestRecord currentSuggestion;
@@ -30,7 +32,7 @@ abstract class SuggestionIterator implements InputIterator
 
     @Override
     public boolean hasPayloads() {
-        return true;
+		return true;
     }
 
     // This method needs to return the key for the record; this is the
@@ -54,20 +56,27 @@ abstract class SuggestionIterator implements InputIterator
     protected abstract String getSearchText(SuggestRecord suggestion);
 
     /**
-     * Return the best query as a payload.
-     * Later it is used as a suggestion for any match on a variant
-     *
-     * @see LuceneQuerySuggester#getBestMatch(Lookup.LookupResult)
-     * @return A BytesRef with the bestMatch
-     */
+	 * Serializes the SuggestRecord payload. It will be deserilized and attached
+	 * to the returned suggestions again.
+	 *
+	 * @see LuceneQuerySuggester#getBestMatch(Lookup.LookupResult)
+	 * @return A BytesRef with the payload
+	 */
     @Override
     public BytesRef payload() {
-    	String payload = currentSuggestion.getPayload();
+		Map<String, String> payload = currentSuggestion.getPayload();
     	if (payload == null) {
-    		payload = currentSuggestion.getPrimaryText();
+			payload = Collections.singletonMap(LuceneQuerySuggester.PAYLOAD_LABEL_KEY, currentSuggestion.getPrimaryText());
+		}
+		else {
+			payload = new HashMap<>(payload);
+			payload.put(LuceneQuerySuggester.PAYLOAD_LABEL_KEY, currentSuggestion.getPrimaryText());
+		}
+		if (!(payload instanceof Serializable)) {
+			payload = new HashMap<>(payload);
     	}
-        final byte[] payloadData = payload.getBytes(StandardCharsets.UTF_8);
-        return new BytesRef(payloadData);
+		byte[] serialize = SerializationUtils.serialize((Serializable) payload);
+		return new BytesRef(serialize);
     }
 
     // This method returns the contexts for the record, which we can

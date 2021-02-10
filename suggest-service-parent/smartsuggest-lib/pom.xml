@@ -11,7 +11,7 @@
 	</parent>
 
 	<artifactId>smartsuggest-lib</artifactId>
-	<version>0.1.5</version>
+	<version>0.2.0</version>
 	<packaging>jar</packaging>
 	<name>smartSuggest Library</name>
 
@@ -43,13 +43,6 @@
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-suggest</artifactId>
 			<version>${lucene.version}</version>
-		</dependency>
-
-		<!-- cloned and installed from https://github.com/nikcomestotalk/autosuggest -->
-		<dependency>
-			<groupId>com.search</groupId>
-			<artifactId>suggestion</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>

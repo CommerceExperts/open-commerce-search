@@ -5,25 +5,7 @@ import static java.util.Collections.emptySet;
 import java.util.List;
 import java.util.Set;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
-
 public interface QuerySuggester extends AutoCloseable {
-
-    @RequiredArgsConstructor
-    @EqualsAndHashCode
-    @ToString
-    @Getter
-    class Result {
-        /**
-         * The user friendly name of the result group
-         */
-        private final String name;
-
-        private final List<String> suggestions;
-    }
 
     int DEFAULT_MAXIMUM_RESULTS = 10;
 
@@ -33,7 +15,7 @@ public interface QuerySuggester extends AutoCloseable {
      * @return A list of suggestions for the given term.
      * 		   At most {@value #DEFAULT_MAXIMUM_RESULTS} results will be returned
      */
-    default List<Result> suggest(String term) throws SuggestException {
+	default List<Suggestion> suggest(String term) throws SuggestException {
         return suggest(term, DEFAULT_MAXIMUM_RESULTS, emptySet());
     }
 
@@ -46,7 +28,7 @@ public interface QuerySuggester extends AutoCloseable {
      * 		the group names used for filtering
      * @return A list of suggestions for the given term
      */
-    List<Result> suggest(String term, int maxResults, Set<String> groups) throws SuggestException;
+	List<Suggestion> suggest(String term, int maxResults, Set<String> groups) throws SuggestException;
 
     /**
      * Destroys any resources created by this suggester

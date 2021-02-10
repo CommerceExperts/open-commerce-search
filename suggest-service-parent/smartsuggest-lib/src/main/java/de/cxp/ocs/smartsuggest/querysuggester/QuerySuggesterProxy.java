@@ -3,7 +3,6 @@ package de.cxp.ocs.smartsuggest.querysuggester;
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -26,7 +25,7 @@ public class QuerySuggesterProxy implements QuerySuggester {
 	private int										maxSuggestionsPerCacheEntry	= 10;
 
 	private final int					cacheLetterLength	= Integer.getInteger("CACHE_LETTER_LENGTH", 3);
-	private Cache<String, List<Result>>	firstLetterCache	= CacheBuilder.newBuilder()
+	private Cache<String, List<Suggestion>>	firstLetterCache	= CacheBuilder.newBuilder()
 			.maximumSize(Long.getLong("CACHE_MAX_SIZE", 10_000L))
 			.build();
 
@@ -64,7 +63,7 @@ public class QuerySuggesterProxy implements QuerySuggester {
 	}
 
 	@Override
-	public List<Result> suggest(String term, int maxResults, Set<String> groups) throws SuggestException {
+	public List<Suggestion> suggest(String term, int maxResults, Set<String> groups) throws SuggestException {
 		if (isClosed || isBlank(term)) return emptyList();
 		String normalizedTerm = term.trim().toLowerCase();
 
@@ -72,10 +71,10 @@ public class QuerySuggesterProxy implements QuerySuggester {
 		// of results is <= to the maxSuggestionPerCacheEntry level
 		if (normalizedTerm.length() <= cacheLetterLength && (groups == null || groups.isEmpty()) && maxResults <= maxSuggestionsPerCacheEntry) {
 			try {
-				List<Result> cachedResults = firstLetterCache.get(normalizedTerm, () -> innerQuerySuggester.get().suggest(normalizedTerm, maxSuggestionsPerCacheEntry, groups));
+				List<Suggestion> cachedResults = firstLetterCache.get(normalizedTerm, () -> innerQuerySuggester.get().suggest(normalizedTerm, maxSuggestionsPerCacheEntry, groups));
 
 				if (maxResults < maxSuggestionsPerCacheEntry) {
-					cachedResults = truncateResult(maxResults, cachedResults);
+					cachedResults = cachedResults.subList(0, maxResults);
 				}
 
 				return cachedResults;
@@ -87,23 +86,5 @@ public class QuerySuggesterProxy implements QuerySuggester {
 		else {
 			return innerQuerySuggester.get().suggest(normalizedTerm, maxResults, groups);
 		}
-	}
-
-	private List<Result> truncateResult(int maxResults, List<Result> cachedResults) {
-		List<Result> truncatedResults = new ArrayList<>();
-		int resultCount = 0;
-		for (Result r : cachedResults) {
-			if (r.getSuggestions().size() > resultCount + maxResults) {
-				truncatedResults.add(new Result(r.getName(), r.getSuggestions().subList(0, maxResults - resultCount)));
-				resultCount = maxResults;
-				break;
-			}
-			else {
-				truncatedResults.add(r);
-				resultCount += r.getSuggestions().size();
-			}
-		}
-		cachedResults = truncatedResults;
-		return cachedResults;
 	}
 }

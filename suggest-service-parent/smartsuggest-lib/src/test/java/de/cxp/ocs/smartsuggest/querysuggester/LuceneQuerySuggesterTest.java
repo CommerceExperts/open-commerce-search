@@ -1,29 +1,20 @@
 package de.cxp.ocs.smartsuggest.querysuggester;
 
+import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.*;
 import static java.util.Arrays.asList;
 import static java.util.Collections.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.WordlistLoader;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
 import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester;
@@ -46,6 +37,7 @@ class LuceneQuerySuggesterTest {
 
 	@AfterEach
 	void close() throws Exception {
+		if (underTest != null)
 		underTest.close();
 	}
 
@@ -62,14 +54,12 @@ class LuceneQuerySuggesterTest {
 
 		underTest.index(toIndex).join();
 
-		List<QuerySuggester.Result> results = underTest.suggest("user");
+		List<Suggestion> results = underTest.suggest("user");
 
-		assertThat(results).hasSize(1);
-		final QuerySuggester.Result result = results.get(0);
-		assertThat(result.getName()).isEqualTo(LuceneQuerySuggester.TYPO_MATCHES_GROUP_NAME);
-		final List<String> suggestions = result.getSuggestions();
-		assertThat(suggestions).element(0).isEqualTo(masterQuery2);
-		assertThat(suggestions).element(1).isEqualTo(masterQuery1);
+		assertThat(results).hasSize(2);
+		assertGroupName(results.get(0), TYPO_MATCHES_GROUP_NAME);
+		assertLabel(results.get(0), masterQuery2);
+		assertLabel(results.get(1), masterQuery1);
 	}
 
 	@DisplayName("Search for 'user' should return the best matches for both 'user query 1' and 'user query 2'. Since the master query is the same it will return it just once")
@@ -85,13 +75,11 @@ class LuceneQuerySuggesterTest {
 
 		underTest.index(toIndex).join();
 
-		List<QuerySuggester.Result> results = underTest.suggest("user");
+		List<Suggestion> results = underTest.suggest("user");
 
 		assertThat(results).hasSize(1);
-		final QuerySuggester.Result bestMatchesResult = results.get(0);
-		assertThat(bestMatchesResult.getName()).isEqualTo(LuceneQuerySuggester.TYPO_MATCHES_GROUP_NAME);
-		final List<String> suggestions = bestMatchesResult.getSuggestions();
-		assertThat(suggestions).element(0).isEqualTo(masterQuery1);
+		assertGroupName(results.get(0), TYPO_MATCHES_GROUP_NAME);
+		assertLabel(results.get(0), masterQuery1);
 	}
 
 	@DisplayName("Search for 'u' should return the best matches for all suggestions, sorted by the weight")
@@ -109,18 +97,14 @@ class LuceneQuerySuggesterTest {
 
 		underTest.index(toIndex).join();
 
-		List<QuerySuggester.Result> suggestions = underTest.suggest("u");
+		List<Suggestion> results = underTest.suggest("u");
 
-		assertThat(suggestions).hasSize(1);
-
-		final QuerySuggester.Result bestMatchResults = suggestions.get(0);
-		assertThat(bestMatchResults.getName()).isEqualTo(LuceneQuerySuggester.TYPO_MATCHES_GROUP_NAME);
-
-		final List<String> bestMatchSuggestions = bestMatchResults.getSuggestions();
-		assertThat(bestMatchSuggestions).element(0).isEqualTo(masterQuery1);
-		assertThat(bestMatchSuggestions).element(1).isEqualTo(masterQuery3);
-		assertThat(bestMatchSuggestions).element(2).isEqualTo(masterQuery2);
-		assertThat(bestMatchSuggestions).element(3).isEqualTo(masterQuery4);
+		assertThat(results).hasSize(4);
+		assertGroupName(results.get(0), TYPO_MATCHES_GROUP_NAME);
+		assertLabel(results.get(0), masterQuery1);
+		assertLabel(results.get(1), masterQuery3);
+		assertLabel(results.get(2), masterQuery2);
+		assertLabel(results.get(3), masterQuery4);
 	}
 
 	@DisplayName("Search for 'guci' should return properly spelled 'Gucci'")
@@ -132,14 +116,10 @@ class LuceneQuerySuggesterTest {
 
 		underTest.index(toIndex).join();
 
-		List<QuerySuggester.Result> suggestions = underTest.suggest("guci");
+		List<Suggestion> results = underTest.suggest("guci");
+		assertThat(results).hasSize(1);
+		assertSuggestion(results.get(0), Gucci, FUZZY_MATCHES_ONE_EDIT_GROUP_NAME);
 
-		assertThat(suggestions).hasSize(1);
-		final QuerySuggester.Result result = suggestions.get(0);
-		assertThat(result.getName()).isEqualTo(LuceneQuerySuggester.FUZZY_MATCHES_ONE_EDIT_GROUP_NAME);
-		final List<String> fuzzySuggestions = result.getSuggestions();
-		assertThat(fuzzySuggestions).hasSize(1);
-		assertThat(fuzzySuggestions).element(0).isEqualTo(Gucci);
 	}
 
 	@DisplayName("Search for 'veshin' should return properly spelled 'Washington'")
@@ -151,13 +131,9 @@ class LuceneQuerySuggesterTest {
 
 		underTest.index(toIndex).join();
 
-		List<QuerySuggester.Result> results = underTest.suggest("veshin");
-
+		List<Suggestion> results = underTest.suggest("veshin");
 		assertThat(results).hasSize(1);
-		final QuerySuggester.Result fuzzyMatchesResult = results.get(0);
-		assertThat(fuzzyMatchesResult.getName()).isEqualTo(LuceneQuerySuggester.FUZZY_MATCHES_TWO_EDITS_GROUP_NAME);
-		final List<String> suggestions = fuzzyMatchesResult.getSuggestions();
-		assertThat(suggestions).element(0).isEqualTo(Washington);
+		assertSuggestion(results.get(0), Washington, FUZZY_MATCHES_TWO_EDITS_GROUP_NAME);
 	}
 
 	@DisplayName("Search for 'shirt' should return all unique best matches with 'shirt'")
@@ -172,14 +148,10 @@ class LuceneQuerySuggesterTest {
 
 		underTest.index(toIndex).join();
 
-		List<QuerySuggester.Result> suggestions = underTest.suggest("shirt");
-
-		assertThat(suggestions).hasSize(1);
-		final QuerySuggester.Result bestMatchResult = suggestions.get(0);
-		assertThat(bestMatchResult.getName()).isEqualTo(LuceneQuerySuggester.BEST_MATCHES_GROUP_NAME);
-		final List<String> bestMatchSuggestions = bestMatchResult.getSuggestions();
-		assertThat(bestMatchSuggestions).element(0).isEqualTo(mensShirts);
-		assertThat(bestMatchSuggestions).element(1).isEqualTo(womensShirts);
+		List<Suggestion> results = underTest.suggest("shirt");
+		assertThat(results).hasSize(2);
+		assertSuggestion(results.get(0), mensShirts, BEST_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(1), womensShirts, BEST_MATCHES_GROUP_NAME);
 	}
 
 	@DisplayName("Search for `men's` should return all unique best matches with `men's`")
@@ -196,31 +168,25 @@ class LuceneQuerySuggesterTest {
 		underTest.index(toIndex).join();
 
 		// with apostrophe
-		List<QuerySuggester.Result> results = underTest.suggest("men's");
+		List<Suggestion> results = underTest.suggest("men's");
 		assertThat(results).hasSize(3);
-		assertThat(results).containsExactly(
-				new QuerySuggester.Result(LuceneQuerySuggester.BEST_MATCHES_GROUP_NAME, singletonList(mensShirts)),
-				new QuerySuggester.Result(LuceneQuerySuggester.FUZZY_MATCHES_ONE_EDIT_GROUP_NAME, singletonList(withoutSMensShirts)),
-				new QuerySuggester.Result(LuceneQuerySuggester.FUZZY_MATCHES_TWO_EDITS_GROUP_NAME, singletonList(womensShirts)));
-
+		assertSuggestion(results.get(0), mensShirts, BEST_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(1), withoutSMensShirts, FUZZY_MATCHES_ONE_EDIT_GROUP_NAME);
+		assertSuggestion(results.get(2), womensShirts, FUZZY_MATCHES_TWO_EDITS_GROUP_NAME);
+		
 		// no apostrophe
 		results = underTest.suggest("mens");
-
 		assertThat(results).hasSize(2);
-		assertThat(results).containsExactly(
-				new QuerySuggester.Result(LuceneQuerySuggester.BEST_MATCHES_GROUP_NAME, singletonList(withoutSMensShirts)),
-				new QuerySuggester.Result(LuceneQuerySuggester.FUZZY_MATCHES_ONE_EDIT_GROUP_NAME, asList(mensShirts)));
+		assertSuggestion(results.get(0), withoutSMensShirts, BEST_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(1), mensShirts, FUZZY_MATCHES_ONE_EDIT_GROUP_NAME);
 
 		// no space
 		results = underTest.suggest("men'sshi");
-
 		assertThat(results).hasSize(2);
-		assertThat(results).containsExactly(
-				new QuerySuggester.Result(LuceneQuerySuggester.FUZZY_MATCHES_ONE_EDIT_GROUP_NAME, asList(mensShirts)),
-				new QuerySuggester.Result(LuceneQuerySuggester.FUZZY_MATCHES_TWO_EDITS_GROUP_NAME, asList(withoutSMensShirts))
+		assertSuggestion(results.get(0), mensShirts, FUZZY_MATCHES_ONE_EDIT_GROUP_NAME);
+		assertSuggestion(results.get(1), withoutSMensShirts, FUZZY_MATCHES_TWO_EDITS_GROUP_NAME);
 		// women's shirts is not in the results because FuzzySuggester supports
 		// at most 2 edits
-		);
 	}
 
 	@Disabled("Lucene does not sort the way we want. More logic should be added in LuceneQuerySuggester.suggest")
@@ -237,11 +203,9 @@ class LuceneQuerySuggesterTest {
 
 		underTest.index(toIndex).join();
 
-		List<QuerySuggester.Result> results = underTest.suggest("new");
-
-		assertThat(results).hasSize(2);
-		assertThat(results).isEqualTo(singletonList(
-				new QuerySuggester.Result(LuceneQuerySuggester.BEST_MATCHES_GROUP_NAME, asList(NewYork, Newton))));
+		List<Suggestion> results = underTest.suggest("new");
+		assertSuggestion(results.get(0), NewYork, BEST_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(1), Newton, BEST_MATCHES_GROUP_NAME);
 	}
 
 	@DisplayName("Suggest with tags/contexts")
@@ -257,15 +221,12 @@ class LuceneQuerySuggesterTest {
 
 		underTest.index(toIndex).join();
 
-		List<QuerySuggester.Result> bookResults = underTest.suggest("name", 10, setOf("book"));
-		assertThat(bookResults).hasSize(1);
-		assertThat(bookResults).containsExactly(
-				new QuerySuggester.Result(LuceneQuerySuggester.TYPO_MATCHES_GROUP_NAME, singletonList(Book1)));
+		List<Suggestion> bookResults = underTest.suggest("name", 10, setOf("book"));
+		assertSuggestion(bookResults.get(0), Book1, TYPO_MATCHES_GROUP_NAME);
 
-		List<QuerySuggester.Result> movieResults = underTest.suggest("name", 10, setOf("movie"));
-		assertThat(movieResults).hasSize(1);
-		assertThat(movieResults).containsExactly(
-				new QuerySuggester.Result(LuceneQuerySuggester.TYPO_MATCHES_GROUP_NAME, asList(Movie1, Movie2)));
+		List<Suggestion> movieResults = underTest.suggest("name", 10, setOf("movie"));
+		assertSuggestion(movieResults.get(0), Movie1, TYPO_MATCHES_GROUP_NAME);
+		assertSuggestion(movieResults.get(1), Movie2, TYPO_MATCHES_GROUP_NAME);
 	}
 
 	@DisplayName("When the search term is a phrase then it should return best matches first, then extra results for sub-phrase/words")
@@ -285,11 +246,13 @@ class LuceneQuerySuggesterTest {
 
 		underTest.index(toIndex).join();
 
-		List<QuerySuggester.Result> results = underTest.suggest("beige men's shirts");
-		assertThat(results).hasSize(2);
-		assertThat(results).containsExactly(
-				new QuerySuggester.Result(LuceneQuerySuggester.BEST_MATCHES_GROUP_NAME, singletonList(BeigeMensShirts)),
-				new QuerySuggester.Result(LuceneQuerySuggester.SHINGLE_MATCHES_GROUP_NAME, asList(Shirts, WorkShirts, WomensShirts, MensShirts)));
+		List<Suggestion> results = underTest.suggest("beige men's shirts");
+		assertSuggestion(results.get(0), BeigeMensShirts, BEST_MATCHES_GROUP_NAME);
+
+		assertSuggestion(results.get(1), Shirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(2), WorkShirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(3), WomensShirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(4), MensShirts, SHINGLE_MATCHES_GROUP_NAME);
 	}
 
 	@DisplayName("When the search term is a phrase then it should return best matches first, then extra results for sub-phrase/words")
@@ -311,19 +274,25 @@ class LuceneQuerySuggesterTest {
 
 		underTest.index(toIndex).join();
 
-		List<QuerySuggester.Result> results = underTest.suggest("men's shi");
+		List<Suggestion> results = underTest.suggest("men's shi");
 
-		assertThat(results).hasSize(3);
-		assertThat(results).containsExactly(
-				new QuerySuggester.Result(LuceneQuerySuggester.BEST_MATCHES_GROUP_NAME, asList(MensShirts, BeigeMensShirts)),
-				new QuerySuggester.Result(LuceneQuerySuggester.FUZZY_MATCHES_TWO_EDITS_GROUP_NAME, asList(WomensShirts)),
-				new QuerySuggester.Result(LuceneQuerySuggester.SHINGLE_MATCHES_GROUP_NAME, asList(ShirtsMen, Shirts, WorkShirts)));
+		assertSuggestion(results.get(0), MensShirts, BEST_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(1), BeigeMensShirts, BEST_MATCHES_GROUP_NAME);
 
-		List<QuerySuggester.Result> results2 = underTest.suggest("shirts men");
-		assertThat(results2).hasSize(2);
-		assertThat(results2).containsExactly(
-				new QuerySuggester.Result(LuceneQuerySuggester.BEST_MATCHES_GROUP_NAME, asList(ShirtsMen, MensShirts, BeigeMensShirts)),
-				new QuerySuggester.Result(LuceneQuerySuggester.SHINGLE_MATCHES_GROUP_NAME, asList(Shirts, WorkShirts, WomensShirts)));
+		assertSuggestion(results.get(2), WomensShirts, FUZZY_MATCHES_TWO_EDITS_GROUP_NAME);
+				
+		assertSuggestion(results.get(3), ShirtsMen, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(4), Shirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(5), WorkShirts, SHINGLE_MATCHES_GROUP_NAME);
+
+		List<Suggestion> results2 = underTest.suggest("shirts men");
+		assertSuggestion(results2.get(0), ShirtsMen, BEST_MATCHES_GROUP_NAME);
+		assertSuggestion(results2.get(1), MensShirts, BEST_MATCHES_GROUP_NAME);
+		assertSuggestion(results2.get(2), BeigeMensShirts, BEST_MATCHES_GROUP_NAME);
+				
+		assertSuggestion(results2.get(3), Shirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results2.get(4), WorkShirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results2.get(5), WomensShirts, SHINGLE_MATCHES_GROUP_NAME);
 	}
 
 	@DisplayName("Search for 'schuhe'")
@@ -371,18 +340,17 @@ class LuceneQuerySuggesterTest {
 
 		underTest.index(toIndex).join();
 
-		List<QuerySuggester.Result> results = underTest.suggest("schuhe");
+		List<Suggestion> results = underTest.suggest("schuhe");
 
-		assertThat(results).hasSize(1);
-		final QuerySuggester.Result result = results.get(0);
-		assertThat(result.getName()).isEqualTo(LuceneQuerySuggester.BEST_MATCHES_GROUP_NAME);
-		final List<String> suggestions = result.getSuggestions();
+		assertThat(results).hasSize(3);
+		final Suggestion result = results.get(0);
+		assertGroupName(result, BEST_MATCHES_GROUP_NAME);
 		// not expecting "damenschuhe" since there is not a single variant that
 		// starts with "schuhe"
-		assertThat(suggestions).hasSize(3);
-		assertThat(suggestions).element(0).isEqualTo(sportSchuheMaster);
-		assertThat(suggestions).element(1).isEqualTo(weißeSchuheMaster);
-		assertThat(suggestions).element(2).isEqualTo(schuheForChindrenMaster);
+		assertThat(results).hasSize(3);
+		assertLabel(results.get(0), sportSchuheMaster);
+		assertLabel(results.get(1), weißeSchuheMaster);
+		assertLabel(results.get(2), schuheForChindrenMaster);
 	}
 
 	@DisplayName("Search for 'weisse s'")
@@ -447,30 +415,29 @@ class LuceneQuerySuggesterTest {
 
 		underTest.index(toIndex).join();
 
-		List<QuerySuggester.Result> results = underTest.suggest("weisse s", 20, Collections.emptySet());
+		List<Suggestion> results = underTest.suggest("weisse s", 20, Collections.emptySet());
 
 		assertThat(results).hasSizeGreaterThanOrEqualTo(2);
-		QuerySuggester.Result result = results.get(0);
-		assertThat(result.getName()).isEqualTo(LuceneQuerySuggester.BEST_MATCHES_GROUP_NAME);
-		List<String> suggestions = result.getSuggestions();
-		assertThat(suggestions).hasSize(8);
-		assertThat(suggestions).element(0).isEqualTo(weisseShortsMaster);
-		assertThat(suggestions).element(1).isEqualTo(weisseStrickjackeMaster);
-		assertThat(suggestions).element(2).isEqualTo(weißeSockenMaster);
-		assertThat(suggestions).element(3).isEqualTo(weißeSchuheMaster);
-		assertThat(suggestions).element(4).isEqualTo(weißeSommerhoseMaster);
-		assertThat(suggestions).element(5).isEqualTo(weißeStoffhoseMaster);
-		assertThat(suggestions).element(6).isEqualTo(weißeSpitzenbluseMaster);
-		assertThat(suggestions).element(7).isEqualTo(weißeSneakerMaster);
+		assertThat(results).hasSize(13);
 
-		result = results.get(1);
-		suggestions = result.getSuggestions();
-		assertThat(result.getName()).isEqualTo(LuceneQuerySuggester.TYPO_MATCHES_GROUP_NAME);
-		assertThat(suggestions).element(0).isEqualTo(tShirtWeißMaster);
-		assertThat(suggestions).element(1).isEqualTo(weissesHemdMaster);
-		assertThat(suggestions).element(2).isEqualTo(weißesSommerkleidMaster);
-		assertThat(suggestions).element(3).isEqualTo(weißeTshirtsDamenMaster);
-		assertThat(suggestions).element(4).isEqualTo(weißesSpitzenkleidMaster);
+		assertGroupName(results.get(0), LuceneQuerySuggester.BEST_MATCHES_GROUP_NAME);
+		assertGroupName(results.get(7), LuceneQuerySuggester.BEST_MATCHES_GROUP_NAME);
+		assertLabel(results.get(0), weisseShortsMaster);
+		assertLabel(results.get(1), weisseStrickjackeMaster);
+		assertLabel(results.get(2), weißeSockenMaster);
+		assertLabel(results.get(3), weißeSchuheMaster);
+		assertLabel(results.get(4), weißeSommerhoseMaster);
+		assertLabel(results.get(5), weißeStoffhoseMaster);
+		assertLabel(results.get(6), weißeSpitzenbluseMaster);
+		assertLabel(results.get(7), weißeSneakerMaster);
+
+		assertGroupName(results.get(8), LuceneQuerySuggester.TYPO_MATCHES_GROUP_NAME);
+		assertGroupName(results.get(12), LuceneQuerySuggester.TYPO_MATCHES_GROUP_NAME);
+		assertLabel(results.get(8), tShirtWeißMaster);
+		assertLabel(results.get(9), weissesHemdMaster);
+		assertLabel(results.get(10), weißesSommerkleidMaster);
+		assertLabel(results.get(11), weißeTshirtsDamenMaster);
+		assertLabel(results.get(12), weißesSpitzenkleidMaster);
 	}
 
 	@DisplayName("Ignore stopwords (like `früher`) for German locale")
@@ -492,21 +459,16 @@ class LuceneQuerySuggesterTest {
 
 		underTest.index(toIndex).join();
 
-		{
-			// `für` is not a stopword so there are results for it
-			List<QuerySuggester.Result> resultsForFür = underTest.suggest("für");
-			assertThat(resultsForFür).hasSize(1);
-			final QuerySuggester.Result result = resultsForFür.get(0);
-			assertThat(result.getName()).isEqualTo(LuceneQuerySuggester.BEST_MATCHES_GROUP_NAME);
-			final List<String> suggestions = result.getSuggestions();
-			assertThat(suggestions).hasSize(1);
-			assertThat(suggestions).element(0).isEqualTo(schuheForKinderMaster);
-		}
+		// `für` is not a stopword so there are results for it
+		List<Suggestion> results = underTest.suggest("für");
+		assertThat(results).hasSize(1);
+		assertGroupName(results.get(0), BEST_MATCHES_GROUP_NAME);
+		assertLabel(results.get(0), schuheForKinderMaster);
 
 		{
 			// `früher` is a stopword so there are no results for it
-			List<QuerySuggester.Result> resultsForFrüher = underTest.suggest("früher");
-			assertThat(resultsForFrüher).hasSize(0);
+			List<Suggestion> resultsForStopword = underTest.suggest("früher");
+			assertThat(resultsForStopword).hasSize(0);
 		}
 	}
 
@@ -531,28 +493,18 @@ class LuceneQuerySuggesterTest {
 
 		underTest.index(toIndex).join();
 
-		List<QuerySuggester.Result> resultsForHmd = underTest.suggest("hmd");
+		List<Suggestion> results = underTest.suggest("hmd");
 
-		assertThat(resultsForHmd).hasSize(2);
-		{
-			final QuerySuggester.Result fuzzyOneEditResult = resultsForHmd.get(0);
-			assertThat(fuzzyOneEditResult.getName()).isEqualTo(LuceneQuerySuggester.FUZZY_MATCHES_ONE_EDIT_GROUP_NAME);
-			final List<String> suggestions = fuzzyOneEditResult.getSuggestions();
-			assertThat(suggestions).hasSize(1);
-			assertThat(suggestions).element(0).isEqualTo(hemdMaster);
-		}
-		{
-			final QuerySuggester.Result fuzzyTwoEditsResult = resultsForHmd.get(1);
-			assertThat(fuzzyTwoEditsResult.getName()).isEqualTo(LuceneQuerySuggester.FUZZY_MATCHES_TWO_EDITS_GROUP_NAME);
-			final List<String> suggestions = fuzzyTwoEditsResult.getSuggestions();
-			assertThat(suggestions).hasSize(2);
-			// `hose` is found with fuzziness=2
-			assertThat(suggestions).element(0).isEqualTo(dressMaster);
-			// `dress` is found with fuzziness=2 because of DFA:
-			// http://julesjacobs.github.io/2015/06/17/disqus-levenshtein-simple-and-fast.html
-			// i.e. it removes `hm` and then `d` matches as a prefix of `dress`
-			assertThat(suggestions).element(1).isEqualTo(hoseMaster);
-		}
+		assertThat(results).hasSize(3);
+		assertSuggestion(results.get(0), hemdMaster, FUZZY_MATCHES_ONE_EDIT_GROUP_NAME);
+
+		// `dress` is found with fuzziness=2 because of DFA:
+		// http://julesjacobs.github.io/2015/06/17/disqus-levenshtein-simple-and-fast.html
+		// i.e. it removes `hm` and then `d` matches as a prefix of `dress`
+		assertSuggestion(results.get(1), dressMaster, FUZZY_MATCHES_TWO_EDITS_GROUP_NAME);
+
+		// `hose` is found with fuzziness=2
+		assertSuggestion(results.get(2), hoseMaster, FUZZY_MATCHES_TWO_EDITS_GROUP_NAME);
 	}
 
 	@DisplayName("Search for `fleece` should return sharpened results")
@@ -567,14 +519,15 @@ class LuceneQuerySuggesterTest {
 
 		// nothing is indexed
 
-		List<QuerySuggester.Result> results = underTest.suggest("fleece");
+		List<Suggestion> results = underTest.suggest("fleece");
+		Set<String> expectedLabels = new HashSet<>(sharpenedQueries);
 
-		assertThat(results).hasSize(1);
-		final QuerySuggester.Result result = results.get(0);
-		assertThat(result.getName()).isEqualTo(LuceneQuerySuggester.SHARPENED_GROUP_NAME);
-		final List<String> suggestions = result.getSuggestions();
-		assertThat(suggestions).hasSize(10);
-		assertThat(suggestions).containsExactly(sharpenedQueries.toArray(new String[0]));
+		assertThat(results).hasSize(expectedLabels.size());
+
+		for (Suggestion result : results) {
+			assertTrue(expectedLabels.remove(result.getLabel()), "label '" + result.getLabel() + "' found, but was not expected");
+		}
+		assertTrue(expectedLabels.isEmpty(), "Some expected labels were not found: " + expectedLabels.toString());
 	}
 
 	@DisplayName("Search for `fleeceanzug` should return relaxed results")
@@ -586,14 +539,9 @@ class LuceneQuerySuggesterTest {
 
 		// nothing is indexed
 
-		List<QuerySuggester.Result> results = underTest.suggest("fleeceanzug");
-
+		List<Suggestion> results = underTest.suggest("fleeceanzug");
 		assertThat(results).hasSize(1);
-		final QuerySuggester.Result result = results.get(0);
-		assertThat(result.getName()).isEqualTo(LuceneQuerySuggester.RELAXED_GROUP_NAME);
-		final List<String> suggestions = result.getSuggestions();
-		assertThat(suggestions).hasSize(1);
-		assertThat(suggestions).containsExactly("fleece");
+		assertSuggestion(results.get(0), "fleece", RELAXED_GROUP_NAME);
 	}
 
 	@DisplayName("Destroyed Suggester returns empty result")
@@ -610,18 +558,29 @@ class LuceneQuerySuggesterTest {
 		assertThat(underTest.suggest("fno")).isEmpty();
 	}
 
+	private void assertLabel(Suggestion suggestion, String expectedLabel) {
+		assertThat(suggestion.getLabel()).isEqualTo(expectedLabel);
+	}
 
+	private void assertGroupName(Suggestion suggestion, String expectedGroupName) {
+		assertThat(suggestion.getPayload().get(LuceneQuerySuggester.PAYLOAD_GROUPMATCH_KEY)).isEqualTo(expectedGroupName);
+	}
+
+	private void assertSuggestion(Suggestion suggestion, String expectedLabel, String expectedGroupName) {
+		assertLabel(suggestion, expectedLabel);
+		assertGroupName(suggestion, expectedGroupName);
+	}
 
 	private SuggestRecord asSuggestRecord(String bestQuery, Set<String> searchData, int weight) {
-		return new SuggestRecord(bestQuery, bestQuery, StringUtils.join(searchData, " "), emptySet(), weight);
+		return new SuggestRecord(bestQuery, StringUtils.join(searchData, " "), singletonMap("label", bestQuery), emptySet(), weight);
 	}
 	
 	private SuggestRecord asSuggestRecord(String searchString, String bestQuery, int weight) {
-		return new SuggestRecord(bestQuery, bestQuery, searchString, emptySet(), weight);
+		return new SuggestRecord(bestQuery, searchString, singletonMap("label", bestQuery), emptySet(), weight);
 	}
 
 	private SuggestRecord asSuggestRecord(String searchString, String bestQuery, int weight, Set<String> tags) {
-		return new SuggestRecord(bestQuery, bestQuery, searchString, tags, weight);
+		return new SuggestRecord(bestQuery, searchString, singletonMap("label", bestQuery), tags, weight);
 	}
 
 	private Set<String> setOf(String... entries) {
@@ -649,6 +608,33 @@ class LuceneQuerySuggesterTest {
 		}
 
 		return null;
+	}
+
+	/**
+	 * minimal suggestion that only compares label and groupname
+	 *
+	 */
+	static class AssertSuggestion extends Suggestion {
+
+		AssertSuggestion(String label, String groupName) {
+			super(label);
+			this.setPayload(Collections.singletonMap(PAYLOAD_GROUPMATCH_KEY, groupName));
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			System.out.println("using equals");
+			if (!(obj instanceof Suggestion)) return false;
+			Suggestion other = (Suggestion)obj;
+			return this.getLabel().equals(other.getLabel())
+					&& this.getPayload().get(PAYLOAD_GROUPMATCH_KEY).equals(other.getPayload().get(PAYLOAD_GROUPMATCH_KEY));
+		}
+
+		@Override
+		public int hashCode() {
+			System.out.println("using hashcode");
+			return super.hashCode();
+		}
 	}
 
 }

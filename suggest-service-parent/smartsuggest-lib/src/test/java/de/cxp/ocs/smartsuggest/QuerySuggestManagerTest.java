@@ -9,11 +9,8 @@ import static org.mockito.Mockito.*;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
-import de.cxp.ocs.smartsuggest.QuerySuggestManager;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
@@ -60,8 +57,8 @@ class QuerySuggestManagerTest {
 		// some initialization delay + latency
 		Thread.sleep(UPDATE_LATENCY);
 
-		assertThat(suggester.suggest("foo").get(0).getSuggestions()).contains("fnord");
-		assertThat(suggester.suggest("bar").get(0).getSuggestions()).contains("bart");
+		assertThat(suggester.suggest("foo").get(0).getLabel()).isEqualTo("fnord");
+		assertThat(suggester.suggest("bar").get(0).getLabel()).isEqualTo("bart");
 	}
 
 	@Test
@@ -74,14 +71,14 @@ class QuerySuggestManagerTest {
 
 		// both suggesters are updated at the same time
 		Thread.sleep(UPDATE_LATENCY);
-		assertThat(suggester1.suggest("foo").get(0).getSuggestions()).containsExactly("fnord");
-		assertThat(suggester2.suggest("bar").get(0).getSuggestions()).containsExactly("bart");
+		assertThat(suggester1.suggest("foo").get(0).getLabel()).isEqualTo("fnord");
+		assertThat(suggester2.suggest("bar").get(0).getLabel()).isEqualTo("bart");
 
 		// first suggester should not get a delay because of the second suggester
 		serviceMock.updateSuggestions(testTenant1, singletonList(s("foo", "foofigher")));
-		assertThat(suggester1.suggest("foo").get(0).getSuggestions()).containsExactly("fnord");
+		assertThat(suggester1.suggest("foo").get(0).getLabel()).isEqualTo("fnord");
 		Thread.sleep(UPDATE_LATENCY);
-		assertThat(suggester1.suggest("foo").get(0).getSuggestions()).containsExactly("foofigher");
+		assertThat(suggester1.suggest("foo").get(0).getLabel()).isEqualTo("foofigher");
 	}
 
 	@Test
@@ -90,7 +87,7 @@ class QuerySuggestManagerTest {
 		serviceMock.updateSuggestions(testTenant1, singletonList(s("foo", "fnord")));
 
 		Thread.sleep(UPDATE_LATENCY); // wait shortly until loaded
-		assertThat(suggester.suggest("foo").get(0).getSuggestions()).containsExactly("fnord");
+		assertThat(suggester.suggest("foo").get(0).getLabel()).isEqualTo("fnord");
 
 		serviceMock.setAvailability(false); // slow service
 		try {
@@ -101,12 +98,12 @@ class QuerySuggestManagerTest {
 		}
 		Thread.sleep(UPDATE_LATENCY);
 		// because of unavailability, the suggestions should not be updated
-		assertThat(suggester.suggest("foo").get(0).getSuggestions()).containsExactly("fnord");
+		assertThat(suggester.suggest("foo").get(0).getLabel()).isEqualTo("fnord");
 
 		serviceMock.setAvailability(true);
 		serviceMock.updateSuggestions(testTenant1, singletonList(s("foo", "foofighter")));
 		Thread.sleep(UPDATE_LATENCY);
-		assertThat(suggester.suggest("foo").get(0).getSuggestions()).containsExactly("foofighter");
+		assertThat(suggester.suggest("foo").get(0).getLabel()).isEqualTo("foofighter");
 	}
 
 	// run this manually to test if the JVM is shutdown although the
@@ -142,7 +139,7 @@ class QuerySuggestManagerTest {
 		QuerySuggester suggester = querySuggestManager.getQuerySuggester(testTenant1, true);
 		assertThat(suggester).isNotNull();
 
-		assertThat(suggester.suggest("foo").get(0).getSuggestions()).contains("1");
+		assertThat(suggester.suggest("foo").get(0).getLabel()).isEqualTo("1");
 		
 		querySuggestManager.destroyQuerySuggester(testTenant1);
 		

@@ -22,5 +22,5 @@ public class Suggestion {
 	public String type = "keyword";
 
 	@Schema(description = "arbitrary payload attached to that suggestion. Default: null")
-	Map<String, Object> payload;
+	Map<String, String> payload;
 }

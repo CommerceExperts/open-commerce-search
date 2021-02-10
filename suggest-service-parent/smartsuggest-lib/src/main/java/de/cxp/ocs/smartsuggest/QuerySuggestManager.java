@@ -4,29 +4,12 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
-import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
-import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggesterProxy;
-import de.cxp.ocs.smartsuggest.querysuggester.SuggesterEngine;
-import de.cxp.ocs.smartsuggest.querysuggester.SuggesterFactory;
-import de.cxp.ocs.smartsuggest.querysuggester.dhiman.DhimanQuerySuggesterFactory;
+import de.cxp.ocs.smartsuggest.querysuggester.*;
 import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneSuggesterFactory;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
 import de.cxp.ocs.smartsuggest.updater.SuggestionsUpdater;
@@ -75,6 +58,7 @@ public class QuerySuggestManager implements AutoCloseable {
 
 	private MeterRegistryAdapter metricsRegistry;
 
+	@Deprecated
 	private SuggesterEngine engine = SuggesterEngine.LUCENE;
 
 	public static class QuerySuggestManagerBuilder {
@@ -280,17 +264,8 @@ public class QuerySuggestManager implements AutoCloseable {
 		QuerySuggesterProxy updateableQuerySuggester = new QuerySuggesterProxy(indexName);
 
 		if (!"noop".equals(indexName)) {
-			SuggesterFactory factory;
-			switch (engine) {
-				case DHIMAN:
-					factory = new DhimanQuerySuggesterFactory();
-					break;
-				case LUCENE:
-				default:
-					Path tenantFolder = suggestIndexFolder.resolve(indexName.toString());
-					factory = new LuceneSuggesterFactory(tenantFolder);
-			}
-
+			Path tenantFolder = suggestIndexFolder.resolve(indexName.toString());
+			SuggesterFactory factory = new LuceneSuggesterFactory(tenantFolder);
 			SuggestionsUpdater updateTask = new SuggestionsUpdater(suggestDataProvider, indexName, updateableQuerySuggester, factory);
 			updateTask.setMetricsRegistryAdapter(Optional.ofNullable(metricsRegistry));
 

@@ -1,48 +1,35 @@
 package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
-import static java.util.Collections.*;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.sort;
 import static org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester.PRESERVE_SEP;
 import static org.apache.lucene.search.suggest.analyzing.BlendedInfixSuggester.DEFAULT_NUM_FACTOR;
-import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.*;
+import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_MIN_FUZZY_LENGTH;
+import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_TRANSPOSITIONS;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.CharArraySet;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.Tokenizer;
+import org.apache.commons.lang3.SerializationUtils;
+import org.apache.lucene.analysis.*;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.StopFilter;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.analysis.shingle.ShingleFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.search.suggest.Lookup;
-import org.apache.lucene.search.suggest.analyzing.AnalyzingInfixSuggester;
-import org.apache.lucene.search.suggest.analyzing.BlendedInfixSuggester;
-import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
-import org.apache.lucene.search.suggest.analyzing.SuggestStopFilter;
+import org.apache.lucene.search.suggest.analyzing.*;
 import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.cxp.ocs.smartsuggest.querysuggester.QueryIndexer;
-import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
-import de.cxp.ocs.smartsuggest.querysuggester.SuggestException;
+import de.cxp.ocs.smartsuggest.querysuggester.*;
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.Util;
@@ -51,6 +38,9 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
+
+	public static final String	PAYLOAD_LABEL_KEY		= "meta.label";
+	public static final String	PAYLOAD_GROUPMATCH_KEY	= "meta.matchGroupName";
 
 	public static final String	BEST_MATCHES_GROUP_NAME				= "best matches";
 	public static final String	TYPO_MATCHES_GROUP_NAME				= "typo matches";
@@ -80,13 +70,13 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 	private final Locale				locale;
 	private final ModifiedTermsService	modifiedTermsService;
 
-	private Instant lastIndexTime;
-	private boolean alwaysDoFuzzy = Boolean.getBoolean("alwaysDoFuzzy");
+	private Instant	lastIndexTime;
+	private boolean	alwaysDoFuzzy	= Boolean.getBoolean("alwaysDoFuzzy");
 
 	private static final Logger perfLog = LoggerFactory.getLogger("de.cxp.ocs.smartsuggest.performance");
-	
+
 	private volatile boolean isClosed = false;
-	
+
 	/**
 	 * Constructor.
 	 * 
@@ -104,13 +94,17 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 		this.locale = locale;
 
 		try {
-			// TODO: extract a AnalyzerProviderInterface to make this customizable
+			// TODO: extract a AnalyzerProviderInterface to make this
+			// customizable
 			// that should be configurable rather than being programmable
 			Analyzer basicIndexAnalyzer = setupBasicAnalyzer(true, stopWords);
 			Analyzer basicQueryAnalyzer = setupBasicAnalyzer(false, stopWords);
-			
+
 			MMapDirectory infixDir = new MMapDirectory(indexFolder.resolve("infix"));
-			// infixSuggester = new AnalyzingInfixSuggester(indexDir, basicIndexAnalyzer, basicQueryAnalyzer, AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS, false, false, AnalyzingInfixSuggester.DEFAULT_HIGHLIGHT);
+			// infixSuggester = new AnalyzingInfixSuggester(indexDir,
+			// basicIndexAnalyzer, basicQueryAnalyzer,
+			// AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS, false, false,
+			// AnalyzingInfixSuggester.DEFAULT_HIGHLIGHT);
 			infixSuggester = new BlendedInfixSuggester(infixDir, basicIndexAnalyzer, basicQueryAnalyzer,
 					AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS, BlendedInfixSuggester.BlenderType.CUSTOM, DEFAULT_NUM_FACTOR, false);
 			closeables.add(infixSuggester);
@@ -206,10 +200,10 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 	}
 
 	@Override
-	public List<Result> suggest(String term, final int maxResults, Set<String> groups) {
+	public List<Suggestion> suggest(String term, final int maxResults, Set<String> groups) {
 		if (isClosed) return Collections.emptyList();
 		try {
-			final List<Result> results = new ArrayList<>();
+			final List<Suggestion> results = new ArrayList<>();
 			final Set<String> uniqueQueries = new HashSet<>();
 			final Set<BytesRef> contexts;
 			if (groups != null && !groups.isEmpty()) {
@@ -222,11 +216,11 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 			}
 
 			PerfResult perfResult = new PerfResult(term);
-			
+
 			if (modifiedTermsService.hasData()) {
 				int resultCount = collectModifiedSuggestions(term, modifiedTermsService.getRelaxedTerm(term), uniqueQueries, maxResults, RELAXED_GROUP_NAME, results);
 				perfResult.addStep("relaxedTerms", resultCount);
-				
+
 				resultCount = collectModifiedSuggestions(term, modifiedTermsService.getSharpenedTerm(term), uniqueQueries, maxResults, SHARPENED_GROUP_NAME, results);
 				perfResult.addStep("sharpenedTerms", resultCount);
 			}
@@ -236,7 +230,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 				int resultCount = collectSuggestions(term, contexts, infixSuggester, maxResults, uniqueQueries, maxResults, BEST_MATCHES_GROUP_NAME, results);
 				perfResult.addStep("bestMatches", resultCount);
 			}
-					
+
 			// lookup known typo variants
 			if (uniqueQueries.size() < maxResults) {
 				final int itemsToFetchTypos = maxResults - uniqueQueries.size();
@@ -247,24 +241,27 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 			// fuzzy lookup with one edit
 			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (alwaysDoFuzzy || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults && contexts == null) {
 				final int itemsToFetchOneEdit = maxResults - uniqueQueries.size();
-				int resultCount = collectSuggestions(term, contexts, fuzzySuggesterOneEdit, itemsToFetchOneEdit, uniqueQueries, itemsToFetchOneEdit, FUZZY_MATCHES_ONE_EDIT_GROUP_NAME, results);
+				int resultCount = collectSuggestions(term, contexts, fuzzySuggesterOneEdit, itemsToFetchOneEdit, uniqueQueries, itemsToFetchOneEdit,
+						FUZZY_MATCHES_ONE_EDIT_GROUP_NAME, results);
 				perfResult.addStep("fuzzy1Matches", resultCount);
 			}
 
 			// fuzzy lookup with two edits
 			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (alwaysDoFuzzy || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults && contexts == null) {
 				final int itemsToFetchTwoEdits = maxResults - uniqueQueries.size();
-				int resultCount = collectSuggestions(term, contexts, fuzzySuggesterTwoEdits, itemsToFetchTwoEdits, uniqueQueries, itemsToFetchTwoEdits, FUZZY_MATCHES_TWO_EDITS_GROUP_NAME, results);
+				int resultCount = collectSuggestions(term, contexts, fuzzySuggesterTwoEdits, itemsToFetchTwoEdits, uniqueQueries, itemsToFetchTwoEdits,
+						FUZZY_MATCHES_TWO_EDITS_GROUP_NAME, results);
 				perfResult.addStep("fuzzy2Matches", resultCount);
 			}
-			
+
 			// lookup with shingles
 			if ((alwaysDoFuzzy || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults && contexts == null) {
 				final int itemsToFetchShingles = maxResults - uniqueQueries.size();
-				int resultCount = collectSuggestions(term, contexts, shingleSuggester, itemsToFetchShingles, uniqueQueries, itemsToFetchShingles, SHINGLE_MATCHES_GROUP_NAME, results);
-				perfResult.addStep("shingleMatches",  resultCount);
+				int resultCount = collectSuggestions(term, contexts, shingleSuggester, itemsToFetchShingles, uniqueQueries, itemsToFetchShingles, SHINGLE_MATCHES_GROUP_NAME,
+						results);
+				perfResult.addStep("shingleMatches", resultCount);
 			}
-			
+
 			perfResult.stop();
 			if (perfResult.getTotalTime().getTime() > 200L) {
 				perfLog.warn(perfResult.toString());
@@ -276,14 +273,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 				perfLog.trace(perfResult.toString());
 			}
 
-			if (log.isDebugEnabled()) {
-				int totalSuggestions = 0;
-				for (Result result : results) {
-					totalSuggestions += result.getSuggestions().size();
-				}
-				log.debug("Collected '{}' suggestions for term '{}'", totalSuggestions, term);
-			}
-
+			log.debug("Collected '{}' suggestions for term '{}'", results.size(), term);
 			return results;
 		}
 		catch (Exception x) {
@@ -292,57 +282,61 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 	}
 
 	private int collectSuggestions(String term, Set<BytesRef> contexts, Lookup suggester, int itemsToFetch,
-			Set<String> uniqueQueries, int maxResults, String groupName, List<Result> results) throws IOException {
+			Set<String> uniqueQueries, int maxResults, String groupName, List<Suggestion> results) throws IOException {
 		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, itemsToFetch);
 
-		final List<String> suggestions = getUniqueSuggestions(lookupResults, uniqueQueries, maxResults);
+		final List<Suggestion> suggestions = getUniqueSuggestions(lookupResults, uniqueQueries, maxResults);
+		suggestions.forEach(s -> s.getPayload().put(PAYLOAD_GROUPMATCH_KEY, groupName));
 
 		if (!suggestions.isEmpty()) {
 			sortSuggestions(suggestions, term, groupName);
-			uniqueQueries.addAll(suggestions);
-			results.add(new Result(groupName, suggestions));
+			results.addAll(suggestions);
 			log.debug("Collected '{}' {} for term '{}': {}", suggestions.size(), groupName, term, suggestions);
-			
+
 		}
-		return suggestions.size(); 
+		return suggestions.size();
 	}
 
-	private int collectModifiedSuggestions(String term, List<String> suggestions,
+	private int collectModifiedSuggestions(String term, List<String> modifiedSuggestions,
 			Set<String> uniqueQueries, int maxResults, String groupName,
-			List<Result> results) {
+			List<Suggestion> results) {
 
-		if (suggestions != null && !suggestions.isEmpty()) {
-			suggestions = suggestions.subList(0, Math.min(suggestions.size(), maxResults));
-			sortSuggestions(suggestions, term, groupName);
-			uniqueQueries.addAll(suggestions);
-			results.add(new Result(groupName, suggestions));
-			log.debug("Collected '{}' {} for term '{}': {}", suggestions.size(), groupName, term, suggestions);
-			return suggestions.size();
+		if (modifiedSuggestions != null && !modifiedSuggestions.isEmpty()) {
+			long count = modifiedSuggestions.stream()
+					.filter(uniqueQueries::add)
+					// TODO: figure out, which are better matching before
+					// truncating
+					.limit(maxResults)
+					.map(l -> new Suggestion(l).setPayload(Collections.singletonMap(PAYLOAD_GROUPMATCH_KEY, groupName)))
+					.peek(results::add)
+					.count();
+
+			log.debug("Collected '{}' {} for term '{}'", count, groupName, term);
+			return (int) count;
 		}
 		return 0;
 	}
 
-	private void sortSuggestions(List<String> suggestions, String term, String groupName) {
+	private void sortSuggestions(List<Suggestion> suggestions, String term, String groupName) {
 		if (FUZZY_MATCHES_ONE_EDIT_GROUP_NAME.equals(groupName) || FUZZY_MATCHES_TWO_EDITS_GROUP_NAME.equals(groupName)) {
 			sortFuzzySuggestions(suggestions, term);
 		}
 	}
 
-	private void sortFuzzySuggestions(List<String> suggestions, String term) {
+	private void sortFuzzySuggestions(List<Suggestion> suggestions, String term) {
 		sort(suggestions, (s1, s2) -> {
-			final double s1CommonChars = Util.commonChars(locale, s1, term);
-			final double s2CommonChars = Util.commonChars(locale, s2, term);
+			final double s1CommonChars = Util.commonChars(locale, s1.getLabel(), term);
+			final double s2CommonChars = Util.commonChars(locale, s2.getLabel(), term);
 			return Double.compare(s1CommonChars, s2CommonChars);
 		});
 	}
 
-	private List<String> getUniqueSuggestions(List<Lookup.LookupResult> results, Set<String> uniqueQueries, int maxResults) {
+	private List<Suggestion> getUniqueSuggestions(List<Lookup.LookupResult> results, Set<String> uniqueQueries, int maxResults) {
 		log.debug("Going to get the best matches for: {}", results);
-		final List<String> bestMatches = results.stream()
+		final List<Suggestion> bestMatches = results.stream()
 				.map(this::getBestMatch)
 				.filter(Objects::nonNull)
-				.filter(bestMatch -> !uniqueQueries.contains(bestMatch))
-				.distinct()
+				.filter(bestMatch -> uniqueQueries.add(bestMatch.getLabel()))
 				.limit(maxResults)
 				.collect(Collectors.toList());
 		log.debug("The best matches are: {}", bestMatches);
@@ -387,17 +381,16 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 	/**
 	 * @see SuggestionIterator#payload()
 	 */
-	private String getBestMatch(Lookup.LookupResult result) {
-		BytesRef payload = result.payload;
-		if (payload != null) {
-			String bestMatch = new String(payload.bytes, StandardCharsets.UTF_8);
-			return bestMatch;
-		}
-		else {
-			return null;
-		}
+	private Suggestion getBestMatch(Lookup.LookupResult result) {
+		Map<String, String> payload = SerializationUtils.deserialize(result.payload.bytes);
+		String label = payload.get(PAYLOAD_LABEL_KEY);
+		if (label == null) label = result.key.toString();
+		return new Suggestion(label)
+				.setPayload(payload)
+				.setWeight(result.value)
+				.setContext(result.contexts);
 	}
-	
+
 	@Override
 	public void close() throws Exception {
 		destroy();
