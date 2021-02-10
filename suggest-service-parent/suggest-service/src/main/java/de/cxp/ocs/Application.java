@@ -1,6 +1,6 @@
 package de.cxp.ocs;
 
-import java.util.*;
+import java.util.Collections;
 
 import org.rapidoid.http.*;
 import org.rapidoid.setup.On;
@@ -38,13 +38,13 @@ public class Application {
 						req.response().header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 						req.response().header(HttpHeaders.CACHE_CONTROL.name(), "public, max-age=60");
 						try {
-							Map<String, String> filters = new HashMap<>(req.params());
-							String userQuery = filters.remove("userQuery");
-							String indexname = filters.remove("indexname");
+							String userQuery = req.params().get("userQuery");
 							if (userQuery != null && !userQuery.isEmpty()) {
+								String indexname = req.param("indexname");
+								String filter = req.param("filter");
 								int limit = Integer.valueOf(req.param("limit", "10"));
-								filters.remove("indexname");
-								return suggestService.suggest(indexname, userQuery, limit, filters);
+
+								return suggestService.suggest(indexname, userQuery, limit, filter);
 							}
 							else {
 								req.response().code(400).header("Warning", "no userQuery defined");

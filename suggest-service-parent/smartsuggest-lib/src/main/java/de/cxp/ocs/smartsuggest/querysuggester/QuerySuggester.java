@@ -20,15 +20,15 @@ public interface QuerySuggester extends AutoCloseable {
     }
 
     /**
-     * @param term
-     * 		the term for which to get suggestions
-     * @param maxResults
-     * 		the maximum number of suggestions to return
-     * @param groups
-     * 		the group names used for filtering
-     * @return A list of suggestions for the given term
-     */
-	List<Suggestion> suggest(String term, int maxResults, Set<String> groups) throws SuggestException;
+	 * @param term
+	 *        the term for which to get suggestions
+	 * @param maxResults
+	 *        the maximum number of suggestions to return
+	 * @param tags
+	 *        the group names used for filtering
+	 * @return A list of suggestions for the given term
+	 */
+	List<Suggestion> suggest(String term, int maxResults, Set<String> tags) throws SuggestException;
 
     /**
      * Destroys any resources created by this suggester

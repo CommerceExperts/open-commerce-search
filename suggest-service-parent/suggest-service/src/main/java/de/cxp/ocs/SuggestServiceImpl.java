@@ -38,10 +38,19 @@ public class SuggestServiceImpl implements SuggestService {
 			});
 
 	@Override
-	public List<Suggestion> suggest(String indexName, String userQuery, Integer limit, Map<String, String> filters) throws Exception {
+	public List<Suggestion> suggest(String indexName, String userQuery, Integer limit, String filter) throws Exception {
 		deletionCache.getUnchecked(indexName);
 		QuerySuggester qm = querySuggestManager.getQuerySuggester(indexName, false);
-		return qm.suggest(userQuery, limit, Collections.emptySet())
+
+		Set<String> tagsFilter;
+		if (filter != null) {
+			tagsFilter = new HashSet<>(Arrays.asList(filter.split(",")));
+		}
+		else {
+			tagsFilter = Collections.emptySet();
+		}
+
+		return qm.suggest(userQuery, limit, tagsFilter)
 				.stream()
 				// map internal "Suggestion"
 				// (de.cxp.ocs.smartsuggest.querysuggester.Suggestion)

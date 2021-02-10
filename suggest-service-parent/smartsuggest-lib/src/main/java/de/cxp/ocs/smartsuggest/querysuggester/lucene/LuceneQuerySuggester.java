@@ -200,14 +200,14 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 	}
 
 	@Override
-	public List<Suggestion> suggest(String term, final int maxResults, Set<String> groups) {
+	public List<Suggestion> suggest(String term, final int maxResults, Set<String> tags) {
 		if (isClosed) return Collections.emptyList();
 		try {
 			final List<Suggestion> results = new ArrayList<>();
 			final Set<String> uniqueQueries = new HashSet<>();
 			final Set<BytesRef> contexts;
-			if (groups != null && !groups.isEmpty()) {
-				contexts = groups.stream()
+			if (tags != null && !tags.isEmpty()) {
+				contexts = tags.stream()
 						.map(group -> new BytesRef(group.getBytes(StandardCharsets.UTF_8)))
 						.collect(Collectors.toSet());
 			}

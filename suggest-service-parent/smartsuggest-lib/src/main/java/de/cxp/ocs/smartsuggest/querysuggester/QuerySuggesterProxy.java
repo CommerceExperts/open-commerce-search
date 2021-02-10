@@ -63,15 +63,18 @@ public class QuerySuggesterProxy implements QuerySuggester {
 	}
 
 	@Override
-	public List<Suggestion> suggest(String term, int maxResults, Set<String> groups) throws SuggestException {
+	public List<Suggestion> suggest(String term, int maxResults, Set<String> tags) throws SuggestException {
 		if (isClosed || isBlank(term)) return emptyList();
-		String normalizedTerm = term.trim().toLowerCase();
+		final String normalizedTerm = term.trim().toLowerCase();
 
-		// only cache results, if no filter is given and the teh maximum amount
+		// only cache results, if no tags filter is given and the the limit
 		// of results is <= to the maxSuggestionPerCacheEntry level
-		if (normalizedTerm.length() <= cacheLetterLength && (groups == null || groups.isEmpty()) && maxResults <= maxSuggestionsPerCacheEntry) {
+		if (normalizedTerm.length() <= cacheLetterLength
+				&& (tags == null || tags.isEmpty())
+				&& maxResults <= maxSuggestionsPerCacheEntry) {
 			try {
-				List<Suggestion> cachedResults = firstLetterCache.get(normalizedTerm, () -> innerQuerySuggester.get().suggest(normalizedTerm, maxSuggestionsPerCacheEntry, groups));
+				List<Suggestion> cachedResults = firstLetterCache.get(normalizedTerm,
+						() -> innerQuerySuggester.get().suggest(normalizedTerm, maxSuggestionsPerCacheEntry, tags));
 
 				if (maxResults < maxSuggestionsPerCacheEntry) {
 					cachedResults = cachedResults.subList(0, maxResults);
@@ -84,7 +87,7 @@ public class QuerySuggesterProxy implements QuerySuggester {
 			}
 		}
 		else {
-			return innerQuerySuggester.get().suggest(normalizedTerm, maxResults, groups);
+			return innerQuerySuggester.get().suggest(normalizedTerm, maxResults, tags);
 		}
 	}
 }

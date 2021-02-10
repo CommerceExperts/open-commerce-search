@@ -1,7 +1,6 @@
 package de.cxp.ocs.api;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -9,7 +8,8 @@ import javax.ws.rs.Path;
 import de.cxp.ocs.model.suggest.Suggestion;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.enums.*;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.media.*;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -57,11 +57,9 @@ public interface SuggestService {
 					required = false) Integer limit,
 			@Parameter(
 					in = ParameterIn.QUERY,
-					name = "filters",
-					description = "Any other parameter is used as filter.",
-					explode = Explode.TRUE,
-					style = ParameterStyle.FORM,
-					required = false) Map<String, String> filters)
+					name = "filter",
+					description = "Optional comma-separated list of filter values.",
+					required = false) String filter)
 			throws Exception;
 
 }
