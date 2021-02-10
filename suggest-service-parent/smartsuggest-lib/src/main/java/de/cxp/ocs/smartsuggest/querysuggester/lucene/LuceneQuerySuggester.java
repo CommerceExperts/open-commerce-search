@@ -134,6 +134,11 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 		}
 	}
 
+	@Override
+	public boolean isReady() {
+		return lastIndexTime != null;
+	}
+
 	private FuzzySuggester createFuzzySuggester(Path indexFolder, String name,
 			Analyzer indexAnalyzer, Analyzer queryAnalyzer, int maxEdits) throws IOException {
 		MMapDirectory fuzzyDirectory = new MMapDirectory(indexFolder.resolve("fuzzy" + name));

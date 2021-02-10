@@ -14,4 +14,9 @@ public class NoQuerySuggester implements QuerySuggester {
 	public List<Suggestion> suggest(String term, int maxResults, Set<String> tags) throws SuggestException {
 		return emptyList();
 	}
+
+	@Override
+	public boolean isReady() {
+		return false;
+	}
 }

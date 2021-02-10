@@ -30,6 +30,11 @@ public interface QuerySuggester extends AutoCloseable {
 	 */
 	List<Suggestion> suggest(String term, int maxResults, Set<String> tags) throws SuggestException;
 
+	/**
+	 * @return true if ready to serve suggestions
+	 */
+	boolean isReady();
+
     /**
      * Destroys any resources created by this suggester
      */

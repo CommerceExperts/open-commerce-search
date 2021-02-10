@@ -55,6 +55,11 @@ public class QuerySuggesterProxy implements QuerySuggester {
 	}
 
 	@Override
+	public boolean isReady() {
+		return innerQuerySuggester.get().isReady();
+	}
+
+	@Override
 	public void close() throws Exception {
 		isClosed = true;
 		firstLetterCache.invalidateAll();
