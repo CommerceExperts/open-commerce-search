@@ -43,7 +43,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 	public static final String	PAYLOAD_GROUPMATCH_KEY	= "meta.matchGroupName";
 
 	public static final String	BEST_MATCHES_GROUP_NAME				= "best matches";
-	public static final String	TYPO_MATCHES_GROUP_NAME				= "typo matches";
+	public static final String	TYPO_MATCHES_GROUP_NAME				= "secondary matches";
 	public static final String	FUZZY_MATCHES_ONE_EDIT_GROUP_NAME	= "fuzzy matches with 1 edit";
 	public static final String	FUZZY_MATCHES_TWO_EDITS_GROUP_NAME	= "fuzzy matches with 2 edits";
 	public static final String	SHINGLE_MATCHES_GROUP_NAME			= "shingle matches";
