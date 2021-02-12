@@ -12,7 +12,7 @@
 	</parent>
 
 	<artifactId>open-commerce-search-api</artifactId>
-	<version>0.7.0</version>
+	<version>0.8.0</version>
 	<packaging>jar</packaging>
 
 	<description>An open and abstract search API that covers minimal search functionality</description>
