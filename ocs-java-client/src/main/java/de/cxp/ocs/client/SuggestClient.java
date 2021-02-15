@@ -7,6 +7,7 @@ import de.cxp.ocs.api.SuggestService;
 import de.cxp.ocs.model.suggest.Suggestion;
 import feign.Feign;
 import feign.Feign.Builder;
+import feign.jackson.JacksonDecoder;
 
 public class SuggestClient implements SuggestService {
 
@@ -26,12 +27,14 @@ public class SuggestClient implements SuggestService {
 
 	/**
 	 * Initializes the SearchClient with the given endpointUrl and
-	 * feign defaults
+	 * recommended settings.
 	 * 
 	 * @param endpointUrl
 	 */
 	public SuggestClient(String endpointUrl) {
-		this(endpointUrl, f -> {});
+		this(endpointUrl, f -> {
+			f.decoder(new JacksonDecoder());
+		});
 	}
 
 	@Override

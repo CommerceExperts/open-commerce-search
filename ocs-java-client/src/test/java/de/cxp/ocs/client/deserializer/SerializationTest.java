@@ -1,9 +1,6 @@
 package de.cxp.ocs.client.deserializer;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -17,20 +14,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.cxp.ocs.api.indexer.ImportSession;
-import de.cxp.ocs.model.index.Attribute;
-import de.cxp.ocs.model.index.Category;
-import de.cxp.ocs.model.index.Document;
-import de.cxp.ocs.model.index.Product;
+import de.cxp.ocs.model.index.*;
 import de.cxp.ocs.model.params.SearchQuery;
-import de.cxp.ocs.model.result.Facet;
-import de.cxp.ocs.model.result.FacetEntry;
-import de.cxp.ocs.model.result.HierarchialFacetEntry;
-import de.cxp.ocs.model.result.IntervalFacetEntry;
-import de.cxp.ocs.model.result.ResultHit;
-import de.cxp.ocs.model.result.SearchResult;
-import de.cxp.ocs.model.result.SearchResultSlice;
-import de.cxp.ocs.model.result.SortOrder;
-import de.cxp.ocs.model.result.Sorting;
+import de.cxp.ocs.model.result.*;
+import de.cxp.ocs.model.suggest.Suggestion;
 
 public class SerializationTest {
 
@@ -153,7 +140,13 @@ public class SerializationTest {
 
 				new SearchResult()
 						.setInputURI(new SearchQuery().setQ("the answer").setSort("wisdom").setLimit(1).asUri())
-						.setTookInMillis(42L));
+						.setTookInMillis(42L),
+
+				new Suggestion("shoes"),
+
+				new Suggestion("jack wolfskin")
+						.setType("brand")
+						.setPayload(Collections.singletonMap("matches", "12")));
 	}
 
 	private static Product masterWithVariants(Product masterProduct, Document... variantProducts) {

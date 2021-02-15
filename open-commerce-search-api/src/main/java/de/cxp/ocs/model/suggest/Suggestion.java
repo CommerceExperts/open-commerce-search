@@ -3,12 +3,13 @@ package de.cxp.ocs.model.suggest;
 import java.util.Map;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.NonNull;
+import lombok.*;
 import lombok.experimental.Accessors;
 
 @Data
 @Accessors(chain = true)
+@NoArgsConstructor
+@RequiredArgsConstructor
 public class Suggestion {
 
 	@NonNull
