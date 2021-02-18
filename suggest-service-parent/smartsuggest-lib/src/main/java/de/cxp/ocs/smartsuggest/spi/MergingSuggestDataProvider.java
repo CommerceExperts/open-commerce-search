@@ -15,12 +15,13 @@ import lombok.extern.slf4j.Slf4j;
  * <ul>
  * <li>You want one data source to control the stop-words for all data
  * sources</li>
- * <li>You don't have tagged data, so you can still use the tag filtering to
- * only get suggestions from one data source</li>
+ * <li>You don't need to filter on "natural tags" AND the "type tag".
+ * (could be implemented however)</li>
  * <ul>
+ * <li>You don't need the fuzzy matches: they don't work with filtering</li>
  * <p>
  * Also your data providers should deliver the data with the same locale
- * setting.
+ * setting (otherwise only the first locale is picked and a warning is logged).
  * </p>
  * 
  */

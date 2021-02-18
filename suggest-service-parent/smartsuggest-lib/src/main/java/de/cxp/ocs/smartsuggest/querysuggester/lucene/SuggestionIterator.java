@@ -27,6 +27,9 @@ abstract class SuggestionIterator implements InputIterator {
 	public boolean hasContexts() {
 		// fuzzy suggester will decline indexing if this is true
 		// and the BlendedInfixSuggester does not call this method
+		// TODO: to implement context filtering for fuzzy Suggesters, we can
+		// append the tags/contexts to the payload object and do the filtering
+		// after retrieving fuzzy results
 		return false;
 	}
 

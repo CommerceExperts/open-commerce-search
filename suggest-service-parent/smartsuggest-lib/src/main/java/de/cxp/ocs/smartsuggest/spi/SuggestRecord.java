@@ -41,9 +41,17 @@ public class SuggestRecord {
 	Map<String, String> payload;
 
 	/**
+	 * <p>
 	 * The lucene naming for this is 'context'. These values that can be
 	 * attached to a record and can be used as filter or to do contextual
 	 * boosting at search time.
+	 * </p>
+	 * <p>
+	 * Keep in mind, that tags only work for non-fuzzy suggesters.
+	 * So if a filter is used when fetching suggestions, no fuzzy matches will
+	 * be made.
+	 * </p>
+	 * TODO A workaround might be implemented soon.
 	 */
 	Set<String> tags;
 
