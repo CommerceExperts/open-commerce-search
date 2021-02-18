@@ -223,11 +223,11 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 			PerfResult perfResult = new PerfResult(term);
 
 			if (modifiedTermsService.hasData()) {
-				int resultCount = collectModifiedSuggestions(term, modifiedTermsService.getRelaxedTerm(term), uniqueQueries, maxResults, RELAXED_GROUP_NAME, results);
-				perfResult.addStep("relaxedTerms", resultCount);
-
-				resultCount = collectModifiedSuggestions(term, modifiedTermsService.getSharpenedTerm(term), uniqueQueries, maxResults, SHARPENED_GROUP_NAME, results);
+				int resultCount = collectModifiedSuggestions(term, modifiedTermsService.getSharpenedTerm(term), uniqueQueries, maxResults, SHARPENED_GROUP_NAME, results);
 				perfResult.addStep("sharpenedTerms", resultCount);
+
+				resultCount = collectModifiedSuggestions(term, modifiedTermsService.getRelaxedTerm(term), uniqueQueries, maxResults, RELAXED_GROUP_NAME, results);
+				perfResult.addStep("relaxedTerms", resultCount);
 			}
 
 			// lookup for best matches

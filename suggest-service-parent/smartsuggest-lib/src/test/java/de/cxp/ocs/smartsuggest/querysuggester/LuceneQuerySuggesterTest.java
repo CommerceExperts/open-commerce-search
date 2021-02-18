@@ -217,7 +217,7 @@ class LuceneQuerySuggesterTest {
 		List<SuggestRecord> toIndex = new ArrayList<>(asList(
 				asSuggestRecord("name 1", Movie1, 101, setOf("movie")),
 				asSuggestRecord("name 2", Movie2, 100, setOf("movie")),
-				asSuggestRecord("name 3", Book1, 100, setOf("book"))));
+				asSuggestRecord("name 3", Book1, 102, setOf("book"))));
 
 		underTest.index(toIndex).join();
 
@@ -227,6 +227,11 @@ class LuceneQuerySuggesterTest {
 		List<Suggestion> movieResults = underTest.suggest("name", 10, setOf("movie"));
 		assertSuggestion(movieResults.get(0), Movie1, TYPO_MATCHES_GROUP_NAME);
 		assertSuggestion(movieResults.get(1), Movie2, TYPO_MATCHES_GROUP_NAME);
+
+		List<Suggestion> bothResults = underTest.suggest("name", 10, setOf("book", "movie"));
+		assertLabel(bothResults.get(0), Book1);
+		assertLabel(bothResults.get(1), Movie1);
+		assertLabel(bothResults.get(2), Movie2);
 	}
 
 	@DisplayName("When the search term is a phrase then it should return best matches first, then extra results for sub-phrase/words")
