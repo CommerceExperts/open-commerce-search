@@ -45,7 +45,7 @@ public class CompoundQuerySuggesterTest {
 						getSuggestData("type2",
 								new SuggestRecord("fnord", "", emptyMap(), singleton("y"), 100))));
 		underTest = new CompoundQuerySuggester("index-a", dataProviders, new FakeSuggesterFactory());
-		assertEquals(underTest.suggest("f", 10, singleton("y")).get(0).getLabel(), "fnord");
+		assertEquals("fnord", underTest.suggest("f", 10, singleton("y")).get(0).getLabel());
 	}
 
 	private SuggestData getSuggestData(String type, SuggestRecord... records) {
