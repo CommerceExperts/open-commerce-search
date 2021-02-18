@@ -33,7 +33,8 @@ public class RemoteSuggestDataProviderSimulation implements SuggestDataProvider 
 
 	@Override
 	public boolean hasData(String indexName) {
-		return loadedSuggestions.containsKey(indexName);
+		// always true, otherwise the updater starts polling and the test fails
+		return true;
 	}
 
 	@Override
