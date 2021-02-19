@@ -257,7 +257,9 @@ public class QuerySuggestManager implements AutoCloseable {
 			scheduledFuture.cancel(true);
 		}
 		QuerySuggester removedSuggester = activeQuerySuggesters.remove(indexName);
-		removedSuggester.destroy();
+		if (removedSuggester != null) {
+			removedSuggester.destroy();	
+		}
 	}
 
 	private QuerySuggester initializeQuerySuggester(String indexName, boolean synchronous) {
