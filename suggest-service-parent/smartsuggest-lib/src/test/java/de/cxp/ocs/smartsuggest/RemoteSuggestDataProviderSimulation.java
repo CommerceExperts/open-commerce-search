@@ -1,9 +1,16 @@
 package de.cxp.ocs.smartsuggest;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
 
-import de.cxp.ocs.smartsuggest.spi.*;
+import de.cxp.ocs.smartsuggest.spi.SuggestData;
+import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
+import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import lombok.Setter;
 
 public class RemoteSuggestDataProviderSimulation implements SuggestDataProvider {
@@ -33,8 +40,7 @@ public class RemoteSuggestDataProviderSimulation implements SuggestDataProvider 
 
 	@Override
 	public boolean hasData(String indexName) {
-		// always true, otherwise the updater starts polling and the test fails
-		return true;
+		return loadedSuggestionTimes.containsKey(indexName);
 	}
 
 	@Override

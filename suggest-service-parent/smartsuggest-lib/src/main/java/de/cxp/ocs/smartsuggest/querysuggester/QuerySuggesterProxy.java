@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class QuerySuggesterProxy implements QuerySuggester {
 
-	private final AtomicReference<QuerySuggester>	innerQuerySuggester			= new AtomicReference<>(new NoQuerySuggester());
+	private final AtomicReference<QuerySuggester>	innerQuerySuggester			= new AtomicReference<>(new NoopQuerySuggester());
 	private final String							indexName;
 	private volatile boolean						isClosed					= false;
 	private int										maxSuggestionsPerCacheEntry	= 10;

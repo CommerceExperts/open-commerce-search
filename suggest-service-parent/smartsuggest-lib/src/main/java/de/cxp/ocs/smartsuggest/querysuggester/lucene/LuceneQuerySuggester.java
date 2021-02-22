@@ -7,29 +7,48 @@ import static org.apache.lucene.search.suggest.analyzing.BlendedInfixSuggester.D
 import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_MIN_FUZZY_LENGTH;
 import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_TRANSPOSITIONS;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.SerializationUtils;
-import org.apache.lucene.analysis.*;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.StopFilter;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.analysis.shingle.ShingleFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.search.suggest.Lookup;
-import org.apache.lucene.search.suggest.analyzing.*;
+import org.apache.lucene.search.suggest.analyzing.AnalyzingInfixSuggester;
+import org.apache.lucene.search.suggest.analyzing.BlendedInfixSuggester;
+import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
+import org.apache.lucene.search.suggest.analyzing.SuggestStopFilter;
 import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.util.BytesRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.cxp.ocs.smartsuggest.querysuggester.*;
+import de.cxp.ocs.smartsuggest.querysuggester.QueryIndexer;
+import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
+import de.cxp.ocs.smartsuggest.querysuggester.SuggestException;
+import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.Util;
@@ -291,7 +310,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, itemsToFetch);
 
 		final List<Suggestion> suggestions = getUniqueSuggestions(lookupResults, uniqueQueries, maxResults);
-		suggestions.forEach(s -> s.getPayload().put(PAYLOAD_GROUPMATCH_KEY, groupName));
+		suggestions.forEach(s -> withPayloadEntry(s, PAYLOAD_GROUPMATCH_KEY, groupName));
 
 		if (!suggestions.isEmpty()) {
 			sortSuggestions(suggestions, term, groupName);
@@ -312,7 +331,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 					// TODO: figure out, which are better matching before
 					// truncating
 					.limit(maxResults)
-					.map(l -> new Suggestion(l).setPayload(Collections.singletonMap(PAYLOAD_GROUPMATCH_KEY, groupName)))
+					.map(l -> withPayloadEntry(new Suggestion(l), PAYLOAD_GROUPMATCH_KEY, groupName))
 					.peek(results::add)
 					.count();
 
@@ -320,6 +339,21 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 			return (int) count;
 		}
 		return 0;
+	}
+
+	private Suggestion withPayloadEntry(Suggestion s, String key, String value) {
+		if (s.getPayload() == null) {
+			s.setPayload(Collections.singletonMap(key, value));
+		}
+		else if (!(s.getPayload() instanceof HashMap<?, ?>)) {
+			HashMap<String, String> payload = new HashMap<>(s.getPayload());
+			payload.put(key, value);
+			s.setPayload(payload);
+		}
+		else {
+			s.getPayload().put(key, value);
+		}
+		return s;
 	}
 
 	private void sortSuggestions(List<Suggestion> suggestions, String term, String groupName) {

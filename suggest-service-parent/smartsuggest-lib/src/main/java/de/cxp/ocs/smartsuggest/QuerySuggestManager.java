@@ -4,13 +4,35 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
-import de.cxp.ocs.smartsuggest.querysuggester.*;
+import de.cxp.ocs.smartsuggest.querysuggester.CompoundQuerySuggester;
+import de.cxp.ocs.smartsuggest.querysuggester.NoopQuerySuggester;
+import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
+import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggesterProxy;
+import de.cxp.ocs.smartsuggest.querysuggester.SuggesterEngine;
+import de.cxp.ocs.smartsuggest.querysuggester.SuggesterFactory;
 import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneSuggesterFactory;
+import de.cxp.ocs.smartsuggest.spi.MergingSuggestDataProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
 import de.cxp.ocs.smartsuggest.updater.SuggestionsUpdater;
 import lombok.NonNull;
@@ -34,7 +56,7 @@ public class QuerySuggestManager implements AutoCloseable {
 
 	public static final String DEBUG_PROPERTY = "ocs.smartsuggest.debug";
 
-	private final SuggestDataProvider suggestDataProvider;
+	private final List<SuggestDataProvider> suggestDataProviders;
 
 	private final Map<String, QuerySuggester> activeQuerySuggesters = new ConcurrentHashMap<>();
 
@@ -56,6 +78,8 @@ public class QuerySuggestManager implements AutoCloseable {
 
 	private long updateRate = 60;
 
+	private boolean useDataMerger = false;
+
 	private MeterRegistryAdapter metricsRegistry;
 
 	@Deprecated
@@ -66,6 +90,8 @@ public class QuerySuggestManager implements AutoCloseable {
 		private Path suggestIndexFolder;
 
 		private int updateRate = 60;
+
+		private boolean useDataMerger = false;
 
 		private SuggesterEngine engine = SuggesterEngine.LUCENE;
 
@@ -117,6 +143,35 @@ public class QuerySuggestManager implements AutoCloseable {
 		}
 
 		/**
+		 * <p>
+		 * Per default for each provided data set, a single suggester is set up.
+		 * If this flag is enabled, the {@link MergingSuggestDataProvider} will
+		 * be used to merge all provided data for a given index.
+		 * </p>
+		 * This approach is best suitable in these cases:
+		 * <ul>
+		 * <li>You want one data source to control the stop-words for all data
+		 * sources</li>
+		 * <li>You don't need to filter on "natural tags" AND the "type
+		 * tag" (only one works at a time)</li>
+		 * <ul>
+		 * <li>You don't need the fuzzy matches: they don't work with
+		 * filtering</li>
+		 * <p>
+		 * Also the data providers should deliver the data with the same locale
+		 * setting (otherwise only the first locale is picked and a warning is
+		 * logged).
+		 * </p>
+		 * 
+		 * @see MergingSuggestDataProvider
+		 * @return
+		 */
+		public QuerySuggestManagerBuilder useDataMerger() {
+			this.useDataMerger = true;
+			return this;
+		}
+
+		/**
 		 * specify indexes that should be loaded immediately after
 		 * initialization.
 		 * 
@@ -156,6 +211,7 @@ public class QuerySuggestManager implements AutoCloseable {
 			querySuggestManager.updateRate = updateRate;
 			querySuggestManager.metricsRegistry = metricsRegistry;
 			querySuggestManager.engine = engine;
+			querySuggestManager.useDataMerger = useDataMerger;
 			if (preloadIndexes.size() > 0) {
 				List<CompletableFuture<QuerySuggester>> futures = preloadIndexes.stream()
 						.map(indexName -> CompletableFuture.supplyAsync(() -> querySuggestManager.getQuerySuggester(indexName, true)))
@@ -176,22 +232,26 @@ public class QuerySuggestManager implements AutoCloseable {
 	 */
 	private QuerySuggestManager() {
 		ServiceLoader<SuggestDataProvider> serviceLoader = ServiceLoader.load(SuggestDataProvider.class);
-		Iterator<SuggestDataProvider> suggestDataProviders = serviceLoader.iterator();
-		SuggestDataProvider dataProvider = null;
-		if (suggestDataProviders.hasNext()) {
-			dataProvider = suggestDataProviders.next();
-		}
-		else {
+		Iterator<SuggestDataProvider> loadedSDPs = serviceLoader.iterator();
+		List<SuggestDataProvider> dataProviders = new ArrayList<>();
+		if (!loadedSDPs.hasNext()) {
 			throw new IllegalStateException("No SuggestDataProvider found on classpath! Suggest unusable that way."
 					+ " Please provide a SuggestDataProvider implementation accessible via ServiceLoader.");
 		}
-		if (suggestDataProviders.hasNext()) {
-			// TODO build a "CompoundSuggestDataServiceProvider" that checks all
-			// available service providers for data
-			log.warn("more than one SuggestDataServiceProvider found! Will only use the first one of type {}", dataProvider.getClass().getCanonicalName());
+		while (loadedSDPs.hasNext()) {
+			dataProviders.add(loadedSDPs.next());
 		}
-		log.info("initialized SmartSuggest with {}", dataProvider.getClass().getCanonicalName());
-		suggestDataProvider = dataProvider;
+		log.info("initialized SmartSuggest with {}", dataProviders.getClass().getCanonicalName());
+		
+		suggestDataProviders = prepareSuggestDataProviders(dataProviders);
+	}
+
+	private List<SuggestDataProvider> prepareSuggestDataProviders(List<SuggestDataProvider> dataProviders) {
+		if (useDataMerger) {
+			return Collections.singletonList(new MergingSuggestDataProvider(dataProviders));
+		} else {
+			return Collections.unmodifiableList(dataProviders);
+		}
 	}
 
 	/**
@@ -199,8 +259,8 @@ public class QuerySuggestManager implements AutoCloseable {
 	 * 
 	 * @param dataProvider
 	 */
-	QuerySuggestManager(SuggestDataProvider dataProvider) {
-		suggestDataProvider = dataProvider;
+	QuerySuggestManager(SuggestDataProvider... dataProvider) {
+		suggestDataProviders = prepareSuggestDataProviders(Arrays.asList(dataProvider));
 		try {
 			suggestIndexFolder = Files.createTempDirectory(QuerySuggestManager.class.getSimpleName() + "-for-testing-");
 		}
@@ -248,7 +308,7 @@ public class QuerySuggestManager implements AutoCloseable {
 			scheduledTasks.remove(indexName);
 			activeQuerySuggesters.remove(indexName);
 		}
-		return activeQuerySuggesters.computeIfAbsent(indexName, (_tenant) -> initializeQuerySuggester(_tenant, synchronous));
+		return activeQuerySuggesters.computeIfAbsent(indexName, (_tenant) -> initializeQuerySuggesters(_tenant, synchronous));
 	}
 
 	public void destroyQuerySuggester(String indexName) {
@@ -262,25 +322,60 @@ public class QuerySuggestManager implements AutoCloseable {
 		}
 	}
 
-	private QuerySuggester initializeQuerySuggester(String indexName, boolean synchronous) {
+	/**
+	 * Initialize query suggester for all suggest data provider that have data
+	 * for the given index name.
+	 * 
+	 * @param indexName
+	 * @param synchronous
+	 * @return
+	 */
+	private QuerySuggester initializeQuerySuggesters(String indexName, boolean synchronous) {
+		if (suggestDataProviders.size() == 1) {
+			return initializeQuerySuggester(suggestDataProviders.get(0), indexName, synchronous);
+		}
+
+		List<QuerySuggester> suggesters = new ArrayList<>();
+		for (SuggestDataProvider sdp : suggestDataProviders) {
+			if (sdp.hasData(indexName)) {
+				suggesters.add(initializeQuerySuggester(sdp, indexName, synchronous));
+			}
+		}
+
+		if (suggesters.isEmpty()) {
+			log.warn("No SuggestDataProvider provides data for index {}. Will use NoopQuerySuggester", indexName);
+			return new NoopQuerySuggester(true);
+		}
+		if (suggesters.size() == 1) {
+			return suggesters.get(0);
+		}
+		else {
+			return new CompoundQuerySuggester(suggesters);
+		}
+	}
+
+	private QuerySuggester initializeQuerySuggester(SuggestDataProvider suggestDataProvider, String indexName, boolean synchronous) {
+		if ("noop".equals(indexName)) {
+			return new NoopQuerySuggester(true);
+		}
+
 		QuerySuggesterProxy updateableQuerySuggester = new QuerySuggesterProxy(indexName);
 
-		if (!"noop".equals(indexName)) {
-			Path tenantFolder = suggestIndexFolder.resolve(indexName.toString());
-			SuggesterFactory factory = new LuceneSuggesterFactory(tenantFolder);
-			SuggestionsUpdater updateTask = new SuggestionsUpdater(suggestDataProvider, indexName, updateableQuerySuggester, factory);
-			updateTask.setMetricsRegistryAdapter(Optional.ofNullable(metricsRegistry));
+		Path tenantFolder = suggestIndexFolder.resolve(indexName.toString()).resolve(suggestDataProvider.getClass().getSimpleName());
+		SuggesterFactory factory = new LuceneSuggesterFactory(tenantFolder);
 
-			long initialDelay = 0;
-			if (synchronous) {
-				initialDelay = updateRate;
-				updateTask.run();
-			}
-			ScheduledFuture<?> scheduledTask = executor.scheduleWithFixedDelay(updateTask, initialDelay, updateRate, TimeUnit.SECONDS);
-			scheduledTasks.put(indexName, scheduledTask);
+		SuggestionsUpdater updateTask = new SuggestionsUpdater(suggestDataProvider, indexName, updateableQuerySuggester, factory);
+		updateTask.setMetricsRegistryAdapter(Optional.ofNullable(metricsRegistry));
 
-			log.info("Successfully initialized QuerySuggester for indexName {}", indexName);
+		long initialDelay = 0;
+		if (synchronous) {
+			initialDelay = updateRate;
+			updateTask.run();
 		}
+		ScheduledFuture<?> scheduledTask = executor.scheduleWithFixedDelay(updateTask, initialDelay, updateRate, TimeUnit.SECONDS);
+		scheduledTasks.put(indexName, scheduledTask);
+
+		log.info("Successfully initialized QuerySuggester for indexName {}", indexName);
 
 		return updateableQuerySuggester;
 	}
