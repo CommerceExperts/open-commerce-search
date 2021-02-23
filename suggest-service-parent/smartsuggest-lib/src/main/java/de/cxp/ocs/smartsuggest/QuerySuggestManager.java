@@ -150,6 +150,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		 * </p>
 		 * <p>
 		 * This approach is best suitable in these cases:
+		 * </p>
 		 * <ul>
 		 * <li>You want one data source to control the stop-words for all data
 		 * sources</li>
@@ -158,7 +159,6 @@ public class QuerySuggestManager implements AutoCloseable {
 		 * <li>You don't need the fuzzy matches: they don't work with
 		 * filtering</li>
 		 * </ul>
-		 * </p>
 		 * <p>
 		 * Also the data providers should deliver the data with the same locale
 		 * setting (otherwise only the first locale is picked and a warning is

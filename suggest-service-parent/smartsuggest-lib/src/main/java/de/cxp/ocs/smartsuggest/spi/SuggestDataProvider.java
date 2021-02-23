@@ -11,8 +11,8 @@ public interface SuggestDataProvider {
 	 * <p>
 	 * It's also possible to return a static "true" here and do the expensive
 	 * availability check at the getLastDataModTime method, which is called
-	 * async. If getLastDataModTime returns a value <0, data update are canceled
-	 * as well.
+	 * async. If getLastDataModTime returns a value &lt; 0, data update are
+	 * canceled as well.
 	 * </p>
 	 * 
 	 * @param indexName
@@ -33,7 +33,7 @@ public interface SuggestDataProvider {
 	 * This feature is used to avoid potential concurrency issues.
 	 * </p>
 	 * <p>
-	 * If data is not available at all, a value <0 should be returned.
+	 * If data is not available at all, a value &lt; 0 should be returned.
 	 * </p>
 	 * 
 	 * @param indexName
