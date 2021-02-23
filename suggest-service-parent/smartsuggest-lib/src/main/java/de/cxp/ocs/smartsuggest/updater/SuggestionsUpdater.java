@@ -9,10 +9,16 @@ import java.util.concurrent.TimeUnit;
 import org.apache.lucene.store.AlreadyClosedException;
 
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
-import de.cxp.ocs.smartsuggest.querysuggester.*;
-import de.cxp.ocs.smartsuggest.spi.*;
+import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
+import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggesterProxy;
+import de.cxp.ocs.smartsuggest.querysuggester.SuggesterFactory;
+import de.cxp.ocs.smartsuggest.spi.SuggestData;
+import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
+import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.Util;
-import io.micrometer.core.instrument.*;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -68,10 +74,18 @@ public class SuggestionsUpdater implements Runnable {
 
 	private void update() throws IOException {
 		if (lastUpdate == null && !dataProvider.hasData(indexName)) {
-			throw new IllegalStateException("dataprovider " + dataProvider.getClass().getSimpleName() + " has no data for index " + indexName);
+			throw new IllegalStateException("dataprovider " + dataProvider.getClass().getSimpleName()
+					+ " has no data for index " + indexName);
 		}
 
-		Instant remoteModTime = Instant.ofEpochMilli(dataProvider.getLastDataModTime(indexName));
+		long remoteModTimeMs = dataProvider.getLastDataModTime(indexName);
+		if (remoteModTimeMs < 0) {
+			throw new IllegalStateException("dataprovider " + dataProvider.getClass().getSimpleName()
+					+ " states to have data for index " + indexName
+					+ " but lastModTime was " + remoteModTimeMs);
+		}
+
+		Instant remoteModTime = Instant.ofEpochMilli(remoteModTimeMs);
 		if (lastUpdate == null || remoteModTime.isAfter(lastUpdate)) {
 			SuggestData suggestData = dataProvider.loadData(indexName);
 
@@ -114,7 +128,9 @@ public class SuggestionsUpdater implements Runnable {
 	}
 
 	private void addSensors(MeterRegistry reg) {
-		Iterable<Tag> indexTag = Tags.of("indexName", indexName);
+		Iterable<Tag> indexTag = Tags
+				.of("indexName", indexName)
+				.and("dataProvider", dataProvider.getClass().getCanonicalName());
 		reg.gauge(Util.APP_NAME + ".update.fail.count", indexTag, this, updater -> updater.updateFailCount);
 		reg.more().counter(Util.APP_NAME + ".update.success.count", indexTag, this, updater -> updater.updateSuccessCount);
 		reg.more().timeGauge(Util.APP_NAME + ".suggestions.age", indexTag, this, TimeUnit.SECONDS,

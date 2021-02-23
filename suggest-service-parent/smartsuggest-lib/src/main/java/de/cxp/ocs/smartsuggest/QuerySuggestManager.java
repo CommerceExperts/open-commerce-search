@@ -148,15 +148,17 @@ public class QuerySuggestManager implements AutoCloseable {
 		 * If this flag is enabled, the {@link MergingSuggestDataProvider} will
 		 * be used to merge all provided data for a given index.
 		 * </p>
+		 * <p>
 		 * This approach is best suitable in these cases:
 		 * <ul>
 		 * <li>You want one data source to control the stop-words for all data
 		 * sources</li>
 		 * <li>You don't need to filter on "natural tags" AND the "type
 		 * tag" (only one works at a time)</li>
-		 * <ul>
 		 * <li>You don't need the fuzzy matches: they don't work with
 		 * filtering</li>
+		 * </ul>
+		 * </p>
 		 * <p>
 		 * Also the data providers should deliver the data with the same locale
 		 * setting (otherwise only the first locale is picked and a warning is
@@ -164,7 +166,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		 * </p>
 		 * 
 		 * @see MergingSuggestDataProvider
-		 * @return
+		 * @return builder
 		 */
 		public QuerySuggestManagerBuilder useDataMerger() {
 			this.useDataMerger = true;

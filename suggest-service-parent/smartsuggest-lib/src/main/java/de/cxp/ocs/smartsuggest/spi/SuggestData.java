@@ -1,8 +1,13 @@
 package de.cxp.ocs.smartsuggest.spi;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
@@ -28,8 +33,7 @@ public class SuggestData {
 	/**
 	 * <p>
 	 * Optional: Time when this data was created in epoch millis. Should be the
-	 * same as
-	 * stated by the {@link SuggestDataProvider}.
+	 * same as stated by the {@link SuggestDataProvider}.
 	 * </p>
 	 * <p>
 	 * If this timestamp is provided, a sanity check is done inside the update
