@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collections;
@@ -131,7 +132,7 @@ class QuerySuggestManagerTest {
 	}
 
 	@Test
-	void noopChannel() {
+	void noopChannel() throws IOException {
 		SuggestDataProvider api = mock(SuggestDataProvider.class);
 
 		try (QuerySuggestManager qm = new QuerySuggestManager(api)) {

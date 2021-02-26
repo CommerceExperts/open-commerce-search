@@ -3,7 +3,11 @@ package de.cxp.ocs.smartsuggest.spi;
 import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.*;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +20,7 @@ public class MergingSuggestDataProviderTest {
 	private MergingSuggestDataProvider underTest;
 
 	@Test
-	public void withSingleProvider() {
+	public void withSingleProvider() throws IOException {
 		underTest = new MergingSuggestDataProvider(
 				Arrays.asList(
 						new FakeSuggestDataProvider().putData("index1",
@@ -30,7 +34,7 @@ public class MergingSuggestDataProviderTest {
 	}
 
 	@Test
-	public void withTwoProvider() {
+	public void withTwoProvider() throws IOException {
 		underTest = new MergingSuggestDataProvider(
 				Arrays.asList(
 						new FakeSuggestDataProvider().putData("index1",
@@ -54,7 +58,7 @@ public class MergingSuggestDataProviderTest {
 	}
 
 	@Test
-	public void withTaggedDataProvided() {
+	public void withTaggedDataProvided() throws IOException {
 		underTest = new MergingSuggestDataProvider(
 				Arrays.asList(
 						new FakeSuggestDataProvider().putData("index1",

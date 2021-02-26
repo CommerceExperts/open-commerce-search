@@ -4,11 +4,16 @@ import static java.util.Collections.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.*;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
-import de.cxp.ocs.smartsuggest.spi.*;
+import de.cxp.ocs.smartsuggest.spi.SuggestData;
+import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
+import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.FakeSuggestDataProvider;
 import de.cxp.ocs.smartsuggest.util.FakeSuggesterFactory;
 
@@ -17,13 +22,13 @@ public class CompoundQuerySuggesterTest {
 	private CompoundQuerySuggester underTest;
 
 	@Test
-	public void testWithoutDataProviders() {
+	public void testWithoutDataProviders() throws IOException {
 		underTest = new CompoundQuerySuggester("", emptyList(), new FakeSuggesterFactory());
 		assertTrue(underTest.suggest("a").isEmpty());
 	}
 
 	@Test
-	public void testWithTwoDataProviders() {
+	public void testWithTwoDataProviders() throws IOException {
 		List<SuggestDataProvider> dataProviders = Arrays.asList(
 				new FakeSuggestDataProvider().putData("index-a",
 						getSuggestData("type1",
@@ -36,7 +41,7 @@ public class CompoundQuerySuggesterTest {
 	}
 
 	@Test
-	public void testWithTaggedData() {
+	public void testWithTaggedData() throws IOException {
 		List<SuggestDataProvider> dataProviders = Arrays.asList(
 				new FakeSuggestDataProvider().putData("index-a",
 						getSuggestData("type1",

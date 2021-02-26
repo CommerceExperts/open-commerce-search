@@ -1,6 +1,10 @@
 package de.cxp.ocs.smartsuggest.querysuggester;
 
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
@@ -20,7 +24,7 @@ public class CompoundQuerySuggester implements QuerySuggester {
 	}
 
 	// for testing purposes
-	CompoundQuerySuggester(String indexName, List<SuggestDataProvider> dataProviders, SuggesterFactory factory) {
+	CompoundQuerySuggester(String indexName, List<SuggestDataProvider> dataProviders, SuggesterFactory factory) throws IOException {
 		suggesterList = new ArrayList<>();
 		for (SuggestDataProvider dataProvider : dataProviders) {
 			if (dataProvider.hasData(indexName)) {

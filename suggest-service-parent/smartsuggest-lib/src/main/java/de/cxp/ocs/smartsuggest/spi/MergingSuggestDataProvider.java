@@ -1,6 +1,12 @@
 package de.cxp.ocs.smartsuggest.spi;
 
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,13 +31,22 @@ public class MergingSuggestDataProvider implements SuggestDataProvider {
 	public long getLastDataModTime(final String indexName) {
 		return suggestDataProviders.stream()
 				.filter(sdp -> sdp.hasData(indexName))
-				.mapToLong(sdp -> sdp.getLastDataModTime(indexName))
+				.mapToLong(sdp -> {
+					try {
+						return sdp.getLastDataModTime(indexName);
+					}
+					catch (IOException e) {
+						log.error("Failed to retrieve dataModTime from data provider {} for index {}",
+								sdp.getClass().getSimpleName(), indexName);
+						return -1;
+					}
+				})
 				.max()
 				.orElse(-1L);
 	}
 
 	@Override
-	public SuggestData loadData(final String indexName) {
+	public SuggestData loadData(final String indexName) throws IOException {
 		// don't do short cuts here for a single suggestDataProvider,
 		// because if this merger is used, the user should
 		// be able to rely on the tagged data for filtering!

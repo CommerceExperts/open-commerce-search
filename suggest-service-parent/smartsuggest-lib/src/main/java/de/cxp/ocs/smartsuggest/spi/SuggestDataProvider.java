@@ -1,5 +1,7 @@
 package de.cxp.ocs.smartsuggest.spi;
 
+import java.io.IOException;
+
 public interface SuggestDataProvider {
 
 	/**
@@ -39,14 +41,16 @@ public interface SuggestDataProvider {
 	 * @param indexName
 	 *        identifier for the requested data
 	 * @return unix timestamp in millis
+	 * @throws IOException
 	 */
-	long getLastDataModTime(String indexName);
+	long getLastDataModTime(String indexName) throws IOException;
 
 	/**
 	 * @param indexName
 	 *        identifier for the requested data
 	 * @return suggest data
+	 * @throws IOException
 	 */
-	SuggestData loadData(String indexName);
+	SuggestData loadData(String indexName) throws IOException;
 
 }
