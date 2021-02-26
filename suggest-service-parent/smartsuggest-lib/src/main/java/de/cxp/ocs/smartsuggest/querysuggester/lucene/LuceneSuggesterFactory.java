@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import org.apache.lucene.analysis.CharArraySet;
 
+import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.SuggesterFactory;
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
@@ -16,6 +17,7 @@ import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -24,6 +26,9 @@ public class LuceneSuggesterFactory implements SuggesterFactory {
 
 	@NonNull
 	private final Path indexFolder;
+
+	@Setter
+	private Optional<MeterRegistryAdapter> metricsRegistry = Optional.empty();
 
 	@Override
 	public QuerySuggester getSuggester(SuggestData suggestData) {
@@ -35,7 +40,8 @@ public class LuceneSuggesterFactory implements SuggesterFactory {
 						Collections.emptyMap()),
 				Optional.ofNullable(suggestData.getWordsToIgnore())
 						.map(sw -> new CharArraySet(sw, true))
-						.orElse(null));
+						.orElse(null),
+				metricsRegistry);
 
 		final long start = System.currentTimeMillis();
 		List<SuggestRecord> suggestRecords = suggestData.getSuggestRecords();

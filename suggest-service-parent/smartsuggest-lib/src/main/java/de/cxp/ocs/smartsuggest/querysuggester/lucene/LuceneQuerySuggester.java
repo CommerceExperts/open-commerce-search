@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,9 +22,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.lucene.analysis.Analyzer;
@@ -42,9 +45,11 @@ import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
 import org.apache.lucene.search.suggest.analyzing.SuggestStopFilter;
 import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.RamUsageEstimator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
 import de.cxp.ocs.smartsuggest.querysuggester.QueryIndexer;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.SuggestException;
@@ -52,6 +57,9 @@ import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.Util;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -94,7 +102,15 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 
 	private static final Logger perfLog = LoggerFactory.getLogger("de.cxp.ocs.smartsuggest.performance");
 
+	private static final String	METRICS_PREFIX	= Util.APP_NAME + ".lucene_suggester";
+	private long				recordCount		= 0;
+	private long				memUsageBytes	= 0;
+
 	private volatile boolean isClosed = false;
+
+	public LuceneQuerySuggester(@NonNull Path indexFolder, @NonNull Locale locale, @NonNull ModifiedTermsService modifiedTermsService, CharArraySet stopWords) {
+		this(indexFolder, locale, modifiedTermsService, stopWords, Optional.empty());
+	}
 
 	/**
 	 * Constructor.
@@ -108,7 +124,8 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 	 * @param stopWords
 	 *        optional set of stopwords. may be null
 	 */
-	public LuceneQuerySuggester(@NonNull Path indexFolder, @NonNull Locale locale, @NonNull ModifiedTermsService modifiedTermsService, CharArraySet stopWords) {
+	public LuceneQuerySuggester(@NonNull Path indexFolder, @NonNull Locale locale, @NonNull ModifiedTermsService modifiedTermsService, CharArraySet stopWords,
+			Optional<MeterRegistryAdapter> meterRegistry) {
 		this.modifiedTermsService = modifiedTermsService;
 		this.locale = locale;
 
@@ -146,11 +163,33 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 			fuzzySuggesterOneEdit = createFuzzySuggester(indexFolder, "Short", basicIndexAnalyzer, basicQueryAnalyzer, 1);
 			fuzzySuggesterTwoEdits = createFuzzySuggester(indexFolder, "Long", basicIndexAnalyzer, basicQueryAnalyzer, 2);
 
+			meterRegistry.ifPresent(adapter -> addSensors(indexFolder, adapter.getMetricsRegistry()));
+
 			index(emptyList()).join();
 		}
 		catch (IOException iox) {
 			throw new SuggestException("An error occurred while initializing the QuerySuggester", iox);
 		}
+	}
+
+	private void addSensors(Path indexFolder, MeterRegistry reg) {
+		Iterable<Tag> tags = Tags
+				.of("indexPath", indexFolder.toString());
+		reg.gauge(METRICS_PREFIX + ".record_count", tags, this, me -> me.recordCount);
+		reg.gauge(METRICS_PREFIX + ".estimated_memusage_bytes", tags, this, me -> me.memUsageBytes);
+		reg.more().counter(METRICS_PREFIX + ".last_index_timestamp_seconds", tags, this,
+				me -> (me.lastIndexTime == null ? -1 : me.lastIndexTime.getEpochSecond()));
+	}
+
+	private long estimateMemoryUsage() {
+		long mySize = RamUsageEstimator.shallowSizeOf(this);
+		mySize += RamUsageEstimator.sizeOf(infixSuggester);
+		mySize += RamUsageEstimator.sizeOf(typoSuggester);
+		mySize += RamUsageEstimator.sizeOf(shingleSuggester);
+		mySize += RamUsageEstimator.sizeOf(fuzzySuggesterOneEdit);
+		mySize += RamUsageEstimator.sizeOf(fuzzySuggesterTwoEdits);
+		mySize += RamUsageEstimator.sizeOf(modifiedTermsService);
+		return mySize;
 	}
 
 	@Override
@@ -396,7 +435,25 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 		CompletableFuture<Void> shingleFuture = CompletableFuture.runAsync(indexAsync(shingleSuggester, suggestions, true));
 		return CompletableFuture
 				.allOf(infixFuture, typoInfixFuture, fuzzyShortFuture, fuzzyLongFuture, shingleFuture)
-				.thenRun(() -> lastIndexTime = Instant.now());
+				.thenRun(() -> {
+					lastIndexTime = Instant.now();
+					recordCount = getRecordCount(suggestions);
+					memUsageBytes = estimateMemoryUsage();
+				});
+	}
+
+	private long getRecordCount(Iterable<SuggestRecord> suggestions) {
+		if (suggestions instanceof Collection<?>) {
+			return ((Collection) suggestions).size();
+		}
+		else {
+			try {
+				return infixSuggester.getCount();
+			}
+			catch (IOException e) {
+				return StreamSupport.stream(suggestions.spliterator(), false).count();
+			}
+		}
 	}
 
 	private Runnable indexAsync(Lookup lookup, Iterable<SuggestRecord> suggestions, boolean useVariant) {

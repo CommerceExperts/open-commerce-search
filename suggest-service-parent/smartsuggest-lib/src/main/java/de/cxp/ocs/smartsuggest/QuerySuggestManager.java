@@ -365,6 +365,7 @@ public class QuerySuggestManager implements AutoCloseable {
 
 		Path tenantFolder = suggestIndexFolder.resolve(indexName.toString()).resolve(suggestDataProvider.getClass().getSimpleName());
 		SuggesterFactory factory = new LuceneSuggesterFactory(tenantFolder);
+		factory.setMetricsRegistry(metricsRegistry);
 
 		SuggestionsUpdater updateTask = new SuggestionsUpdater(suggestDataProvider, indexName, updateableQuerySuggester, factory);
 		updateTask.setMetricsRegistryAdapter(Optional.ofNullable(metricsRegistry));
