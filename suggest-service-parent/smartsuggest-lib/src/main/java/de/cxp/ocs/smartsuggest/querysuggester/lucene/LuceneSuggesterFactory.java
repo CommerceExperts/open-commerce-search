@@ -28,7 +28,7 @@ public class LuceneSuggesterFactory implements SuggesterFactory {
 	private final Path indexFolder;
 
 	@Setter
-	private Optional<MeterRegistryAdapter> metricsRegistry = Optional.empty();
+	private Optional<MeterRegistryAdapter> metricsRegistryAdapter = Optional.empty();
 
 	@Override
 	public QuerySuggester getSuggester(SuggestData suggestData) {
@@ -41,7 +41,7 @@ public class LuceneSuggesterFactory implements SuggesterFactory {
 				Optional.ofNullable(suggestData.getWordsToIgnore())
 						.map(sw -> new CharArraySet(sw, true))
 						.orElse(null),
-				metricsRegistry);
+				metricsRegistryAdapter);
 
 		final long start = System.currentTimeMillis();
 		List<SuggestRecord> suggestRecords = suggestData.getSuggestRecords();

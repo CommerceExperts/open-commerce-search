@@ -24,6 +24,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import de.cxp.ocs.smartsuggest.monitoring.Instrumentable;
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
 import de.cxp.ocs.smartsuggest.querysuggester.CompoundQuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.NoopQuerySuggester;
@@ -80,7 +81,7 @@ public class QuerySuggestManager implements AutoCloseable {
 
 	private boolean useDataMerger = false;
 
-	private MeterRegistryAdapter metricsRegistry;
+	private Optional<MeterRegistryAdapter> metricsRegistry = Optional.empty();
 
 	@Deprecated
 	private SuggesterEngine engine = SuggesterEngine.LUCENE;
@@ -208,10 +209,9 @@ public class QuerySuggestManager implements AutoCloseable {
 			if (SuggesterEngine.LUCENE.equals(engine) && suggestIndexFolder == null) {
 				throw new IllegalArgumentException("required 'indexFolder' not specified");
 			}
-			QuerySuggestManager querySuggestManager = new QuerySuggestManager();
+			QuerySuggestManager querySuggestManager = new QuerySuggestManager(Optional.ofNullable(metricsRegistry));
 			querySuggestManager.suggestIndexFolder = suggestIndexFolder;
 			querySuggestManager.updateRate = updateRate;
-			querySuggestManager.metricsRegistry = metricsRegistry;
 			querySuggestManager.engine = engine;
 			querySuggestManager.useDataMerger = useDataMerger;
 			if (preloadIndexes.size() > 0) {
@@ -231,8 +231,9 @@ public class QuerySuggestManager implements AutoCloseable {
 	/**
 	 * Basic constructor to create QuerySuggestManager with default settings.
 	 * To customize behavioral settings, use the builder instead.
+	 * @param meterRegistryAdapter 
 	 */
-	private QuerySuggestManager() {
+	private QuerySuggestManager(Optional<MeterRegistryAdapter> meterRegistryAdapter) {
 		ServiceLoader<SuggestDataProvider> serviceLoader = ServiceLoader.load(SuggestDataProvider.class);
 		Iterator<SuggestDataProvider> loadedSDPs = serviceLoader.iterator();
 		List<SuggestDataProvider> dataProviders = new ArrayList<>();
@@ -245,6 +246,14 @@ public class QuerySuggestManager implements AutoCloseable {
 		}
 		log.info("initialized SmartSuggest with {}", dataProviders.getClass().getCanonicalName());
 		
+		if (meterRegistryAdapter.isPresent()) {
+			for(SuggestDataProvider sdp : dataProviders) {
+				if (sdp instanceof Instrumentable) {
+					((Instrumentable)sdp).setMetricsRegistryAdapter(meterRegistryAdapter);
+				}
+			}
+		}
+
 		suggestDataProviders = prepareSuggestDataProviders(dataProviders);
 	}
 
@@ -361,14 +370,15 @@ public class QuerySuggestManager implements AutoCloseable {
 			return new NoopQuerySuggester(true);
 		}
 
-		QuerySuggesterProxy updateableQuerySuggester = new QuerySuggesterProxy(indexName);
+		QuerySuggesterProxy updateableQuerySuggester = new QuerySuggesterProxy(indexName, suggestDataProvider.getClass().getCanonicalName());
+		updateableQuerySuggester.setMetricsRegistryAdapter(metricsRegistry);
 
 		Path tenantFolder = suggestIndexFolder.resolve(indexName.toString()).resolve(suggestDataProvider.getClass().getSimpleName());
 		SuggesterFactory factory = new LuceneSuggesterFactory(tenantFolder);
-		factory.setMetricsRegistry(metricsRegistry);
+		factory.setMetricsRegistryAdapter(metricsRegistry);
 
 		SuggestionsUpdater updateTask = new SuggestionsUpdater(suggestDataProvider, indexName, updateableQuerySuggester, factory);
-		updateTask.setMetricsRegistryAdapter(Optional.ofNullable(metricsRegistry));
+		updateTask.setMetricsRegistryAdapter(metricsRegistry);
 
 		long initialDelay = 0;
 		if (synchronous) {

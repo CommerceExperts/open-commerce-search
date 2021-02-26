@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.lucene.store.AlreadyClosedException;
 
+import de.cxp.ocs.smartsuggest.monitoring.Instrumentable;
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggesterProxy;
@@ -25,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
-public class SuggestionsUpdater implements Runnable {
+public class SuggestionsUpdater implements Runnable, Instrumentable {
 
 	@NonNull
 	private final SuggestDataProvider dataProvider;
@@ -127,6 +128,11 @@ public class SuggestionsUpdater implements Runnable {
 		}
 	}
 
+	@Override
+	public void setMetricsRegistryAdapter(Optional<MeterRegistryAdapter> metricsRegistryAdapter) {
+		metricsRegistryAdapter.ifPresent(adapter -> this.addSensors(adapter.getMetricsRegistry()));
+	}
+
 	private void addSensors(MeterRegistry reg) {
 		Iterable<Tag> indexTag = Tags
 				.of("indexName", indexName)
@@ -136,10 +142,6 @@ public class SuggestionsUpdater implements Runnable {
 		reg.more().timeGauge(Util.APP_NAME + ".suggestions.age", indexTag, this, TimeUnit.SECONDS,
 				updater -> (updater.lastUpdate == null ? -1 : System.currentTimeMillis() - updater.lastUpdate.toEpochMilli()) / 1000);
 		reg.gauge(Util.APP_NAME + ".suggestions.size", indexTag, this, updater -> updater.suggestionsCount);
-	}
-
-	public void setMetricsRegistryAdapter(Optional<MeterRegistryAdapter> metricsRegistryAdapter) {
-		metricsRegistryAdapter.ifPresent(adapter -> this.addSensors(adapter.getMetricsRegistry()));
 	}
 
 }
