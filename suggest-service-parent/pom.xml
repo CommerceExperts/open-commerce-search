@@ -15,7 +15,7 @@
 	<description>intermediate parent project that splits the Suggest Service into several modules</description>
 	
 	<properties>
-		<smartsuggest-lib.version>0.2.0</smartsuggest-lib.version>
+		<smartsuggest-lib.version>0.3.0</smartsuggest-lib.version>
 	</properties>
 
 	<modules>
