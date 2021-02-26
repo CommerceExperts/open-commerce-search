@@ -134,7 +134,7 @@ public class SuggestionsUpdater implements Runnable {
 		reg.gauge(Util.APP_NAME + ".update.fail.count", indexTag, this, updater -> updater.updateFailCount);
 		reg.more().counter(Util.APP_NAME + ".update.success.count", indexTag, this, updater -> updater.updateSuccessCount);
 		reg.more().timeGauge(Util.APP_NAME + ".suggestions.age", indexTag, this, TimeUnit.SECONDS,
-				updater -> (System.currentTimeMillis() - updater.lastUpdate.toEpochMilli()) / 1000);
+				updater -> (updater.lastUpdate == null ? -1 : System.currentTimeMillis() - updater.lastUpdate.toEpochMilli()) / 1000);
 		reg.gauge(Util.APP_NAME + ".suggestions.size", indexTag, this, updater -> updater.suggestionsCount);
 	}
 
