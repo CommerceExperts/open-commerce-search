@@ -33,12 +33,12 @@ import com.google.common.cache.CacheBuilder;
 
 import de.cxp.ocs.api.searcher.SearchService;
 import de.cxp.ocs.config.ApplicationProperties;
-import de.cxp.ocs.config.FieldConfigFetcher;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.config.TenantSearchConfiguration;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
+import de.cxp.ocs.elasticsearch.FieldConfigFetcher;
 import de.cxp.ocs.elasticsearch.Searcher;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
