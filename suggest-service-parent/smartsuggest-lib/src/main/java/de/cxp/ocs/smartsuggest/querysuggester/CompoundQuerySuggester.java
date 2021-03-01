@@ -7,12 +7,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.apache.lucene.util.Accountable;
+import org.apache.lucene.util.RamUsageEstimator;
+
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class CompoundQuerySuggester implements QuerySuggester {
+public class CompoundQuerySuggester implements QuerySuggester, Accountable {
 
 	final List<QuerySuggester> suggesterList;
 
@@ -65,5 +68,20 @@ public class CompoundQuerySuggester implements QuerySuggester {
 			}
 		});
 
+	}
+
+	@Override
+	public long ramBytesUsed() {
+		long mySize = RamUsageEstimator.shallowSizeOf(this);
+		for (QuerySuggester s : suggesterList) {
+			if (s instanceof Accountable) {
+				// the heavy implementations all should implement Accountable
+				mySize += RamUsageEstimator.sizeOf((Accountable) s);
+			}
+			else {
+				mySize += RamUsageEstimator.shallowSizeOf(s);
+			}
+		}
+		return mySize;
 	}
 }

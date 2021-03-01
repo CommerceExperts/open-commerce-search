@@ -44,6 +44,7 @@ import org.apache.lucene.search.suggest.analyzing.BlendedInfixSuggester;
 import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
 import org.apache.lucene.search.suggest.analyzing.SuggestStopFilter;
 import org.apache.lucene.store.MMapDirectory;
+import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.RamUsageEstimator;
 import org.slf4j.Logger;
@@ -64,7 +65,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
+public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accountable {
 
 	public static final String	PAYLOAD_LABEL_KEY		= "meta.label";
 	public static final String	PAYLOAD_GROUPMATCH_KEY	= "meta.matchGroupName";
@@ -179,17 +180,6 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 		reg.gauge(METRICS_PREFIX + ".estimated_memusage_bytes", tags, this, me -> me.memUsageBytes);
 		reg.more().counter(METRICS_PREFIX + ".last_index_timestamp_seconds", tags, this,
 				me -> (me.lastIndexTime == null ? -1 : me.lastIndexTime.getEpochSecond()));
-	}
-
-	private long estimateMemoryUsage() {
-		long mySize = RamUsageEstimator.shallowSizeOf(this);
-		mySize += RamUsageEstimator.sizeOf(infixSuggester);
-		mySize += RamUsageEstimator.sizeOf(typoSuggester);
-		mySize += RamUsageEstimator.sizeOf(shingleSuggester);
-		mySize += RamUsageEstimator.sizeOf(fuzzySuggesterOneEdit);
-		mySize += RamUsageEstimator.sizeOf(fuzzySuggesterTwoEdits);
-		mySize += RamUsageEstimator.sizeOf(modifiedTermsService);
-		return mySize;
 	}
 
 	@Override
@@ -438,7 +428,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 				.thenRun(() -> {
 					lastIndexTime = Instant.now();
 					recordCount = getRecordCount(suggestions);
-					memUsageBytes = estimateMemoryUsage();
+					memUsageBytes = ramBytesUsed();
 				});
 	}
 
@@ -503,5 +493,17 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 				log.error("An error occurred while closing '{}'", closeable, x);
 			}
 		}
+	}
+
+	@Override
+	public long ramBytesUsed() {
+		long mySize = RamUsageEstimator.shallowSizeOf(this);
+		mySize += RamUsageEstimator.sizeOf(infixSuggester);
+		mySize += RamUsageEstimator.sizeOf(typoSuggester);
+		mySize += RamUsageEstimator.sizeOf(shingleSuggester);
+		mySize += RamUsageEstimator.sizeOf(fuzzySuggesterOneEdit);
+		mySize += RamUsageEstimator.sizeOf(fuzzySuggesterTwoEdits);
+		mySize += RamUsageEstimator.sizeOf(modifiedTermsService);
+		return mySize;
 	}
 }

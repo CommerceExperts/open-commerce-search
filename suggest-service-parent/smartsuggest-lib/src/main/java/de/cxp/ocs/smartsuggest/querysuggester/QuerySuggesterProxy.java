@@ -10,6 +10,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.lucene.store.AlreadyClosedException;
+import org.apache.lucene.util.Accountable;
+import org.apache.lucene.util.RamUsageEstimator;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -25,7 +27,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class QuerySuggesterProxy implements QuerySuggester, Instrumentable {
+public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Accountable {
 
 	private final String	indexName;
 	private final String	dataProviderName;
@@ -138,5 +140,17 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable {
 		reg.gauge(Util.APP_NAME + ".suggester.cache.load_count", indexTag, this, me -> me.getCacheStats().loadCount());
 		reg.gauge(Util.APP_NAME + ".suggester.cache.miss_count", indexTag, this, me -> me.getCacheStats().missCount());
 		reg.gauge(Util.APP_NAME + ".suggester.cache.request_count", indexTag, this, me -> me.getCacheStats().requestCount());
+	}
+
+	@Override
+	public long ramBytesUsed() {
+		long mySize = RamUsageEstimator.shallowSizeOf(this);
+		mySize += RamUsageEstimator.shallowSizeOf(firstLetterCache);
+		mySize += RamUsageEstimator.sizeOfMap(firstLetterCache.asMap());
+		QuerySuggester delegate = innerQuerySuggester.get();
+		if (delegate instanceof Accountable) {
+			mySize += RamUsageEstimator.sizeOf((Accountable) delegate);
+		}
+		return mySize;
 	}
 }
