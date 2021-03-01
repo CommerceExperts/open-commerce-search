@@ -30,7 +30,7 @@ public class MergingSuggestDataProviderTest {
 
 		SuggestData result = underTest.loadData("index1");
 		assertEquals("merged", result.getType());
-		assertEquals(2, result.getSuggestRecords().size());
+		assertEquals(2, ((List<SuggestRecord>) result.getSuggestRecords()).size());
 	}
 
 	@Test
@@ -48,9 +48,9 @@ public class MergingSuggestDataProviderTest {
 
 		SuggestData dataResult = underTest.loadData("index1");
 		assertEquals("merged", dataResult.getType());
-		assertEquals(4, dataResult.getSuggestRecords().size());
+		assertEquals(4, ((List<SuggestRecord>) dataResult.getSuggestRecords()).size());
 
-		FakeSuggester suggester = new FakeSuggester(dataResult.getSuggestRecords().toArray(new SuggestRecord[0]));
+		FakeSuggester suggester = new FakeSuggester(((List<SuggestRecord>) dataResult.getSuggestRecords()).toArray(new SuggestRecord[0]));
 		List<Suggestion> suggestResult = suggester.suggest("t", 10, Collections.singleton("brand"));
 		assertEquals(2, suggestResult.size());
 		assertEquals("test 3", suggestResult.get(0).getLabel());
@@ -72,9 +72,9 @@ public class MergingSuggestDataProviderTest {
 
 		SuggestData dataResult = underTest.loadData("index1");
 		assertEquals("merged", dataResult.getType());
-		assertEquals(4, dataResult.getSuggestRecords().size());
+		assertEquals(4, ((List<SuggestRecord>) dataResult.getSuggestRecords()).size());
 
-		FakeSuggester suggester = new FakeSuggester(dataResult.getSuggestRecords().toArray(new SuggestRecord[0]));
+		FakeSuggester suggester = new FakeSuggester(((List<SuggestRecord>) dataResult.getSuggestRecords()).toArray(new SuggestRecord[0]));
 		List<Suggestion> suggestResult = suggester.suggest("t", 10, Collections.singleton("tag B"));
 		assertEquals(2, suggestResult.size());
 		assertEquals("test 2", suggestResult.get(0).getLabel());

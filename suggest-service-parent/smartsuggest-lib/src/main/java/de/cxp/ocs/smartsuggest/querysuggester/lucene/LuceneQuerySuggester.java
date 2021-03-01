@@ -506,4 +506,15 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		mySize += RamUsageEstimator.sizeOf(modifiedTermsService);
 		return mySize;
 	}
+
+	@Override
+	public long recordCount() {
+		try {
+			return infixSuggester.getCount();
+		}
+		catch (IOException e) {
+			log.warn("IOException when retrieving count of infixSuggester: " + e.getMessage());
+			return -1;
+		}
+	}
 }

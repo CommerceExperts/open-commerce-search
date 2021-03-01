@@ -1,9 +1,15 @@
 package de.cxp.ocs.smartsuggest.util;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
-import de.cxp.ocs.smartsuggest.querysuggester.*;
+import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
+import de.cxp.ocs.smartsuggest.querysuggester.SuggestException;
+import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import lombok.RequiredArgsConstructor;
 
@@ -45,4 +51,9 @@ public class FakeSuggester implements QuerySuggester {
 
 	@Override
 	public void close() throws Exception {}
+
+	@Override
+	public long recordCount() {
+		return records.length;
+	}
 }

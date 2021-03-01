@@ -2,7 +2,6 @@ package de.cxp.ocs.smartsuggest.updater;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -42,9 +41,9 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 
 	private Instant lastUpdate = null;
 
-	private int	updateFailCount		= 0;
-	private int	updateSuccessCount	= 0;
-	private int	suggestionsCount	= -1;
+	private int		updateFailCount		= 0;
+	private int		updateSuccessCount	= 0;
+	private long	suggestionsCount	= -1;
 
 	@Override
 	public void run() {
@@ -105,9 +104,9 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 				}
 			}
 
-			List<SuggestRecord> suggestRecords = suggestData.getSuggestRecords();
-			final int count = suggestRecords.size();
+			Iterable<SuggestRecord> suggestRecords = suggestData.getSuggestRecords();
 			QuerySuggester querySuggester = factory.getSuggester(suggestData);
+			final long count = querySuggester.recordCount();
 			try {
 				querySuggesterProxy.updateQueryMapper(querySuggester);
 			}

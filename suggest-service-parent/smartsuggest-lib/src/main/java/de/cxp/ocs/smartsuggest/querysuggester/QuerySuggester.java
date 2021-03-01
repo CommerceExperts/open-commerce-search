@@ -31,6 +31,13 @@ public interface QuerySuggester extends AutoCloseable {
 	List<Suggestion> suggest(String term, int maxResults, Set<String> tags) throws SuggestException;
 
 	/**
+	 * return amount of records indexed into this QuerySuggester.
+	 * 
+	 * @return amount of indexed records
+	 */
+	long recordCount();
+
+	/**
 	 * @return true if ready to serve suggestions
 	 */
 	boolean isReady();

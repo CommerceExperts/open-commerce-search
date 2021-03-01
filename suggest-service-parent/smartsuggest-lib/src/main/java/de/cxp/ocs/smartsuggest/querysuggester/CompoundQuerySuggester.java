@@ -84,4 +84,13 @@ public class CompoundQuerySuggester implements QuerySuggester, Accountable {
 		}
 		return mySize;
 	}
+
+	@Override
+	public long recordCount() {
+		long recordCount = 0;
+		for (QuerySuggester s : suggesterList) {
+			recordCount += s.recordCount();
+		}
+		return recordCount;
+	}
 }

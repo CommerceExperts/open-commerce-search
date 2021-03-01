@@ -55,7 +55,8 @@ public class MergingSuggestDataProvider implements SuggestDataProvider {
 
 		// set mutable types so they can be extended in the loop
 		merged.setWordsToIgnore(new HashSet<>());
-		merged.setSuggestRecords(new ArrayList<>());
+		ArrayList<SuggestRecord> suggestRecords = new ArrayList<>();
+		merged.setSuggestRecords(suggestRecords);
 
 		Locale locale = null;
 		long lastModificationTime = -1;
@@ -85,7 +86,7 @@ public class MergingSuggestDataProvider implements SuggestDataProvider {
 			loadedData.getSuggestRecords()
 					.forEach(suggestRecord -> {
 						attachTypeAsTag(suggestRecord, loadedData.getType());
-						merged.getSuggestRecords().add(suggestRecord);
+						suggestRecords.add(suggestRecord);
 					});
 		}
 

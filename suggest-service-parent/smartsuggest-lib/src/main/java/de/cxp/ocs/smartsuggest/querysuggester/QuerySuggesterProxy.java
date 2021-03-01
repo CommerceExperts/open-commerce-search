@@ -153,4 +153,9 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 		}
 		return mySize;
 	}
+
+	@Override
+	public long recordCount() {
+		return innerQuerySuggester.get().recordCount();
+	}
 }

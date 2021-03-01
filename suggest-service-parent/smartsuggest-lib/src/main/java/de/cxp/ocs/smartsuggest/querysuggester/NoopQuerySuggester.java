@@ -26,4 +26,9 @@ public class NoopQuerySuggester implements QuerySuggester {
 	public boolean isReady() {
 		return isReady;
 	}
+
+	@Override
+	public long recordCount() {
+		return 0;
+	}
 }

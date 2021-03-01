@@ -44,10 +44,12 @@ public class LuceneSuggesterFactory implements SuggesterFactory {
 				metricsRegistryAdapter);
 
 		final long start = System.currentTimeMillis();
-		List<SuggestRecord> suggestRecords = suggestData.getSuggestRecords();
-		Collections.sort(suggestRecords, Comparator.comparingDouble(SuggestRecord::getWeight).reversed());
+		Iterable<SuggestRecord> suggestRecords = suggestData.getSuggestRecords();
+		if (suggestRecords instanceof List) {
+			Collections.sort((List<SuggestRecord>) suggestRecords, Comparator.comparingDouble(SuggestRecord::getWeight).reversed());
+		}
 		luceneQuerySuggester.index(suggestRecords).join();
-		log.info("Indexing {} suggestions took: {}ms", suggestRecords.size(), System.currentTimeMillis() - start);
+		log.info("Indexing {} suggestions took: {}ms", luceneQuerySuggester.recordCount(), System.currentTimeMillis() - start);
 
 		return luceneQuerySuggester;
 	}
