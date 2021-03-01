@@ -2,7 +2,9 @@ package de.cxp.ocs;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 
 public class SuggestProperties {
@@ -42,5 +44,11 @@ public class SuggestProperties {
 				throw new UncheckedIOException("Could not create temporary suggest index directory", e);
 			}
 		}
+	}
+
+	public int getSuggesterMaxIdleMinutes() {
+		return Optional.ofNullable(System.getenv("SUGGESTER_MAX_IDLE_MINUTES"))
+				.map(Integer::parseInt)
+				.orElseGet(() -> Integer.getInteger("suggester_max_idle_minutes", 30));
 	}
 }
