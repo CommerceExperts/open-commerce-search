@@ -221,7 +221,9 @@ public class ConfigurableShareLimiter implements Limiter {
 	}
 
 	private String groupKey(Suggestion suggestion) {
-		return suggestion.getPayload().getOrDefault(groupingKey, OTHER_SHARE_KEY);
+		return suggestion.getPayload() == null
+				? OTHER_SHARE_KEY
+				: suggestion.getPayload().getOrDefault(groupingKey, OTHER_SHARE_KEY);
 	}
 
 }
