@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,6 +25,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import de.cxp.ocs.smartsuggest.limiter.ConfigurableShareLimiter;
+import de.cxp.ocs.smartsuggest.limiter.CutOffLimiter;
+import de.cxp.ocs.smartsuggest.limiter.Limiter;
 import de.cxp.ocs.smartsuggest.monitoring.Instrumentable;
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
 import de.cxp.ocs.smartsuggest.querysuggester.CompoundQuerySuggester;
@@ -81,6 +85,8 @@ public class QuerySuggestManager implements AutoCloseable {
 
 	private boolean useDataMerger = false;
 
+	public Limiter limiter;
+
 	private Optional<MeterRegistryAdapter> metricsRegistry = Optional.empty();
 
 	@Deprecated
@@ -99,6 +105,8 @@ public class QuerySuggestManager implements AutoCloseable {
 		private Set<String> preloadIndexes = new HashSet<>();
 
 		private MeterRegistryAdapter metricsRegistry;
+
+		private Limiter limiter;
 
 		/**
 		 * Sets the root path where the indices for the different tenants
@@ -140,6 +148,39 @@ public class QuerySuggestManager implements AutoCloseable {
 		 */
 		public QuerySuggestManagerBuilder engine(SuggesterEngine engine) {
 			this.engine = engine;
+			return this;
+		}
+
+		/**
+		 * The share limiter will group the results according to a particular
+		 * payload value and uses the configured share values to distribute the
+		 * limited space among those grouped suggestions.
+		 *
+		 * @see Limiter
+		 * @see ConfigurableShareLimiter
+		 * @param groupingKey
+		 *        which key to use to get the grouping key from the suggestions
+		 *        payload.
+		 * @param groupShares
+		 *        the share value (between 0 and 1) for each available group.
+		 *        The order of the groups matters. See java-doc of
+		 *        ConfigurableShareLimiter
+		 * @return
+		 */
+		public QuerySuggestManagerBuilder withShareLimiter(String groupingKey, LinkedHashMap<String, Double> groupShares) {
+			limiter = new ConfigurableShareLimiter(groupingKey, groupShares);
+			return this;
+		}
+
+		/**
+		 * With this method you can specify custom limiter.
+		 * 
+		 * @see Limiter
+		 * @param customLimiter
+		 * @return
+		 */
+		public QuerySuggestManagerBuilder withCustomLimiter(Limiter customLimiter) {
+			limiter = customLimiter;
 			return this;
 		}
 
@@ -214,6 +255,7 @@ public class QuerySuggestManager implements AutoCloseable {
 			querySuggestManager.updateRate = updateRate;
 			querySuggestManager.engine = engine;
 			querySuggestManager.useDataMerger = useDataMerger;
+			querySuggestManager.limiter = this.limiter != null ? this.limiter : new CutOffLimiter();
 			if (preloadIndexes.size() > 0) {
 				List<CompletableFuture<QuerySuggester>> futures = preloadIndexes.stream()
 						.map(indexName -> CompletableFuture.supplyAsync(() -> querySuggestManager.getQuerySuggester(indexName, true)))
@@ -361,7 +403,7 @@ public class QuerySuggestManager implements AutoCloseable {
 			return suggesters.get(0);
 		}
 		else {
-			return new CompoundQuerySuggester(suggesters);
+			return new CompoundQuerySuggester(suggesters, limiter);
 		}
 	}
 

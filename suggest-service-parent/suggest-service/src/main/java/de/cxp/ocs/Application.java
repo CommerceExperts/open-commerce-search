@@ -2,7 +2,9 @@ package de.cxp.ocs;
 
 import java.util.Collections;
 
-import org.rapidoid.http.*;
+import org.rapidoid.http.HttpHeaders;
+import org.rapidoid.http.Req;
+import org.rapidoid.http.ReqHandler;
 import org.rapidoid.setup.On;
 
 import de.cxp.ocs.api.SuggestService;
@@ -23,7 +25,7 @@ public class Application {
 		SuggestProperties properties = new SuggestProperties();
 		final PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
 		final QuerySuggestManager querySuggestManager = getQuerySuggestManager(properties, meterRegistry);
-		final SuggestService suggestService = new SuggestServiceImpl(querySuggestManager);
+		final SuggestService suggestService = new SuggestServiceImpl(querySuggestManager, properties);
 
 		On.port(properties.getServerPort()).address(properties.getServerAdress());
 

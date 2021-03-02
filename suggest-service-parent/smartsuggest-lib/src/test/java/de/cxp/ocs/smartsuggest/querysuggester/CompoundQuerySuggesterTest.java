@@ -11,6 +11,7 @@ import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
+import de.cxp.ocs.smartsuggest.limiter.Limiter;
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
@@ -21,9 +22,11 @@ public class CompoundQuerySuggesterTest {
 
 	private CompoundQuerySuggester underTest;
 
+	private static Limiter limiter = (list, limit) -> list;
+
 	@Test
 	public void testWithoutDataProviders() throws IOException {
-		underTest = new CompoundQuerySuggester("", emptyList(), new FakeSuggesterFactory());
+		underTest = new CompoundQuerySuggester("", emptyList(), new FakeSuggesterFactory(), limiter);
 		assertTrue(underTest.suggest("a").isEmpty());
 	}
 
@@ -36,7 +39,7 @@ public class CompoundQuerySuggesterTest {
 				new FakeSuggestDataProvider().putData("index-a",
 						getSuggestData("type2",
 								new SuggestRecord("fnord", "", emptyMap(), emptySet(), 200))));
-		underTest = new CompoundQuerySuggester("index-a", dataProviders, new FakeSuggesterFactory());
+		underTest = new CompoundQuerySuggester("index-a", dataProviders, new FakeSuggesterFactory(), limiter);
 		assertTrue(underTest.suggest("f").size() == 2, () -> "expect both terms as result, only got " + underTest.suggest("f"));
 	}
 
@@ -49,7 +52,7 @@ public class CompoundQuerySuggesterTest {
 				new FakeSuggestDataProvider().putData("index-a",
 						getSuggestData("type2",
 								new SuggestRecord("fnord", "", emptyMap(), singleton("y"), 100))));
-		underTest = new CompoundQuerySuggester("index-a", dataProviders, new FakeSuggesterFactory());
+		underTest = new CompoundQuerySuggester("index-a", dataProviders, new FakeSuggesterFactory(), limiter);
 		assertEquals("fnord", underTest.suggest("f", 10, singleton("y")).get(0).getLabel());
 	}
 

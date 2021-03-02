@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.RamUsageEstimator;
 
+import de.cxp.ocs.smartsuggest.limiter.Limiter;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -19,15 +20,18 @@ public class CompoundQuerySuggester implements QuerySuggester, Accountable {
 
 	final List<QuerySuggester> suggesterList;
 
+	private final Limiter limiter;
+
 	@Setter
 	private boolean isMultiThreaded = false;
 
-	public CompoundQuerySuggester(List<QuerySuggester> suggester) {
+	public CompoundQuerySuggester(List<QuerySuggester> suggester, Limiter limiter) {
 		suggesterList = new ArrayList<>(suggester);
+		this.limiter = limiter;
 	}
 
 	// for testing purposes
-	CompoundQuerySuggester(String indexName, List<SuggestDataProvider> dataProviders, SuggesterFactory factory) throws IOException {
+	CompoundQuerySuggester(String indexName, List<SuggestDataProvider> dataProviders, SuggesterFactory factory, Limiter limiter) throws IOException {
 		suggesterList = new ArrayList<>();
 		for (SuggestDataProvider dataProvider : dataProviders) {
 			if (dataProvider.hasData(indexName)) {
@@ -35,6 +39,7 @@ public class CompoundQuerySuggester implements QuerySuggester, Accountable {
 				suggesterList.add(suggester);
 			}
 		}
+		this.limiter = limiter;
 	}
 
 	@Override
@@ -49,7 +54,7 @@ public class CompoundQuerySuggester implements QuerySuggester, Accountable {
 		suggesterStream
 				.map(s -> s.suggest(term, maxResults, tags))
 				.forEach(finalResult::addAll);
-		return finalResult;
+		return limiter.limit(finalResult, maxResults);
 	}
 
 	@Override
