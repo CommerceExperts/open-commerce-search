@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import de.cxp.ocs.smartsuggest.limiter.ConfigurableShareLimiter;
 import de.cxp.ocs.smartsuggest.limiter.CutOffLimiter;
+import de.cxp.ocs.smartsuggest.limiter.GroupedCutOffLimiter;
 import de.cxp.ocs.smartsuggest.limiter.Limiter;
 import de.cxp.ocs.smartsuggest.monitoring.Instrumentable;
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
@@ -156,7 +157,6 @@ public class QuerySuggestManager implements AutoCloseable {
 		 * payload value and uses the configured share values to distribute the
 		 * limited space among those grouped suggestions.
 		 *
-		 * @see Limiter
 		 * @see ConfigurableShareLimiter
 		 * @param groupingKey
 		 *        which key to use to get the grouping key from the suggestions
@@ -169,6 +169,21 @@ public class QuerySuggestManager implements AutoCloseable {
 		 */
 		public QuerySuggestManagerBuilder withShareLimiter(String groupingKey, LinkedHashMap<String, Double> groupShares) {
 			limiter = new ConfigurableShareLimiter(groupingKey, groupShares);
+			return this;
+		}
+
+		/**
+		 * This limiter will group the results in the order of the specified
+		 * groupLimits map and limit each group to the according value.
+		 * 
+		 * @see GroupedCutOffLimiter
+		 * @param groupingKey
+		 * @param defaultGroupLimit
+		 * @param groupLimits
+		 * @return
+		 */
+		public QuerySuggestManagerBuilder withGroupedCutOffLimiter(String groupingKey, int defaultGroupLimit, LinkedHashMap<String, Integer> groupLimits) {
+			limiter = new GroupedCutOffLimiter(groupingKey, defaultGroupLimit, groupLimits);
 			return this;
 		}
 
