@@ -47,6 +47,7 @@ import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.FieldUsage;
+import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
@@ -313,9 +314,7 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 	}
 
 	private SuggestRecord toSuggestRecord(String label, int termCount, Field sourceField) {
-		Map<String, String> payload = new HashMap<>(2);
-		payload.put("count", String.valueOf(termCount));
-		payload.put("sourceField", sourceField.getName());
+		Map<String, String> payload = CommonPayloadFields.payloadOfTypeAndCount(sourceField.getName(), String.valueOf(termCount));
 
 		String secondaryText = EMPTY_STRING;
 		if (FieldType.category.equals(sourceField.getType()) && label.indexOf('/') > -1) {
