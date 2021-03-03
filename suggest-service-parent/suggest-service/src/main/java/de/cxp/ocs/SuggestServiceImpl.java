@@ -19,6 +19,7 @@ import de.cxp.ocs.model.suggest.Suggestion;
 import de.cxp.ocs.smartsuggest.QuerySuggestManager;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester;
+import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -69,10 +70,19 @@ public class SuggestServiceImpl implements SuggestService {
 				// to external "Suggestion"
 				// (de.cxp.ocs.model.suggest.Suggestion.Suggestion)
 				.map(suggestion -> {
-					suggestion.getPayload().remove(LuceneQuerySuggester.PAYLOAD_GROUPMATCH_KEY);
-					suggestion.getPayload().remove(LuceneQuerySuggester.PAYLOAD_LABEL_KEY);
-					return new Suggestion(suggestion.getLabel())
+					Suggestion mappedSuggestion = new Suggestion(suggestion.getLabel())
 							.setPayload(suggestion.getPayload());
+
+					if (suggestion.getPayload() != null) {
+						suggestion.getPayload().remove(LuceneQuerySuggester.PAYLOAD_GROUPMATCH_KEY);
+						suggestion.getPayload().remove(LuceneQuerySuggester.PAYLOAD_LABEL_KEY);
+						String type = suggestion.getPayload().remove(CommonPayloadFields.PAYLOAD_TYPE_KEY);
+						if (type != null) {
+							mappedSuggestion.setType(type);
+						}
+					}
+
+					return mappedSuggestion;
 				})
 				.collect(Collectors.toList());
 	}
