@@ -147,6 +147,7 @@ public class SuggestProperties {
 	 * be used to extract that particular payload value and group the
 	 * suggestions accordingly.
 	 * </p>
+	 * <p>
 	 * It's recommended to specify 'SUGGEST_GROUP_SHARE_CONF' or
 	 * 'SUGGEST_GROUP_CUTOFF_CONF' as well, otherwise the default limiter will
 	 * be used after grouping.
