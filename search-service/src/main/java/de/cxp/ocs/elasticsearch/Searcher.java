@@ -180,9 +180,11 @@ public class Searcher {
 			searchSourceBuilder.postFilter(postFilter);
 		}
 
-		List<AggregationBuilder> aggregators = facetApplier.buildAggregators(filterContext);
-		if (aggregators != null && aggregators.size() > 0) {
-			aggregators.forEach(searchSourceBuilder::aggregation);
+		if (parameters.isWithFacets()) {
+			List<AggregationBuilder> aggregators = facetApplier.buildAggregators(filterContext);
+			if (aggregators != null && aggregators.size() > 0) {
+				aggregators.forEach(searchSourceBuilder::aggregation);
+			}
 		}
 
 		// TODO: add a "hint" to the params for follow-up searches or at least a
@@ -285,7 +287,9 @@ public class Searcher {
 		resultTimer.record(() -> {
 			if (searchResponse != null) {
 				SearchResultSlice searchResultSlice = toSearchResult(searchResponse, parameters);
-				searchResultSlice.facets = facetApplier.getFacets(searchResponse.getAggregations(), searchResultSlice.matchCount, filterContext, linkBuilder);
+				if (parameters.isWithFacets()) {
+					searchResultSlice.facets = facetApplier.getFacets(searchResponse.getAggregations(), searchResultSlice.matchCount, filterContext, linkBuilder);
+				}
 				searchResult.slices.add(searchResultSlice);
 			}
 		});

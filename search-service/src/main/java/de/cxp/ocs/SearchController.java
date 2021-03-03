@@ -112,6 +112,7 @@ public class SearchController implements SearchService {
 		parameters.userQuery = searchQuery.q;
 		parameters.limit = searchQuery.limit;
 		parameters.offset = searchQuery.offset;
+		parameters.withFacets = searchQuery.withFacets;
 		if (searchQuery.sort != null) {
 			parameters.sortings = parseSortings(searchQuery.sort, searchConfig.getIndexedFieldConfig());
 		}
