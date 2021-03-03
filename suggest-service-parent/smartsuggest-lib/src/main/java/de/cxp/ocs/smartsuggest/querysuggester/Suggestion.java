@@ -1,10 +1,15 @@
 package de.cxp.ocs.smartsuggest.querysuggester;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.lucene.util.BytesRef;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.Accessors;
 
 @Accessors(chain = true)
@@ -24,6 +29,8 @@ public class Suggestion {
 
 	@Setter
 	Set<BytesRef>	context;
+
+	@Setter
 	Set<String>		tags	= null;
 
 	public Set<String> getTags() {
