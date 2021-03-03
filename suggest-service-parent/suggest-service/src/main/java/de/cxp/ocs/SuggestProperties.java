@@ -20,8 +20,8 @@ import org.apache.commons.lang3.StringUtils;
  * </p>
  * <p>
  * Only the environment variable names are documented - the System Properties
- * are the same, just in the lowercase form (e.g. instead 'SUGGEST_SERVER_PORT'
- * it's 'suggest_server_port').
+ * are the same, just in the lowercase form and with dots instead underscores
+ * (e.g. instead 'SUGGEST_SERVER_PORT' it is 'suggest.server.port').
  * </p>
  */
 public class SuggestProperties {
@@ -218,7 +218,8 @@ public class SuggestProperties {
 	}
 
 	private Optional<String> getVarValue(String envVarName) {
-		String value = System.getProperty(envVarName.toLowerCase(Locale.ROOT));
+		String propName = envVarName.toLowerCase(Locale.ROOT).replaceAll("_", ".");
+		String value = System.getProperty(propName);
 		if (value == null) {
 			value = System.getenv(envVarName);
 		}
