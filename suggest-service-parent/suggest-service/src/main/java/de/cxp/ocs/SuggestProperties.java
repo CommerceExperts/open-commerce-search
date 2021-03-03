@@ -8,9 +8,12 @@ import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * <p>
@@ -24,7 +27,17 @@ import org.apache.commons.lang3.StringUtils;
  * (e.g. instead 'SUGGEST_SERVER_PORT' it is 'suggest.server.port').
  * </p>
  */
+@RequiredArgsConstructor
 public class SuggestProperties {
+
+	private final Properties properties;
+
+	/**
+	 * using system properties as backing properties
+	 */
+	public SuggestProperties() {
+		properties = System.getProperties();
+	}
 
 	/**
 	 * Expects env var 'SUGGEST_SERVER_PORT' set to a valid port number.
@@ -219,7 +232,7 @@ public class SuggestProperties {
 
 	private Optional<String> getVarValue(String envVarName) {
 		String propName = envVarName.toLowerCase(Locale.ROOT).replaceAll("_", ".");
-		String value = System.getProperty(propName);
+		String value = properties.getProperty(propName);
 		if (value == null) {
 			value = System.getenv(envVarName);
 		}
