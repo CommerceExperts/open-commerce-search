@@ -83,7 +83,7 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 			return client.indices().exists(new GetIndexRequest(indexName), RequestOptions.DEFAULT);
 		}
 		catch (IOException e) {
-			log.debug("index exists request failed for index {} because of {}", indexName, e.getMessage());
+			log.warn("index exists request failed for index {} because of {}", indexName, e.getMessage());
 			return false;
 		}
 	}
