@@ -3,6 +3,8 @@ package de.cxp.ocs.smartsuggest.querysuggester;
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -32,8 +34,8 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 	private final String	dataProviderName;
 	private int				maxSuggestionsPerCacheEntry	= 10;
 
-	private final AtomicReference<QuerySuggester>	innerQuerySuggester			= new AtomicReference<>(new NoopQuerySuggester());
-	private volatile boolean						isClosed					= false;
+	private final AtomicReference<QuerySuggester>	innerQuerySuggester	= new AtomicReference<>(new NoopQuerySuggester());
+	private volatile boolean						isClosed			= false;
 
 	private final int						cacheLetterLength	= Integer.getInteger("CACHE_LETTER_LENGTH", 3);
 	private Cache<String, List<Suggestion>>	firstLetterCache	= CacheBuilder.newBuilder()
@@ -107,7 +109,12 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 					cachedResults = cachedResults.subList(0, maxResults);
 				}
 
-				return cachedResults;
+				// dont use stream + collector, because we need a mutable list
+				ArrayList<Suggestion> clonedList = new ArrayList<>(cachedResults.size());
+				for (Suggestion cachedSuggestion : cachedResults) {
+					clonedList.add(cloneSuggestion(cachedSuggestion));
+				}
+				return clonedList;
 			}
 			catch (ExecutionException e) {
 				throw new SuggestException(e.getCause());
@@ -117,6 +124,15 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 			return innerQuerySuggester.get().suggest(normalizedTerm, maxResults, tags);
 		}
 	}
+
+	private Suggestion cloneSuggestion(Suggestion s) {
+		Suggestion clone = new Suggestion(s.getLabel());
+		clone.setTags(s.getTags());
+		clone.setPayload(s.getPayload() == null ? null : new HashMap<>(s.getPayload()));
+		clone.setWeight(s.getWeight());
+		return clone;
+	}
+
 	CacheStats getCacheStats() {
 		if (cacheStats == null || lastCacheStatsUpdate + 60_000 < System.currentTimeMillis()) {
 			cacheStats = firstLetterCache.stats();
