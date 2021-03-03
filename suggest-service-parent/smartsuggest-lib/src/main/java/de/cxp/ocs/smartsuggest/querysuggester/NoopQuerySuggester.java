@@ -5,7 +5,14 @@ import static java.util.Collections.emptyList;
 import java.util.List;
 import java.util.Set;
 
-public class NoQuerySuggester implements QuerySuggester {
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
+@AllArgsConstructor
+public class NoopQuerySuggester implements QuerySuggester {
+
+	private boolean isReady = false;
 
 	@Override
 	public void close() throws Exception {}
@@ -17,6 +24,11 @@ public class NoQuerySuggester implements QuerySuggester {
 
 	@Override
 	public boolean isReady() {
-		return false;
+		return isReady;
+	}
+
+	@Override
+	public long recordCount() {
+		return 0;
 	}
 }

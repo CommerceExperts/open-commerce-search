@@ -2,16 +2,24 @@ package de.cxp.ocs.smartsuggest;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
+import de.cxp.ocs.smartsuggest.querysuggester.CompoundQuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
+import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggesterProxy;
+import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 
@@ -25,23 +33,22 @@ class QuerySuggestManagerTest {
 	private RemoteSuggestDataProviderSimulation				serviceMock	= new RemoteSuggestDataProviderSimulation();
 	private QuerySuggestManager querySuggestManager;
 
-	@BeforeEach
-	void beforeEach() throws Exception {
-		querySuggestManager = new QuerySuggestManager(serviceMock);
+	QuerySuggestManager withUpdateRate(QuerySuggestManager manager, int updateRate) throws Exception {
 		Field updateRateField = QuerySuggestManager.class.getDeclaredField("updateRate");
 		updateRateField.setAccessible(true);
-		updateRateField.setLong(querySuggestManager, 1);
-		
-		
+		updateRateField.setLong(manager, updateRate);
+		return manager;
 	}
 
 	@AfterEach
 	void afterEach() {
-		querySuggestManager.close();
+		if (querySuggestManager != null) querySuggestManager.close();
 	}
 
 	@Test
 	void basicTest() throws Exception {
+		serviceMock.updateSuggestions(testTenant1, Collections.emptyList());
+		querySuggestManager = withUpdateRate(new QuerySuggestManager(serviceMock), 1);
 		QuerySuggester suggester = querySuggestManager.getQuerySuggester(testTenant1);
 
 		assertThat(suggester).isNotNull();
@@ -63,11 +70,13 @@ class QuerySuggestManagerTest {
 
 	@Test
 	void twoChannelsBasicTest() throws Exception {
-		QuerySuggester suggester1 = querySuggestManager.getQuerySuggester(testTenant1);
-		QuerySuggester suggester2 = querySuggestManager.getQuerySuggester(testTenant2);
+		querySuggestManager = withUpdateRate(new QuerySuggestManager(serviceMock), 1);
 
 		serviceMock.updateSuggestions(testTenant1, singletonList(s("foo", "fnord")));
 		serviceMock.updateSuggestions(testTenant2, singletonList(s("bar", "bart")));
+
+		QuerySuggester suggester1 = querySuggestManager.getQuerySuggester(testTenant1);
+		QuerySuggester suggester2 = querySuggestManager.getQuerySuggester(testTenant2);
 
 		// both suggesters are updated at the same time
 		Thread.sleep(UPDATE_LATENCY);
@@ -83,8 +92,9 @@ class QuerySuggestManagerTest {
 
 	@Test
 	void failingService() throws Exception {
-		QuerySuggester suggester = querySuggestManager.getQuerySuggester(testTenant1);
 		serviceMock.updateSuggestions(testTenant1, singletonList(s("foo", "fnord")));
+		querySuggestManager = withUpdateRate(new QuerySuggestManager(serviceMock), 1);
+		QuerySuggester suggester = querySuggestManager.getQuerySuggester(testTenant1);
 
 		Thread.sleep(UPDATE_LATENCY); // wait shortly until loaded
 		assertThat(suggester.suggest("foo").get(0).getLabel()).isEqualTo("fnord");
@@ -122,7 +132,7 @@ class QuerySuggestManagerTest {
 	}
 
 	@Test
-	void noopChannel() {
+	void noopChannel() throws IOException {
 		SuggestDataProvider api = mock(SuggestDataProvider.class);
 
 		try (QuerySuggestManager qm = new QuerySuggestManager(api)) {
@@ -135,6 +145,8 @@ class QuerySuggestManagerTest {
 
 	@Test
 	void destroySuggesterTest() throws Exception {
+		querySuggestManager = withUpdateRate(new QuerySuggestManager(serviceMock), 1);
+
 		serviceMock.updateSuggestions(testTenant1, Arrays.asList(s("foo", "1")));
 		QuerySuggester suggester = querySuggestManager.getQuerySuggester(testTenant1, true);
 		assertThat(suggester).isNotNull();
@@ -150,6 +162,37 @@ class QuerySuggestManagerTest {
 		serviceMock.updateSuggestions(testTenant1, Arrays.asList(s("foo", "2")));
 		Thread.sleep(1000);
 		assertThat(suggester.suggest("foo")).isEmpty();
+	}
+
+	@Test
+	void multipleDataProviders() throws Exception {
+		RemoteSuggestDataProviderSimulation dp1 = new RemoteSuggestDataProviderSimulation();
+		RemoteSuggestDataProviderSimulation dp2 = new RemoteSuggestDataProviderSimulation();
+		SuggestDataProvider mock = mock(SuggestDataProvider.class);
+
+		querySuggestManager = withUpdateRate(new QuerySuggestManager(dp1, dp2, mock), 1);
+
+		// subtest 1: only one data provider has data
+		dp1.updateSuggestions("index1", Arrays.asList(new SuggestRecord("query1", "matching text", null, null, 10L)));
+		QuerySuggester querySuggester1 = querySuggestManager.getQuerySuggester("index1", true);
+
+		assertTrue(querySuggester1 instanceof QuerySuggesterProxy, "but was instanceof " + querySuggester1.getClass().getCanonicalName());
+		verify(mock, times(1)).hasData("index1");
+
+		List<Suggestion> suggestions1 = querySuggester1.suggest("text");
+		assertThat(suggestions1).size().isEqualTo(1);
+		assertThat(suggestions1).allMatch(s -> "query1".equals(s.getLabel())).as("query1 as label expected");
+
+		// subtest 2: two data providers have data
+		dp1.updateSuggestions("index2", Arrays.asList(new SuggestRecord("query 1.2", "arbitrary matching text", null, null, 10L)));
+		dp2.updateSuggestions("index2", Arrays.asList(new SuggestRecord("query 2.2", "more matching text", null, null, 10L)));
+		QuerySuggester querySuggester2 = querySuggestManager.getQuerySuggester("index2", true);
+
+		verify(mock, times(1)).hasData("index2");
+		assertTrue(querySuggester2 instanceof CompoundQuerySuggester, "but was instanceof " + querySuggester1.getClass().getCanonicalName());
+		List<Suggestion> suggestions2 = querySuggester2.suggest("tex");
+		assertThat(suggestions2).size().isEqualTo(2);
+		assertThat(suggestions2).allMatch(s -> s.getLabel().endsWith("2"));
 	}
 
 	/**

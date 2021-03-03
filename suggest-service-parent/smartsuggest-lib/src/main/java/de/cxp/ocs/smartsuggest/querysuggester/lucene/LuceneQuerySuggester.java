@@ -7,43 +7,71 @@ import static org.apache.lucene.search.suggest.analyzing.BlendedInfixSuggester.D
 import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_MIN_FUZZY_LENGTH;
 import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_TRANSPOSITIONS;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import org.apache.commons.lang3.SerializationUtils;
-import org.apache.lucene.analysis.*;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.StopFilter;
 import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilter;
 import org.apache.lucene.analysis.shingle.ShingleFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.search.suggest.Lookup;
-import org.apache.lucene.search.suggest.analyzing.*;
+import org.apache.lucene.search.suggest.analyzing.AnalyzingInfixSuggester;
+import org.apache.lucene.search.suggest.analyzing.BlendedInfixSuggester;
+import org.apache.lucene.search.suggest.analyzing.FuzzySuggester;
+import org.apache.lucene.search.suggest.analyzing.SuggestStopFilter;
 import org.apache.lucene.store.MMapDirectory;
+import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.RamUsageEstimator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.cxp.ocs.smartsuggest.querysuggester.*;
+import de.cxp.ocs.smartsuggest.monitoring.Instrumentable;
+import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
+import de.cxp.ocs.smartsuggest.querysuggester.QueryIndexer;
+import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
+import de.cxp.ocs.smartsuggest.querysuggester.SuggestException;
+import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.Util;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
+public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accountable, Instrumentable {
 
 	public static final String	PAYLOAD_LABEL_KEY		= "meta.label";
 	public static final String	PAYLOAD_GROUPMATCH_KEY	= "meta.matchGroupName";
 
 	public static final String	BEST_MATCHES_GROUP_NAME				= "best matches";
-	public static final String	TYPO_MATCHES_GROUP_NAME				= "typo matches";
+	public static final String	TYPO_MATCHES_GROUP_NAME				= "secondary matches";
 	public static final String	FUZZY_MATCHES_ONE_EDIT_GROUP_NAME	= "fuzzy matches with 1 edit";
 	public static final String	FUZZY_MATCHES_TWO_EDITS_GROUP_NAME	= "fuzzy matches with 2 edits";
 	public static final String	SHINGLE_MATCHES_GROUP_NAME			= "shingle matches";
@@ -74,6 +102,10 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 	private boolean	alwaysDoFuzzy	= Boolean.getBoolean("alwaysDoFuzzy");
 
 	private static final Logger perfLog = LoggerFactory.getLogger("de.cxp.ocs.smartsuggest.performance");
+
+	private static final String	METRICS_PREFIX	= Util.APP_NAME + ".lucene_suggester";
+	private long				recordCount		= 0;
+	private long				memUsageBytes	= 0;
 
 	private volatile boolean isClosed = false;
 
@@ -132,6 +164,18 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 		catch (IOException iox) {
 			throw new SuggestException("An error occurred while initializing the QuerySuggester", iox);
 		}
+	}
+
+	@Override
+	public void instrument(Optional<MeterRegistryAdapter> metricsRegistryAdapter, Iterable<Tag> tags) {
+		metricsRegistryAdapter.ifPresent(reg -> this.addSensors(reg.getMetricsRegistry(), tags));
+	}
+
+	private void addSensors(MeterRegistry reg, Iterable<Tag> tags) {
+		reg.gauge(METRICS_PREFIX + ".record_count", tags, this, me -> me.recordCount);
+		reg.gauge(METRICS_PREFIX + ".estimated_memusage_bytes", tags, this, me -> me.memUsageBytes);
+		reg.more().counter(METRICS_PREFIX + ".last_index_timestamp_seconds", tags, this,
+				me -> (me.lastIndexTime == null ? -1 : me.lastIndexTime.getEpochSecond()));
 	}
 
 	@Override
@@ -223,11 +267,11 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 			PerfResult perfResult = new PerfResult(term);
 
 			if (modifiedTermsService.hasData()) {
-				int resultCount = collectModifiedSuggestions(term, modifiedTermsService.getRelaxedTerm(term), uniqueQueries, maxResults, RELAXED_GROUP_NAME, results);
-				perfResult.addStep("relaxedTerms", resultCount);
-
-				resultCount = collectModifiedSuggestions(term, modifiedTermsService.getSharpenedTerm(term), uniqueQueries, maxResults, SHARPENED_GROUP_NAME, results);
+				int resultCount = collectModifiedSuggestions(term, modifiedTermsService.getSharpenedTerm(term), uniqueQueries, maxResults, SHARPENED_GROUP_NAME, results);
 				perfResult.addStep("sharpenedTerms", resultCount);
+
+				resultCount = collectModifiedSuggestions(term, modifiedTermsService.getRelaxedTerm(term), uniqueQueries, maxResults, RELAXED_GROUP_NAME, results);
+				perfResult.addStep("relaxedTerms", resultCount);
 			}
 
 			// lookup for best matches
@@ -291,7 +335,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, itemsToFetch);
 
 		final List<Suggestion> suggestions = getUniqueSuggestions(lookupResults, uniqueQueries, maxResults);
-		suggestions.forEach(s -> s.getPayload().put(PAYLOAD_GROUPMATCH_KEY, groupName));
+		suggestions.forEach(s -> withPayloadEntry(s, PAYLOAD_GROUPMATCH_KEY, groupName));
 
 		if (!suggestions.isEmpty()) {
 			sortSuggestions(suggestions, term, groupName);
@@ -312,7 +356,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 					// TODO: figure out, which are better matching before
 					// truncating
 					.limit(maxResults)
-					.map(l -> new Suggestion(l).setPayload(Collections.singletonMap(PAYLOAD_GROUPMATCH_KEY, groupName)))
+					.map(l -> withPayloadEntry(new Suggestion(l), PAYLOAD_GROUPMATCH_KEY, groupName))
 					.peek(results::add)
 					.count();
 
@@ -320,6 +364,21 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 			return (int) count;
 		}
 		return 0;
+	}
+
+	private Suggestion withPayloadEntry(Suggestion s, String key, String value) {
+		if (s.getPayload() == null) {
+			s.setPayload(Collections.singletonMap(key, value));
+		}
+		else if (!(s.getPayload() instanceof HashMap<?, ?>)) {
+			HashMap<String, String> payload = new HashMap<>(s.getPayload());
+			payload.put(key, value);
+			s.setPayload(payload);
+		}
+		else {
+			s.getPayload().put(key, value);
+		}
+		return s;
 	}
 
 	private void sortSuggestions(List<Suggestion> suggestions, String term, String groupName) {
@@ -362,7 +421,25 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 		CompletableFuture<Void> shingleFuture = CompletableFuture.runAsync(indexAsync(shingleSuggester, suggestions, true));
 		return CompletableFuture
 				.allOf(infixFuture, typoInfixFuture, fuzzyShortFuture, fuzzyLongFuture, shingleFuture)
-				.thenRun(() -> lastIndexTime = Instant.now());
+				.thenRun(() -> {
+					lastIndexTime = Instant.now();
+					recordCount = getRecordCount(suggestions);
+					memUsageBytes = ramBytesUsed();
+				});
+	}
+
+	private long getRecordCount(Iterable<SuggestRecord> suggestions) {
+		if (suggestions instanceof Collection<?>) {
+			return ((Collection) suggestions).size();
+		}
+		else {
+			try {
+				return infixSuggester.getCount();
+			}
+			catch (IOException e) {
+				return StreamSupport.stream(suggestions.spliterator(), false).count();
+			}
+		}
 	}
 
 	private Runnable indexAsync(Lookup lookup, Iterable<SuggestRecord> suggestions, boolean useVariant) {
@@ -411,6 +488,29 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer {
 			catch (Exception x) {
 				log.error("An error occurred while closing '{}'", closeable, x);
 			}
+		}
+	}
+
+	@Override
+	public long ramBytesUsed() {
+		long mySize = RamUsageEstimator.shallowSizeOf(this);
+		mySize += RamUsageEstimator.sizeOf(infixSuggester);
+		mySize += RamUsageEstimator.sizeOf(typoSuggester);
+		mySize += RamUsageEstimator.sizeOf(shingleSuggester);
+		mySize += RamUsageEstimator.sizeOf(fuzzySuggesterOneEdit);
+		mySize += RamUsageEstimator.sizeOf(fuzzySuggesterTwoEdits);
+		mySize += RamUsageEstimator.sizeOf(modifiedTermsService);
+		return mySize;
+	}
+
+	@Override
+	public long recordCount() {
+		try {
+			return infixSuggester.getCount();
+		}
+		catch (IOException e) {
+			log.warn("IOException when retrieving count of infixSuggester: " + e.getMessage());
+			return -1;
 		}
 	}
 }

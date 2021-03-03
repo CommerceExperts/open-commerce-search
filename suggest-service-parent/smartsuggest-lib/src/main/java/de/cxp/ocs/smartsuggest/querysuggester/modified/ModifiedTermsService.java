@@ -4,13 +4,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.lucene.util.Accountable;
+import org.apache.lucene.util.RamUsageEstimator;
+
 import lombok.RequiredArgsConstructor;
 
 /**
  * A service that provides mappings of modified (relaxed or sharpened) queries.
  */
 @RequiredArgsConstructor
-public class ModifiedTermsService {
+public class ModifiedTermsService implements Accountable {
 
     private final Map<String, List<String>> relaxedTerms;
     private final Map<String, List<String>> sharpenedTerms;
@@ -28,4 +31,12 @@ public class ModifiedTermsService {
     public boolean hasData() {
     	return relaxedTerms != null && !relaxedTerms.isEmpty() || sharpenedTerms != null && !sharpenedTerms.isEmpty();
     }
+
+	@Override
+	public long ramBytesUsed() {
+		long mySize = RamUsageEstimator.shallowSizeOf(this);
+		mySize += RamUsageEstimator.sizeOfMap(relaxedTerms);
+		mySize += RamUsageEstimator.sizeOfMap(sharpenedTerms);
+		return mySize;
+	}
 }

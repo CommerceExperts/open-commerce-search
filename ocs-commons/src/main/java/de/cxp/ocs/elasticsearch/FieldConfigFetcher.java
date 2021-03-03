@@ -1,4 +1,4 @@
-package de.cxp.ocs.config;
+package de.cxp.ocs.elasticsearch;
 
 import static de.cxp.ocs.config.FieldConstants.NUMBER_FACET_DATA;
 import static de.cxp.ocs.config.FieldConstants.PATH_FACET_DATA;
@@ -26,6 +26,11 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
+import de.cxp.ocs.config.Field;
+import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.config.FieldLevel;
+import de.cxp.ocs.config.FieldType;
+import de.cxp.ocs.config.FieldUsage;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

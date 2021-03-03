@@ -6,12 +6,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>suggest-service-parent</artifactId>
-		<version>0.9.0</version>
+		<version>0.10.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>ocs-suggest-data-provider</artifactId>
-	<version>0.1.4</version>
+	<version>0.2.0</version>
 	<packaging>jar</packaging>
 	<name>OCS Suggest Data Provider</name>
 
@@ -20,6 +20,14 @@
 			<groupId>de.cxp.ocs</groupId>
 			<artifactId>smartsuggest-lib</artifactId>
 			<version>${smartsuggest-lib.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>de.cxp.ocs</groupId>
+			<artifactId>ocs-commons</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.elasticsearch.client</groupId>
+			<artifactId>elasticsearch-rest-high-level-client</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
