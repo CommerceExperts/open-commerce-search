@@ -299,9 +299,10 @@ public class QuerySuggestManager implements AutoCloseable {
 					+ " Please provide a SuggestDataProvider implementation accessible via ServiceLoader.");
 		}
 		while (loadedSDPs.hasNext()) {
-			dataProviders.add(loadedSDPs.next());
+			SuggestDataProvider sdp = loadedSDPs.next();
+			dataProviders.add(sdp);
+			log.info("initialized SmartSuggest with {}", sdp.getClass().getCanonicalName());
 		}
-		log.info("initialized SmartSuggest with {}", dataProviders.getClass().getCanonicalName());
 		
 		if (meterRegistryAdapter.isPresent()) {
 			for(SuggestDataProvider sdp : dataProviders) {
