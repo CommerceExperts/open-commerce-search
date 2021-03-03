@@ -131,10 +131,10 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 	}
 
 	private void addSensors(MeterRegistry reg, Iterable<Tag> tags) {
-		reg.gauge(Util.APP_NAME + ".suggester.cache.hit_count", tags, this, me -> me.getCacheStats().hitCount());
-		reg.gauge(Util.APP_NAME + ".suggester.cache.load_count", tags, this, me -> me.getCacheStats().loadCount());
-		reg.gauge(Util.APP_NAME + ".suggester.cache.miss_count", tags, this, me -> me.getCacheStats().missCount());
-		reg.gauge(Util.APP_NAME + ".suggester.cache.request_count", tags, this, me -> me.getCacheStats().requestCount());
+		reg.gauge(Util.APP_NAME + ".suggester.cache.size", tags, this, me -> me.firstLetterCache.size());
+		reg.gauge(Util.APP_NAME + ".suggester.cache.evictionCount", tags, this, me -> me.getCacheStats().evictionCount());
+		reg.gauge(Util.APP_NAME + ".suggester.cache.hit_rate", tags, this, me -> me.getCacheStats().hitRate());
+		reg.gauge(Util.APP_NAME + ".suggester.cache.miss_rate", tags, this, me -> me.getCacheStats().missRate());
 	}
 
 	@Override
