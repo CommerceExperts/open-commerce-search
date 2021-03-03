@@ -50,6 +50,7 @@ import org.apache.lucene.util.RamUsageEstimator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.cxp.ocs.smartsuggest.monitoring.Instrumentable;
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
 import de.cxp.ocs.smartsuggest.querysuggester.QueryIndexer;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
@@ -60,12 +61,11 @@ import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.Util;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Tags;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accountable {
+public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accountable, Instrumentable {
 
 	public static final String	PAYLOAD_LABEL_KEY		= "meta.label";
 	public static final String	PAYLOAD_GROUPMATCH_KEY	= "meta.matchGroupName";
@@ -109,10 +109,6 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 
 	private volatile boolean isClosed = false;
 
-	public LuceneQuerySuggester(@NonNull Path indexFolder, @NonNull Locale locale, @NonNull ModifiedTermsService modifiedTermsService, CharArraySet stopWords) {
-		this(indexFolder, locale, modifiedTermsService, stopWords, Optional.empty());
-	}
-
 	/**
 	 * Constructor.
 	 * 
@@ -125,8 +121,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 * @param stopWords
 	 *        optional set of stopwords. may be null
 	 */
-	public LuceneQuerySuggester(@NonNull Path indexFolder, @NonNull Locale locale, @NonNull ModifiedTermsService modifiedTermsService, CharArraySet stopWords,
-			Optional<MeterRegistryAdapter> meterRegistry) {
+	public LuceneQuerySuggester(@NonNull Path indexFolder, @NonNull Locale locale, @NonNull ModifiedTermsService modifiedTermsService, CharArraySet stopWords) {
 		this.modifiedTermsService = modifiedTermsService;
 		this.locale = locale;
 
@@ -164,8 +159,6 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			fuzzySuggesterOneEdit = createFuzzySuggester(indexFolder, "Short", basicIndexAnalyzer, basicQueryAnalyzer, 1);
 			fuzzySuggesterTwoEdits = createFuzzySuggester(indexFolder, "Long", basicIndexAnalyzer, basicQueryAnalyzer, 2);
 
-			meterRegistry.ifPresent(adapter -> addSensors(indexFolder, adapter.getMetricsRegistry()));
-
 			index(emptyList()).join();
 		}
 		catch (IOException iox) {
@@ -173,9 +166,12 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		}
 	}
 
-	private void addSensors(Path indexFolder, MeterRegistry reg) {
-		Iterable<Tag> tags = Tags
-				.of("indexPath", indexFolder.toString());
+	@Override
+	public void instrument(Optional<MeterRegistryAdapter> metricsRegistryAdapter, Iterable<Tag> tags) {
+		metricsRegistryAdapter.ifPresent(reg -> this.addSensors(reg.getMetricsRegistry(), tags));
+	}
+
+	private void addSensors(MeterRegistry reg, Iterable<Tag> tags) {
 		reg.gauge(METRICS_PREFIX + ".record_count", tags, this, me -> me.recordCount);
 		reg.gauge(METRICS_PREFIX + ".estimated_memusage_bytes", tags, this, me -> me.memUsageBytes);
 		reg.more().counter(METRICS_PREFIX + ".last_index_timestamp_seconds", tags, this,

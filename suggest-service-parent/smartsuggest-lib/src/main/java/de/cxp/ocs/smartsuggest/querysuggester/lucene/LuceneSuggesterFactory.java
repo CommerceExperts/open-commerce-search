@@ -15,9 +15,9 @@ import de.cxp.ocs.smartsuggest.querysuggester.SuggesterFactory;
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
+import io.micrometer.core.instrument.Tag;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -27,8 +27,8 @@ public class LuceneSuggesterFactory implements SuggesterFactory {
 	@NonNull
 	private final Path indexFolder;
 
-	@Setter
-	private Optional<MeterRegistryAdapter> metricsRegistryAdapter = Optional.empty();
+	private Optional<MeterRegistryAdapter>	metricsRegistryAdapter	= Optional.empty();
+	private Iterable<Tag>					tags;
 
 	@Override
 	public QuerySuggester getSuggester(SuggestData suggestData) {
@@ -40,8 +40,11 @@ public class LuceneSuggesterFactory implements SuggesterFactory {
 						Collections.emptyMap()),
 				Optional.ofNullable(suggestData.getWordsToIgnore())
 						.map(sw -> new CharArraySet(sw, true))
-						.orElse(null),
-				metricsRegistryAdapter);
+						.orElse(null));
+
+		if (metricsRegistryAdapter.isPresent()) {
+			luceneQuerySuggester.instrument(metricsRegistryAdapter, tags);
+		}
 
 		final long start = System.currentTimeMillis();
 		Iterable<SuggestRecord> suggestRecords = suggestData.getSuggestRecords();
@@ -52,6 +55,12 @@ public class LuceneSuggesterFactory implements SuggesterFactory {
 		log.info("Indexing {} suggestions took: {}ms", luceneQuerySuggester.recordCount(), System.currentTimeMillis() - start);
 
 		return luceneQuerySuggester;
+	}
+
+	@Override
+	public void instrument(Optional<MeterRegistryAdapter> metricsRegistryAdapter, Iterable<Tag> tags) {
+		this.metricsRegistryAdapter = metricsRegistryAdapter;
+		this.tags = tags;
 	}
 
 }

@@ -41,6 +41,8 @@ import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneSuggesterFactory;
 import de.cxp.ocs.smartsuggest.spi.MergingSuggestDataProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
 import de.cxp.ocs.smartsuggest.updater.SuggestionsUpdater;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -271,6 +273,7 @@ public class QuerySuggestManager implements AutoCloseable {
 			querySuggestManager.engine = engine;
 			querySuggestManager.useDataMerger = useDataMerger;
 			querySuggestManager.limiter = this.limiter != null ? this.limiter : new CutOffLimiter();
+			querySuggestManager.metricsRegistry = Optional.ofNullable(metricsRegistry);
 			if (preloadIndexes.size() > 0) {
 				List<CompletableFuture<QuerySuggester>> futures = preloadIndexes.stream()
 						.map(indexName -> CompletableFuture.supplyAsync(() -> querySuggestManager.getQuerySuggester(indexName, true)))
@@ -307,7 +310,8 @@ public class QuerySuggestManager implements AutoCloseable {
 		if (meterRegistryAdapter.isPresent()) {
 			for(SuggestDataProvider sdp : dataProviders) {
 				if (sdp instanceof Instrumentable) {
-					((Instrumentable)sdp).setMetricsRegistryAdapter(meterRegistryAdapter);
+					Iterable<Tag> tags = Tags.of("dataProvider", sdp.getClass().getCanonicalName());
+					((Instrumentable) sdp).instrument(meterRegistryAdapter, tags);
 				}
 			}
 		}
@@ -428,15 +432,19 @@ public class QuerySuggestManager implements AutoCloseable {
 			return new NoopQuerySuggester(true);
 		}
 
-		QuerySuggesterProxy updateableQuerySuggester = new QuerySuggesterProxy(indexName, suggestDataProvider.getClass().getCanonicalName());
-		updateableQuerySuggester.setMetricsRegistryAdapter(metricsRegistry);
+		Iterable<Tag> tags = Tags
+				.of("indexName", indexName)
+				.and("dataProvider", suggestDataProvider.getClass().getCanonicalName());
 
-		Path tenantFolder = suggestIndexFolder.resolve(indexName.toString()).resolve(suggestDataProvider.getClass().getSimpleName());
+		QuerySuggesterProxy updateableQuerySuggester = new QuerySuggesterProxy(indexName, suggestDataProvider.getClass().getCanonicalName());
+		updateableQuerySuggester.instrument(metricsRegistry, tags);
+
+		Path tenantFolder = suggestIndexFolder.resolve(indexName.toString()).resolve(suggestDataProvider.getClass().getCanonicalName());
 		SuggesterFactory factory = new LuceneSuggesterFactory(tenantFolder);
-		factory.setMetricsRegistryAdapter(metricsRegistry);
+		factory.instrument(metricsRegistry, tags);
 
 		SuggestionsUpdater updateTask = new SuggestionsUpdater(suggestDataProvider, indexName, updateableQuerySuggester, factory);
-		updateTask.setMetricsRegistryAdapter(metricsRegistry);
+		updateTask.instrument(metricsRegistry, tags);
 
 		long initialDelay = 0;
 		if (synchronous) {

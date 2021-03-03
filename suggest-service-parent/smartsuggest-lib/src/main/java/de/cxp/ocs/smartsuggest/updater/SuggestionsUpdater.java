@@ -18,7 +18,6 @@ import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.Util;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Tags;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -128,19 +127,16 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 	}
 
 	@Override
-	public void setMetricsRegistryAdapter(Optional<MeterRegistryAdapter> metricsRegistryAdapter) {
-		metricsRegistryAdapter.ifPresent(adapter -> this.addSensors(adapter.getMetricsRegistry()));
+	public void instrument(Optional<MeterRegistryAdapter> metricsRegistryAdapter, Iterable<Tag> tags) {
+		metricsRegistryAdapter.ifPresent(adapter -> this.addSensors(adapter.getMetricsRegistry(), tags));
 	}
 
-	private void addSensors(MeterRegistry reg) {
-		Iterable<Tag> indexTag = Tags
-				.of("indexName", indexName)
-				.and("dataProvider", dataProvider.getClass().getCanonicalName());
-		reg.gauge(Util.APP_NAME + ".update.fail.count", indexTag, this, updater -> updater.updateFailCount);
-		reg.more().counter(Util.APP_NAME + ".update.success.count", indexTag, this, updater -> updater.updateSuccessCount);
-		reg.more().timeGauge(Util.APP_NAME + ".suggestions.age", indexTag, this, TimeUnit.SECONDS,
+	private void addSensors(MeterRegistry reg, Iterable<Tag> tags) {
+		reg.gauge(Util.APP_NAME + ".update.fail.count", tags, this, updater -> updater.updateFailCount);
+		reg.more().counter(Util.APP_NAME + ".update.success.count", tags, this, updater -> updater.updateSuccessCount);
+		reg.more().timeGauge(Util.APP_NAME + ".suggestions.age", tags, this, TimeUnit.SECONDS,
 				updater -> (updater.lastUpdate == null ? -1 : System.currentTimeMillis() - updater.lastUpdate.toEpochMilli()) / 1000);
-		reg.gauge(Util.APP_NAME + ".suggestions.size", indexTag, this, updater -> updater.suggestionsCount);
+		reg.gauge(Util.APP_NAME + ".suggestions.size", tags, this, updater -> updater.suggestionsCount);
 	}
 
 }

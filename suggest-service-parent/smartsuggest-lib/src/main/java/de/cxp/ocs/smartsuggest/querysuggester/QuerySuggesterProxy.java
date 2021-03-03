@@ -22,7 +22,6 @@ import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
 import de.cxp.ocs.smartsuggest.util.Util;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Tags;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -118,12 +117,6 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 			return innerQuerySuggester.get().suggest(normalizedTerm, maxResults, tags);
 		}
 	}
-
-	@Override
-	public void setMetricsRegistryAdapter(Optional<MeterRegistryAdapter> metricsRegistryAdapter) {
-		metricsRegistryAdapter.ifPresent(adapter -> addSensors(adapter.getMetricsRegistry()));
-	}
-
 	CacheStats getCacheStats() {
 		if (cacheStats == null || lastCacheStatsUpdate + 60_000 < System.currentTimeMillis()) {
 			cacheStats = firstLetterCache.stats();
@@ -132,14 +125,16 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 		return cacheStats;
 	}
 
-	private void addSensors(MeterRegistry reg) {
-		Iterable<Tag> indexTag = Tags
-				.of("indexName", indexName)
-				.and("dataProvider", dataProviderName);
-		reg.gauge(Util.APP_NAME + ".suggester.cache.hit_count", indexTag, this, me -> me.getCacheStats().hitCount());
-		reg.gauge(Util.APP_NAME + ".suggester.cache.load_count", indexTag, this, me -> me.getCacheStats().loadCount());
-		reg.gauge(Util.APP_NAME + ".suggester.cache.miss_count", indexTag, this, me -> me.getCacheStats().missCount());
-		reg.gauge(Util.APP_NAME + ".suggester.cache.request_count", indexTag, this, me -> me.getCacheStats().requestCount());
+	@Override
+	public void instrument(Optional<MeterRegistryAdapter> metricsRegistryAdapter, Iterable<Tag> tags) {
+		metricsRegistryAdapter.ifPresent(adapter -> addSensors(adapter.getMetricsRegistry(), tags));
+	}
+
+	private void addSensors(MeterRegistry reg, Iterable<Tag> tags) {
+		reg.gauge(Util.APP_NAME + ".suggester.cache.hit_count", tags, this, me -> me.getCacheStats().hitCount());
+		reg.gauge(Util.APP_NAME + ".suggester.cache.load_count", tags, this, me -> me.getCacheStats().loadCount());
+		reg.gauge(Util.APP_NAME + ".suggester.cache.miss_count", tags, this, me -> me.getCacheStats().missCount());
+		reg.gauge(Util.APP_NAME + ".suggester.cache.request_count", tags, this, me -> me.getCacheStats().requestCount());
 	}
 
 	@Override

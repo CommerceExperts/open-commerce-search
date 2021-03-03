@@ -9,7 +9,7 @@ import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.SuggesterFactory;
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
-import lombok.Setter;
+import io.micrometer.core.instrument.Tag;
 
 public class FakeSuggesterFactory implements SuggesterFactory {
 
@@ -25,7 +25,9 @@ public class FakeSuggesterFactory implements SuggesterFactory {
 		return new FakeSuggester(suggestRecords);
 	}
 
-	@Setter
-	private Optional<MeterRegistryAdapter> metricsRegistryAdapter = Optional.empty();
+	@Override
+	public void instrument(Optional<MeterRegistryAdapter> metricsRegistryAdapter, Iterable<Tag> tags) {
+		// irrelevant for testing
+	}
 
 }
