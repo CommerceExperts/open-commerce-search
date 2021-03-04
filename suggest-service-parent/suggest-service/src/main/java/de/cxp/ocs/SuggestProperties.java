@@ -68,6 +68,7 @@ public class SuggestProperties {
 	 * 3600. It's used as the interval on how often the SuggestDataProviders are
 	 * asked if they have new data.
 	 * </p>
+	 * search-test-ocssuggest-6b65dd5598-jz7z5
 	 * <p>
 	 * Defaults to 60.
 	 * </p>
@@ -216,6 +217,23 @@ public class SuggestProperties {
 		return getVarValue("SUGGEST_GROUP_CUTOFF_DEFAULT")
 				.map(Integer::parseInt)
 				.orElse(5);
+	}
+
+	/**
+	 * If property is set, the returned values will be deduplicated. As a value
+	 * a comma separated list of the group-values can be specified. It's used as
+	 * a priority order: suggestions of the groups defined first will be
+	 * preferred over suggestions from other groups. Example: a value
+	 * "brand,keyword" will be used to remove a keyword suggestions if there is
+	 * a similar brand suggestions. Comparison is done on normalized values
+	 * (lowercase+trim). Defining the property without a value will enable
+	 * deduplication, but will do that without any priorization.
+	 * 
+	 * @return
+	 */
+	public Optional<String[]> getGroupDeduplicationOrder() {
+		return getVarValue("SUGGEST_GROUP_DEDUPLICATION_ORDER")
+				.map(val -> StringUtils.split(val, ','));
 	}
 
 	private <T> LinkedHashMap<String, T> toLinkedHashMap(String rawConf, Function<String, T> valParser) {

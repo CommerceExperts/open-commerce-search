@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,7 @@ public class GroupedCutOffLimiterTest {
 		limitConf.put("keyword", 5);
 		limitConf.put("brand", 3);
 		limitConf.put("category", 4);
-		underTest = new GroupedCutOffLimiter("type", 3, limitConf);
+		underTest = new GroupedCutOffLimiter("type", 3, limitConf, Optional.empty());
 	}
 
 	@Test
@@ -117,7 +118,7 @@ public class GroupedCutOffLimiterTest {
 
 	@Test
 	public void onlyConfigreDefaultLimit() {
-		underTest = new GroupedCutOffLimiter("type", 3, new LinkedHashMap<>());
+		underTest = new GroupedCutOffLimiter("type", 3, new LinkedHashMap<>(), Optional.empty());
 		List<Suggestion> bigList = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
 			bigList.add(new Suggestion("c_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "category")));

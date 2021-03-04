@@ -8,13 +8,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 
 import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -60,19 +60,39 @@ import lombok.extern.slf4j.Slf4j;
  * </p>
  */
 @Slf4j
-@NoArgsConstructor
 public class ConfigurableShareLimiter implements Limiter {
 
 	public final static String	SHARE_KEY_ENV_PREFIX	= "SUGGEST_GROUP_SHARE_";
 	public final static String	OTHER_SHARE_KEY			= "other";
 
-	private String groupingKey;
+	private final String				groupingKey;
+	private final Optional<String[]>	groupDeduplicationOrder;
 
 	private final LinkedHashMap<String, Double> origShareConf = new LinkedHashMap<>();
 	private final LinkedHashMap<String, Double> normalizedShareConf = new LinkedHashMap<>();
 
-	public ConfigurableShareLimiter(@Nonnull String groupingKey, LinkedHashMap<String, Double> shareConfiguration) {
+	/**
+	 * The share limiter will group the results according to a particular
+	 * payload value and uses the configured share values to distribute the
+	 * limited space among those grouped suggestions.
+	 *
+	 * @see ConfigurableShareLimiter
+	 * @param groupingKey
+	 *        which key to use to get the grouping key from the suggestions
+	 *        payload.
+	 * @param shareConfiguration
+	 *        the share value (between 0 and 1) for each available group.
+	 *        The order of the groups matters. See java-doc of
+	 *        ConfigurableShareLimiter
+	 * @param groupDeduplicationOrder
+	 *        If given (even with an empty array), the suggestions will be
+	 *        deduplicated. The array defines preferred groups. Suggestions of
+	 *        the groups defined first will be preferred over suggestions from
+	 *        other groups.
+	 */
+	public ConfigurableShareLimiter(@Nonnull String groupingKey, LinkedHashMap<String, Double> shareConfiguration, Optional<String[]> groupDeduplicationOrder) {
 		this.groupingKey = groupingKey;
+		this.groupDeduplicationOrder = groupDeduplicationOrder;
 
 		if (shareConfiguration != null && !shareConfiguration.isEmpty()) {
 			origShareConf.putAll(shareConfiguration);
@@ -87,27 +107,29 @@ public class ConfigurableShareLimiter implements Limiter {
 			return suggestions;
 		}
 
-		Map<String, List<Suggestion>> grouped = suggestions.stream().collect(Collectors.groupingBy(this::groupKey));
+		Map<String, List<Suggestion>> groupedSuggestions = suggestions.stream().collect(Collectors.groupingBy(this::groupKey));
+		groupDeduplicationOrder.ifPresent(order -> SuggestDeduplicator.deduplicate(groupedSuggestions, order));
+
 		List<Suggestion> limitedSuggestions;
-		if (grouped.size() == 1) {
+		if (groupedSuggestions.size() == 1) {
 			limitedSuggestions = suggestions.subList(0, limit);
 		}
 		else {
 			limitedSuggestions = new ArrayList<>();
-			if (!normalizedShareConf.keySet().containsAll(grouped.keySet())) {
-				updateShareConfiguration(grouped.keySet());
+			if (!normalizedShareConf.keySet().containsAll(groupedSuggestions.keySet())) {
+				updateShareConfiguration(groupedSuggestions.keySet());
 			}
 
-			HashMap<String, Double> resultShares = new HashMap<>(grouped.size());
-			grouped.keySet().forEach(g -> resultShares.put(g, normalizedShareConf.get(g)));
+			HashMap<String, Double> resultShares = new HashMap<>(groupedSuggestions.size());
+			groupedSuggestions.keySet().forEach(g -> resultShares.put(g, normalizedShareConf.get(g)));
 			normalizeShareValues(resultShares);
 			
 
 			LinkedList<Suggestion> remainingSuggestions = new LinkedList<>();
-			Map<String, int[]> groupInsertIndexes = new HashMap<>(grouped.size());
+			Map<String, int[]> groupInsertIndexes = new HashMap<>(groupedSuggestions.size());
 			
 			for (String group : normalizedShareConf.keySet()) {
-				List<Suggestion> groupSuggestion = grouped.get(group);
+				List<Suggestion> groupSuggestion = groupedSuggestions.get(group);
 				if (groupSuggestion != null) {
 					int groupLimit = Math.min((int)Math.round(resultShares.get(group) * limit), groupSuggestion.size());
 					limitedSuggestions.addAll(groupSuggestion.subList(0, groupLimit));

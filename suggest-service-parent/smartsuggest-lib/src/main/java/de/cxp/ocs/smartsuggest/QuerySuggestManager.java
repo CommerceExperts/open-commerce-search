@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -25,9 +24,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import de.cxp.ocs.smartsuggest.limiter.ConfigurableShareLimiter;
 import de.cxp.ocs.smartsuggest.limiter.CutOffLimiter;
-import de.cxp.ocs.smartsuggest.limiter.GroupedCutOffLimiter;
 import de.cxp.ocs.smartsuggest.limiter.Limiter;
 import de.cxp.ocs.smartsuggest.monitoring.Instrumentable;
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
@@ -154,49 +151,19 @@ public class QuerySuggestManager implements AutoCloseable {
 			return this;
 		}
 
-		/**
-		 * The share limiter will group the results according to a particular
-		 * payload value and uses the configured share values to distribute the
-		 * limited space among those grouped suggestions.
-		 *
-		 * @see ConfigurableShareLimiter
-		 * @param groupingKey
-		 *        which key to use to get the grouping key from the suggestions
-		 *        payload.
-		 * @param groupShares
-		 *        the share value (between 0 and 1) for each available group.
-		 *        The order of the groups matters. See java-doc of
-		 *        ConfigurableShareLimiter
-		 * @return
-		 */
-		public QuerySuggestManagerBuilder withShareLimiter(String groupingKey, LinkedHashMap<String, Double> groupShares) {
-			limiter = new ConfigurableShareLimiter(groupingKey, groupShares);
-			return this;
-		}
 
 		/**
-		 * This limiter will group the results in the order of the specified
-		 * groupLimits map and limit each group to the according value.
+		 * With this method you can specify a limiter for suggestions from
+		 * different sources.
 		 * 
-		 * @see GroupedCutOffLimiter
-		 * @param groupingKey
-		 * @param defaultGroupLimit
-		 * @param groupLimits
-		 * @return
-		 */
-		public QuerySuggestManagerBuilder withGroupedCutOffLimiter(String groupingKey, int defaultGroupLimit, LinkedHashMap<String, Integer> groupLimits) {
-			limiter = new GroupedCutOffLimiter(groupingKey, defaultGroupLimit, groupLimits);
-			return this;
-		}
-
-		/**
-		 * With this method you can specify custom limiter.
-		 * 
-		 * @see Limiter
+		 * @see de.cxp.ocs.smartsuggest.limiter.Limiter
+		 * @see de.cxp.ocs.smartsuggest.limiter.GroupedCutOffLimiter
+		 * @see de.cxp.ocs.smartsuggest.limiter.ConfigurableShareLimiter
+		 * @see de.cxp.ocs.smartsuggest.limiter.CutOffLimiter
 		 * @param customLimiter
 		 * @return
 		 */
-		public QuerySuggestManagerBuilder withCustomLimiter(Limiter customLimiter) {
+		public QuerySuggestManagerBuilder withLimiter(Limiter customLimiter) {
 			limiter = customLimiter;
 			return this;
 		}

@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,7 +27,7 @@ public class ConfigurableShareLimiterTest {
 		shareConfiguration.put("keyword", 0.3);
 		shareConfiguration.put("brand", 0.2);
 		shareConfiguration.put("category", 0.5);
-		underTest = new ConfigurableShareLimiter("type", shareConfiguration);
+		underTest = new ConfigurableShareLimiter("type", shareConfiguration, Optional.empty());
 	}
 
 	@AfterEach

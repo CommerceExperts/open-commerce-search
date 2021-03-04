@@ -81,14 +81,15 @@ public class Application {
 
 		final Optional<String> groupKey = props.getGroupKey();
 		if (groupKey.isPresent()) {
+			Optional<String[]> groupDeduplicationOrder = props.getGroupDeduplicationOrder();
 			Limiter limiter = props.getGroupedShareConf()
-					.map(conf -> (Limiter) new ConfigurableShareLimiter(groupKey.get(), conf))
+					.map(conf -> (Limiter) new ConfigurableShareLimiter(groupKey.get(), conf, groupDeduplicationOrder))
 					.orElseGet(() -> {
 						Integer cutoffDefault = props.getGroupedCutoffDefaultSize();
 						LinkedHashMap<String, Integer> conf = props.getGroupedCutoffConf().orElse(new LinkedHashMap<>(0));
-						return new GroupedCutOffLimiter(groupKey.get(), cutoffDefault, conf);
+						return new GroupedCutOffLimiter(groupKey.get(), cutoffDefault, conf, groupDeduplicationOrder);
 					});
-			querySuggestManagerBuilder.withCustomLimiter(limiter);
+			querySuggestManagerBuilder.withLimiter(limiter);
 		}
 
 		return querySuggestManagerBuilder.build();

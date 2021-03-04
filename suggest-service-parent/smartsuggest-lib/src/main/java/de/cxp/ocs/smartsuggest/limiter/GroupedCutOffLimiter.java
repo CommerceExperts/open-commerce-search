@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
@@ -13,14 +14,24 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 /**
+ * <p>
  * This limiter groups the result by the specified payload entry and limits each
  * group to the specified size. If the final list is longer than the requested
  * limit, the least important group is truncated accordingly.
+ * </p>
+ * <p>
  * If the final list is shorter as the requested limit, nothing is done, so it
  * will stay short! Only exception: if there are suggestions from a group that
  * was not configured, they are appended to the final list, but not more than
  * specified by the "defaultLimit".
+ * </p>
+ * <p>
+ * With the optional given "groupDeduplicationOrder", the suggestions will be
+ * deduplicated. The array defines preferred groups. Suggestions of the groups
+ * defined first will be preferred over suggestions from other groups.
+ * </p>
  */
+
 @RequiredArgsConstructor
 public class GroupedCutOffLimiter implements Limiter {
 
@@ -34,9 +45,14 @@ public class GroupedCutOffLimiter implements Limiter {
 	@NonNull
 	private final LinkedHashMap<String, Integer> limitConf;
 
+	@NonNull
+	private final Optional<String[]> groupDeduplicationOrder;
+
 	@Override
 	public List<Suggestion> limit(List<Suggestion> suggestions, int limit) {
 		Map<String, List<Suggestion>> groupedSuggestions = suggestions.stream().collect(Collectors.groupingBy(this::groupKey));
+		groupDeduplicationOrder.ifPresent(order -> SuggestDeduplicator.deduplicate(groupedSuggestions, order));
+
 		List<Suggestion> finalList = new ArrayList<>(Math.min(limit, suggestions.size()));
 		for (Entry<String, Integer> limitEntry : limitConf.entrySet()) {
 			List<Suggestion> groupedList = groupedSuggestions.remove(limitEntry.getKey());
@@ -45,6 +61,7 @@ public class GroupedCutOffLimiter implements Limiter {
 				finalList.addAll(groupedList.subList(0, groupLimit));
 			}
 		}
+
 		Iterator<List<Suggestion>> otherSuggestionsIterator = groupedSuggestions.values().iterator();
 		while (finalList.size() < limit && otherSuggestionsIterator.hasNext()) {
 			List<Suggestion> groupedList = otherSuggestionsIterator.next();
