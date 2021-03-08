@@ -25,8 +25,6 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class TermFacetCreator extends NestedFacetCreator {
 
-	private final static String CODE_VALUE_AGG = "_code";
-
 	@Setter
 	private int maxFacetValues = 100;
 
@@ -59,8 +57,8 @@ public class TermFacetCreator extends NestedFacetCreator {
 		return AggregationBuilders.terms(FACET_VALUES_AGG)
 				.field(nestedPathPrefix + ".value")
 				.size(maxFacetValues)
-				.subAggregation(AggregationBuilders.terms(CODE_VALUE_AGG)
-						.field(nestedPathPrefix + ".code")
+				.subAggregation(AggregationBuilders.terms(FACET_IDS_AGG)
+						.field(nestedPathPrefix + ".id")
 						.size(1));
 	}
 
@@ -89,7 +87,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 			String facetValue = valueBucket.getKeyAsString();
 
 			String facetValueId = null;
-			Terms facetValueAgg = (Terms) valueBucket.getAggregations().get(CODE_VALUE_AGG);
+			Terms facetValueAgg = (Terms) valueBucket.getAggregations().get(FACET_IDS_AGG);
 			if (facetValueAgg != null && facetValueAgg.getBuckets().size() > 0) {
 				facetValueId = facetValueAgg.getBuckets().get(0).getKeyAsString();
 			}

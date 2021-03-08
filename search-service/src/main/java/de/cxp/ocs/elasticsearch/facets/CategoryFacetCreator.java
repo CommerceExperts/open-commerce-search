@@ -41,10 +41,10 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 
 	@Override
 	protected AggregationBuilder getNestedValueAggregation(String nestedPathPrefix) {
-		return AggregationBuilders.terms("_values")
+		return AggregationBuilders.terms(FACET_VALUES_AGG)
 				.field(FieldConstants.PATH_FACET_DATA + ".value")
 				.size(maxFacetValues)
-				.subAggregation(AggregationBuilders.terms("_ids")
+				.subAggregation(AggregationBuilders.terms(FACET_IDS_AGG)
 						.field(FieldConstants.PATH_FACET_DATA + ".id")
 						.size(1));
 	}
@@ -66,7 +66,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 
 	@Override
 	protected Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter intFacetFilter, SearchQueryBuilder linkBuilder) {
-		Terms categoryAgg = facetNameBucket.getAggregations().get("_values");
+		Terms categoryAgg = facetNameBucket.getAggregations().get(FACET_VALUES_AGG);
 		List<? extends Bucket> catBuckets = categoryAgg.getBuckets();
 		if (catBuckets.size() == 0) return Optional.empty();
 
@@ -101,7 +101,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 			lastLevelEntry.setDocCount(docCount);
 			lastLevelEntry.setPath(categoryPath);
 
-			Terms idsAgg = (Terms) categoryBucket.getAggregations().get("_ids");
+			Terms idsAgg = (Terms) categoryBucket.getAggregations().get(FACET_IDS_AGG);
 			if (idsAgg != null && idsAgg.getBuckets().size() > 0) {
 				lastLevelEntry.setId(idsAgg.getBuckets().get(0).getKeyAsString());
 
