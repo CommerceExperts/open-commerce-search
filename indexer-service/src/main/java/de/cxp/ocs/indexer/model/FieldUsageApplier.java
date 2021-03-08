@@ -1,9 +1,6 @@
 package de.cxp.ocs.indexer.model;
 
-import static de.cxp.ocs.util.Util.collectObjects;
-import static de.cxp.ocs.util.Util.toNumberCollection;
-import static de.cxp.ocs.util.Util.toStringCollection;
-import static de.cxp.ocs.util.Util.tryToParseAsNumber;
+import static de.cxp.ocs.util.Util.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -182,9 +179,9 @@ public class FieldUsageApplier {
 		}
 		else if (value instanceof Attribute) {
 			Attribute attr = ((Attribute) value);
-			Optional<Number> numberValue = tryToParseAsNumber(attr.getValue());
-			numberValue.map(numVal -> record.getNumberFacetData().add(
-					new FacetEntry<>(field.getName(), attr.getId(), numVal, attr.getCode())));
+			tryToParseAsNumber(attr.getValue())
+					.map(numVal -> record.getNumberFacetData().add(
+							new FacetEntry<>(field.getName(), null, numVal)));
 		}
 		else {
 			Optional<Number> numberValue = tryToParseAsNumber(String.valueOf(value));
@@ -229,7 +226,7 @@ public class FieldUsageApplier {
 		}
 		else if (value instanceof Attribute) {
 			Attribute attr = (Attribute) value;
-			record.getTermFacetData().add(new FacetEntry<>(field.getName(), attr.getId(), attr.getValue(), attr.getCode()));
+			record.getTermFacetData().add(new FacetEntry<>(field.getName(), attr.getCode(), attr.getValue()));
 		}
 		else {
 			record.getTermFacetData().add(new FacetEntry<>(field.getName(), String.valueOf(value)));
@@ -250,7 +247,7 @@ public class FieldUsageApplier {
 			return;
 		}
 		else if (value instanceof Attribute) {
-			fieldName = ((Attribute) value).getLabel();
+			fieldName = ((Attribute) value).getName();
 			numValue = tryToParseAsNumber(((Attribute) value).getValue());
 		}
 		else {
