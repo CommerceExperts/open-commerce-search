@@ -83,7 +83,7 @@ public class IndexerController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(argEx.getMessage());
 		}
 		catch (IllegalStateException ise) {
-			return ResponseEntity.status(HttpStatus.CONFLICT).build();
+			return ResponseEntity.status(HttpStatus.CONFLICT).body(ise.getMessage());
 		}
 		catch (ExecutionException e) {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
