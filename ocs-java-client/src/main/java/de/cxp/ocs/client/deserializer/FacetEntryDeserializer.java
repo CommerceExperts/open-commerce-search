@@ -50,6 +50,7 @@ public class FacetEntryDeserializer extends JsonDeserializer<FacetEntry> {
 			entry = new FacetEntry();
 		}
 
+		Optional.ofNullable((JsonNode) docNode.get("id")).map(JsonNode::textValue).ifPresent(entry::setId);
 		Optional.ofNullable((JsonNode) docNode.get("docCount")).map(JsonNode::asLong).ifPresent(entry::setDocCount);
 		Optional.ofNullable((JsonNode) docNode.get("key")).map(JsonNode::textValue).ifPresent(entry::setKey);
 		Optional.ofNullable((JsonNode) docNode.get("link")).map(JsonNode::textValue).ifPresent(entry::setLink);
