@@ -139,7 +139,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 	}
 
 	private HierarchialFacetEntry toFacetEntry(String value, String categoryPath, FacetConfig facetConfig, SearchQueryBuilder linkBuilder) {
-		boolean isSelected = linkBuilder.isFilterSelected(facetConfig, categoryPath);
+		boolean isSelected = linkBuilder.isFilterSelected(facetConfig.getSourceField(), categoryPath);
 		String link;
 		if (isSelected) {
 			link = linkBuilder.withoutFilterAsLink(facetConfig, categoryPath);
