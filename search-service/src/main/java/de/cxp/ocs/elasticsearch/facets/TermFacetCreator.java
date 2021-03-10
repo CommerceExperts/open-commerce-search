@@ -80,7 +80,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 
 	private void fillFacet(Facet facet, Bucket facetNameBucket, TermResultFilter facetFilter, FacetConfig facetConfig, SearchQueryBuilder linkBuilder) {
 		Terms facetValues = ((Terms) facetNameBucket.getAggregations().get(FACET_VALUES_AGG));
-		Set<String> filterValues = asSet(facetFilter.getValues());
+		Set<String> filterValues = facetFilter == null ? Collections.emptySet() : asSet(facetFilter.getValues());
 		long absDocCount = 0;
 		for (Bucket valueBucket : facetValues.getBuckets()) {
 			long docCount = getDocumentCount(valueBucket);
@@ -121,9 +121,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 				}
 			}
 
-			FacetEntry facetEntry = new FacetEntry(facetValue, facetValueId, docCount, link, isSelected);
-
-			facet.addEntry(facetEntry);
+			facet.addEntry(new FacetEntry(facetValue, facetValueId, docCount, link, isSelected));
 			absDocCount += docCount;
 		}
 		facet.setAbsoluteFacetCoverage(absDocCount);
