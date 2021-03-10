@@ -15,12 +15,18 @@ import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import feign.codec.Decoder;
+import feign.codec.Encoder;
 import feign.jackson.JacksonDecoder;
+import feign.jackson.JacksonEncoder;
 
 public class ObjectMapperFactory {
 
 	public static Decoder createJacksonDecoder() {
 		return new JacksonDecoder(createObjectMapper());
+	}
+
+	public static Encoder createJacksonEncoder() {
+		return new JacksonEncoder(createObjectMapper());
 	}
 
 	public static ObjectMapper createObjectMapper() {

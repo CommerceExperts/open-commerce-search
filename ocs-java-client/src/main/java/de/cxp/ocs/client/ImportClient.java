@@ -38,6 +38,7 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 	 */
 	public ImportClient(String endpointUrl) {
 		this(endpointUrl, f -> {
+			f.encoder(ObjectMapperFactory.createJacksonEncoder());
 			f.decoder(ObjectMapperFactory.createJacksonDecoder());
 			return;
 		});
