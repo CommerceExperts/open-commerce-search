@@ -1,8 +1,6 @@
 package de.cxp.ocs.indexer;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Arrays;
 
@@ -190,7 +188,7 @@ public class IndexItemConverterTest {
 						.addDynamicField(new Field("attributes").setUsage(FieldUsage.Facet)));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("1")
-				.setAttributes(new Attribute().setLabel("color").setValue("red")));
+				.setAttributes(new Attribute().setName("color").setValue("red")));
 		assertEquals("red", result.getSearchData().get("color"));
 		assertTrue(result.getTermFacetData().isEmpty());
 	}
@@ -203,7 +201,7 @@ public class IndexItemConverterTest {
 						.addDynamicField(new Field("attributes").addSourceName(".*").setUsage(FieldUsage.Facet)));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("1")
-				.setAttributes(new Attribute().setLabel("color").setValue("red")));
+				.setAttributes(new Attribute().setName("color").setValue("red")));
 		assertTrue(result.getSearchData().isEmpty());
 		assertEquals("color", result.getTermFacetData().get(0).getName());
 		assertEquals("red", result.getTermFacetData().get(0).getValue());
@@ -224,8 +222,8 @@ public class IndexItemConverterTest {
 		IndexableItem result = underTest.toIndexableItem(new Document("1")
 				.set("unknown", "must be ignored")
 				.setAttributes(
-						new Attribute().setLabel("color").setValue("red"),
-						new Attribute().setLabel("size").setValue("41.5")));
+						new Attribute().setName("color").setValue("red"),
+						new Attribute().setName("size").setValue("41.5")));
 
 		assertTrue(result.getSearchData().isEmpty());
 		assertTrue(result.getResultData().isEmpty());
@@ -250,7 +248,7 @@ public class IndexItemConverterTest {
 						.addField(new Field("title").setUsage(FieldUsage.Search)));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("1")
-				.setAttributes(new Attribute().setLabel("color").setValue("red")));
+				.setAttributes(new Attribute().setName("color").setValue("red")));
 
 		assertTrue(result.getSearchData().isEmpty());
 		assertTrue(result.getPathFacetData().isEmpty());

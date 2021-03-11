@@ -36,6 +36,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 	static final String	FILTERED_AGG		= "_filtered";
 	static final String	FACET_NAMES_AGG		= "_names";
 	static final String	FACET_VALUES_AGG	= "_values";
+	static final String	FACET_IDS_AGG		= "_ids";
 
 	@Setter
 	private int maxFacets = 2;

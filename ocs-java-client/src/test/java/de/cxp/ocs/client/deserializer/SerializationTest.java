@@ -14,9 +14,20 @@ import org.junit.jupiter.params.provider.MethodSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.cxp.ocs.api.indexer.ImportSession;
-import de.cxp.ocs.model.index.*;
+import de.cxp.ocs.model.index.Attribute;
+import de.cxp.ocs.model.index.Category;
+import de.cxp.ocs.model.index.Document;
+import de.cxp.ocs.model.index.Product;
 import de.cxp.ocs.model.params.SearchQuery;
-import de.cxp.ocs.model.result.*;
+import de.cxp.ocs.model.result.Facet;
+import de.cxp.ocs.model.result.FacetEntry;
+import de.cxp.ocs.model.result.HierarchialFacetEntry;
+import de.cxp.ocs.model.result.IntervalFacetEntry;
+import de.cxp.ocs.model.result.ResultHit;
+import de.cxp.ocs.model.result.SearchResult;
+import de.cxp.ocs.model.result.SearchResultSlice;
+import de.cxp.ocs.model.result.SortOrder;
+import de.cxp.ocs.model.result.Sorting;
 import de.cxp.ocs.model.suggest.Suggestion;
 
 public class SerializationTest {
@@ -62,7 +73,7 @@ public class SerializationTest {
 						.set("title", "string values test"),
 				Attribute.of("a1", "with id"),
 
-				new Attribute("1", "color", "ff0000", "red"),
+				new Attribute("color", "ff0000", "red"),
 
 				new Attribute[] { Attribute.of("1", "fruits"), Attribute.of("2", "apples") },
 
@@ -74,7 +85,7 @@ public class SerializationTest {
 
 				new Product("3")
 						.set("title", "attribute with id test")
-						.setAttributes(new Attribute("1", "color", "ff0000", "red")),
+						.setAttributes(new Attribute("color", "ff0000", "red")),
 
 				new Product("4.1")
 						.set("title", "number array test")

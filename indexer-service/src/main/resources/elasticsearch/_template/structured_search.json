@@ -229,10 +229,8 @@
         "type": "nested",
         "properties": {
           "id": {
-            "type": "keyword"
-          },
-          "code": {
-            "type": "keyword"
+            "type": "keyword",
+            "eager_global_ordinals": true
           },
           "name": {
             "type": "keyword",
@@ -247,12 +245,6 @@
       "numberFacetData": {
         "type": "nested",
         "properties": {
-          "id": {
-            "type": "keyword"
-          },
-          "code": {
-            "type": "keyword"
-          },
           "name": {
             "type": "keyword",
             "eager_global_ordinals": true
@@ -266,10 +258,8 @@
         "type": "nested",
         "properties": {
           "id": {
-            "type": "keyword"
-          },
-          "code": {
-            "type": "keyword"
+            "type": "keyword",
+            "eager_global_ordinals": true
           },
           "name": {
             "type": "keyword",
@@ -287,6 +277,10 @@
           "termFacetData": {
             "type": "nested",
             "properties": {
+              "id": {
+	            "type": "keyword",
+	            "eager_global_ordinals": true
+	          },
               "name": {
                 "type": "keyword",
                 "eager_global_ordinals": true
