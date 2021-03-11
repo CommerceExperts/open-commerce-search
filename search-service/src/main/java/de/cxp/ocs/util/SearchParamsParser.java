@@ -26,6 +26,8 @@ import de.cxp.ocs.model.result.Sorting;
  */
 public class SearchParamsParser {
 
+	public final static String ID_FILTER_SUFFIX = ".id";
+
 	/**
 	 * Checks the parameter map for valid filters and extracts them into
 	 * InternalResultFilter objects.
@@ -48,7 +50,7 @@ public class SearchParamsParser {
 			String paramValue = p.getValue();
 
 			boolean isIdFilter = false;
-			if (paramName.endsWith(".id")) {
+			if (paramName.endsWith(ID_FILTER_SUFFIX)) {
 				isIdFilter = true;
 				paramName = paramName.substring(0, paramName.length() - 3);
 			}

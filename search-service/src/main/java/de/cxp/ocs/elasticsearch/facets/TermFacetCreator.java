@@ -1,7 +1,10 @@
 package de.cxp.ocs.elasticsearch.facets;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -53,7 +56,10 @@ public class TermFacetCreator extends NestedFacetCreator {
 	protected AggregationBuilder getNestedValueAggregation(String nestedPathPrefix) {
 		return AggregationBuilders.terms(FACET_VALUES_AGG)
 				.field(nestedPathPrefix + ".value")
-				.size(maxFacetValues);
+				.size(maxFacetValues)
+				.subAggregation(AggregationBuilders.terms(FACET_IDS_AGG)
+						.field(nestedPathPrefix + ".id")
+						.size(1));
 	}
 
 	@Override
@@ -62,55 +68,74 @@ public class TermFacetCreator extends NestedFacetCreator {
 		Facet facet = FacetFactory.create(facetConfig, FacetType.term);
 		if (facetFilter != null && facetFilter instanceof TermResultFilter) {
 			facet.setFiltered(true);
-			if (facetConfig.isMultiSelect() || facetConfig.isShowUnselectedOptions()) {
-				fillFacet(facet, facetNameBucket, facetConfig, linkBuilder);
-			}
-			else {
-				fillSingleSelectFacet(facetNameBucket, facet, (TermResultFilter) facetFilter, facetConfig, linkBuilder);
-			}
+			fillFacet(facet, facetNameBucket, (TermResultFilter) facetFilter, facetConfig, linkBuilder);
 		}
 		else {
 			// unfiltered facet
-			fillFacet(facet, facetNameBucket, facetConfig, linkBuilder);
+			fillFacet(facet, facetNameBucket, null, facetConfig, linkBuilder);
 		}
 
 		return facet.entries.isEmpty() ? Optional.empty() : Optional.of(facet);
 	}
 
-	private void fillSingleSelectFacet(Bucket facetNameBucket, Facet facet, TermResultFilter facetFilter, FacetConfig facetConfig,
-			SearchQueryBuilder linkBuilder) {
+	private void fillFacet(Facet facet, Bucket facetNameBucket, TermResultFilter facetFilter, FacetConfig facetConfig, SearchQueryBuilder linkBuilder) {
 		Terms facetValues = ((Terms) facetNameBucket.getAggregations().get(FACET_VALUES_AGG));
-		long absDocCount = 0;
-		for (String filterValue : facetFilter.getValues()) {
-			Bucket elementBucket = facetValues.getBucketByKey(filterValue);
-			if (elementBucket != null) {
-				long docCount = getDocumentCount(elementBucket);
-				facet.addEntry(buildFacetEntry(facetConfig, filterValue, docCount, linkBuilder));
-				absDocCount += docCount;
-			}
-		}
-		facet.setAbsoluteFacetCoverage(absDocCount);
-	}
-
-	private void fillFacet(Facet facet, Bucket facetNameBucket, FacetConfig facetConfig, SearchQueryBuilder linkBuilder) {
-		Terms facetValues = ((Terms) facetNameBucket.getAggregations().get(FACET_VALUES_AGG));
+		Set<String> filterValues = facetFilter == null ? Collections.emptySet() : asSet(facetFilter.getValues());
 		long absDocCount = 0;
 		for (Bucket valueBucket : facetValues.getBuckets()) {
 			long docCount = getDocumentCount(valueBucket);
-			facet.addEntry(buildFacetEntry(facetConfig, valueBucket.getKeyAsString(), docCount, linkBuilder));
+			String facetValue = valueBucket.getKeyAsString();
+
+			String facetValueId = null;
+			Terms facetValueAgg = (Terms) valueBucket.getAggregations().get(FACET_IDS_AGG);
+			if (facetValueAgg != null && facetValueAgg.getBuckets().size() > 0) {
+				facetValueId = facetValueAgg.getBuckets().get(0).getKeyAsString();
+			}
+
+			boolean isSelected = false;
+			if (facetFilter != null) {
+				if (facetFilter.isFilterOnId()) {
+					isSelected = filterValues.contains(facetValueId);
+				}
+				else {
+					isSelected = filterValues.contains(facetValue);
+				}
+			}
+
+			String link;
+			if (isSelected) {
+				if (facetFilter.isFilterOnId()) {
+					link = linkBuilder.withoutFilterAsLink(facetConfig, facetValueId);
+				}
+				else {
+					link = linkBuilder.withoutFilterAsLink(facetConfig, facetValue);
+				}
+			}
+			else {
+				if (facetFilter != null && facetFilter.isFilterOnId()) {
+					// as soon as we have a single ID filter and we're
+					link = linkBuilder.withFilterAsLink(facetConfig, facetValueId);
+				}
+				else {
+					link = linkBuilder.withFilterAsLink(facetConfig, facetValue);
+				}
+			}
+
+			facet.addEntry(new FacetEntry(facetValue, facetValueId, docCount, link, isSelected));
 			absDocCount += docCount;
 		}
 		facet.setAbsoluteFacetCoverage(absDocCount);
 	}
 
-	private FacetEntry buildFacetEntry(FacetConfig facetConfig, String filterValue, long docCount, SearchQueryBuilder linkBuilder) {
-		boolean isSelected = linkBuilder.isFilterSelected(facetConfig, filterValue);
-		return new FacetEntry(
-				filterValue,
-				null, // TODO: fetch IDS
-				docCount,
-				isSelected ? linkBuilder.withoutFilterAsLink(facetConfig, filterValue) : linkBuilder.withFilterAsLink(facetConfig, filterValue),
-				isSelected);
+	private Set<String> asSet(String[] values) {
+		if (values.length == 0) return Collections.emptySet();
+		if (values.length == 1) return Collections.singleton(values[0]);
+
+		Set<String> hashedValues = new HashSet<>();
+		for (String val : values) {
+			hashedValues.add(val);
+		}
+		return hashedValues;
 	}
 
 	private long getDocumentCount(Bucket valueBucket) {

@@ -27,9 +27,6 @@ public class FacetEntry<T> {
 	@NonNull
 	private Object value;
 
-	// optional attribute value code
-	private String code;
-
 	public FacetEntry(String name) {
 		this.name = name;
 	}
