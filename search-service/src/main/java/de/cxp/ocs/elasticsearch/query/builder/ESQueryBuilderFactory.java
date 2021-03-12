@@ -17,6 +17,7 @@ import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.config.QueryConfiguration;
 import de.cxp.ocs.config.QueryConfiguration.QueryCondition;
 import de.cxp.ocs.config.SearchConfiguration;
+import de.cxp.ocs.elasticsearch.query.ESQueryBuilder;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueryBuilder.BuilderWithCondition;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueryBuilder.ComposedPredicate;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueryBuilder.PatternCondition;

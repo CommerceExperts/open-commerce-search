@@ -7,12 +7,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.11.0</version>
+		<version>0.12.0-SNAPSHOT</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>search-service</artifactId>
-	<version>0.9.0</version>
+	<version>0.10.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<!-- Import dependency management from Spring Boot -->
@@ -44,7 +44,11 @@
 			<groupId>de.cxp.ocs</groupId>
 			<artifactId>ocs-commons</artifactId>
 		</dependency>
-
+		<dependency>
+			<groupId>de.cxp.ocs</groupId>
+			<artifactId>ocs-plugin-spi</artifactId>
+		</dependency>
+		
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-config</artifactId>
@@ -91,11 +95,6 @@
 			<groupId>pl.allegro.tech</groupId>
 			<artifactId>embedded-elasticsearch</artifactId>
 			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
 		</dependency>
 
 		<dependency>

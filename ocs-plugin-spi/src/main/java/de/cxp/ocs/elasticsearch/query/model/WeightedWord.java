@@ -1,11 +1,15 @@
 package de.cxp.ocs.elasticsearch.query.model;
 
+import de.cxp.ocs.util.StringUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * A term that accepts a weight and a optional fuzzy operator.
+ */
 @Data
 @AllArgsConstructor
 @RequiredArgsConstructor
@@ -15,6 +19,7 @@ public class WeightedWord implements QueryStringTerm {
 	@NonNull
 	private String	word;
 	private float	weight			= 1f;
+	// TODO: remove because unused?
 	private int		termFrequency	= -1;
 	private boolean	isFuzzy			= false;
 
@@ -31,7 +36,7 @@ public class WeightedWord implements QueryStringTerm {
 
 	@Override
 	public String toQueryString() {
-		return QueryStringTerm.escape(word)
+		return StringUtils.escapeReservedESCharacters(word)
 				+ (isFuzzy ? "~" : "")
 				+ (weight != 1f ? "^" + weight : "");
 	}

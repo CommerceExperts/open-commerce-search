@@ -46,10 +46,11 @@ import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.config.SortOptionConfiguration;
 import de.cxp.ocs.elasticsearch.facets.FacetConfigurationApplyer;
+import de.cxp.ocs.elasticsearch.query.ESQueryBuilder;
 import de.cxp.ocs.elasticsearch.query.FiltersBuilder;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
+import de.cxp.ocs.elasticsearch.query.analyzer.WhitespaceAnalyzer;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueryBuilder;
-import de.cxp.ocs.elasticsearch.query.builder.ESQueryBuilder;
 import de.cxp.ocs.elasticsearch.query.builder.ESQueryBuilderFactory;
 import de.cxp.ocs.elasticsearch.query.builder.MatchAllQueryBuilder;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
@@ -60,6 +61,7 @@ import de.cxp.ocs.model.result.ResultHit;
 import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.model.result.SearchResultSlice;
 import de.cxp.ocs.model.result.Sorting;
+import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.SearchQueryBuilder;
@@ -82,6 +84,8 @@ public class Searcher {
 
 	@NonNull
 	private final MeterRegistry registry;
+
+	private final UserQueryAnalyzer userQueryAnalyzer;
 
 	private final FacetConfigurationApplyer facetApplier;
 
@@ -120,6 +124,7 @@ public class Searcher {
 		summary = DistributionSummary.builder("stagedSearches").tag("indexName", config.getIndexName())
 				.register(registry);
 
+		userQueryAnalyzer = new WhitespaceAnalyzer();
 		facetApplier = new FacetConfigurationApplyer(config);
 		filtersBuilder = new FiltersBuilder(config);
 		scoringCreator = new ScoringCreator(config);
@@ -161,7 +166,7 @@ public class Searcher {
 		List<QueryStringTerm> searchWords;
 		if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
 			String asciiFoldedUserQuery = StringUtils.asciify(parameters.userQuery);
-			searchWords = UserQueryAnalyzer.defaultAnalyzer.analyze(asciiFoldedUserQuery);
+			searchWords = userQueryAnalyzer.analyze(asciiFoldedUserQuery);
 			stagedQueryBuilders = queryBuilder.getStagedQueryBuilders(searchWords);
 		} else {
 			stagedQueryBuilders = Collections.<ESQueryBuilder>singletonList(new MatchAllQueryBuilder()).iterator();

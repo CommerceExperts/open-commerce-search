@@ -1,13 +1,12 @@
-package de.cxp.ocs.elasticsearch.query.builder;
+package de.cxp.ocs.elasticsearch.query;
 
 import java.util.List;
 
-import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 
 /**
- * a query builder that only receives the user query to build a fancy
- * Elasticsearch query
+ * A query builder that receives the analyzed user query to build a proper
+ * Elasticsearch query.
  * (actually a QueryBuilder - so this should be a QueryBuilderBuilder :)).
  */
 public interface ESQueryBuilder {

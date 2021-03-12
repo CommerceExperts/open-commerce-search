@@ -1,9 +1,6 @@
 package de.cxp.ocs.elasticsearch.query.builder;
 
-import static de.cxp.ocs.config.QueryBuildingSetting.acceptNoResult;
-import static de.cxp.ocs.config.QueryBuildingSetting.minShouldMatch;
-import static de.cxp.ocs.config.QueryBuildingSetting.multimatch_type;
-import static de.cxp.ocs.config.QueryBuildingSetting.tieBreaker;
+import static de.cxp.ocs.config.QueryBuildingSetting.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,6 +18,7 @@ import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.config.QueryBuildingSetting;
+import de.cxp.ocs.elasticsearch.query.ESQueryBuilder;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.util.ESQueryUtils;

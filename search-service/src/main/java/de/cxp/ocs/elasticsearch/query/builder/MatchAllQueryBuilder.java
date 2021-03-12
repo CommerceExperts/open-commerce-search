@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.elasticsearch.index.query.QueryBuilders;
 
+import de.cxp.ocs.elasticsearch.query.ESQueryBuilder;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import lombok.Getter;

@@ -4,12 +4,17 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import de.cxp.ocs.util.StringUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * A term that is associated with other terms (e.g. synonyms). They all will be
+ * searched together each one as an optional replacement for the actual word.
+ */
 @Data
 @AllArgsConstructor
 @RequiredArgsConstructor
@@ -51,8 +56,10 @@ public class WordAssociation implements QueryStringTerm {
 	@Override
 	public String toQueryString() {
 		StringBuilder queryString = new StringBuilder("(")
-				.append(QueryStringTerm.escape(originalWord));
+				.append(StringUtils.escapeReservedESCharacters(originalWord));
 		for (WeightedWord relatedWord : relatedWords.values()) {
+			// TODO: move query-quoting or enclosing brackets into WeightedWord
+			// in case it contains spaces so it's not necessary here
 			queryString.append(" OR ").append('"').append(relatedWord.toQueryString().replace("^", "\"^"));
 		}
 		return queryString.append(")").toString();

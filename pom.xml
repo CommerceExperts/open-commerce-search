@@ -12,6 +12,7 @@
 
 	<modules>
 		<module>open-commerce-search-api</module>
+		<module>ocs-plugin-spi</module>
 		<module>ocs-java-client</module>
 		<module>ocs-commons</module>
 		<module>indexer-service</module>
@@ -43,8 +44,13 @@
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
+				<artifactId>ocs-plugin-spi</artifactId>
+				<version>0.1.0-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-commons</artifactId>
-				<version>0.5.0</version>
+				<version>0.6.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
@@ -54,7 +60,7 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>search-service</artifactId>
-				<version>0.9.0</version>
+				<version>0.10.0-SNAPSHOT</version>
 			</dependency>
 			<!-- only including the suggest-service directly, because it depends on 
 				the other suggest modules -->
