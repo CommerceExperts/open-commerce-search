@@ -85,67 +85,68 @@ spring:
       de.cxp.ocs: DEBUG
 
 ocs:
-  default-index-config:
-    field-configuration:
-      fields:
-        id:
-          name: id
-          type: id
-          usage:
-            - Result
-        title:
-          name: title
-          type: string
-          source-names: 
-            - title
-          usage:
-            - Search
-            - Result
-            - Sort
-        score:
-          name: score
-          type: number
-          source-names:
-            - score
-          usage:
-            - Facet
-            - Result
-            - Sort
-        url:
-          name: url
-          type: string
-          source-names:
-            - url
-          usage:
-            - Result
-        number_of_comments:
-          name: number_of_comments
-          type: string
-          source-names:
-            - comms_num
-          usage:
-            - Result
-            - Facet
-            - Sort
-        created:
-          name: created
-          type: number
-          usage:
-            - Result
-            - Sort
-        comment:
-          name: comment
-          source-names:
-            - body 
-          usage:
-            - Search
-            - Result
-        timestamp:
-          name: timestamp
-          source-names:
-            - timestamp 
-          usage:
-            - Result
+  index-config:
+    quick-start:
+      field-configuration:
+        fields:
+          id:
+            name: id
+            type: id
+            usage:
+              - Result
+          title:
+            name: title
+            type: string
+            source-names: 
+              - title
+            usage:
+              - Search
+              - Result
+              - Sort
+          score:
+            name: score
+            type: number
+            source-names:
+              - score
+            usage:
+              - Facet
+              - Result
+              - Sort
+          url:
+            name: url
+            type: string
+            source-names:
+              - url
+            usage:
+              - Result
+          number_of_comments:
+            name: number_of_comments
+            type: string
+            source-names:
+              - comms_num
+            usage:
+              - Result
+              - Facet
+              - Sort
+          created:
+            name: created
+            type: number
+            usage:
+              - Result
+              - Sort
+          comment:
+            name: comment
+            source-names:
+              - body 
+            usage:
+              - Search
+              - Result
+          timestamp:
+            name: timestamp
+            source-names:
+              - timestamp 
+            usage:
+              - Result
 ```
 
 `Please notice that if you change the search configuration you have to restart the indexer service. This could be done with the following command next to the docker-compose.yml:`
@@ -171,7 +172,7 @@ As we can see, the index creation and indexing was successful.
 ## Use search-api
 After we created an index, it's time to try a search against the search api.
 ```
-# curl "http://localhost:8534/search-api/v1/search/quick-start?searchQuery=beer" | jq .
+# curl "http://localhost:8534/search-api/v1/search/quick-start?q=beer" | jq .
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
 100 10288    0 10288    0     0   401k      0 --:--:-- --:--:-- --:--:--  401k
