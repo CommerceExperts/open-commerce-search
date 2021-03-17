@@ -8,13 +8,13 @@ This guide gives you an short overview, how to start OCSS locally and index samp
 - [sample dataset](https://www.kaggle.com/gpreda/reddit-vaccine-myths) from [kaggle](https://www.kaggle.com/)
 
 ## Start the stack
-Before we can index some data to OCSS we have to start the stack. For this purpose there is an [docker-compose folder](https://github.com/CommerceExperts/open-commerce-search/tree/master/operations/docker-compose) in the operations folder of this repository. This folder contains files needed to start the stack locally:
+Before we can index some data to OCSS we have to start the stack. For this purpose there is an [docker-compose folder](../operations/docker-compose) in the operations folder of this repository. This folder contains files needed to start the stack locally:
 
-- [docker-compose.yml](https://github.com/CommerceExperts/open-commerce-search/blob/master/operations/docker-compose/docker-compose.yml) (defines the services which should be started)
-- [application.indexer-service.yml](https://github.com/CommerceExperts/open-commerce-search/blob/master/operations/docker-compose/application.indexer-service.yml) (configures the indexer spring boot application and the defines the search configuration)
-- [application.search-service.yml](https://github.com/CommerceExperts/open-commerce-search/blob/master/operations/docker-compose/application.search-service.yml) (configures the search spring boot application)
+- [docker-compose.yml](../operations/docker-compose/docker-compose.yml) (defines the services which should be started)
+- [application.indexer-service.yml](../operations/docker-compose/application.indexer-service.yml) (configures the indexer spring boot application and the defines the search configuration)
+- [application.search-service.yml](../operations/docker-compose/application.search-service.yml) (configures the search spring boot application)
 
-The [docker-compose.yml](https://github.com/CommerceExperts/open-commerce-search/blob/master/operations/docker-compose/docker-compose.yml) defines 3 services:
+The [docker-compose.yml](../operations/docker-compose/docker-compose.yml) defines 3 services:
  - indexer
  - searcher
  - elasticsearch
@@ -28,14 +28,14 @@ The search service is performing the search / filtering etc. on top of the searc
 ### elasticsearch
 Elasticsearch in this case is the searchengine we used for our reference implementation of the OCSS search and indexing API.
 
-To start the stack change the parent working direktory next to the [docker-compose.yml](https://github.com/CommerceExperts/open-commerce-search/blob/master/operations/docker-compose/docker-compose.yml) and perform the following command:
+To start the stack change the parent working direktory next to the [docker-compose.yml](../operations/docker-compose/docker-compose.yml) and perform the following command:
 ```
 # docker-compose up -d
 Starting ocs_elasticsearch ... done
 Starting ocs_searcher      ... done
 Starting ocs_indexer       ... done
 ```
-This command will startup all services defined in the [docker-compose.yml](https://github.com/CommerceExperts/open-commerce-search/blob/master/operations/docker-compose/docker-compose.yml). To confirm that all three services are up and running you can use the `docker ps` command:
+This command will startup all services defined in the [docker-compose.yml](../operations/docker-compose/docker-compose.yml). To confirm that all three services are up and running you can use the `docker ps` command:
 ```
 # docker ps
 CONTAINER ID        IMAGE                                                 COMMAND                  CREATED             STATUS              PORTS                              NAMES
@@ -50,7 +50,7 @@ As you can see there are now 3 sockets opened:
 
 
 ## Index data
-For indexing data from a CSV file there is a helper script [ocs-index-data.sh](https://github.com/CommerceExperts/open-commerce-search/blob/master/operations/ocs-index-data.sh). After we downloaded the sample dataset from kaggle, we have to unpack the `.zip` file to get the `reddit_vm.csv`. Now let us inspect the CSV file to get an overview of the data. In the first step the `field delimiter`, the `field sperator`, the `count of header rows` and the `id field number` (starting from 0) are intressting for us. To get this information just print the first two lines of the CSV file:
+For indexing data from a CSV file there is a helper script [ocs-index-data.sh](../operations/ocs-index-data.sh). After we downloaded the sample dataset from kaggle, we have to unpack the `.zip` file to get the `reddit_vm.csv`. Now let us inspect the CSV file to get an overview of the data. In the first step the `field delimiter`, the `field sperator`, the `count of header rows` and the `id field number` (starting from 0) are intressting for us. To get this information just print the first two lines of the CSV file:
 ```
 # head -n 2 reddit_vm.csv
 title,score,id,url,comms_num,created,body,timestamp
@@ -77,7 +77,7 @@ ERROR: no mapping defined. These are the columns of the given file:
      6	body
      7	timestamp
 ```
-The script tells us now that we have to describe how the single colmuns of the CSV file should be mapped to search configuration. This should be done the [jq](https://stedolan.github.io/jq/tutorial/) way, to make this easier for us the script is telling us the column numbers of the headers. As we don't have a field configuration yet, we have to create one. As described above this can be done in the [application.indexer-service.yml](https://github.com/CommerceExperts/open-commerce-search/blob/master/operations/docker-compose/application.indexer-service.yml). The following search field configuration (complete application.indexer-service.yml) would fit to our datafeed:
+The script tells us now that we have to describe how the single colmuns of the CSV file should be mapped to search configuration. This should be done the [jq](https://stedolan.github.io/jq/tutorial/) way, to make this easier for us the script is telling us the column numbers of the headers. As we don't have a field configuration yet, we have to create one. As described above this can be done in the [application.indexer-service.yml](../operations/docker-compose/application.indexer-service.yml). The following search field configuration (complete application.indexer-service.yml) would fit to our datafeed:
 ```
 spring:
   logging:
@@ -154,7 +154,7 @@ ocs:
 # docker-compose restart indexer
 Restarting ocs_indexer ... done
 ```
-Once we have the field configuration the mapping for the [ocs-index-data.sh](https://github.com/CommerceExperts/open-commerce-search/blob/master/operations/ocs-index-data.sh) is clear and the parameter value in our case would be:
+Once we have the field configuration the mapping for the [ocs-index-data.sh](../operations/ocs-index-data.sh) is clear and the parameter value in our case would be:
 ```
 '{title:.[0],score:.[1],url:.[3],comms_num:.[4],created:.[5],body:.[6],timestamp:.[7]}'
 ```

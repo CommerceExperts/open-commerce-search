@@ -9,7 +9,7 @@ https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-quickstart.html
 ## Preparation
 
 ### Create namespace
-This namespace should match with the namespace which is set in the `base/kustomization.yaml`.
+This namespace should match with the namespace which is set in the [base/kustomization.yaml](base/kustomization.yaml).
 ```
 kubectl create namespace ocs-stack
 ```
@@ -17,9 +17,9 @@ kubectl create namespace ocs-stack
 ### Prepare ingress and auth
 The following changes have to be made, to make the services work like expected:
 
-- To enable SSL on LoadBalancer level, adjust `base/api-ingress.yaml` by adding the required annotations for your cloud provider
+- To enable SSL on LoadBalancer level, adjust [base/api-ingress.yaml](base/api-ingress.yaml) by adding the required annotations for your cloud provider
 
-- In case a specific domain is used and should be considered by the ingress rules, add it to `base/api-ingress.yaml`
+- In case a specific domain is used and should be considered by the ingress rules, add it to [base/api-ingress.yaml](base/api-ingress.yaml)
 
 - By default, basic authentication is configured for the APIs. To add your credentials, the following steps have to be done:
 ```
@@ -33,8 +33,9 @@ kustomize build base | kubectl apply -f -
 ```
 
 ## Customize deployment
-If you want to create an customized deployment, just create an kustomize overlay (https://kubectl.docs.kubernetes.io/references/kustomize/glossary/#overlay) with your adjusted settings under the folder `overlays`. Then you can deploy it like the following example:
+If you want to create an customized deployment, just create an kustomize overlay (https://kubectl.docs.kubernetes.io/references/kustomize/glossary/#overlay) with your adjusted settings under the folder 
+[overlays](overlays). Then you can deploy it like the following example:
 ```
 kustomize build base/overlays/example | kubectl apply -f -
 ```
-The files under `overlays` would not be commited into git.
+The files under [overlays](overlays) would not be commited into git.
