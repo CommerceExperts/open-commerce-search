@@ -15,7 +15,6 @@ import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.model.index.BulkImportData;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.preprocessor.CombiFieldBuilder;
-import de.cxp.ocs.preprocessor.DataPreProcessor;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
@@ -25,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class AbstractIndexer implements FullIndexationService {
 
 	@NonNull
-	private final List<DataPreProcessor> dataPreProcessors;
+	private final List<DocumentPreProcessor> dataPreProcessors;
 	
 	@Getter(value = AccessLevel.PROTECTED)
 	@NonNull
@@ -35,7 +34,7 @@ public abstract class AbstractIndexer implements FullIndexationService {
 
 	private final IndexItemConverter indexItemConverter;
 
-	public AbstractIndexer(@NonNull List<DataPreProcessor> dataPreProcessors, @NonNull IndexConfiguration indexConf) {
+	public AbstractIndexer(@NonNull List<DocumentPreProcessor> dataPreProcessors, @NonNull IndexConfiguration indexConf) {
 		this.dataPreProcessors = dataPreProcessors;
 		this.indexConf = indexConf;
 		Map<String, Field> fields = Collections.unmodifiableMap(indexConf.getFieldConfiguration().getFields());
@@ -89,7 +88,7 @@ public abstract class AbstractIndexer implements FullIndexationService {
 		boolean isIndexable = true;
 
 		combiFieldBuilder.build(doc);
-		for (DataPreProcessor preProcessor : dataPreProcessors) {
+		for (DocumentPreProcessor preProcessor : dataPreProcessors) {
 			isIndexable = preProcessor.process(doc, isIndexable);
 		}
 		return isIndexable;

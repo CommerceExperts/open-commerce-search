@@ -12,13 +12,13 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
-import de.cxp.ocs.conf.IndexConfiguration;
 import de.cxp.ocs.conf.converter.FlagFieldConfiguration;
 import de.cxp.ocs.conf.converter.FlagFieldConfiguration.PatternMatch;
 import de.cxp.ocs.config.Field;
+import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.preprocessor.ConfigureableDataprocessor;
-import de.cxp.ocs.preprocessor.DataPreProcessor;
 import de.cxp.ocs.util.OnceInAWhileRunner;
 import de.cxp.ocs.util.Util;
 import lombok.NoArgsConstructor;
@@ -67,15 +67,14 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @NoArgsConstructor
-public class FlagFieldDataProcessor implements DataPreProcessor {
+public class FlagFieldDataProcessor implements DocumentPreProcessor {
 
 	private List<FlagFieldConfiguration>	flagFieldConf;
 	private Map<String, Field>				fieldConf;
 
-	public void configure(IndexConfiguration properties) {
-		Map<String, Map<String, String>> configuration = properties.getDataProcessorConfiguration().getConfiguration();
-		Map<String, String> confMap = configuration.get(this.getClass().getSimpleName());
-		fieldConf = properties.getFieldConfiguration().getFields();
+	@Override
+	public void initialize(FieldConfiguration fieldConfig, Map<String, String> confMap) {
+		fieldConf = fieldConfig.getFields();
 		if (confMap != null) {
 			Map<String, Map<String, List<Entry<String, String>>>> groupToTypeConf = confMap.entrySet().stream()
 					.collect(Collectors

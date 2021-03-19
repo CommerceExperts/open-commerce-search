@@ -2,13 +2,13 @@ package de.cxp.ocs.preprocessor.impl;
 
 import java.util.Map;
 
-import de.cxp.ocs.conf.IndexConfiguration;
+import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.model.index.Document;
-import de.cxp.ocs.preprocessor.DataPreProcessor;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
-public class RemoveFieldContentDelimiterProcessor implements DataPreProcessor {
+public class RemoveFieldContentDelimiterProcessor implements DocumentPreProcessor {
 
 	private static final String	FIELD_CONTENT_DELIMITER_MATCH_PATTERN		= "^\\.\\.(.*)\\.\\.$|\\.\\.\\|\\.\\.|\\.\\.\\,\\.\\.";
 	private static final String	FIELD_CONTENT_REPLACE_PATTERN_START			= "^\\.\\.";
@@ -20,7 +20,7 @@ public class RemoveFieldContentDelimiterProcessor implements DataPreProcessor {
 	private static final String	FIELD_CONTENT_DELIMITER_REPLACEMENT_COMMA	= ",";
 
 	@Override
-	public void configure(IndexConfiguration indexConfiguration) {}
+	public void initialize(FieldConfiguration fieldConfig, Map<String, String> confMap) {}
 	
 	public boolean process(Document document, boolean visible) {
 		Map<String, Object> sourceData = document.getData();

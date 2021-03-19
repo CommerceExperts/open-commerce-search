@@ -1,25 +1,32 @@
-package de.cxp.ocs.preprocessor;
+package de.cxp.ocs.indexer;
 
-import de.cxp.ocs.conf.IndexConfiguration;
+import java.util.Map;
+
+import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.model.index.Document;
 
 /**
- * {@link DataPreProcessor} implementations can be used to alter product data
- * before they get indexed into the search engine. Several implementations can be
+ * {@link DocumentPreProcessor} implementations can be used to alter product
+ * data
+ * before they get indexed into the search engine. Several implementations can
+ * be
  * configured to run one after another, where each processor get's the
  * manipulated record value of the former processor.
  * 
  * @author hjk, rb
  */
-public interface DataPreProcessor {
+public interface DocumentPreProcessor {
 
 	/**
 	 * DataPreProcessor MUST have a no-args constructor. To configure it
 	 * afterwards, this method will be used.
 	 * 
-	 * @param indexConfiguration
+	 * @param fieldConfig
+	 * @param a
+	 *        custom string-to-string map that can be configured per
+	 *        DocumentPreProcessor.
 	 */
-	void configure(IndexConfiguration indexConfiguration);
+	void initialize(FieldConfiguration fieldConfig, Map<String, String> preProcessorConfig);
 
 	/**
 	 * Called for each source document.
@@ -31,6 +38,5 @@ public interface DataPreProcessor {
 	 *         <code>false</code> otherwise.
 	 */
 	boolean process(final Document sourceDocument, boolean visible);
-
 
 }

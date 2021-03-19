@@ -10,6 +10,8 @@ import de.cxp.ocs.conf.DataProcessorConfiguration;
 import de.cxp.ocs.conf.IndexConfiguration;
 import de.cxp.ocs.conf.converter.ConfigureableField;
 import de.cxp.ocs.conf.converter.PatternConfiguration;
+import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.util.OnceInAWhileRunner;
 import lombok.NoArgsConstructor;
@@ -29,17 +31,14 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @NoArgsConstructor
-public abstract class ConfigureableDataprocessor<T extends ConfigureableField> implements DataPreProcessor {
+public abstract class ConfigureableDataprocessor<T extends ConfigureableField> implements DocumentPreProcessor {
 
 	protected IndexConfiguration properties;
 
 	protected List<T> patternConf;
 
-	public void configure(final IndexConfiguration properties) {
-		this.properties = properties;
-		Map<String, Map<String, String>> configuration = properties.getDataProcessorConfiguration().getConfiguration();
-		Map<String, String> confMap = configuration.get(this.getClass().getSimpleName());
-
+	@Override
+	public void initialize(FieldConfiguration fieldConfig, Map<String, String> confMap) {
 		if (confMap != null) {
 			patternConf = new ArrayList<>(confMap.size());
 			confMap.forEach((key, val) -> {

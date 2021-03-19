@@ -21,8 +21,8 @@ import org.elasticsearch.common.settings.Settings;
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.conf.IndexConfiguration;
 import de.cxp.ocs.indexer.AbstractIndexer;
+import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.indexer.model.IndexableItem;
-import de.cxp.ocs.preprocessor.DataPreProcessor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -34,12 +34,12 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 
 	private final ElasticsearchIndexClient indexClient;
 
-	public ElasticsearchIndexer(IndexConfiguration indexConf, RestHighLevelClient restClient, List<DataPreProcessor> dataProcessors) {
+	public ElasticsearchIndexer(IndexConfiguration indexConf, RestHighLevelClient restClient, List<DocumentPreProcessor> dataProcessors) {
 		super(dataProcessors, indexConf);
 		indexClient = new ElasticsearchIndexClient(restClient);
 	}
 
-	protected ElasticsearchIndexer(IndexConfiguration indexConf, List<DataPreProcessor> dataProcessors, ElasticsearchIndexClient esIndexClient) {
+	protected ElasticsearchIndexer(IndexConfiguration indexConf, List<DocumentPreProcessor> dataProcessors, ElasticsearchIndexClient esIndexClient) {
 		super(dataProcessors, indexConf);
 		indexClient = esIndexClient;
 	}

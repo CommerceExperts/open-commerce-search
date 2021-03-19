@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import de.cxp.ocs.conf.IndexConfiguration;
+import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.config.FieldUsage;
+import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.model.index.Document;
-import de.cxp.ocs.preprocessor.DataPreProcessor;
 import de.cxp.ocs.util.OnceInAWhileRunner;
 import de.cxp.ocs.util.Util;
 import lombok.NoArgsConstructor;
@@ -25,12 +25,13 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @NoArgsConstructor
-public class AsciiFoldingDataProcessor implements DataPreProcessor {
+public class AsciiFoldingDataProcessor implements DocumentPreProcessor {
 
 	private List<String> searchableFields;
 
-	public void configure(IndexConfiguration config) {
-		searchableFields = config.getFieldConfiguration().getFields().entrySet().stream()
+	@Override
+	public void initialize(FieldConfiguration fieldConfig, Map<String, String> preProcessorConfig) {
+		searchableFields = fieldConfig.getFields().entrySet().stream()
 				.filter(entry -> entry.getValue().getUsage().contains(FieldUsage.Search))
 				.map(Map.Entry::getKey)
 				.collect(Collectors.toList());

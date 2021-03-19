@@ -16,14 +16,13 @@ import org.apache.commons.lang3.StringUtils;
 import de.cxp.ocs.conf.converter.PatternConfiguration;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.preprocessor.ConfigureableDataprocessor;
-import de.cxp.ocs.preprocessor.DataPreProcessor;
 import de.cxp.ocs.util.OnceInAWhileRunner;
 import de.cxp.ocs.util.Util;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link DataPreProcessor} implementation which removes values from a fields value
+ * {@link DocumentPreProcessor} implementation which removes values from a fields value
  * based on a regular expression. Will be auto configured and can be further
  * configuration like described below:
  * 

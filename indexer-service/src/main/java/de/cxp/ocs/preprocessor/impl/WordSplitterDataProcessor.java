@@ -2,14 +2,14 @@ package de.cxp.ocs.preprocessor.impl;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
-import de.cxp.ocs.conf.IndexConfiguration;
+import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.model.index.Document;
-import de.cxp.ocs.preprocessor.DataPreProcessor;
 import de.danielnaber.jwordsplitter.AbstractWordSplitter;
 import de.danielnaber.jwordsplitter.GermanWordSplitter;
 import lombok.NoArgsConstructor;
@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @NoArgsConstructor
-public class WordSplitterDataProcessor implements DataPreProcessor {
+public class WordSplitterDataProcessor implements DocumentPreProcessor {
 
 	private static final String SIMPLE_TOKENIZER_REGEX = ",|;|!|\\?|/|\\||\\.|\\\\|\\(|\\)|:|\\s+";
 
@@ -32,11 +32,10 @@ public class WordSplitterDataProcessor implements DataPreProcessor {
 
 	private AbstractWordSplitter splitter = null;
 
-	public void configure(IndexConfiguration properties) {
+	@Override
+	public void initialize(FieldConfiguration fieldConfig, Map<String, String> confMap) {
 		this.fields = new LinkedList<>();
-		properties.getDataProcessorConfiguration().getConfiguration()
-				.getOrDefault(this.getClass().getSimpleName(), Collections.emptyMap())
-				.forEach((key, value) -> {
+		confMap.forEach((key, value) -> {
 					if ("fieldName".equals(key)) {
 						this.fieldName = value.toString();
 					}

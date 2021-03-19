@@ -2,13 +2,13 @@ package de.cxp.ocs.indexer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.stereotype.Component;
 
 import de.cxp.ocs.conf.IndexConfiguration;
 import de.cxp.ocs.elasticsearch.ElasticsearchIndexer;
-import de.cxp.ocs.preprocessor.DataPreProcessor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,14 +22,16 @@ public class IndexerFactory {
 	private final RestHighLevelClient elasticsearchClient;
 
 	public AbstractIndexer create(IndexConfiguration indexConfiguration) {
-		List<DataPreProcessor> dataProcessors = new ArrayList<>();
+		List<DocumentPreProcessor> dataProcessors = new ArrayList<>();
+
+		Map<String, Map<String, String>> dataProcessorsConfig = indexConfiguration.getDataProcessorConfiguration().getConfiguration();
 
 		for (String processorName : indexConfiguration.getDataProcessorConfiguration().getProcessors()) {
 			try {
 				Class<?> processorClass = Class.forName(dataPreProcessorImplPackage + processorName);
-				if (processorClass != null && DataPreProcessor.class.isAssignableFrom(processorClass)) {
-					DataPreProcessor processor = (DataPreProcessor) processorClass.newInstance();
-					processor.configure(indexConfiguration);
+				if (processorClass != null && DocumentPreProcessor.class.isAssignableFrom(processorClass)) {
+					DocumentPreProcessor processor = (DocumentPreProcessor) processorClass.newInstance();
+					processor.initialize(indexConfiguration.getFieldConfiguration(), dataProcessorsConfig.get(processorClass.getSimpleName()));
 					dataProcessors.add(processor);
 				}
 			}
