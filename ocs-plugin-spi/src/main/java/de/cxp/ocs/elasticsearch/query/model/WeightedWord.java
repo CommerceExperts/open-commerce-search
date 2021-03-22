@@ -1,6 +1,5 @@
 package de.cxp.ocs.elasticsearch.query.model;
 
-import de.cxp.ocs.util.StringUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -36,7 +35,7 @@ public class WeightedWord implements QueryStringTerm {
 
 	@Override
 	public String toQueryString() {
-		return StringUtils.escapeReservedESCharacters(word)
+		return EscapeUtil.escapeReservedESCharacters(word)
 				+ (isFuzzy ? "~" : "")
 				+ (weight != 1f ? "^" + weight : "");
 	}

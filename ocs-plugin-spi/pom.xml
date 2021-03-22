@@ -25,15 +25,22 @@
 	<dependencies>
 		<dependency>
 			<groupId>de.cxp.ocs</groupId>
-			<artifactId>ocs-commons</artifactId>
-			<scope>provided</scope>
+			<artifactId>open-commerce-search-api</artifactId>
 		</dependency>
-		
+		<dependency>
+			<groupId>org.elasticsearch.client</groupId>
+			<artifactId>elasticsearch-rest-high-level-client</artifactId>
+		</dependency>
 		<!-- install lombok into your IDE to use its power: https://projectlombok.org/download.html -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 

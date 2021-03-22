@@ -23,6 +23,10 @@
 			<artifactId>open-commerce-search-api</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>de.cxp.ocs</groupId>
+			<artifactId>ocs-plugin-spi</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.elasticsearch.client</groupId>
 			<artifactId>elasticsearch-rest-high-level-client</artifactId>
 		</dependency>

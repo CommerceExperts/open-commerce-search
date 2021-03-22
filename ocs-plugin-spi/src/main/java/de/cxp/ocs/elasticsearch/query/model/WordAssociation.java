@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.cxp.ocs.util.StringUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -56,7 +55,7 @@ public class WordAssociation implements QueryStringTerm {
 	@Override
 	public String toQueryString() {
 		StringBuilder queryString = new StringBuilder("(")
-				.append(StringUtils.escapeReservedESCharacters(originalWord));
+				.append(EscapeUtil.escapeReservedESCharacters(originalWord));
 		for (WeightedWord relatedWord : relatedWords.values()) {
 			// TODO: move query-quoting or enclosing brackets into WeightedWord
 			// in case it contains spaces so it's not necessary here
