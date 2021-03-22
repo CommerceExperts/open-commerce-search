@@ -1,4 +1,4 @@
-package de.cxp.ocs.conf;
+package de.cxp.ocs.config;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

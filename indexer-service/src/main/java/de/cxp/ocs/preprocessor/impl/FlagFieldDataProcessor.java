@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -15,7 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import de.cxp.ocs.conf.converter.FlagFieldConfiguration;
 import de.cxp.ocs.conf.converter.FlagFieldConfiguration.PatternMatch;
 import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.preprocessor.ConfigureableDataprocessor;
@@ -70,11 +71,11 @@ import lombok.extern.slf4j.Slf4j;
 public class FlagFieldDataProcessor implements DocumentPreProcessor {
 
 	private List<FlagFieldConfiguration>	flagFieldConf;
-	private Map<String, Field>				fieldConf;
+	private FieldConfigAccess				fieldConfAccess;
 
 	@Override
-	public void initialize(FieldConfiguration fieldConfig, Map<String, String> confMap) {
-		fieldConf = fieldConfig.getFields();
+	public void initialize(FieldConfigAccess fieldConfig, Map<String, String> confMap) {
+		fieldConfAccess = fieldConfig;
 		if (confMap != null) {
 			Map<String, Map<String, List<Entry<String, String>>>> groupToTypeConf = confMap.entrySet().stream()
 					.collect(Collectors
@@ -122,7 +123,8 @@ public class FlagFieldDataProcessor implements DocumentPreProcessor {
 		MatchResult matchRes = new MatchResult();
 		Map<String, Object> data = document.getData();
 		for (PatternMatch pm : ffc) {
-			if (fieldConf.containsKey(pm.getFieldName())) {
+			Optional<Field> field = fieldConfAccess.getField(pm.getFieldName());
+			if (field.isPresent()) {
 				Object value = data.get(pm.getFieldName());
 				if (value instanceof String) {
 					String strValue = (String) value;

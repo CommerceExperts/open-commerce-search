@@ -2,7 +2,7 @@ package de.cxp.ocs.spi.search;
 
 import java.util.Map;
 
-import de.cxp.ocs.config.FieldConfigIndex;
+import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.elasticsearch.query.ESQueryBuilder;
 
 public interface ESQueryBuilderProvider {
@@ -24,6 +24,6 @@ public interface ESQueryBuilderProvider {
 	 * @param fieldConfig
 	 * @return
 	 */
-	ESQueryBuilder initialize(Map<String, String> settings, Map<String, Float> fieldWeights, FieldConfigIndex fieldConfig);
+	ESQueryBuilder initialize(Map<String, String> settings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig);
 
 }

@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-import de.cxp.ocs.conf.DataProcessorConfiguration;
 import de.cxp.ocs.conf.IndexConfiguration;
 import de.cxp.ocs.conf.converter.ConfigureableField;
 import de.cxp.ocs.conf.converter.PatternConfiguration;
-import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.config.DataProcessorConfiguration;
+import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.util.OnceInAWhileRunner;
@@ -38,7 +38,7 @@ public abstract class ConfigureableDataprocessor<T extends ConfigureableField> i
 	protected List<T> patternConf;
 
 	@Override
-	public void initialize(FieldConfiguration fieldConfig, Map<String, String> confMap) {
+	public void initialize(FieldConfigAccess fieldConfig, Map<String, String> confMap) {
 		if (confMap != null) {
 			patternConf = new ArrayList<>(confMap.size());
 			confMap.forEach((key, val) -> {

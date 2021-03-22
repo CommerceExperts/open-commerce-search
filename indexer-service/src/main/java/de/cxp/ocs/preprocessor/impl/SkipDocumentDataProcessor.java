@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.preprocessor.ConfigureableDataprocessor;
@@ -33,7 +33,7 @@ public class SkipDocumentDataProcessor implements DocumentPreProcessor {
 	private Map<String, Pattern> filterPatterns = new HashMap<>();
 
 	@Override
-	public void initialize(FieldConfiguration fieldConfig, Map<String, String> confMap) {
+	public void initialize(FieldConfigAccess fieldConfig, Map<String, String> confMap) {
 		confMap.forEach((field, regex) -> filterPatterns.put(field, Pattern.compile(regex)));
 	}
 

@@ -2,7 +2,7 @@ package de.cxp.ocs.indexer;
 
 import java.util.Map;
 
-import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.model.index.Document;
 
 /**
@@ -26,7 +26,7 @@ public interface DocumentPreProcessor {
 	 *        custom string-to-string map that can be configured per
 	 *        DocumentPreProcessor.
 	 */
-	void initialize(FieldConfiguration fieldConfig, Map<String, String> preProcessorConfig);
+	void initialize(FieldConfigAccess fieldConfig, Map<String, String> preProcessorConfig);
 
 	/**
 	 * Called for each source document.

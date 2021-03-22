@@ -58,7 +58,7 @@ class ElasticsearchIndexClient {
 	public static final String	ES_SETTINGS_REFRESH_INTERVAL	= "index.refresh_interval";
 
 	private final RestHighLevelClient	highLevelClient;
-	private final ObjectMapper			mapper	= new ObjectMapper();
+	private final ObjectMapper			mapper	= IndexableItemMapperFactory.createObjectMapper();
 
 	/**
 	 * Get actual index names with potential aliases.

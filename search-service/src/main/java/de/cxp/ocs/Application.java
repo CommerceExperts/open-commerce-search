@@ -8,8 +8,11 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 
 import de.cxp.ocs.config.ApplicationProperties;
+import de.cxp.ocs.config.DefaultSearchConfigrationProvider;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.RestClientBuilderFactory;
+import de.cxp.ocs.plugin.PluginManager;
+import de.cxp.ocs.spi.search.SearchConfigurationProvider;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.spring.autoconfigure.MeterRegistryCustomizer;
 
@@ -33,5 +36,16 @@ public class Application {
 		return registry -> {
 			registry.config().commonTags("application", applicationName);
 		};
+	}
+
+	@Bean
+	public PluginManager pluginManager(ApplicationProperties properties) {
+		return new PluginManager(properties.getDisabledPlugins(), properties.getPreferedPlugins());
+	}
+
+	@Bean
+	public SearchConfigurationProvider configProvider(PluginManager pluginManager, ApplicationProperties properties) {
+		return pluginManager.loadPrefered(SearchConfigurationProvider.class)
+				.orElseGet(DefaultSearchConfigrationProvider::new);
 	}
 }

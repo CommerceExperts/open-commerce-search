@@ -8,6 +8,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.stereotype.Component;
 
 import de.cxp.ocs.conf.IndexConfiguration;
+import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.elasticsearch.ElasticsearchIndexer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,13 +26,14 @@ public class IndexerFactory {
 		List<DocumentPreProcessor> dataProcessors = new ArrayList<>();
 
 		Map<String, Map<String, String>> dataProcessorsConfig = indexConfiguration.getDataProcessorConfiguration().getConfiguration();
+		FieldConfigIndex fieldConfigIndex = new FieldConfigIndex(indexConfiguration.getFieldConfiguration());
 
 		for (String processorName : indexConfiguration.getDataProcessorConfiguration().getProcessors()) {
 			try {
 				Class<?> processorClass = Class.forName(dataPreProcessorImplPackage + processorName);
 				if (processorClass != null && DocumentPreProcessor.class.isAssignableFrom(processorClass)) {
 					DocumentPreProcessor processor = (DocumentPreProcessor) processorClass.newInstance();
-					processor.initialize(indexConfiguration.getFieldConfiguration(), dataProcessorsConfig.get(processorClass.getSimpleName()));
+					processor.initialize(fieldConfigIndex, dataProcessorsConfig.get(processorClass.getSimpleName()));
 					dataProcessors.add(processor);
 				}
 			}
@@ -44,7 +46,7 @@ public class IndexerFactory {
 			}
 		}
 
-		return new ElasticsearchIndexer(indexConfiguration, elasticsearchClient, dataProcessors);
+		return new ElasticsearchIndexer(fieldConfigIndex, elasticsearchClient, dataProcessors);
 	}
 
 }

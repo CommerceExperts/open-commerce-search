@@ -1,7 +1,5 @@
 package de.cxp.ocs;
 
-import java.util.Map.Entry;
-
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,16 +17,15 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
 import de.cxp.ocs.conf.ApplicationProperties;
-import de.cxp.ocs.conf.IndexConfiguration;
-import de.cxp.ocs.config.Field;
+import de.cxp.ocs.conf.DefaultIndexerConfigurationProvider;
 import de.cxp.ocs.elasticsearch.RestClientBuilderFactory;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Product;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
-import fr.pilato.elasticsearch.tools.ElasticsearchBeyonder;
-import fr.pilato.elasticsearch.tools.SettingsFinder.Defaults;
+import de.cxp.ocs.plugin.PluginManager;
+import de.cxp.ocs.spi.indexer.IndexerConfigurationProvider;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.spring.autoconfigure.MeterRegistryCustomizer;
 
@@ -42,23 +39,19 @@ public class Application {
 
 	@Bean
 	public RestHighLevelClient getElasticsearchClient(ApplicationProperties properties) throws Exception {
-		fixFieldConfiguration(properties.getDefaultIndexConfig());
-		for (IndexConfiguration indexerProps : properties.getIndexConfig().values()) {
-			fixFieldConfiguration(indexerProps);
-		}
-
 		RestClientBuilder restClientBuilder = RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
-		RestHighLevelClient highLevelClient = new RestHighLevelClient(restClientBuilder);
-		ElasticsearchBeyonder.start(highLevelClient.getLowLevelClient(), Defaults.ConfigDir, Defaults.MergeMappings, true);
-		return highLevelClient;
+		return new RestHighLevelClient(restClientBuilder);
 	}
 
-	private void fixFieldConfiguration(IndexConfiguration indexerProperties) {
-		for (Entry<String, Field> field : indexerProperties.getFieldConfiguration().getFields().entrySet()) {
-			if (field.getValue().getName() == null) {
-				field.getValue().setName(field.getKey());
-			}
-		}
+	@Bean
+	public PluginManager getPluginManager(ApplicationProperties properties) {
+		return new PluginManager(properties.getDisabledPlugins(), properties.getPreferedPlugins());
+	}
+
+	@Bean
+	public IndexerConfigurationProvider configurationProvider(PluginManager pluginManager, ApplicationProperties properties) {
+		return pluginManager.loadPrefered(IndexerConfigurationProvider.class)
+				.orElseGet(() -> new DefaultIndexerConfigurationProvider(properties));
 	}
 
 	@Bean
@@ -69,11 +62,21 @@ public class Application {
 		};
 	}
 
+	/**
+	 * Customization for ObjectMapper that's used for rest requests.
+	 * 
+	 * @return
+	 */
 	@Bean
 	public Module parameterNamesModule() {
 		return new ParameterNamesModule(Mode.PROPERTIES);
 	}
 
+	/**
+	 * Customizations for ObjectMapper that's used for rest requests.
+	 * 
+	 * @return
+	 */
 	@Bean
 	public Module mixinModule() {
 		SimpleModule module = new SimpleModule();

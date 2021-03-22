@@ -19,10 +19,12 @@ import org.elasticsearch.cluster.metadata.AliasMetaData;
 import org.elasticsearch.common.settings.Settings;
 
 import de.cxp.ocs.api.indexer.ImportSession;
-import de.cxp.ocs.conf.IndexConfiguration;
+import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.indexer.AbstractIndexer;
 import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.indexer.model.IndexableItem;
+import fr.pilato.elasticsearch.tools.ElasticsearchBeyonder;
+import fr.pilato.elasticsearch.tools.SettingsFinder.Defaults;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -32,16 +34,19 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	private final String	INDEX_PREFIX		= "ocs" + INDEX_DELIMITER;
 	private final Pattern	INDEX_NAME_PATTERN	= Pattern.compile(Pattern.quote(INDEX_PREFIX) + "(\\d+)\\" + INDEX_DELIMITER);
 
+	private final RestHighLevelClient		restClient;
 	private final ElasticsearchIndexClient indexClient;
 
-	public ElasticsearchIndexer(IndexConfiguration indexConf, RestHighLevelClient restClient, List<DocumentPreProcessor> dataProcessors) {
-		super(dataProcessors, indexConf);
+	public ElasticsearchIndexer(FieldConfigIndex fieldConfAccess, RestHighLevelClient restClient, List<DocumentPreProcessor> dataProcessors) {
+		super(dataProcessors, fieldConfAccess);
+		this.restClient = restClient;
 		indexClient = new ElasticsearchIndexClient(restClient);
 	}
 
-	protected ElasticsearchIndexer(IndexConfiguration indexConf, List<DocumentPreProcessor> dataProcessors, ElasticsearchIndexClient esIndexClient) {
-		super(dataProcessors, indexConf);
-		indexClient = esIndexClient;
+	public ElasticsearchIndexer(FieldConfigIndex fieldConfAccess, ElasticsearchIndexClient mockedIndexClient, List<DocumentPreProcessor> dataProcessors) {
+		super(dataProcessors, fieldConfAccess);
+		this.restClient = null;
+		indexClient = mockedIndexClient;
 	}
 
 	@Override
@@ -61,12 +66,22 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	 * Expects a indexName ending with a number and will return a new index name
 	 */
 	@Override
-	protected String initNewIndex(final String indexName, String locale) {
+	protected String initNewIndex(final String indexName, String locale) throws IOException {
 		String localizedIndexName = getLocalizedIndexName(indexName, LocaleUtils.toLocale(locale));
 		String finalIndexName = getNextIndexName(indexName, localizedIndexName);
 
-		log.info("trying to create index {}", finalIndexName);
-		indexClient.createFreshIndex(finalIndexName);
+		try {
+			// only during testing we don't have a real connection to ES
+			if (restClient != null) {
+				ElasticsearchBeyonder.start(restClient.getLowLevelClient(), Defaults.ConfigDir, Defaults.MergeMappings, true);
+			}
+
+			log.info("trying to create index {}", finalIndexName);
+			indexClient.createFreshIndex(finalIndexName);
+		}
+		catch (Exception e) {
+			throw new IOException("failed to initialize template new index", e);
+		}
 
 		return finalIndexName;
 	}

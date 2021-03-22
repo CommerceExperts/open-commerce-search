@@ -2,9 +2,6 @@ package de.cxp.ocs.indexer.model;
 
 import java.util.Collection;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
-import de.cxp.ocs.util.Util;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,7 +12,6 @@ import lombok.experimental.Accessors;
 @AllArgsConstructor
 @Data
 @Accessors(chain = true)
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class FacetEntry<T> {
 
 	@NonNull
@@ -36,14 +32,9 @@ public class FacetEntry<T> {
 		this.value = value;
 	}
 
-	public FacetEntry<T> withValue(T additionalValue) {
-		value = Util.collectObjects(value, additionalValue);
-		return this;
-	}
-
-	public FacetEntry<T> withValues(Collection<T> additionalValue) {
-		value = Util.collectObjects(value, additionalValue);
-		return this;
+	public FacetEntry(String name, Collection<T> values) {
+		this.name = name;
+		this.value = values;
 	}
 
 }

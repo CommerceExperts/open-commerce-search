@@ -9,8 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldConfiguration;
-import de.cxp.ocs.config.FieldType;
+import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.model.index.Document;
@@ -56,8 +55,8 @@ public class ExtractCategoryLevelDataProcessor implements DocumentPreProcessor {
 	private Optional<Field>		categoryField;
 
 	@Override
-	public void initialize(FieldConfiguration fieldConfig, Map<String, String> preProcessorConfig) {
-		categoryField = fieldConfig.getField(FieldType.category);
+	public void initialize(FieldConfigAccess fieldConfig, Map<String, String> preProcessorConfig) {
+		categoryField = fieldConfig.getPrimaryCategoryField();
 	}
 
 	@Override

@@ -3,9 +3,9 @@ package de.cxp.ocs.indexer;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
 
+import de.cxp.ocs.conf.FieldUsageApplier;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
-import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.indexer.model.DataItem;
 import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.indexer.model.MasterItem;
@@ -30,8 +30,8 @@ public class IndexItemConverter {
 	 * 
 	 * @param fieldConfiguration
 	 */
-	public IndexItemConverter(FieldConfiguration fieldConfiguration) {
-		fieldConfigIndex = new FieldConfigIndex(fieldConfiguration);
+	public IndexItemConverter(FieldConfigIndex fieldConfigIndex) {
+		this.fieldConfigIndex = fieldConfigIndex;
 	}
 
 	/**
@@ -76,7 +76,7 @@ public class IndexItemConverter {
 				fieldConfigIndex.getMatchingFields(dataField.getKey(), dataField.getValue())
 						.stream()
 						.filter(fieldAtCorrectDocLevelPredicate)
-						.forEach(field -> targetItem.setValue(field, dataField.getValue()));
+						.forEach(field -> FieldUsageApplier.applyAll(targetItem, field, dataField.getValue()));
 			}
 		}
 
@@ -86,11 +86,11 @@ public class IndexItemConverter {
 				fieldConfigIndex.getMatchingFields(attribute.name, attribute)
 						.stream()
 						.filter(fieldAtCorrectDocLevelPredicate)
-						.forEach(field -> targetItem.setValue(field, attribute));
+						.forEach(field -> FieldUsageApplier.applyAll(targetItem, field, attribute));
 			}
 		}
 
-		fieldConfigIndex.getCategoryField().ifPresent(f -> targetItem.setValue(f, sourceDoc.getCategories()));
+		fieldConfigIndex.getPrimaryCategoryField().ifPresent(f -> FieldUsageApplier.applyAll(targetItem, f, sourceDoc.getCategories()));
 	}
 
 	private boolean isFieldAtVariantLevel(Field field) {

@@ -3,7 +3,6 @@ package de.cxp.ocs.indexer.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.cxp.ocs.config.Field;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
@@ -22,10 +21,4 @@ public class MasterItem extends IndexableItem {
 	 */
 	private final List<VariantItem> variants = new ArrayList<>();
 
-	@Override
-	public void setValue(Field field, Object value) {
-		if (field.isMasterLevel()) {
-			super.setValue(field, value);
-		}
-	}
 }

@@ -4,15 +4,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.experimental.Accessors;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Data
 @Accessors(chain = true)
 @NoArgsConstructor
@@ -28,9 +25,7 @@ public class FieldConfiguration {
 	private final List<Field> dynamicFields = new ArrayList<>();
 
 	public FieldConfiguration addField(Field field) {
-		if (fields.put(field.getName(), field) != null) {
-			log.warn("overwriting field configuration {}", field.getName());
-		}
+		fields.put(field.getName(), field);
 		return this;
 	}
 
@@ -49,20 +44,6 @@ public class FieldConfiguration {
 	 */
 	public Field getField(final String name) {
 		return fields.get(name);
-	}
-
-	/**
-	 * Returns the first field matching the passed type.
-	 * 
-	 * @param type
-	 *        the type of the fields to return.
-	 * @return an optional containing the found field, if any.
-	 * @deprecated This method is OK for a single usage, but it's not efficient
-	 *             to use it regularly in the code. Consider storing and
-	 *             according index instead.
-	 */
-	public Optional<Field> getField(final FieldType type) {
-		return fields.values().stream().filter(f -> type.equals(f.getType())).findFirst();
 	}
 
 	/**

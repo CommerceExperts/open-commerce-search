@@ -32,16 +32,15 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 import de.cxp.ocs.api.searcher.SearchService;
-import de.cxp.ocs.config.ApplicationProperties;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.config.SearchConfiguration;
-import de.cxp.ocs.config.TenantSearchConfiguration;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.FieldConfigFetcher;
 import de.cxp.ocs.elasticsearch.Searcher;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
+import de.cxp.ocs.spi.search.SearchConfigurationProvider;
 import de.cxp.ocs.util.InternalSearchParams;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.NonNull;
@@ -60,10 +59,11 @@ public class SearchController implements SearchService {
 
 	@Autowired
 	@NonNull
-	private ApplicationProperties properties;
+	private SearchConfigurationProvider searchConfigProvider;
 
 	@Autowired
 	private MeterRegistry registry;
+
 
 	private final Map<String, SearchConfiguration> searchConfigs = new HashMap<>();
 
@@ -157,26 +157,21 @@ public class SearchController implements SearchService {
 			log.warn("could not retrieve ES indices", e);
 		}
 		tenants.addAll(searchConfigs.keySet());
-		tenants.addAll(properties.getTenantConfig().keySet());
+		tenants.addAll(searchConfigProvider.getConfiguredTenants());
 		return tenants.toArray(new String[tenants.size()]);
 	}
 
 	private SearchConfiguration getConfigForTenant(String tenant) {
 		SearchConfiguration mergedConfig = new SearchConfiguration();
+		
+		mergedConfig.setIndexName(searchConfigProvider.getTargetIndex(tenant).orElse(tenant));
 
-		TenantSearchConfiguration defaultConfig = properties.getDefaultTenantConfig();
-		TenantSearchConfiguration specificConfig = properties.getTenantConfig().get(tenant);
+		searchConfigProvider.getFacetConfiguration(tenant).ifPresent(mergedConfig::setFacetConfiguration);
+		searchConfigProvider.getScoringConfiguration(tenant).ifPresent(mergedConfig::setScoring);
 
-		if (specificConfig != null && specificConfig.getIndexName() != null) {
-			mergedConfig.setIndexName(specificConfig.getIndexName());
-		}
-		else if (defaultConfig.getIndexName() != null) {
-			mergedConfig.setIndexName(defaultConfig.getIndexName());
-		}
-		else {
-			mergedConfig.setIndexName(tenant);
-		}
-
+		mergedConfig.getQueryConfigs().addAll(searchConfigProvider.getQueryConfiguration(tenant));
+		mergedConfig.getSortConfigs().addAll(searchConfigProvider.getSortConfigs(tenant));
+		
 		FieldConfiguration fieldConfig;
 		try {
 			fieldConfig = new FieldConfigFetcher(esBuilder.getRestHLClient()).fetchConfig(mergedConfig.getIndexName());
@@ -185,37 +180,7 @@ public class SearchController implements SearchService {
 			log.error("couldn't fetch field configuration from index {}", mergedConfig.getIndexName());
 			throw new UncheckedIOException(e);
 		}
-
 		mergedConfig.setIndexedFieldConfig(new FieldConfigIndex(fieldConfig));
-
-		if (specificConfig != null && !specificConfig.getFacetConfiguration().getFacets().isEmpty()) {
-			// only set specific facet config, if a specific config exists and
-			// is not empty
-			mergedConfig.setFacetConfiguration(specificConfig.getFacetConfiguration());
-		}
-		else if (specificConfig == null || !specificConfig.isDisableFacets()) {
-			// only set default facet config, if specific config does not exist
-			// or if disableFacets is not activated/true
-			mergedConfig.setFacetConfiguration(defaultConfig.getFacetConfiguration());
-		}
-
-		if (specificConfig != null && !specificConfig.getQueryConfiguration().isEmpty()) {
-			mergedConfig.getQueryConfigs().putAll(specificConfig.getQueryConfiguration());
-		}
-		else if (specificConfig == null || !specificConfig.isDisableQueryConfig()) {
-			mergedConfig.getQueryConfigs().putAll(defaultConfig.getQueryConfiguration());
-		}
-
-		if (specificConfig != null && !specificConfig.getScoringConfiguration().getScoreFunctions().isEmpty()) {
-			mergedConfig.setScoring(specificConfig.getScoringConfiguration());
-		}
-		else if (specificConfig == null || !specificConfig.isDisableScorings()) {
-			mergedConfig.setScoring(defaultConfig.getScoringConfiguration());
-		}
-
-		if (specificConfig != null && specificConfig.getSortConfigs().isEmpty() && !defaultConfig.getSortConfigs().isEmpty()) {
-			mergedConfig.getSortConfigs().addAll(defaultConfig.getSortConfigs());
-		}
 
 		return mergedConfig;
 	}
@@ -237,7 +202,7 @@ public class SearchController implements SearchService {
 	public ResponseEntity<ExceptionResponse> handleInternalErrors(Exception e) {
 		final String errorId = UUID.randomUUID().toString();
 		log.error("Internal Server Error " + errorId, e);
-		
+
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(ExceptionResponse.builder()
 						.message("Internal Error")

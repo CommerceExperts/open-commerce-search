@@ -1,4 +1,4 @@
-package de.cxp.ocs.indexer.model;
+package de.cxp.ocs.conf;
 
 import static de.cxp.ocs.util.Util.*;
 
@@ -17,6 +17,11 @@ import org.apache.commons.lang3.StringUtils;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.FieldUsage;
+import de.cxp.ocs.indexer.model.DataItem;
+import de.cxp.ocs.indexer.model.FacetEntry;
+import de.cxp.ocs.indexer.model.IndexableItem;
+import de.cxp.ocs.indexer.model.MasterItem;
+import de.cxp.ocs.indexer.model.VariantItem;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.util.MinMaxSet;
@@ -27,6 +32,42 @@ import io.micrometer.core.lang.NonNull;
  */
 @SuppressWarnings("unchecked")
 public class FieldUsageApplier {
+
+	public static void applyAll(final DataItem record, final Field field, final Object value) {
+		if (value == null
+				|| (record instanceof MasterItem && !field.isMasterLevel())
+				|| (record instanceof VariantItem && !field.isVariantLevel())
+				|| (value instanceof String && ((String) value).isEmpty())
+				|| (value instanceof Collection<?> && ((Collection<?>) value).isEmpty())
+				|| field.getUsage() == null
+				|| field.getUsage().isEmpty()) {
+			return;
+		}
+
+		for (final FieldUsage fu : field.getUsage()) {
+			apply(fu, record, field, value);
+		}
+	}
+
+	public static void apply(FieldUsage fieldUsage, DataItem indexableItem, Field field, @NonNull Object value) {
+		switch (fieldUsage) {
+			case Facet:
+				handleFacetField(indexableItem, field, value);
+				break;
+			case Result:
+				handleResultField(indexableItem, field, value);
+				break;
+			case Sort:
+				handleSortField(indexableItem, field, value);
+				break;
+			case Score:
+				handleScoreField(indexableItem, field, value);
+				break;
+			case Search:
+				handleSearchField(indexableItem, field, value);
+				break;
+		}
+	}
 
 	public static void handleSearchField(final DataItem record, final Field field, Object value) {
 		if (isEmpty(value)) {
@@ -174,8 +215,7 @@ public class FieldUsageApplier {
 	private static void handleNumberFacetData(final DataItem record, final Field field, Object value) {
 		if (value instanceof Collection || value.getClass().isArray()) {
 			Collection<Number> numberValues = toNumberCollection(value);
-			record.getNumberFacetData().add(new FacetEntry<Number>(field.getName()).withValues(
-					numberValues));
+			record.getNumberFacetData().add(new FacetEntry<Number>(field.getName(), numberValues));
 		}
 		else if (value instanceof Attribute) {
 			Attribute attr = ((Attribute) value);
@@ -222,7 +262,7 @@ public class FieldUsageApplier {
 	private static void handleTermFacetData(final DataItem record, final Field field, Object value) {
 		if (value instanceof Collection || value.getClass().isArray()) {
 			Collection<String> stringValues = toStringCollection(value);
-			record.getTermFacetData().add(new FacetEntry<String>(field.getName()).withValues(stringValues));
+			record.getTermFacetData().add(new FacetEntry<String>(field.getName(), stringValues));
 		}
 		else if (value instanceof Attribute) {
 			Attribute attr = (Attribute) value;
@@ -284,26 +324,6 @@ public class FieldUsageApplier {
 			if (Double.compare(value.doubleValue(), ((Number) oldVal).doubleValue()) > 0) return value;
 			else return oldVal;
 		};
-	}
-
-	public static void apply(FieldUsage fieldUsage, DataItem indexableItem, Field field, @NonNull Object value) {
-		switch (fieldUsage) {
-			case Facet:
-				handleFacetField(indexableItem, field, value);
-				break;
-			case Result:
-				handleResultField(indexableItem, field, value);
-				break;
-			case Sort:
-				handleSortField(indexableItem, field, value);
-				break;
-			case Score:
-				handleScoreField(indexableItem, field, value);
-				break;
-			case Search:
-				handleSearchField(indexableItem, field, value);
-				break;
-		}
 	}
 
 	private static Collection<String> convertCategoryDataToString(Object value, Function<Category[], String> toStringMethod) {

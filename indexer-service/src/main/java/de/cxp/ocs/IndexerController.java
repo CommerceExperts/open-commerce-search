@@ -1,6 +1,7 @@
 package de.cxp.ocs;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -22,11 +23,11 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
 import de.cxp.ocs.api.indexer.ImportSession;
-import de.cxp.ocs.conf.ApplicationProperties;
 import de.cxp.ocs.conf.IndexConfiguration;
 import de.cxp.ocs.indexer.AbstractIndexer;
 import de.cxp.ocs.indexer.IndexerFactory;
 import de.cxp.ocs.model.index.BulkImportData;
+import de.cxp.ocs.spi.indexer.IndexerConfigurationProvider;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
@@ -46,7 +47,7 @@ public class IndexerController {
 	private IndexerFactory indexerFactory;
 
 	@Autowired
-	private ApplicationProperties properties;
+	private IndexerConfigurationProvider configProvider;
 
 	private LoadingCache<String, AbstractIndexer> actualIndexers = CacheBuilder.newBuilder()
 			.expireAfterAccess(15, TimeUnit.MINUTES)
@@ -54,17 +55,16 @@ public class IndexerController {
 
 				@Override
 				public AbstractIndexer load(String indexName) throws Exception {
-					IndexConfiguration indexConfiguration = properties.getIndexConfig().get(indexName);
-					if (indexConfiguration == null) {
-						indexConfiguration = properties.getDefaultIndexConfig();
-					}
-					return indexerFactory.create(indexConfiguration);
+					IndexConfiguration indexConfig = new IndexConfiguration();
+					configProvider.getDataProcessorConfiguration(indexName).ifPresent(indexConfig::setDataProcessorConfiguration);
+					indexConfig.setFieldConfiguration(configProvider.getFieldConfiguration(indexName));
+					return indexerFactory.create(indexConfig);
 				}
 			});
 
 	@ExceptionHandler(
-			value = { ExecutionException.class, IOException.class, RuntimeException.class,
-					ClassNotFoundException.class })
+			value = { ExecutionException.class, IOException.class, UncheckedIOException.class,
+					RuntimeException.class, ClassNotFoundException.class })
 	public ResponseEntity<String> handleInternalErrors(Exception e) {
 		final String errorId = UUID.randomUUID().toString();
 		log.error("Internal Server Error " + errorId, e);

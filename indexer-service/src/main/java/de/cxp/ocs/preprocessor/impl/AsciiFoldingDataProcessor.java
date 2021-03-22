@@ -7,9 +7,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
-import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.model.index.Document;
@@ -30,11 +29,8 @@ public class AsciiFoldingDataProcessor implements DocumentPreProcessor {
 	private List<String> searchableFields;
 
 	@Override
-	public void initialize(FieldConfiguration fieldConfig, Map<String, String> preProcessorConfig) {
-		searchableFields = fieldConfig.getFields().entrySet().stream()
-				.filter(entry -> entry.getValue().getUsage().contains(FieldUsage.Search))
-				.map(Map.Entry::getKey)
-				.collect(Collectors.toList());
+	public void initialize(FieldConfigAccess fieldConfig, Map<String, String> preProcessorConfig) {
+		searchableFields = new ArrayList(fieldConfig.getFieldsByUsage(FieldUsage.Search).keySet());
 	}
 
 	@Override

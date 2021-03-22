@@ -132,7 +132,7 @@ public class Searcher {
 		sortFieldConfig = config.getSortConfigs().stream().collect(Collectors.toMap(SortOptionConfiguration::getField, s -> s));
 		spellCorrector = initSpellCorrection();
 
-		queryBuilder = new ESQueryBuilderFactory(restClient, config.getIndexName(), config).build();
+		queryBuilder = new ESQueryBuilderFactory(restClient, config).build();
 	}
 
 	private Timer getTimer(final String name, final String indexName) {

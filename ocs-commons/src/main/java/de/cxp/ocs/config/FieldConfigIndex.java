@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
  * especially for "the category field" and dynamic fields.
  */
 @Slf4j
-public class FieldConfigIndex {
+public final class FieldConfigIndex implements FieldConfigAccess {
 
 	@AllArgsConstructor
 	static class DynamicFieldConfig {
@@ -50,8 +50,10 @@ public class FieldConfigIndex {
 
 	private final Map<FieldUsage, Map<String, Field>> fieldsByUsage = new HashMap<>();
 
+	private final Map<FieldType, Map<String, Field>> fieldsByType = new HashMap<>();
+
 	@Getter
-	private final Optional<Field> categoryField;
+	private final Optional<Field> primaryCategoryField;
 
 	private final List<DynamicFieldConfig> dynamicFields = new ArrayList<>();
 
@@ -75,7 +77,7 @@ public class FieldConfigIndex {
 				categoryFields.put(field.getName(), field);
 			}
 
-			updateFieldsByUsage(field);
+			updateFieldIndexes(field);
 
 			for (String sourceName : field.getSourceNames()) {
 				fieldsBySource.computeIfAbsent(sourceName, n -> new ArrayList<Field>(1)).add(field);
@@ -124,18 +126,28 @@ public class FieldConfigIndex {
 			}
 		}
 
-		categoryField = determineDefaultCategoryField(categoryFields);
+		primaryCategoryField = determineDefaultCategoryField(categoryFields);
 	}
 
-	private void updateFieldsByUsage(Field f) {
+	private void updateFieldIndexes(Field f) {
 		for (FieldUsage usage : f.getUsage()) {
 			fieldsByUsage.computeIfAbsent(usage, x -> new HashMap<>())
 					.put(f.getName(), f);
 		}
+		fieldsByType.computeIfAbsent(f.getType(), x -> new HashMap<>())
+				.put(f.getName(), f);
 	}
 
 	public Map<String, Field> getFieldsByUsage(FieldUsage usage) {
 		Map<String, Field> fields = fieldsByUsage.get(usage);
+		if (fields == null) {
+			fields = Collections.emptyMap();
+		}
+		return fields;
+	}
+
+	public Map<String, Field> getFieldsByType(FieldType type) {
+		Map<String, Field> fields = fieldsByType.get(type);
 		if (fields == null) {
 			fields = Collections.emptyMap();
 		}
@@ -242,7 +254,7 @@ public class FieldConfigIndex {
 					generatedField = cloneField(dynamicFieldConf.fieldConfig);
 					generatedField.setName(fieldName);
 					generatedFields.put(fieldName, generatedField);
-					updateFieldsByUsage(generatedField);
+					updateFieldIndexes(generatedField);
 					break;
 				}
 			}

@@ -1,16 +1,16 @@
 package de.cxp.ocs.indexer;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang3.LocaleUtils;
 
 import de.cxp.ocs.api.indexer.FullIndexationService;
 import de.cxp.ocs.api.indexer.ImportSession;
-import de.cxp.ocs.conf.IndexConfiguration;
-import de.cxp.ocs.config.Field;
+import de.cxp.ocs.config.FieldConfigIndex;
+import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.model.index.BulkImportData;
 import de.cxp.ocs.model.index.Document;
@@ -28,18 +28,17 @@ public abstract class AbstractIndexer implements FullIndexationService {
 	
 	@Getter(value = AccessLevel.PROTECTED)
 	@NonNull
-	final IndexConfiguration indexConf;
+	final FieldConfigIndex fieldConfIndex;
 
 	private final CombiFieldBuilder combiFieldBuilder;
 
 	private final IndexItemConverter indexItemConverter;
 
-	public AbstractIndexer(@NonNull List<DocumentPreProcessor> dataPreProcessors, @NonNull IndexConfiguration indexConf) {
+	public AbstractIndexer(@NonNull List<DocumentPreProcessor> dataPreProcessors, @NonNull FieldConfigIndex fieldConfIndex) {
 		this.dataPreProcessors = dataPreProcessors;
-		this.indexConf = indexConf;
-		Map<String, Field> fields = Collections.unmodifiableMap(indexConf.getFieldConfiguration().getFields());
-		combiFieldBuilder = new CombiFieldBuilder(fields);
-		indexItemConverter = new IndexItemConverter(indexConf.getFieldConfiguration());
+		this.fieldConfIndex = fieldConfIndex;
+		combiFieldBuilder = new CombiFieldBuilder(fieldConfIndex.getFieldsByType(FieldType.combi));
+		indexItemConverter = new IndexItemConverter(fieldConfIndex);
 	}
 
 	@Override
@@ -53,14 +52,19 @@ public abstract class AbstractIndexer implements FullIndexationService {
 
 		log.info("starting import session for index {} with locale {}", indexName, locale);
 
-		return new ImportSession(
-				indexName,
-				initNewIndex(indexName, locale));
+		try {
+			return new ImportSession(
+					indexName,
+					initNewIndex(indexName, locale));
+		}
+		catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
 	}
 
 	public abstract boolean isImportRunning(String indexName);
 
-	protected abstract String initNewIndex(String indexName, String locale);
+	protected abstract String initNewIndex(String indexName, String locale) throws IOException;
 
 	@Override
 	public int add(BulkImportData data) throws Exception {

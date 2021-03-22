@@ -5,8 +5,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -43,7 +41,6 @@ public class Field {
 	 * @return <code>true</code> if the field is on variant level,
 	 *         <code>false</code> otherwise.
 	 */
-	@JsonIgnore
 	public boolean isVariantLevel() {
 		return FieldLevel.variant.equals(fieldLevel) || FieldLevel.both.equals(fieldLevel);
 	}
@@ -54,7 +51,6 @@ public class Field {
 	 * @return <code>true</code> if the field is on master level,
 	 *         <code>false</code> otherwise.
 	 */
-	@JsonIgnore
 	public boolean isMasterLevel() {
 		return FieldLevel.master.equals(fieldLevel) || FieldLevel.both.equals(fieldLevel);
 	}
@@ -65,7 +61,6 @@ public class Field {
 	 * @return <code>true</code> if the field is on both level,
 	 *         <code>false</code> otherwise.
 	 */
-	@JsonIgnore
 	public boolean isBothLevel() {
 		return FieldLevel.both.equals(fieldLevel);
 	}

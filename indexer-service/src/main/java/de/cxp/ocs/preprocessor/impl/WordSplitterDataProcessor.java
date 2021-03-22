@@ -7,7 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.model.index.Document;
 import de.danielnaber.jwordsplitter.AbstractWordSplitter;
@@ -33,7 +33,7 @@ public class WordSplitterDataProcessor implements DocumentPreProcessor {
 	private AbstractWordSplitter splitter = null;
 
 	@Override
-	public void initialize(FieldConfiguration fieldConfig, Map<String, String> confMap) {
+	public void initialize(FieldConfigAccess fieldConfig, Map<String, String> confMap) {
 		this.fields = new LinkedList<>();
 		confMap.forEach((key, value) -> {
 					if ("fieldName".equals(key)) {

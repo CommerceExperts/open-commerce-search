@@ -18,7 +18,8 @@ public class SortOptionConfiguration {
 	String field;
 
 	/**
-	 * specify which sort order options should be returned in the result.
+	 * specify which sort order options should be returned in the result. If
+	 * empty, sorting options won't be part of result.
 	 */
 	SortOrder[] shownOrders = new SortOrder[] { SortOrder.ASC, SortOrder.DESC };
 

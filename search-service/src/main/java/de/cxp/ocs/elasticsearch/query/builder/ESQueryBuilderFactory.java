@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.Predicate;
 
 import org.elasticsearch.client.RestHighLevelClient;
@@ -24,7 +23,6 @@ import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueryBuilder.PatternCon
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueryBuilder.TermCountCondition;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -32,23 +30,33 @@ import lombok.extern.slf4j.Slf4j;
  * on the given configuration
  */
 @Slf4j
-@RequiredArgsConstructor
 public class ESQueryBuilderFactory {
 
 	@NonNull
 	private final RestHighLevelClient	restClient;
 	@NonNull
-	private final String				index;
+	private final String				indexName;
 	@NonNull
 	private final SearchConfiguration	config;
 
-	private Map<String, QueryConfiguration> queryConfigs;
+	private List<QueryConfiguration> queryConfigs;
+
+	private Map<String, QueryConfiguration> queryConfigIndex = new HashMap<>();
+
+
+	public ESQueryBuilderFactory(RestHighLevelClient restClient, SearchConfiguration config) {
+		this.restClient = restClient;
+		this.indexName = config.getIndexName();
+		this.config = config;
+		this.queryConfigs = config.getQueryConfigs();
+		this.queryConfigs.forEach(qc -> queryConfigIndex.put(qc.getName(), qc));
+	}
 
 	private QueryPredictor getMetaPreFetcher(Map<QueryBuildingSetting, String> settings) {
 		// TODO: add a cache-wrapper to avoid multiple data fetches for the
 		// same query (maybe this has to be done inside the
 		// QueryMetaFetcher)
-		QueryPredictor preFetcher = new QueryPredictor(restClient, index);
+		QueryPredictor preFetcher = new QueryPredictor(restClient, indexName);
 		preFetcher.setAnalyzer(settings.get(QueryBuildingSetting.analyzer));
 		return preFetcher;
 	}
@@ -59,33 +67,28 @@ public class ESQueryBuilderFactory {
 			return new ConditionalQueryBuilder(new DefaultQueryBuilder());
 		}
 		if (queryConfigs.size() == 1) {
-			return new ConditionalQueryBuilder(createQueryBuilder(queryConfigs.values().iterator().next(), null));
+			return new ConditionalQueryBuilder(createQueryBuilder(queryConfigs.get(0), null));
 		}
 
 		List<BuilderWithCondition> predicatesAndBuilders = new LinkedList<>();
-		for (Entry<String, QueryConfiguration> queryNameAndConf : queryConfigs.entrySet()) {
+		for (QueryConfiguration queryConf : queryConfigs) {
 			BuilderWithCondition queryBuilder = new BuilderWithCondition();
 
-			ESQueryBuilder fallbackQueryBuilder = getFallbackQueryBuilder(queryNameAndConf.getKey(), queryConfigs);
+			ESQueryBuilder fallbackQueryBuilder = getFallbackQueryBuilder(queryConf);
 
-			queryBuilder.predicate = createPredicate(queryNameAndConf.getValue().getCondition());
-			queryBuilder.queryBuilder = createQueryBuilder(queryNameAndConf.getValue(), fallbackQueryBuilder);
-			queryBuilder.queryBuilder.setName(queryNameAndConf.getKey());
+			queryBuilder.predicate = createPredicate(queryConf.getCondition());
+			queryBuilder.queryBuilder = createQueryBuilder(queryConf, fallbackQueryBuilder);
+			queryBuilder.queryBuilder.setName(queryConf.getName());
 			predicatesAndBuilders.add(queryBuilder);
 		}
 		return new ConditionalQueryBuilder(predicatesAndBuilders);
 	}
 
-	private ESQueryBuilder getFallbackQueryBuilder(String queryName, Map<String, QueryConfiguration> queryConfigs) {
+	private ESQueryBuilder getFallbackQueryBuilder(QueryConfiguration queryConf) {
 		ESQueryBuilder fallbackQueryBuilder = null;
-		QueryConfiguration queryConf = queryConfigs.get(queryName);
 		String fallbackSearchName = queryConf.getSettings().get(QueryBuildingSetting.fallbackQuery);
-
-		// XXX: maybe it would be nice to allow fallback queries for fallback
-		// queries, however cyclic dependencies and self-references should be
-		// prevented!
-		if (fallbackSearchName != null && !fallbackSearchName.isEmpty()) {
-			QueryConfiguration fallbackQueryConf = queryConfigs.get(fallbackSearchName);
+		if (fallbackSearchName != null && !fallbackSearchName.isEmpty() && queryConfigIndex.containsKey(fallbackSearchName)) {
+			QueryConfiguration fallbackQueryConf = queryConfigIndex.get(fallbackSearchName);
 			fallbackQueryBuilder = createQueryBuilder(fallbackQueryConf, null);
 		}
 		return fallbackQueryBuilder;

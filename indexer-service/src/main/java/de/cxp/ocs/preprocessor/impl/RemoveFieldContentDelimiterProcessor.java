@@ -2,7 +2,7 @@ package de.cxp.ocs.preprocessor.impl;
 
 import java.util.Map;
 
-import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.model.index.Document;
 import lombok.NoArgsConstructor;
@@ -20,7 +20,7 @@ public class RemoveFieldContentDelimiterProcessor implements DocumentPreProcesso
 	private static final String	FIELD_CONTENT_DELIMITER_REPLACEMENT_COMMA	= ",";
 
 	@Override
-	public void initialize(FieldConfiguration fieldConfig, Map<String, String> confMap) {}
+	public void initialize(FieldConfigAccess fieldConfig, Map<String, String> confMap) {}
 	
 	public boolean process(Document document, boolean visible) {
 		Map<String, Object> sourceData = document.getData();

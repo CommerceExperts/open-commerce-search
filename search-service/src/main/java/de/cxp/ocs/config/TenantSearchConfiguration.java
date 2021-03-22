@@ -33,6 +33,11 @@ public class TenantSearchConfiguration {
 	 * queries and only use the default query.
 	 */
 	boolean disableQueryConfig = false;
+	/**
+	 * can be used by the tenant specific configuration to disable specific sort
+	 * options.
+	 */
+	boolean disableSortingConfig = false;
 
 	@NestedConfigurationProperty
 	private FacetConfiguration facetConfiguration = new FacetConfiguration();
