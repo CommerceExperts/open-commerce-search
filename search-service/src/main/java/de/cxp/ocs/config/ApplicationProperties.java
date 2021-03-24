@@ -27,9 +27,9 @@ public class ApplicationProperties {
 	private final ConnectionConfiguration connectionConfiguration = new ConnectionConfiguration();
 
 	@NestedConfigurationProperty
-	TenantSearchConfiguration defaultTenantConfig = new TenantSearchConfiguration();
+	ApplicationSearchProperties defaultTenantConfig = new ApplicationSearchProperties();
 
 	@NestedConfigurationProperty
-	private final Map<String, TenantSearchConfiguration> tenantConfig = new HashMap<>();
+	private final Map<String, ApplicationSearchProperties> tenantConfig = new HashMap<>();
 
 }

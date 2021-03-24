@@ -39,7 +39,7 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 	}
 
 	public Optional<ScoringConfiguration> getScoringConfiguration(String tenant) {
-		TenantSearchConfiguration tenantConfig = properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
+		ApplicationSearchProperties tenantConfig = properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
 		if (tenantConfig.disableScorings) {
 			return Optional.empty();
 		}
@@ -47,7 +47,7 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 	}
 
 	public Optional<FacetConfiguration> getFacetConfiguration(String tenant) {
-		TenantSearchConfiguration tenantConfig = properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
+		ApplicationSearchProperties tenantConfig = properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
 		if (tenantConfig.disableFacets) {
 			return Optional.empty();
 		}
@@ -55,7 +55,7 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 	}
 
 	public List<QueryConfiguration> getQueryConfiguration(String tenant) {
-		TenantSearchConfiguration tenantConfig = properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
+		ApplicationSearchProperties tenantConfig = properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
 		if (tenantConfig.disableQueryConfig) {
 			return null;
 		}
@@ -63,7 +63,7 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 	}
 
 	public List<SortOptionConfiguration> getSortConfigs(String tenant) {
-		TenantSearchConfiguration tenantConfig = properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
+		ApplicationSearchProperties tenantConfig = properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
 		if (tenantConfig.disableSortingConfig) {
 			return Collections.emptyList();
 		}

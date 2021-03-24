@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class TenantSearchConfiguration {
+public class ApplicationSearchProperties {
 
 	@NestedConfigurationProperty
 	private String indexName;
