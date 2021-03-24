@@ -64,6 +64,7 @@ import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.model.result.SearchResultSlice;
 import de.cxp.ocs.model.result.Sorting;
 import de.cxp.ocs.spi.search.ESQueryFactory;
+import de.cxp.ocs.spi.search.RescorerProvider;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.InternalSearchParams;
@@ -98,6 +99,8 @@ public class Searcher {
 	private final FiltersBuilder filtersBuilder;
 
 	private final ConditionalQueries queryBuilder;
+
+	private final List<RescorerProvider> rescorers;
 
 	private final Map<String, Field> sortFields;
 	private final Map<String, SortOptionConfiguration>	sortFieldConfig;
@@ -139,6 +142,7 @@ public class Searcher {
 		sortFields = fetchSortFields();
 		sortFieldConfig = config.getSortConfigs().stream().collect(Collectors.toMap(SortOptionConfiguration::getField, s -> s));
 		spellCorrector = initSpellCorrection();
+		rescorers = new ArrayList(plugins.getRescorers());
 
 		queryBuilder = new ESQueryFactoryBuilder(restClient, internalConfig, plugins.getEsQueryFactories()).build();
 	}
@@ -237,6 +241,7 @@ public class Searcher {
 			}
 
 			searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
+			addRescorersFailsafe(parameters, customParams, searchSourceBuilder);
 			searchResponse = executeSearchRequest(searchSourceBuilder);
 
 			if (log.isDebugEnabled()) {
@@ -280,6 +285,21 @@ public class Searcher {
 		findTimer.record(searchResult.tookInMillis, TimeUnit.MILLISECONDS);
 
 		return searchResult;
+	}
+
+	private void addRescorersFailsafe(InternalSearchParams parameters, Map<String, String> customParams, SearchSourceBuilder searchSourceBuilder) {
+		Iterator<RescorerProvider> rescorerProviders = rescorers.iterator();
+		while (rescorerProviders.hasNext()) {
+			RescorerProvider rescorerProvider = rescorerProviders.next();
+			try {
+				searchSourceBuilder.addRescorer(rescorerProvider.get(parameters.userQuery, customParams));
+			}
+			catch (Exception e) {
+				log.error("RescorerProvider {} caused exception when creating rescorer based on userQuery {} and customParams {}!"
+						+ "Will remove it until next configuration reload!",
+						rescorerProvider.getClass().getCanonicalName(), parameters.userQuery, customParams, e);
+			}
+		}
 	}
 
 	private SearchResponse executeSearchRequest(SearchSourceBuilder searchSourceBuilder) throws IOException {

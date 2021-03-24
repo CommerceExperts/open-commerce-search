@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import de.cxp.ocs.spi.search.ESQueryFactory;
+import de.cxp.ocs.spi.search.RescorerProvider;
 import de.cxp.ocs.spi.search.SearchConfigurationProvider;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.spi.search.UserQueryPreprocessor;
@@ -19,5 +20,7 @@ public class SearchPlugins {
 	private Optional<UserQueryAnalyzer> userQueryAnalyzers;
 
 	private List<UserQueryPreprocessor> userQueryPreprocessors;
+
+	private List<RescorerProvider> rescorers;
 
 }
