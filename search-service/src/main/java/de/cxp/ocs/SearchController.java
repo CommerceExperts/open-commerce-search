@@ -41,8 +41,9 @@ import de.cxp.ocs.elasticsearch.FieldConfigFetcher;
 import de.cxp.ocs.elasticsearch.Searcher;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
-import de.cxp.ocs.spi.search.SearchConfigurationProvider;
+import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import de.cxp.ocs.util.InternalSearchParams;
+import de.cxp.ocs.util.SearchParamsParser;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +61,7 @@ public class SearchController implements SearchService {
 
 	@Autowired
 	@NonNull
-	private SearchConfigurationProvider searchConfigProvider;
+	private SearchPlugins plugins;
 
 	@Autowired
 	private MeterRegistry registry;
@@ -110,18 +111,30 @@ public class SearchController implements SearchService {
 		log.debug("Using index {} for tenant {}", searchConfig.provided.getIndexName(), tenant);
 
 		final InternalSearchParams parameters = new InternalSearchParams();
-		parameters.userQuery = searchQuery.q;
 		parameters.limit = searchQuery.limit;
 		parameters.offset = searchQuery.offset;
 		parameters.withFacets = searchQuery.withFacets;
+
+		String userQuery = searchQuery.q;
+		// TODO: support a configured set of preprocessors per tenant
+		for (UserQueryPreprocessor preprocessor : plugins.getUserQueryPreprocessors()) {
+			userQuery = preprocessor.preProcess(userQuery);
+		}
+		parameters.userQuery = userQuery;
 		if (searchQuery.sort != null) {
 			parameters.sortings = parseSortings(searchQuery.sort, searchConfig.getFieldConfigIndex());
 		}
 		parameters.filters = parseFilters(filters, searchConfig.getFieldConfigIndex());
 
+		Map<String, String> customParams = new HashMap<>(filters);
+		parameters.filters.forEach(f -> {
+			customParams.remove(f.getField().getName());
+			customParams.remove(f.getField().getName() + SearchParamsParser.ID_FILTER_SUFFIX);
+		});
+
 		try {
-			final Searcher searcher = searchClientCache.get(tenant, () -> new Searcher(esBuilder.getRestHLClient(), searchConfig, registry));
-			return searcher.find(parameters);
+			final Searcher searcher = searchClientCache.get(tenant, () -> new Searcher(esBuilder.getRestHLClient(), searchConfig, registry, plugins));
+			return searcher.find(parameters, customParams);
 		}
 		catch (ElasticsearchStatusException esx) {
 			// TODO: in case an index was requested where it fails because
@@ -158,12 +171,12 @@ public class SearchController implements SearchService {
 			log.warn("could not retrieve ES indices", e);
 		}
 		tenants.addAll(searchConfigs.keySet());
-		tenants.addAll(searchConfigProvider.getConfiguredTenants());
+		tenants.addAll(plugins.getConfigurationProvider().getConfiguredTenants());
 		return tenants.toArray(new String[tenants.size()]);
 	}
 
 	private InternalSearchConfiguration getConfigForTenant(String tenant) {
-		SearchConfiguration searchConfig = searchConfigProvider.getTenantSearchConfiguration(tenant);
+		SearchConfiguration searchConfig = plugins.getConfigurationProvider().getTenantSearchConfiguration(tenant);
 		
 		FieldConfiguration fieldConfig;
 		try {

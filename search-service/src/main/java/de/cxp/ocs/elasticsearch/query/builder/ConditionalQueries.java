@@ -6,28 +6,28 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import de.cxp.ocs.elasticsearch.query.ESQueryBuilder;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
+import de.cxp.ocs.spi.search.ESQueryFactory;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class ConditionalQueryBuilder {
+public class ConditionalQueries {
 
-	private final List<BuilderWithCondition> conditionalQueryBuilders;
+	private final List<ConditionalQuery> conditionalQueryBuilders;
 
-	public ConditionalQueryBuilder(ESQueryBuilder defaultQueryBuilder) {
+	public ConditionalQueries(ESQueryFactory defaultQueryBuilder) {
 		conditionalQueryBuilders = new ArrayList<>();
 
-		BuilderWithCondition oneAndOnlyQuery = new BuilderWithCondition();
+		ConditionalQuery oneAndOnlyQuery = new ConditionalQuery();
 		oneAndOnlyQuery.predicate = new TermCountCondition(1, Integer.MAX_VALUE);
 		oneAndOnlyQuery.queryBuilder = defaultQueryBuilder;
 		conditionalQueryBuilders.add(oneAndOnlyQuery);
 	}
 
-	static class BuilderWithCondition {
+	static class ConditionalQuery {
 
 		Predicate<List<QueryStringTerm>>	predicate;
-		ESQueryBuilder						queryBuilder;
+		ESQueryFactory						queryBuilder;
 	}
 
 	@RequiredArgsConstructor
@@ -83,20 +83,20 @@ public class ConditionalQueryBuilder {
 
 	}
 
-	public Iterator<ESQueryBuilder> getStagedQueryBuilders(final List<QueryStringTerm> searchWords) {
+	public Iterator<ESQueryFactory> getMatchingFactories(final List<QueryStringTerm> searchWords) {
 		if (searchWords == null || searchWords.size() == 0) return null;
 
-		final List<ESQueryBuilder> matchingBuilders = new ArrayList<>();
-		for (BuilderWithCondition condAndQBuilder : conditionalQueryBuilders) {
-			if (condAndQBuilder.predicate.test(searchWords)) {
-				matchingBuilders.add(condAndQBuilder.queryBuilder);
+		final List<ESQueryFactory> matchingQueryFactories = new ArrayList<>();
+		for (ConditionalQuery condAndQueryFactory : conditionalQueryBuilders) {
+			if (condAndQueryFactory.predicate.test(searchWords)) {
+				matchingQueryFactories.add(condAndQueryFactory.queryBuilder);
 			}
 		}
 
 		// XXX: improvement: if first QueryBuilder is a PerFetchQueryBuilder,
 		// start pre-fetch phase in a separate thread
 
-		return matchingBuilders.iterator();
+		return matchingQueryFactories.iterator();
 	}
 
 }

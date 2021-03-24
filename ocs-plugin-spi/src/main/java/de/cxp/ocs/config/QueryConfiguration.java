@@ -23,8 +23,7 @@ public class QueryConfiguration {
 
 	private final QueryCondition condition = new QueryCondition();
 
-	// TODO: allow custom strategies => type should become String
-	private QueryStrategy strategy = QueryStrategy.DefaultQuery;
+	private String strategy = "DefaultQuery";
 
 	private final Map<String, Float> weightedFields = new HashMap<>();
 

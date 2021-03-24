@@ -23,13 +23,14 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 
+import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.QueryBuildingSetting;
-import de.cxp.ocs.elasticsearch.query.ESQueryBuilder;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.query.model.WeightedWord;
 import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
+import de.cxp.ocs.spi.search.ESQueryFactory;
 import de.cxp.ocs.util.ESQueryUtils;
 import lombok.Getter;
 import lombok.NonNull;
@@ -37,26 +38,34 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 @RequiredArgsConstructor
-public class PredictionQueryBuilder implements ESQueryBuilder {
+public class PredictionQueryFactory implements ESQueryFactory {
 
 	@NonNull
 	private final QueryPredictor metaFetcher;
 
-	private final Map<QueryBuildingSetting, String> settings;
+	private final Map<QueryBuildingSetting, String> settings = new HashMap<>();
 
-	private final Map<String, Float> fieldWeights;
+	private final Map<String, Float> fieldWeights = new HashMap<>();
 
 	private final int desiredResultCount = 12;
 
 	@Setter
-	private ESQueryBuilder fallbackQueryBuilder;
+	private ESQueryFactory fallbackQueryBuilder;
 
 	@Getter
 	@Setter
 	private String name;
 
 	@Override
-	public MasterVariantQuery buildQuery(final List<QueryStringTerm> searchWords) {
+	public void initialize(String name, Map<QueryBuildingSetting, String> settings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig) {
+		if (name != null) this.name = name;
+		this.settings.putAll(settings);
+		this.fieldWeights.putAll(fieldWeights);
+		metaFetcher.setAnalyzer(settings.get(QueryBuildingSetting.analyzer));
+	}
+
+	@Override
+	public MasterVariantQuery createQuery(final List<QueryStringTerm> searchWords) {
 		final List<PredictedQuery> predictedQueries = predictQueries(searchWords);
 
 		if (predictedQueries == null || predictedQueries.isEmpty()) {
@@ -64,7 +73,7 @@ public class PredictionQueryBuilder implements ESQueryBuilder {
 				return null;
 			}
 			else {
-				return fallbackQueryBuilder.buildQuery(searchWords);
+				return fallbackQueryBuilder.createQuery(searchWords);
 			}
 		}
 
@@ -158,7 +167,7 @@ public class PredictionQueryBuilder implements ESQueryBuilder {
 		// in case we have some terms that are not matched by any query, use
 		// them with the fallback query builder to boost matching records.
 		if (unmatchedTerms.size() > 0 && fallbackQueryBuilder != null) {
-			MasterVariantQuery boostQuery = fallbackQueryBuilder.buildQuery(new ArrayList<>(unmatchedTerms.values()));
+			MasterVariantQuery boostQuery = fallbackQueryBuilder.createQuery(new ArrayList<>(unmatchedTerms.values()));
 			mainQuery = QueryBuilders.boolQuery()
 					.must(mainQuery)
 					.should(boostQuery.getMasterLevelQuery())

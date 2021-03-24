@@ -14,34 +14,39 @@ import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 
+import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.QueryBuildingSetting;
-import de.cxp.ocs.elasticsearch.query.ESQueryBuilder;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.query.model.WeightedWord;
+import de.cxp.ocs.spi.search.ESQueryFactory;
 import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.Util;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 
 /**
  * creates a configurable query-string query
  */
 @RequiredArgsConstructor
-public class ConfigurableQueryBuilder implements ESQueryBuilder {
+public class ConfigurableQueryFactory implements ESQueryFactory {
 
-	private final Map<QueryBuildingSetting, String>	querySettings;
-	private final Map<String, Float>				weightedFields;
+	private Map<QueryBuildingSetting, String>	querySettings;
+	private Map<String, Float>					weightedFields;
 
 	@Getter
-	@Setter
 	private String name;
 
 	@Override
-	public MasterVariantQuery buildQuery(List<QueryStringTerm> searchTerms) {
+	public void initialize(String name, Map<QueryBuildingSetting, String> settings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig) {
+		if (name != null) this.name = name;
+		querySettings = settings;
+		weightedFields = fieldWeights;
+	}
 
+	@Override
+	public MasterVariantQuery createQuery(List<QueryStringTerm> searchTerms) {
 		// set fuzziness
 		String fuzzySetting = querySettings.get(fuzziness);
 		Fuzziness fuzziness = Fuzziness.AUTO;

@@ -14,17 +14,15 @@ import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder.Type;
 import org.elasticsearch.index.query.QueryBuilders;
 
-import de.cxp.ocs.config.Field;
+import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.config.QueryBuildingSetting;
-import de.cxp.ocs.elasticsearch.query.ESQueryBuilder;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
+import de.cxp.ocs.spi.search.ESQueryFactory;
 import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.Util;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,9 +31,9 @@ import lombok.extern.slf4j.Slf4j;
  * fuzziness
  */
 @Slf4j
-public class NgramQueryBuilder implements ESQueryBuilder {
+public class NgramQueryFactory implements ESQueryFactory {
 
-	private final Map<QueryBuildingSetting, String>	querySettings;
+	private final Map<QueryBuildingSetting, String>	querySettings	= new HashMap<>();
 	private final Map<String, Float>				masterFields	= new HashMap<>();
 	private final Map<String, Float>				variantFields	= new HashMap<>();
 
@@ -43,18 +41,14 @@ public class NgramQueryBuilder implements ESQueryBuilder {
 	@Setter
 	private String name;
 
-	public NgramQueryBuilder(Map<QueryBuildingSetting, String> settings, @NonNull Map<String, Float> searchableFields,
-			Map<String, Field> fields) {
-		this.querySettings = settings;
-		for (Entry<String, Float> fieldAndWeight : searchableFields.entrySet()) {
+	@Override
+	public void initialize(String name, Map<QueryBuildingSetting, String> settings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig) {
+		if (name != null) this.name = name;
+		querySettings.putAll(settings);
+
+		for (Entry<String, Float> fieldAndWeight : fieldWeights.entrySet()) {
 			String fieldName = fieldAndWeight.getKey().split("\\.")[0].replaceAll("[^a-zA-Z0-9-_]", "");
-			Field fieldConf = fields.get(fieldName);
-			if (fieldConf == null) {
-				log.warn("field with stripped name {} (from {}) not found. Ignoring.", fieldName, fieldAndWeight
-						.getKey());
-				continue;
-			}
-			if (fieldConf.getUsage().contains(FieldUsage.Search)) {
+			fieldConfig.getField(fieldName).ifPresent(fieldConf -> {
 				if (fieldConf.isVariantLevel()) {
 					variantFields.put(
 							FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + "." + fieldName + ".ngram",
@@ -65,13 +59,13 @@ public class NgramQueryBuilder implements ESQueryBuilder {
 							FieldConstants.SEARCH_DATA + "." + fieldName + ".ngram",
 							fieldAndWeight.getValue());
 				}
-			}
+			});
 		}
 
 	}
 
 	@Override
-	public MasterVariantQuery buildQuery(List<QueryStringTerm> searchTerms) {
+	public MasterVariantQuery createQuery(List<QueryStringTerm> searchTerms) {
 		StringBuilder searchPhrase = new StringBuilder();
 		// TODO: do a ngram tokenization on each term separately and search each
 		// "ngramed word" separately combined with boolean-should-clauses but
