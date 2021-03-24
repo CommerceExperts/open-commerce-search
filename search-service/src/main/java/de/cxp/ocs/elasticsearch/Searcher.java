@@ -40,9 +40,11 @@ import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 
 import de.cxp.ocs.config.Field;
+import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.FieldUsage;
+import de.cxp.ocs.config.InternalSearchConfiguration;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.config.SortOptionConfiguration;
 import de.cxp.ocs.elasticsearch.facets.FacetConfigurationApplyer;
@@ -85,6 +87,9 @@ public class Searcher {
 	@NonNull
 	private final MeterRegistry registry;
 
+	@NonNull
+	private final FieldConfigIndex fieldIndex;
+
 	private final UserQueryAnalyzer userQueryAnalyzer;
 
 	private final FacetConfigurationApplyer facetApplier;
@@ -109,10 +114,11 @@ public class Searcher {
 	private final Timer searchRequestTimer;
 	private final DistributionSummary summary;
 
-	public Searcher(RestHighLevelClient restClient, SearchConfiguration config, final MeterRegistry registry) {
+	public Searcher(RestHighLevelClient restClient, InternalSearchConfiguration internalConfig, final MeterRegistry registry) {
 		this.restClient = restClient;
-		this.config = config;
+		this.config = internalConfig.provided;
 		this.registry = registry;
+		this.fieldIndex = internalConfig.getFieldConfigIndex();
 
 		findTimer = getTimer("find", config.getIndexName());
 		sortTimer = getTimer("applySort", config.getIndexName());
@@ -125,14 +131,14 @@ public class Searcher {
 				.register(registry);
 
 		userQueryAnalyzer = new WhitespaceAnalyzer();
-		facetApplier = new FacetConfigurationApplyer(config);
-		filtersBuilder = new FiltersBuilder(config);
-		scoringCreator = new ScoringCreator(config);
+		facetApplier = new FacetConfigurationApplyer(internalConfig);
+		filtersBuilder = new FiltersBuilder(internalConfig);
+		scoringCreator = new ScoringCreator(internalConfig);
 		sortFields = fetchSortFields();
 		sortFieldConfig = config.getSortConfigs().stream().collect(Collectors.toMap(SortOptionConfiguration::getField, s -> s));
 		spellCorrector = initSpellCorrection();
 
-		queryBuilder = new ESQueryBuilderFactory(restClient, config).build();
+		queryBuilder = new ESQueryBuilderFactory(restClient, internalConfig).build();
 	}
 
 	private Timer getTimer(final String name, final String indexName) {
@@ -141,12 +147,12 @@ public class Searcher {
 	}
 
 	private SpellCorrector initSpellCorrection() {
-		Set<String> spellCorrectionFields = config.getIndexedFieldConfig().getFieldsByUsage(FieldUsage.Search).keySet();
+		Set<String> spellCorrectionFields = fieldIndex.getFieldsByUsage(FieldUsage.Search).keySet();
 		return new SpellCorrector(spellCorrectionFields.toArray(new String[spellCorrectionFields.size()]));
 	}
 
 	private Map<String, Field> fetchSortFields() {
-		Map<String, Field> tempSortFields = config.getIndexedFieldConfig().getFieldsByUsage(FieldUsage.Sort);
+		Map<String, Field> tempSortFields = fieldIndex.getFieldsByUsage(FieldUsage.Sort);
 		return Collections.unmodifiableMap(tempSortFields);
 	}
 
@@ -516,7 +522,7 @@ public class Searcher {
 		// TODO: Only for development purposes, remove in production to save
 		// performance!!
 		resultFields.entrySet().stream().sorted(
-				Comparator.comparing(entry -> config.getIndexedFieldConfig().getField(entry.getKey()), (f1, f2) -> {
+				Comparator.comparing(entry -> fieldIndex.getField(entry.getKey()), (f1, f2) -> {
 					if (!f1.isPresent()) {
 						return 1;
 					} else if (!f2.isPresent()) {

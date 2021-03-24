@@ -34,6 +34,7 @@ import com.google.common.cache.CacheBuilder;
 import de.cxp.ocs.api.searcher.SearchService;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.config.InternalSearchConfiguration;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.FieldConfigFetcher;
@@ -65,7 +66,7 @@ public class SearchController implements SearchService {
 	private MeterRegistry registry;
 
 
-	private final Map<String, SearchConfiguration> searchConfigs = new HashMap<>();
+	private final Map<String, InternalSearchConfiguration> searchConfigs = new HashMap<>();
 
 	private final Cache<String, Searcher> searchClientCache = CacheBuilder.newBuilder()
 			.expireAfterAccess(10, TimeUnit.MINUTES)
@@ -80,7 +81,7 @@ public class SearchController implements SearchService {
 	public ResponseEntity<HttpStatus> flushConfig(@PathVariable("tenant") String tenant) {
 		HttpStatus status;
 		brokenTenantsCache.invalidate(tenant);
-		SearchConfiguration oldConfig = searchConfigs.put(tenant, getConfigForTenant(tenant));
+		InternalSearchConfiguration oldConfig = searchConfigs.put(tenant, getConfigForTenant(tenant));
 		if (oldConfig == null) {
 			status = HttpStatus.CREATED;
 		}
@@ -105,8 +106,8 @@ public class SearchController implements SearchService {
 			throw latestTenantEx;
 		}
 
-		SearchConfiguration searchConfig = searchConfigs.computeIfAbsent(tenant, this::getConfigForTenant);
-		log.debug("Using index {} for tenant {}", searchConfig.getIndexName(), tenant);
+		InternalSearchConfiguration searchConfig = searchConfigs.computeIfAbsent(tenant, this::getConfigForTenant);
+		log.debug("Using index {} for tenant {}", searchConfig.provided.getIndexName(), tenant);
 
 		final InternalSearchParams parameters = new InternalSearchParams();
 		parameters.userQuery = searchQuery.q;
@@ -114,9 +115,9 @@ public class SearchController implements SearchService {
 		parameters.offset = searchQuery.offset;
 		parameters.withFacets = searchQuery.withFacets;
 		if (searchQuery.sort != null) {
-			parameters.sortings = parseSortings(searchQuery.sort, searchConfig.getIndexedFieldConfig());
+			parameters.sortings = parseSortings(searchQuery.sort, searchConfig.getFieldConfigIndex());
 		}
-		parameters.filters = parseFilters(filters, searchConfig.getIndexedFieldConfig());
+		parameters.filters = parseFilters(filters, searchConfig.getFieldConfigIndex());
 
 		try {
 			final Searcher searcher = searchClientCache.get(tenant, () -> new Searcher(esBuilder.getRestHLClient(), searchConfig, registry));
@@ -161,28 +162,18 @@ public class SearchController implements SearchService {
 		return tenants.toArray(new String[tenants.size()]);
 	}
 
-	private SearchConfiguration getConfigForTenant(String tenant) {
-		SearchConfiguration mergedConfig = new SearchConfiguration();
-		
-		mergedConfig.setIndexName(searchConfigProvider.getTargetIndex(tenant).orElse(tenant));
-
-		searchConfigProvider.getFacetConfiguration(tenant).ifPresent(mergedConfig::setFacetConfiguration);
-		searchConfigProvider.getScoringConfiguration(tenant).ifPresent(mergedConfig::setScoring);
-
-		mergedConfig.getQueryConfigs().addAll(searchConfigProvider.getQueryConfiguration(tenant));
-		mergedConfig.getSortConfigs().addAll(searchConfigProvider.getSortConfigs(tenant));
+	private InternalSearchConfiguration getConfigForTenant(String tenant) {
+		SearchConfiguration searchConfig = searchConfigProvider.getTenantSearchConfiguration(tenant);
 		
 		FieldConfiguration fieldConfig;
 		try {
-			fieldConfig = new FieldConfigFetcher(esBuilder.getRestHLClient()).fetchConfig(mergedConfig.getIndexName());
+			fieldConfig = new FieldConfigFetcher(esBuilder.getRestHLClient()).fetchConfig(searchConfig.getIndexName());
 		}
 		catch (IOException e) {
-			log.error("couldn't fetch field configuration from index {}", mergedConfig.getIndexName());
+			log.error("couldn't fetch field configuration from index {}", searchConfig.getIndexName());
 			throw new UncheckedIOException(e);
 		}
-		mergedConfig.setIndexedFieldConfig(new FieldConfigIndex(fieldConfig));
-
-		return mergedConfig;
+		return new InternalSearchConfiguration(new FieldConfigIndex(fieldConfig), searchConfig);
 	}
 
 	@ExceptionHandler({ ElasticsearchStatusException.class })

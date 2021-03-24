@@ -12,10 +12,10 @@ import org.elasticsearch.client.RestHighLevelClient;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldUsage;
+import de.cxp.ocs.config.InternalSearchConfiguration;
 import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.config.QueryConfiguration;
 import de.cxp.ocs.config.QueryConfiguration.QueryCondition;
-import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.elasticsearch.query.ESQueryBuilder;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueryBuilder.BuilderWithCondition;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueryBuilder.ComposedPredicate;
@@ -33,22 +33,21 @@ import lombok.extern.slf4j.Slf4j;
 public class ESQueryBuilderFactory {
 
 	@NonNull
-	private final RestHighLevelClient	restClient;
+	private final RestHighLevelClient			restClient;
 	@NonNull
-	private final String				indexName;
+	private final String						indexName;
 	@NonNull
-	private final SearchConfiguration	config;
+	private final InternalSearchConfiguration	config;
 
 	private List<QueryConfiguration> queryConfigs;
 
 	private Map<String, QueryConfiguration> queryConfigIndex = new HashMap<>();
 
-
-	public ESQueryBuilderFactory(RestHighLevelClient restClient, SearchConfiguration config) {
+	public ESQueryBuilderFactory(RestHighLevelClient restClient, InternalSearchConfiguration config) {
 		this.restClient = restClient;
-		this.indexName = config.getIndexName();
+		this.indexName = config.provided.getIndexName();
 		this.config = config;
-		this.queryConfigs = config.getQueryConfigs();
+		this.queryConfigs = config.provided.getQueryConfigs();
 		this.queryConfigs.forEach(qc -> queryConfigIndex.put(qc.getName(), qc));
 	}
 
@@ -62,7 +61,7 @@ public class ESQueryBuilderFactory {
 	}
 
 	public ConditionalQueryBuilder build() {
-		queryConfigs = config.getQueryConfigs();
+		queryConfigs = config.provided.getQueryConfigs();
 		if (queryConfigs == null || queryConfigs.size() == 0) {
 			return new ConditionalQueryBuilder(new DefaultQueryBuilder());
 		}
@@ -124,7 +123,7 @@ public class ESQueryBuilderFactory {
 				return new NgramQueryBuilder(
 						queryConf.getSettings(),
 						loadFields(queryConf.getWeightedFields()),
-						config.getIndexedFieldConfig().getFieldsByUsage(FieldUsage.Search));
+						config.getFieldConfigIndex().getFieldsByUsage(FieldUsage.Search));
 			case DefaultQuery:
 			default:
 				return new DefaultQueryBuilder();
@@ -133,7 +132,7 @@ public class ESQueryBuilderFactory {
 
 	private Map<String, Float> loadFields(Map<String, Float> weightedFields) {
 		Map<String, Float> validatedFields = new HashMap<>();
-		FieldConfigIndex fieldConfig = config.getIndexedFieldConfig();
+		FieldConfigIndex fieldConfig = config.getFieldConfigIndex();
 		weightedFields.forEach((fieldNamePattern, weight) -> {
 			if (isSearchableField(fieldConfig, fieldNamePattern)) {
 				validatedFields.put(fieldNamePattern, weight);

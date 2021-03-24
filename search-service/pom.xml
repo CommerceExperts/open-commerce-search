@@ -48,7 +48,7 @@
 			<groupId>de.cxp.ocs</groupId>
 			<artifactId>ocs-plugin-spi</artifactId>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-config</artifactId>
@@ -168,8 +168,9 @@
 			</dependencies>
 		</profile>
 	</profiles>
-	
-	<!-- copy repos from parent, which is necessary otherwise older versions of parent won't be found during public build -->
+
+	<!-- copy repos from parent, which is necessary otherwise older versions 
+		of parent won't be found during public build -->
 	<repositories>
 		<repository>
 			<id>cxp-public-releases</id>

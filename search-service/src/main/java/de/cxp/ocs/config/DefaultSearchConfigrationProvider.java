@@ -17,13 +17,27 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 	@NonNull
 	private ApplicationProperties properties;
 
+
 	@Override
+	public SearchConfiguration getTenantSearchConfiguration(String tenant) {
+		SearchConfiguration mergedConfig = new SearchConfiguration();
+
+		mergedConfig.setIndexName(getTargetIndex(tenant).orElse(tenant));
+
+		getFacetConfiguration(tenant).ifPresent(mergedConfig::setFacetConfiguration);
+		getScoringConfiguration(tenant).ifPresent(mergedConfig::setScoring);
+
+		mergedConfig.getQueryConfigs().addAll(getQueryConfiguration(tenant));
+		mergedConfig.getSortConfigs().addAll(getSortConfigs(tenant));
+
+		return mergedConfig;
+	}
+
 	public Optional<String> getTargetIndex(String tenant) {
 		return Optional.ofNullable(properties.getTenantConfig()
 				.getOrDefault(tenant, properties.getDefaultTenantConfig()).getIndexName());
 	}
 
-	@Override
 	public Optional<ScoringConfiguration> getScoringConfiguration(String tenant) {
 		TenantSearchConfiguration tenantConfig = properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
 		if (tenantConfig.disableScorings) {
@@ -32,7 +46,6 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 		return Optional.ofNullable(tenantConfig.getScoringConfiguration());
 	}
 
-	@Override
 	public Optional<FacetConfiguration> getFacetConfiguration(String tenant) {
 		TenantSearchConfiguration tenantConfig = properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
 		if (tenantConfig.disableFacets) {
@@ -41,7 +54,6 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 		return Optional.ofNullable(tenantConfig.getFacetConfiguration());
 	}
 
-	@Override
 	public List<QueryConfiguration> getQueryConfiguration(String tenant) {
 		TenantSearchConfiguration tenantConfig = properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
 		if (tenantConfig.disableQueryConfig) {
@@ -50,7 +62,6 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 		return new ArrayList<>(tenantConfig.getQueryConfiguration().values());
 	}
 
-	@Override
 	public List<SortOptionConfiguration> getSortConfigs(String tenant) {
 		TenantSearchConfiguration tenantConfig = properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
 		if (tenantConfig.disableSortingConfig) {
