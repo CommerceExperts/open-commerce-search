@@ -29,6 +29,7 @@ public class ElasticsearchIndexerTest {
 	ElasticsearchIndexer underTest = new ElasticsearchIndexer(
 			new FieldConfigIndex(getIndexConf().getFieldConfiguration()),
 			mockedIndexClient,
+			Collections.emptyList(),
 			Collections.emptyList());
 
 	@BeforeEach

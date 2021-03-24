@@ -23,6 +23,7 @@ import de.cxp.ocs.preprocessor.impl.SkipDocumentDataProcessor;
 import de.cxp.ocs.preprocessor.impl.SplitValueDataProcessor;
 import de.cxp.ocs.preprocessor.impl.WordSplitterDataProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
+import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -34,6 +35,8 @@ public class IndexerFactory {
 	private final RestHighLevelClient elasticsearchClient;
 
 	private final Map<String, Supplier<? extends DocumentPreProcessor>> docPreProcessorSuppliers;
+
+	private final Map<String, Supplier<? extends DocumentPostProcessor>> indexableItemProcessorSuppliers;
 
 	public IndexerFactory(RestHighLevelClient elasticsearchClient, PluginManager pm) {
 		this.elasticsearchClient = elasticsearchClient;
@@ -50,22 +53,36 @@ public class IndexerFactory {
 		docPreProcessorRegistry.register(WordSplitterDataProcessor.class, WordSplitterDataProcessor::new);
 		pm.loadAll(DocumentPreProcessor.class).forEach(c -> docPreProcessorRegistry.register(c));
 		docPreProcessorSuppliers = docPreProcessorRegistry.getExtensionSuppliers();
+
+		ExtensionSupplierRegistry<DocumentPostProcessor> indexableItemProcessor = new ExtensionSupplierRegistry<DocumentPostProcessor>();
+		pm.loadAll(DocumentPostProcessor.class).forEach(c -> indexableItemProcessor.register(c));
+		indexableItemProcessorSuppliers = indexableItemProcessor.getExtensionSuppliers();
 	}
 
 	public AbstractIndexer create(IndexConfiguration indexConfiguration) {
-		List<DocumentPreProcessor> dataProcessors = new ArrayList<>();
+		List<DocumentPreProcessor> preProcessors = new ArrayList<>();
+		List<DocumentPostProcessor> postProcessors = new ArrayList<>();
 
 		Map<String, Map<String, String>> dataProcessorsConfig = indexConfiguration.getDataProcessorConfiguration().getConfiguration();
 		FieldConfigIndex fieldConfigIndex = new FieldConfigIndex(indexConfiguration.getFieldConfiguration());
 
 		for (String processorName : indexConfiguration.getDataProcessorConfiguration().getProcessors()) {
-			Supplier<? extends DocumentPreProcessor> supplier = docPreProcessorSuppliers.get(processorName);
-			DocumentPreProcessor processor = supplier.get();
-			processor.initialize(fieldConfigIndex, dataProcessorsConfig.get(processor.getClass().getSimpleName()));
-			dataProcessors.add(processor);
+			Supplier<? extends DocumentPreProcessor> preProcessorSupplier = docPreProcessorSuppliers.get(processorName);
+			if (preProcessorSupplier != null) {
+				DocumentPreProcessor processor = preProcessorSupplier.get();
+				processor.initialize(fieldConfigIndex, dataProcessorsConfig.get(processor.getClass().getSimpleName()));
+				preProcessors.add(processor);
+			}
+			else {
+				Supplier<? extends DocumentPostProcessor> postProcessorSupplier = indexableItemProcessorSuppliers.get(processorName);
+				if (postProcessorSupplier != null) {
+					DocumentPostProcessor postProcessor = postProcessorSupplier.get();
+					postProcessor.initialize(fieldConfigIndex, dataProcessorsConfig.get(postProcessor.getClass().getSimpleName()));
+				}
+			}
 		}
 
-		return new ElasticsearchIndexer(fieldConfigIndex, elasticsearchClient, dataProcessors);
+		return new ElasticsearchIndexer(fieldConfigIndex, elasticsearchClient, preProcessors, postProcessors);
 	}
 
 }

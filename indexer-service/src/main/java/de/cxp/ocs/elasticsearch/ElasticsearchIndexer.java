@@ -23,6 +23,7 @@ import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.indexer.AbstractIndexer;
 import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
+import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import fr.pilato.elasticsearch.tools.ElasticsearchBeyonder;
 import fr.pilato.elasticsearch.tools.SettingsFinder.Defaults;
 import lombok.extern.slf4j.Slf4j;
@@ -37,16 +38,24 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	private final RestHighLevelClient		restClient;
 	private final ElasticsearchIndexClient indexClient;
 
-	public ElasticsearchIndexer(FieldConfigIndex fieldConfAccess, RestHighLevelClient restClient, List<DocumentPreProcessor> dataProcessors) {
-		super(dataProcessors, fieldConfAccess);
+	public ElasticsearchIndexer(
+			FieldConfigIndex fieldConfAccess,
+			RestHighLevelClient restClient,
+			List<DocumentPreProcessor> preProcessors,
+			List<DocumentPostProcessor> postProcessors) {
+		super(preProcessors, postProcessors, fieldConfAccess);
 		this.restClient = restClient;
 		indexClient = new ElasticsearchIndexClient(restClient);
 	}
 
-	public ElasticsearchIndexer(FieldConfigIndex fieldConfAccess, ElasticsearchIndexClient mockedIndexClient, List<DocumentPreProcessor> dataProcessors) {
-		super(dataProcessors, fieldConfAccess);
+	ElasticsearchIndexer(
+			FieldConfigIndex fieldConfAccess,
+			ElasticsearchIndexClient indexClient,
+			List<DocumentPreProcessor> dataProcessors,
+			List<DocumentPostProcessor> postProcessors) {
+		super(dataProcessors, postProcessors, fieldConfAccess);
 		this.restClient = null;
-		indexClient = mockedIndexClient;
+		this.indexClient = indexClient;
 	}
 
 	@Override

@@ -1,5 +1,7 @@
 package de.cxp.ocs.indexer;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
 
@@ -13,6 +15,8 @@ import de.cxp.ocs.indexer.model.VariantItem;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
+import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -22,16 +26,23 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class IndexItemConverter {
 
-	private FieldConfigIndex fieldConfigIndex;
+	private final FieldConfigIndex					fieldConfigIndex;
+	private final List<DocumentPostProcessor>	postProcessors;
+
+	public IndexItemConverter(FieldConfigIndex fieldConfigIndex) {
+		this(fieldConfigIndex, Collections.emptyList());
+	}
 
 	/**
 	 * Constructor of the converter that prepares the given field configurations
 	 * for converting Documents into {@link IndexableItem}.
 	 * 
 	 * @param fieldConfiguration
+	 * @param postProcessors
 	 */
-	public IndexItemConverter(FieldConfigIndex fieldConfigIndex) {
+	public IndexItemConverter(FieldConfigIndex fieldConfigIndex, @NonNull List<DocumentPostProcessor> postProcessors) {
 		this.fieldConfigIndex = fieldConfigIndex;
+		this.postProcessors = postProcessors;
 	}
 
 	/**
@@ -42,7 +53,6 @@ public class IndexItemConverter {
 	 * @return
 	 */
 	public IndexableItem toIndexableItem(Document doc) {
-		// TODO: validate document (e.g. require IDs etc.)
 		IndexableItem indexableItem;
 		if (doc instanceof Product) {
 			indexableItem = toMasterVariantItem((Product) doc);
@@ -52,6 +62,10 @@ public class IndexItemConverter {
 		}
 
 		extractSourceValues(doc, indexableItem);
+
+		for (DocumentPostProcessor postProcessor : postProcessors) {
+			postProcessor.process(doc, indexableItem, fieldConfigIndex);
+		}
 
 		return indexableItem;
 	}

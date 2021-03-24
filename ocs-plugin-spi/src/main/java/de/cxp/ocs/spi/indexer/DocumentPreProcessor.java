@@ -7,11 +7,10 @@ import de.cxp.ocs.model.index.Document;
 
 /**
  * {@link DocumentPreProcessor} implementations can be used to alter product
- * data
- * before they get indexed into the search engine. Several implementations can
- * be
- * configured to run one after another, where each processor get's the
- * manipulated record value of the former processor.
+ * data before they get transformed into
+ * {@link de.cxp.ocs.indexer.model.IndexableItem}s.
+ * Several implementations can be configured to run one after another, where
+ * each processor get's the manipulated record value of the former processor.
  * 
  * @author hjk, rb
  */
