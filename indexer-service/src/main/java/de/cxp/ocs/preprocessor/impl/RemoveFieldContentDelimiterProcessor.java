@@ -3,8 +3,8 @@ package de.cxp.ocs.preprocessor.impl;
 import java.util.Map;
 
 import de.cxp.ocs.config.FieldConfigAccess;
-import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.model.index.Document;
+import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor

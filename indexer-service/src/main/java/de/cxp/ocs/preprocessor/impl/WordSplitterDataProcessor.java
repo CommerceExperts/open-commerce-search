@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 import de.cxp.ocs.config.FieldConfigAccess;
-import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.model.index.Document;
+import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import de.danielnaber.jwordsplitter.AbstractWordSplitter;
 import de.danielnaber.jwordsplitter.GermanWordSplitter;
 import lombok.NoArgsConstructor;

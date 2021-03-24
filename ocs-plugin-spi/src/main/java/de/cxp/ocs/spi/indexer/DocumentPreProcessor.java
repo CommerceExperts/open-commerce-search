@@ -1,4 +1,4 @@
-package de.cxp.ocs.indexer;
+package de.cxp.ocs.spi.indexer;
 
 import java.util.Map;
 

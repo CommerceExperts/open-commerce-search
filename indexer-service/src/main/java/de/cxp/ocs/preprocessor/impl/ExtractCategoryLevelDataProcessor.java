@@ -10,10 +10,10 @@ import java.util.Optional;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigAccess;
-import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.preprocessor.util.CategorySearchData;
+import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import de.cxp.ocs.util.OnceInAWhileRunner;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

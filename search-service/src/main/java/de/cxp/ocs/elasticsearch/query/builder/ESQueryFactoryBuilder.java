@@ -23,6 +23,7 @@ import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.ConditionalQuer
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.PatternCondition;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.TermCountCondition;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
+import de.cxp.ocs.plugin.ExtensionSupplierRegistry;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +46,7 @@ public class ESQueryFactoryBuilder {
 
 	private Map<String, QueryConfiguration> queryConfigIndex = new HashMap<>();
 
-	private Map<String, Supplier<? extends ESQueryFactory>> knownQueryFactories = new HashMap<>();
+	private final Map<String, Supplier<? extends ESQueryFactory>> knownQueryFactories;
 
 	public ESQueryFactoryBuilder(RestHighLevelClient restClient, InternalSearchConfiguration config, List<ESQueryFactory> additionalQueryFactories) {
 		this.restClient = restClient;
@@ -54,40 +55,13 @@ public class ESQueryFactoryBuilder {
 		this.queryConfigs = config.provided.getQueryConfigs();
 		this.queryConfigs.forEach(qc -> queryConfigIndex.put(qc.getName(), qc));
 		
-		registerESQueryFactory(PredictionQueryFactory.class, () -> new PredictionQueryFactory(new QueryPredictor(restClient, indexName)));
-		registerESQueryFactory(ConfigurableQueryFactory.class, ConfigurableQueryFactory::new);
-		registerESQueryFactory(NgramQueryFactory.class, NgramQueryFactory::new);
-		registerESQueryFactory(DefaultQueryFactory.class, DefaultQueryFactory::new);
-		additionalQueryFactories.forEach(this::registerCustomESQueryFactory);
-	}
-
-	@SuppressWarnings("unchecked")
-	private <F extends ESQueryFactory> void registerCustomESQueryFactory(F factory) {
-		Class<F> clazz = (Class<F>) factory.getClass();
-		registerESQueryFactory(clazz, () -> {
-			try {
-				return clazz.newInstance();
-			}
-			catch (InstantiationException | IllegalAccessException e) {
-				throw new IllegalStateException("Custom ESQueryFactory " + clazz + " misses a required default construtor", e);
-			}
-		});
-	}
-
-	private <F extends ESQueryFactory> void registerESQueryFactory(Class<F> clazz, Supplier<F> supplier) {
-		String queryName = clazz.getSimpleName().replaceFirst("Factory", "");
-		if (knownQueryFactories.put(queryName, supplier) != null) {
-			log.warn("the simple query name {} from the factory class {} was already registered and overwritten!",
-					queryName, clazz.getCanonicalName());
-		}
-		if (knownQueryFactories.put(clazz.getSimpleName(), supplier) != null) {
-			log.warn("the simple class name {} from the factory class {} was already registered and overwritten!",
-					clazz.getSimpleName(), clazz.getCanonicalName());
-		}
-		if (knownQueryFactories.put(clazz.getCanonicalName(), supplier) != null) {
-			log.warn("the ESQueryFactory class {} was already registered and overwritten!",
-					clazz.getCanonicalName());
-		}
+		ExtensionSupplierRegistry<ESQueryFactory> esQueryFactoryRegistry = new ExtensionSupplierRegistry<ESQueryFactory>();
+		esQueryFactoryRegistry.register(PredictionQueryFactory.class, () -> new PredictionQueryFactory(new QueryPredictor(restClient, indexName)));
+		esQueryFactoryRegistry.register(ConfigurableQueryFactory.class, ConfigurableQueryFactory::new);
+		esQueryFactoryRegistry.register(NgramQueryFactory.class, NgramQueryFactory::new);
+		esQueryFactoryRegistry.register(DefaultQueryFactory.class, DefaultQueryFactory::new);
+		additionalQueryFactories.forEach(esQueryFactoryRegistry::register);
+		knownQueryFactories = esQueryFactoryRegistry.getExtensionSuppliers();
 	}
 
 	public ConditionalQueries build() {

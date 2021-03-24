@@ -15,6 +15,7 @@ import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.model.index.BulkImportData;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.preprocessor.CombiFieldBuilder;
+import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;

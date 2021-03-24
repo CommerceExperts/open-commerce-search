@@ -10,8 +10,8 @@ import java.util.Map;
 
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldUsage;
-import de.cxp.ocs.indexer.DocumentPreProcessor;
 import de.cxp.ocs.model.index.Document;
+import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import de.cxp.ocs.util.OnceInAWhileRunner;
 import de.cxp.ocs.util.Util;
 import lombok.NoArgsConstructor;
