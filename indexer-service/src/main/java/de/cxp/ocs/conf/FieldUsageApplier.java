@@ -193,6 +193,13 @@ public class FieldUsageApplier {
 	 * For fields that should be indexed on both levels, facets will only be
 	 * indexed on variant level to avoid conflicts during facet creation.
 	 * </p>
+	 * 
+	 * @param record
+	 *        where the facet value should be put
+	 * @param field
+	 *        field configuration of the according field
+	 * @param value
+	 *        value to be applied to the record
 	 */
 	public static void handleFacetField(final DataItem record, final Field field, Object value) {
 		if (isEmpty(value) || field.isBothLevel() && record instanceof MasterItem) {

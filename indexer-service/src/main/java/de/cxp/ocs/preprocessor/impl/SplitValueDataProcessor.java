@@ -17,9 +17,10 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link DocumentPreProcessor} implementation which splits a field value on a regular
- * expression and adds the splitted values into new fields. Will be auto
- * configured and can be further configuration like described below:
+ * {@link de.cxp.ocs.spi.indexer.DocumentPreProcessor} implementation which
+ * splits a field value on a regular expression and adds the splitted values
+ * into new fields. Will be auto configured and can be further configuration
+ * like described below:
  * 
  * <pre>
  *  data-processor-configuration: 

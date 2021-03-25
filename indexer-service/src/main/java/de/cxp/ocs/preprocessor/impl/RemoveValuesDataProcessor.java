@@ -22,9 +22,9 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * {@link DocumentPreProcessor} implementation which removes values from a fields value
- * based on a regular expression. Will be auto configured and can be further
- * configuration like described below:
+ * {@link de.cxp.ocs.spi.indexer.DocumentPreProcessor} implementation which
+ * removes values from a fields value based on a regular expression. Will be
+ * auto configured and can be further configuration like described below:
  * 
  * <pre>
  *  data-processor-configuration: 

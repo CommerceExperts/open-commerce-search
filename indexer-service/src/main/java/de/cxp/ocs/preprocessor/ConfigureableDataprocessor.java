@@ -9,7 +9,6 @@ import java.util.function.BiConsumer;
 import de.cxp.ocs.conf.IndexConfiguration;
 import de.cxp.ocs.conf.converter.ConfigureableField;
 import de.cxp.ocs.conf.converter.PatternConfiguration;
-import de.cxp.ocs.config.DataProcessorConfiguration;
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
@@ -18,15 +17,15 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Abstract class which handles reading and initializing {@link DataPreProcessor}
- * implementations which need further configuration by
- * {@link DataProcessorConfiguration}.
+ * Abstract class which handles reading and initializing
+ * {@link de.cxp.ocs.spi.indexer.DocumentPreProcessor}
+ * implementations which need further configuration.
  * 
  * @author hjk
  * 
  * @param <T>
  *        {@link ConfigureableField} implementation to which the
- *        {@link DataProcessorConfiguration} gets mapped.
+ *        {@link de.cxp.ocs.spi.indexer.DocumentPreProcessor} gets mapped.
  *
  */
 @Slf4j
@@ -66,12 +65,12 @@ public abstract class ConfigureableDataprocessor<T extends ConfigureableField> i
 	 * for every configured key.
 	 * 
 	 * @param key
-	 *        a key from the {@link DataProcessorConfiguration} for this data
+	 *        a key from the data processor configuration for this data
 	 *        processor.
 	 * @param value
 	 *        the value of that key.
 	 * @param confMap
-	 *        the complete {@link DataProcessorConfiguration} map.
+	 *        the complete data processor configuration map.
 	 * @return the parsed configurable field for the key.
 	 */
 	protected abstract T getPatternConfiguration(final String key, final String value,
@@ -113,8 +112,7 @@ public abstract class ConfigureableDataprocessor<T extends ConfigureableField> i
 	protected abstract BiConsumer<T, Object> getProcessConsumer(Document sourceDocument, boolean visible);
 
 	/**
-	 * Called on each {@link DataPreProcessor#process(Document, boolean)} run
-	 * after
+	 * Called at the end of each process(Document, boolean) run after
 	 * {@link ConfigureableDataprocessor#getProcessConsumer(Document, boolean)}
 	 * is has run for every {@link ConfigureableField}, to determine weather the
 	 * record should be visible or not.

@@ -37,8 +37,10 @@ public class IndexItemConverter {
 	 * Constructor of the converter that prepares the given field configurations
 	 * for converting Documents into {@link IndexableItem}.
 	 * 
-	 * @param fieldConfiguration
+	 * @param fieldConfigIndex
+	 *        access to the field configuration
 	 * @param postProcessors
+	 *        list of post processors
 	 */
 	public IndexItemConverter(FieldConfigIndex fieldConfigIndex, @NonNull List<DocumentPostProcessor> postProcessors) {
 		this.fieldConfigIndex = fieldConfigIndex;
@@ -50,7 +52,8 @@ public class IndexItemConverter {
 	 * for Elasticsearch.
 	 * 
 	 * @param doc
-	 * @return
+	 *        document to be transformed
+	 * @return indexable item
 	 */
 	public IndexableItem toIndexableItem(Document doc) {
 		IndexableItem indexableItem;
