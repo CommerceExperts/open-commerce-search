@@ -22,7 +22,6 @@ public interface FieldConfigAccess {
 	 * Get field configuration that should be used for the "Categories" property
 	 * of the documents.
 	 * 
-	 * @param usage
 	 * @return
 	 */
 	Optional<Field> getPrimaryCategoryField();
@@ -59,7 +58,7 @@ public interface FieldConfigAccess {
 	 * the search service), this function works similar to
 	 * {@code getField(String)}
 	 * 
-	 * @param fieldName
+	 * @param name
 	 * @return
 	 */
 	Set<Field> getMatchingFields(String name);

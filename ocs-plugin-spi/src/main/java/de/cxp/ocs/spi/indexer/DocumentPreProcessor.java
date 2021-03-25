@@ -21,7 +21,7 @@ public interface DocumentPreProcessor {
 	 * afterwards, this method will be used.
 	 * 
 	 * @param fieldConfig
-	 * @param a
+	 * @param preProcessorConfig
 	 *        custom string-to-string map that can be configured per
 	 *        DocumentPreProcessor.
 	 */
