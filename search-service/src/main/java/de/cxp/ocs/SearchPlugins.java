@@ -14,8 +14,10 @@ import de.cxp.ocs.spi.search.SearchConfigurationProvider;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
+@Slf4j
 public class SearchPlugins {
 
 	private SearchConfigurationProvider configurationProvider;
@@ -32,11 +34,18 @@ public class SearchPlugins {
 		if (clazz == null) return Optional.empty();
 		Supplier<? extends T> supplier = suppliers.get(clazz);
 		if (supplier == null) return Optional.empty();
-		T instance = supplier.get();
-		if (instance instanceof ConfigurableExtension) {
-			((ConfigurableExtension) instance).initialize(settings != null ? settings : Collections.emptyMap());
+
+		try {
+			T instance = supplier.get();
+			if (instance instanceof ConfigurableExtension) {
+				((ConfigurableExtension) instance).initialize(settings != null ? settings : Collections.emptyMap());
+			}
+			return Optional.of(instance);
 		}
-		return Optional.of(instance);
+		catch (Exception e) {
+			log.error("failed to initialize plugin {}", clazz, e);
+		}
+		return Optional.empty();
 	}
 
 	public static <T> List<T> initialize(List<String> classNames, Map<String, Supplier<? extends T>> suppliers, Map<String, Map<String, String>> pluginSettings) {
