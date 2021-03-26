@@ -99,9 +99,18 @@ public class ESQueryFactoryBuilder {
 	}
 
 	private ESQueryFactory createQueryFactory(QueryConfiguration queryConf) {
-		Supplier<? extends ESQueryFactory> queryFactorySupplier = knownQueryFactories.get(queryConf.getStrategy());
+		String strategyName = queryConf.getStrategy();
+		Supplier<? extends ESQueryFactory> queryFactorySupplier = knownQueryFactories.get(strategyName);
+
+		// Fallback: check if the strategy name + "Factory" is the actual class
+		// we're looking for
+		if (queryFactorySupplier == null && !strategyName.endsWith("Factory")) {
+			String factoryName = strategyName + "Factory";
+			queryFactorySupplier = knownQueryFactories.get(factoryName);
+		}
+
 		if (queryFactorySupplier == null) {
-			log.error("No ESQueryFactory implementation found for configured strategy {}", queryConf.getStrategy());
+			log.error("No ESQueryFactory implementation found for configured strategy {}", strategyName);
 			return null;
 		}
 		ESQueryFactory esQueryFactory = queryFactorySupplier.get();

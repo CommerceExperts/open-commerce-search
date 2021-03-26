@@ -27,11 +27,6 @@ public class ExtensionSupplierRegistry<E> {
 	}
 
 	public <T extends E> void register(Class<T> clazz, Supplier<T> supplier) {
-		String queryName = clazz.getSimpleName().replaceFirst("Factory", "");
-		if (extensionSuppliers.put(queryName, supplier) != null) {
-			log.warn("the simple query name {} from the class {} was already registered and overwritten!",
-					queryName, clazz.getCanonicalName());
-		}
 		if (extensionSuppliers.put(clazz.getSimpleName(), supplier) != null) {
 			log.warn("the simple class name {} from the class {} was already registered and overwritten!",
 					clazz.getSimpleName(), clazz.getCanonicalName());
