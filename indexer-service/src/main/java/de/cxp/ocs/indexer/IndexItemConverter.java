@@ -17,6 +17,7 @@ import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -24,27 +25,17 @@ import lombok.extern.slf4j.Slf4j;
  * {@link DataItem}
  */
 @Slf4j
+@RequiredArgsConstructor
 public class IndexItemConverter {
 
+	@NonNull
 	private final FieldConfigIndex					fieldConfigIndex;
+
+	@NonNull
 	private final List<DocumentPostProcessor>	postProcessors;
 
 	public IndexItemConverter(FieldConfigIndex fieldConfigIndex) {
 		this(fieldConfigIndex, Collections.emptyList());
-	}
-
-	/**
-	 * Constructor of the converter that prepares the given field configurations
-	 * for converting Documents into {@link IndexableItem}.
-	 * 
-	 * @param fieldConfigIndex
-	 *        access to the field configuration
-	 * @param postProcessors
-	 *        list of post processors
-	 */
-	public IndexItemConverter(FieldConfigIndex fieldConfigIndex, @NonNull List<DocumentPostProcessor> postProcessors) {
-		this.fieldConfigIndex = fieldConfigIndex;
-		this.postProcessors = postProcessors;
 	}
 
 	/**

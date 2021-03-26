@@ -99,8 +99,8 @@ public abstract class ConfigureableDataprocessor<T extends ConfigureableField> i
 	 * Returns a {@link BiConsumer} whose input is the configured
 	 * {@link ConfigureableField} with the value of the currently processed
 	 * record. The consumer gets called in the
-	 * {@link DataPreProcessor#process(Document, boolean)} method for each
-	 * configured key.
+	 * {@link de.cxp.ocs.spi.indexer.DocumentPreProcessor#process(Document, boolean)}
+	 * method for each configured key.
 	 * 
 	 * @param sourceDocument
 	 *        the record data
