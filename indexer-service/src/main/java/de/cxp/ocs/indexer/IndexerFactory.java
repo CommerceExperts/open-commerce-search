@@ -22,8 +22,8 @@ import de.cxp.ocs.preprocessor.impl.ReplacePatternInValuesDataProcessor;
 import de.cxp.ocs.preprocessor.impl.SkipDocumentDataProcessor;
 import de.cxp.ocs.preprocessor.impl.SplitValueDataProcessor;
 import de.cxp.ocs.preprocessor.impl.WordSplitterDataProcessor;
-import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
+import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -70,15 +70,14 @@ public class IndexerFactory {
 			Supplier<? extends DocumentPreProcessor> preProcessorSupplier = docPreProcessorSuppliers.get(processorName);
 			if (preProcessorSupplier != null) {
 				DocumentPreProcessor processor = preProcessorSupplier.get();
-				processor.initialize(fieldConfigIndex, dataProcessorsConfig.get(processor.getClass().getSimpleName()));
+				processor.initialize(fieldConfigIndex, dataProcessorsConfig.get(processor.getClass().getCanonicalName()));
 				preProcessors.add(processor);
 			}
-			else {
-				Supplier<? extends DocumentPostProcessor> postProcessorSupplier = indexableItemProcessorSuppliers.get(processorName);
-				if (postProcessorSupplier != null) {
-					DocumentPostProcessor postProcessor = postProcessorSupplier.get();
-					postProcessor.initialize(fieldConfigIndex, dataProcessorsConfig.get(postProcessor.getClass().getSimpleName()));
-				}
+
+			Supplier<? extends DocumentPostProcessor> postProcessorSupplier = indexableItemProcessorSuppliers.get(processorName);
+			if (postProcessorSupplier != null) {
+				DocumentPostProcessor postProcessor = postProcessorSupplier.get();
+				postProcessor.initialize(fieldConfigIndex, dataProcessorsConfig.get(postProcessor.getClass().getCanonicalName()));
 			}
 		}
 

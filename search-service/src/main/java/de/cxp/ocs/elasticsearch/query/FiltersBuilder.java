@@ -18,10 +18,10 @@ import org.elasticsearch.index.query.QueryBuilders;
 
 import com.google.common.base.Functions;
 
+import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
-import de.cxp.ocs.config.InternalSearchConfiguration;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilterAdapter;
@@ -42,11 +42,11 @@ public class FiltersBuilder {
 		filterAdapters.put(TermResultFilter.class, new TermResultFilterAdapter());
 	}
 
-	public FiltersBuilder(InternalSearchConfiguration searchConfig) {
-		for (FacetConfig facet : searchConfig.provided.getFacetConfiguration().getFacets()) {
+	public FiltersBuilder(SearchContext context) {
+		for (FacetConfig facet : context.config.getFacetConfiguration().getFacets()) {
 			if (facet.isMultiSelect() || facet.isShowUnselectedOptions()) postFilterFacets.add(facet.getSourceField());
 		}
-		indexedFieldConfig = searchConfig.getFieldConfigIndex();
+		indexedFieldConfig = context.getFieldConfigIndex();
 	}
 
 	public FilterContext buildFilterContext(List<InternalResultFilter> filters) {

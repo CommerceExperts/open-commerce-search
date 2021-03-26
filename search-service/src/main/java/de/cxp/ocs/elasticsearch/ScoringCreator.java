@@ -14,10 +14,10 @@ import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder.Fil
 import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
 
+import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldUsage;
-import de.cxp.ocs.config.InternalSearchConfiguration;
 import de.cxp.ocs.config.ScoreOption;
 import de.cxp.ocs.config.ScoreType;
 import de.cxp.ocs.config.ScoringConfiguration;
@@ -31,9 +31,9 @@ public class ScoringCreator {
 
 	private final Map<String, Field> scoreFields;
 
-	public ScoringCreator(InternalSearchConfiguration config) {
-		scoreConf = config.provided.getScoring();
-		Map<String, Field> tempScoreFields = config.getFieldConfigIndex().getFieldsByUsage(FieldUsage.Score);
+	public ScoringCreator(SearchContext context) {
+		scoreConf = context.config.getScoring();
+		Map<String, Field> tempScoreFields = context.getFieldConfigIndex().getFieldsByUsage(FieldUsage.Score);
 		scoreFields = Collections.unmodifiableMap(tempScoreFields);
 	}
 

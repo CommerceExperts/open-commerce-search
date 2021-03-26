@@ -39,13 +39,13 @@ import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 
+import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.SearchPlugins;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.FieldUsage;
-import de.cxp.ocs.config.InternalSearchConfiguration;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.config.SortOptionConfiguration;
 import de.cxp.ocs.elasticsearch.facets.FacetConfigurationApplyer;
@@ -118,11 +118,11 @@ public class Searcher {
 	private final Timer searchRequestTimer;
 	private final DistributionSummary summary;
 
-	public Searcher(RestHighLevelClient restClient, InternalSearchConfiguration internalConfig, final MeterRegistry registry, final SearchPlugins plugins) {
+	public Searcher(RestHighLevelClient restClient, SearchContext searchContext, final MeterRegistry registry, final SearchPlugins plugins) {
 		this.restClient = restClient;
-		this.config = internalConfig.provided;
+		this.config = searchContext.config;
 		this.registry = registry;
-		this.fieldIndex = internalConfig.getFieldConfigIndex();
+		this.fieldIndex = searchContext.getFieldConfigIndex();
 
 		findTimer = getTimer("find", config.getIndexName());
 		sortTimer = getTimer("applySort", config.getIndexName());
@@ -134,18 +134,21 @@ public class Searcher {
 		summary = DistributionSummary.builder("stagedSearches").tag("indexName", config.getIndexName())
 				.register(registry);
 
-		// TODO: pick a userQueryAnalyzers based on per-tenant configuration
-		userQueryAnalyzer = plugins.getUserQueryAnalyzers().orElseGet(WhitespaceAnalyzer::new);
-		facetApplier = new FacetConfigurationApplyer(internalConfig);
-		filtersBuilder = new FiltersBuilder(internalConfig);
-		scoringCreator = new ScoringCreator(internalConfig);
+		String queryAnalyzerClazz = config.getQueryProcessing().getUserQueryAnalyzer();
+		userQueryAnalyzer = SearchPlugins.initialize(queryAnalyzerClazz, plugins.getUserQueryAnalyzers(), config.getPluginConfiguration().get(queryAnalyzerClazz))
+				.orElseGet(WhitespaceAnalyzer::new);
+
+		facetApplier = new FacetConfigurationApplyer(searchContext);
+		filtersBuilder = new FiltersBuilder(searchContext);
+		scoringCreator = new ScoringCreator(searchContext);
 		sortFields = fetchSortFields();
 		sortFieldConfig = config.getSortConfigs().stream().collect(Collectors.toMap(SortOptionConfiguration::getField, s -> s));
 		spellCorrector = initSpellCorrection();
-		rescorers = new ArrayList(plugins.getRescorers());
+		rescorers = SearchPlugins.initialize(config.getRescorers(), plugins.getRescorers(), config.getPluginConfiguration());
 
-		queryBuilder = new ESQueryFactoryBuilder(restClient, internalConfig, plugins.getEsQueryFactories()).build();
+		queryBuilder = new ESQueryFactoryBuilder(restClient, searchContext, plugins.getEsQueryFactories()).build();
 	}
+
 
 	private Timer getTimer(final String name, final String indexName) {
 		return Timer.builder(name).tag("indexName", indexName).publishPercentiles(0.5, 0.8, 0.9, 0.95)

@@ -1,5 +1,9 @@
 package de.cxp.ocs;
 
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
+
 import org.elasticsearch.client.RestClientBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
@@ -11,6 +15,7 @@ import de.cxp.ocs.config.ApplicationProperties;
 import de.cxp.ocs.config.DefaultSearchConfigrationProvider;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.RestClientBuilderFactory;
+import de.cxp.ocs.plugin.ExtensionSupplierRegistry;
 import de.cxp.ocs.plugin.PluginManager;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import de.cxp.ocs.spi.search.SearchConfigurationProvider;
@@ -47,10 +52,16 @@ public class Application {
 		PluginManager pluginManager = new PluginManager(properties.getDisabledPlugins(), properties.getPreferedPlugins());
 		plugins.setConfigurationProvider(pluginManager.loadPrefered(SearchConfigurationProvider.class)
 				.orElseGet(DefaultSearchConfigrationProvider::new));
-		plugins.setEsQueryFactories(pluginManager.loadAll(ESQueryFactory.class));
-		plugins.setUserQueryAnalyzers(pluginManager.loadPrefered(UserQueryAnalyzer.class));
-		plugins.setUserQueryPreprocessors(pluginManager.loadAll(UserQueryPreprocessor.class));
+		plugins.setEsQueryFactories(extensionsAsSuppliers(pluginManager.loadAll(ESQueryFactory.class)));
+		plugins.setUserQueryAnalyzers(extensionsAsSuppliers(pluginManager.loadAll(UserQueryAnalyzer.class)));
+		plugins.setUserQueryPreprocessors(extensionsAsSuppliers(pluginManager.loadAll(UserQueryPreprocessor.class)));
 		return plugins;
+	}
+
+	private <T> Map<String, Supplier<? extends T>> extensionsAsSuppliers(List<T> instances) {
+		ExtensionSupplierRegistry<T> registry = new ExtensionSupplierRegistry<T>();
+		instances.forEach(registry::register);
+		return registry.getExtensionSuppliers();
 	}
 
 }

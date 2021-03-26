@@ -11,10 +11,10 @@ import java.util.function.Supplier;
 
 import org.elasticsearch.client.RestHighLevelClient;
 
+import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldUsage;
-import de.cxp.ocs.config.InternalSearchConfiguration;
 import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.config.QueryConfiguration;
 import de.cxp.ocs.config.QueryConfiguration.QueryCondition;
@@ -40,7 +40,7 @@ public class ESQueryFactoryBuilder {
 	@NonNull
 	private final String						indexName;
 	@NonNull
-	private final InternalSearchConfiguration	config;
+	private final SearchContext			context;
 
 	private List<QueryConfiguration> queryConfigs;
 
@@ -48,11 +48,11 @@ public class ESQueryFactoryBuilder {
 
 	private final Map<String, Supplier<? extends ESQueryFactory>> knownQueryFactories;
 
-	public ESQueryFactoryBuilder(RestHighLevelClient restClient, InternalSearchConfiguration config, List<ESQueryFactory> additionalQueryFactories) {
+	public ESQueryFactoryBuilder(RestHighLevelClient restClient, SearchContext context, Map<String, Supplier<? extends ESQueryFactory>> esQueryFactorySuppliers) {
 		this.restClient = restClient;
-		this.indexName = config.provided.getIndexName();
-		this.config = config;
-		this.queryConfigs = config.provided.getQueryConfigs();
+		this.indexName = context.config.getIndexName();
+		this.context = context;
+		this.queryConfigs = context.config.getQueryConfigs();
 		this.queryConfigs.forEach(qc -> queryConfigIndex.put(qc.getName(), qc));
 		
 		ExtensionSupplierRegistry<ESQueryFactory> esQueryFactoryRegistry = new ExtensionSupplierRegistry<ESQueryFactory>();
@@ -60,12 +60,12 @@ public class ESQueryFactoryBuilder {
 		esQueryFactoryRegistry.register(ConfigurableQueryFactory.class, ConfigurableQueryFactory::new);
 		esQueryFactoryRegistry.register(NgramQueryFactory.class, NgramQueryFactory::new);
 		esQueryFactoryRegistry.register(DefaultQueryFactory.class, DefaultQueryFactory::new);
-		additionalQueryFactories.forEach(esQueryFactoryRegistry::register);
 		knownQueryFactories = esQueryFactoryRegistry.getExtensionSuppliers();
+		knownQueryFactories.putAll(esQueryFactorySuppliers);
 	}
 
 	public ConditionalQueries build() {
-		queryConfigs = config.provided.getQueryConfigs();
+		queryConfigs = context.config.getQueryConfigs();
 		if (queryConfigs == null || queryConfigs.size() == 0) {
 			return new ConditionalQueries(new DefaultQueryFactory());
 		}
@@ -106,7 +106,7 @@ public class ESQueryFactoryBuilder {
 		}
 		ESQueryFactory esQueryFactory = queryFactorySupplier.get();
 		Map<String, Float> fieldWeights = loadFields(queryConf.getWeightedFields());
-		esQueryFactory.initialize(queryConf.getName(), queryConf.getSettings(), fieldWeights, config.getFieldConfigIndex());
+		esQueryFactory.initialize(queryConf.getName(), queryConf.getSettings(), fieldWeights, context.getFieldConfigIndex());
 
 		// Special case for PredictionQueryFactory.
 		// Not sure if this should be supported generally
@@ -129,7 +129,7 @@ public class ESQueryFactoryBuilder {
 
 	private Map<String, Float> loadFields(Map<String, Float> weightedFields) {
 		Map<String, Float> validatedFields = new HashMap<>();
-		FieldConfigIndex fieldConfig = config.getFieldConfigIndex();
+		FieldConfigIndex fieldConfig = context.getFieldConfigIndex();
 		weightedFields.forEach((fieldNamePattern, weight) -> {
 			if (isSearchableField(fieldConfig, fieldNamePattern)) {
 				validatedFields.put(fieldNamePattern, weight);

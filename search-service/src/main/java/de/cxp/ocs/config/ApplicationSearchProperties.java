@@ -40,15 +40,22 @@ public class ApplicationSearchProperties {
 	boolean disableSortingConfig = false;
 
 	@NestedConfigurationProperty
+	private QueryProcessingConfiguration queryProcessing = new QueryProcessingConfiguration();
+
+	@NestedConfigurationProperty
 	private FacetConfiguration facetConfiguration = new FacetConfiguration();
 
 	@NestedConfigurationProperty
 	private ScoringConfiguration scoringConfiguration = new ScoringConfiguration();
+
+	private List<String> rescorers = new ArrayList<>();
 
 	@NestedConfigurationProperty
 	private final Map<String, QueryConfiguration> queryConfiguration = new LinkedHashMap<>();
 
 	@NestedConfigurationProperty
 	private final List<SortOptionConfiguration> sortConfigs = new ArrayList<>();
+
+	private final Map<String, Map<String, String>> pluginConfiguration = new LinkedHashMap<>();
 
 }

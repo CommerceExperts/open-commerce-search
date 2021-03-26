@@ -1,7 +1,9 @@
 package de.cxp.ocs.config;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,6 +25,13 @@ public class SearchConfiguration {
 	 * @return
 	 */
 	private String indexName;
+
+	/**
+	 * Optional query processing configuration. If nothing special is defined,
+	 * the standard behavior will be used.
+	 */
+	@NonNull
+	private QueryProcessingConfiguration queryProcessing = new QueryProcessingConfiguration();
 
 	/**
 	 * <p>
@@ -54,6 +63,21 @@ public class SearchConfiguration {
 	private ScoringConfiguration scoring = new ScoringConfiguration();
 
 	/**
+	 * <p>
+	 * List of full canonical class names of the
+	 * {@link de.cxp.ocs.spi.search.RescorerProvider} that should activated
+	 * for the according tenant.
+	 * </p>
+	 * <p>
+	 * Use the 'pluginConfiguration' setting to add custom configuration for the
+	 * activated rescorers.
+	 * <p>
+	 * Per defaults it's empty, so no rescorers are used.
+	 * </p>
+	 */
+	private List<String> rescorers = new ArrayList<>();
+
+	/**
 	 * Get query relaxation chain. If empty, only the DefaultQueryBuilder will
 	 * be used.
 	 * 
@@ -78,4 +102,24 @@ public class SearchConfiguration {
 	 */
 	@NonNull
 	private final List<SortOptionConfiguration> sortConfigs = new ArrayList<>();
+
+	/**
+	 * <p>
+	 * Settings for the single possible customization classes, like rescorers,
+	 * query analyzers etc.
+	 * </p>
+	 * <p>
+	 * As a key the full canonical class name of the customization class is
+	 * expected.
+	 * </p>
+	 * <p>
+	 * The value is an optional string-to-string map with arbitrary settings for
+	 * the according customization class that will be passed to it with the
+	 * "initialize" method.
+	 * </p>
+	 * <p>
+	 * Check the java-doc of the according classes for more details.
+	 * </p>
+	 */
+	private final Map<String, Map<String, String>> pluginConfiguration = new LinkedHashMap<>();
 }

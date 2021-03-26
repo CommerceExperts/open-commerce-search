@@ -17,18 +17,25 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 	@NonNull
 	private ApplicationProperties properties;
 
-
 	@Override
 	public SearchConfiguration getTenantSearchConfiguration(String tenant) {
 		SearchConfiguration mergedConfig = new SearchConfiguration();
 
 		mergedConfig.setIndexName(getTargetIndex(tenant).orElse(tenant));
 
+		getQueryProcessing(tenant).ifPresent(mergedConfig::setQueryProcessing);
 		getFacetConfiguration(tenant).ifPresent(mergedConfig::setFacetConfiguration);
 		getScoringConfiguration(tenant).ifPresent(mergedConfig::setScoring);
 
 		mergedConfig.getQueryConfigs().addAll(getQueryConfiguration(tenant));
 		mergedConfig.getSortConfigs().addAll(getSortConfigs(tenant));
+
+		mergedConfig.getRescorers().addAll(properties.getTenantConfig()
+				.getOrDefault(tenant, properties.getDefaultTenantConfig())
+				.getRescorers());
+		mergedConfig.getPluginConfiguration().putAll(properties.getTenantConfig()
+				.getOrDefault(tenant, properties.getDefaultTenantConfig())
+				.getPluginConfiguration());
 
 		return mergedConfig;
 	}
@@ -36,6 +43,11 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 	public Optional<String> getTargetIndex(String tenant) {
 		return Optional.ofNullable(properties.getTenantConfig()
 				.getOrDefault(tenant, properties.getDefaultTenantConfig()).getIndexName());
+	}
+
+	public Optional<QueryProcessingConfiguration> getQueryProcessing(String tenant) {
+		return Optional.ofNullable(properties.getTenantConfig()
+				.getOrDefault(tenant, properties.getDefaultTenantConfig()).getQueryProcessing());
 	}
 
 	public Optional<ScoringConfiguration> getScoringConfiguration(String tenant) {
@@ -69,6 +81,7 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 		}
 		return tenantConfig.getSortConfigs();
 	}
+
 
 	@Override
 	public Set<String> getConfiguredTenants() {

@@ -22,11 +22,11 @@ import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.filter.Filter;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
 
+import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldType;
-import de.cxp.ocs.config.InternalSearchConfiguration;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.model.result.Facet;
@@ -83,8 +83,8 @@ public class FacetConfigurationApplyer {
 	@NonNull
 	private Set<String> excludeFields = Collections.emptySet();
 
-	public FacetConfigurationApplyer(InternalSearchConfiguration config) {
-		maxFacets = config.provided.getFacetConfiguration().getMaxFacets();
+	public FacetConfigurationApplyer(SearchContext context) {
+		maxFacets = context.config.getFacetConfiguration().getMaxFacets();
 
 		// I tried to do this whole method in a more generic way, but such code
 		// is less readable even if shorter
@@ -97,8 +97,8 @@ public class FacetConfigurationApplyer {
 		Map<String, FacetConfig> variantTermFacets = new HashMap<>();
 
 		// put facet configs into according maps
-		for (FacetConfig facetConfig : config.provided.getFacetConfiguration().getFacets()) {
-			Optional<Field> sourceField = config.getFieldConfigIndex().getField(facetConfig.getSourceField());
+		for (FacetConfig facetConfig : context.config.getFacetConfiguration().getFacets()) {
+			Optional<Field> sourceField = context.getFieldConfigIndex().getField(facetConfig.getSourceField());
 
 			if (!sourceField.isPresent()) {
 				log.warn("facet {} configured for field {}, but that field does not exist. Facet won't be created",
