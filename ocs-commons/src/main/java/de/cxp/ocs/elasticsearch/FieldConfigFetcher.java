@@ -1,9 +1,6 @@
 package de.cxp.ocs.elasticsearch;
 
-import static de.cxp.ocs.config.FieldConstants.NUMBER_FACET_DATA;
-import static de.cxp.ocs.config.FieldConstants.PATH_FACET_DATA;
-import static de.cxp.ocs.config.FieldConstants.TERM_FACET_DATA;
-import static de.cxp.ocs.config.FieldConstants.VARIANTS;
+import static de.cxp.ocs.config.FieldConstants.*;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -19,7 +16,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetMappingsRequest;
 import org.elasticsearch.client.indices.GetMappingsResponse;
-import org.elasticsearch.cluster.metadata.MappingMetaData;
+import org.elasticsearch.cluster.metadata.MappingMetadata;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.nested.Nested;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
@@ -45,7 +42,7 @@ public class FieldConfigFetcher {
 		GetMappingsRequest getMappingsRequest = new GetMappingsRequest();
 		getMappingsRequest.indices(searchIndex);
 		GetMappingsResponse mappingResponse = restHLClient.indices().getMapping(getMappingsRequest, RequestOptions.DEFAULT);
-		MappingMetaData mappingsData = mappingResponse.mappings().values().iterator().next();
+		MappingMetadata mappingsData = mappingResponse.mappings().values().iterator().next();
 
 		@SuppressWarnings("unchecked")
 		Map<String, Object> mappings = (Map<String, Object>) mappingsData.getSourceAsMap().get("properties");

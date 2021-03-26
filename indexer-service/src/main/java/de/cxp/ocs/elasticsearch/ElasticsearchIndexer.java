@@ -15,15 +15,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.cluster.metadata.AliasMetaData;
+import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.common.settings.Settings;
 
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.indexer.AbstractIndexer;
 import de.cxp.ocs.indexer.model.IndexableItem;
-import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
+import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import fr.pilato.elasticsearch.tools.ElasticsearchBeyonder;
 import fr.pilato.elasticsearch.tools.SettingsFinder.Defaults;
 import lombok.extern.slf4j.Slf4j;
@@ -65,7 +65,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 			return settings.map(s -> "-1".equals(s.get("index.refresh_interval"))).orElse(false);
 		}
 		else {
-			Map<String, Set<AliasMetaData>> aliases = indexClient.getAliases(INDEX_PREFIX + "*" + INDEX_DELIMITER + indexName + "*");
+			Map<String, Set<AliasMetadata>> aliases = indexClient.getAliases(INDEX_PREFIX + "*" + INDEX_DELIMITER + indexName + "*");
 			return (aliases.size() > 1 || (aliases.size() == 1 && aliases.values().iterator().next().isEmpty()));
 		}
 	}
@@ -126,7 +126,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	private String getNextIndexName(String indexName, String localizedIndexName) {
-		Map<String, Set<AliasMetaData>> aliases = indexClient.getAliases(indexName);
+		Map<String, Set<AliasMetadata>> aliases = indexClient.getAliases(indexName);
 		if (aliases.size() == 0) return getNumberedIndexName(localizedIndexName, 1);
 
 		String oldIndexName = aliases.keySet().iterator().next();
@@ -199,7 +199,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 			return false;
 		}
 
-		Map<String, Set<AliasMetaData>> currentAliasState = indexClient.getAliases(session.finalIndexName);
+		Map<String, Set<AliasMetadata>> currentAliasState = indexClient.getAliases(session.finalIndexName);
 
 		String oldIndexName = null;
 		if (currentAliasState != null && !currentAliasState.isEmpty()) {

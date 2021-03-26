@@ -32,7 +32,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.client.indices.CreateIndexRequest;
-import org.elasticsearch.cluster.metadata.AliasMetaData;
+import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
 
@@ -66,7 +66,7 @@ class ElasticsearchIndexClient {
 	 * @param indexNames
 	 * @return
 	 */
-	public Map<String, Set<AliasMetaData>> getAliases(String indexName) {
+	public Map<String, Set<AliasMetadata>> getAliases(String indexName) {
 		try {
 			GetAliasesRequest getAliasesRequest = new GetAliasesRequest().indices(indexName);
 			GetAliasesResponse response = highLevelClient
