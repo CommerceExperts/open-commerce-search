@@ -6,16 +6,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
 import de.cxp.ocs.spi.search.SearchConfigurationProvider;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class DefaultSearchConfigrationProvider implements SearchConfigurationProvider {
 
-	@Autowired
 	@NonNull
-	private ApplicationProperties properties;
+	private final ApplicationProperties properties;
 
 	@Override
 	public SearchConfiguration getTenantSearchConfiguration(String tenant) {

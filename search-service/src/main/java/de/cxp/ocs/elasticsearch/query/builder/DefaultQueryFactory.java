@@ -40,13 +40,15 @@ public class DefaultQueryFactory implements ESQueryFactory {
 		QueryStringQueryBuilder mainQuery = QueryBuilders
 				.queryStringQuery(ESQueryUtils.buildQueryString(searchTerms, " "))
 				.defaultField(FieldConstants.SEARCH_DATA + ".*")
-				.fields(fields)
 				.analyzer("standard")
 				.fuzziness(Fuzziness.AUTO)
 				.minimumShouldMatch("2<80%")
 				.tieBreaker(0.8f)
 				.type(searchTerms.size() == 1 ? Type.BEST_FIELDS : Type.CROSS_FIELDS)
 				.queryName(name);
+		if (fields != null) {
+			mainQuery.fields(fields);
+		}
 
 		QueryStringQueryBuilder variantQuery = QueryBuilders.queryStringQuery(ESQueryUtils.buildQueryString(searchTerms, " "))
 				.minimumShouldMatch("1")

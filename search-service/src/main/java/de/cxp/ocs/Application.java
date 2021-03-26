@@ -51,7 +51,7 @@ public class Application {
 		SearchPlugins plugins = new SearchPlugins();
 		PluginManager pluginManager = new PluginManager(properties.getDisabledPlugins(), properties.getPreferedPlugins());
 		plugins.setConfigurationProvider(pluginManager.loadPrefered(SearchConfigurationProvider.class)
-				.orElseGet(DefaultSearchConfigrationProvider::new));
+				.orElseGet(() -> new DefaultSearchConfigrationProvider(properties)));
 		plugins.setEsQueryFactories(extensionsAsSuppliers(pluginManager.loadAll(ESQueryFactory.class)));
 		plugins.setUserQueryAnalyzers(extensionsAsSuppliers(pluginManager.loadAll(UserQueryAnalyzer.class)));
 		plugins.setUserQueryPreprocessors(extensionsAsSuppliers(pluginManager.loadAll(UserQueryPreprocessor.class)));

@@ -118,7 +118,6 @@ public class SearchController implements SearchService {
 		parameters.withFacets = searchQuery.withFacets;
 
 		String userQuery = searchQuery.q;
-		// TODO: support a configured set of preprocessors per tenant
 		for (UserQueryPreprocessor preprocessor : searchContext.userQueryPreprocessors) {
 			userQuery = preprocessor.preProcess(userQuery);
 		}
@@ -184,7 +183,8 @@ public class SearchController implements SearchService {
 	private SearchContext loadContext(String tenant) {
 		SearchConfiguration searchConfig = plugins.getConfigurationProvider().getTenantSearchConfiguration(tenant);
 		FieldConfigIndex fieldConfigAccess = loadFieldConfiguration(tenant);
-		List<UserQueryPreprocessor> userQueryPreprocessors = SearchPlugins.initialize(searchConfig.getQueryProcessing().getUserQueryPreprocessors(),
+		List<UserQueryPreprocessor> userQueryPreprocessors = SearchPlugins.initialize(
+				searchConfig.getQueryProcessing().getUserQueryPreprocessors(),
 				plugins.getUserQueryPreprocessors(),
 				searchConfig.getPluginConfiguration());
 		return new SearchContext(fieldConfigAccess, searchConfig, userQueryPreprocessors);
