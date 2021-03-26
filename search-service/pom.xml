@@ -166,6 +166,30 @@
 				</dependency>
 			</dependencies>
 		</profile>
+		<profile>
+			<id>searchhub</id>
+			<dependencyManagement>
+				<dependencies>
+					<dependency>
+						<groupId>io.github.openfeign</groupId>
+						<artifactId>feign-core</artifactId>
+						<version>10.8</version>
+					</dependency>
+					<dependency>
+						<groupId>io.github.openfeign</groupId>
+						<artifactId>feign-okhttp</artifactId>
+						<version>10.8</version>
+					</dependency>
+				</dependencies>
+			</dependencyManagement>
+			<dependencies>
+				<dependency>
+					<groupId>io.searchhub</groupId>
+					<artifactId>ocs-smartquery-plugin</artifactId>
+					<version>1.2.0</version>
+				</dependency>
+			</dependencies>
+		</profile>
 	</profiles>
 
 	<!-- copy repos from parent, which is necessary otherwise older versions 
