@@ -6,12 +6,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>suggest-service-parent</artifactId>
-		<version>0.10.1</version>
+		<version>0.12.1</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>ocs-suggest-data-provider</artifactId>
-	<version>0.2.1</version>
+	<version>0.2.2</version>
 	<packaging>jar</packaging>
 	<name>OCS Suggest Data Provider</name>
 
@@ -19,7 +19,6 @@
 		<dependency>
 			<groupId>de.cxp.ocs</groupId>
 			<artifactId>smartsuggest-lib</artifactId>
-			<version>${smartsuggest-lib.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>de.cxp.ocs</groupId>

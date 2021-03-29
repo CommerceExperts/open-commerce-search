@@ -7,12 +7,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.12.0</version>
+		<version>0.12.1</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<artifactId>indexer-service</artifactId>
-	<version>0.7.0</version>
+	<version>0.7.1</version>
 	<packaging>jar</packaging>
 
 	<!-- Import dependency management from Spring Boot -->
