@@ -70,8 +70,7 @@ public class FacetConfigurationApplyer {
 		final static FacetCreatorClassifier	variantRangeFacet		= new FacetCreatorClassifier(true, FacetType.range.name());
 		final static FacetCreatorClassifier	variantTermFacet		= new FacetCreatorClassifier(true, FacetType.term.name());
 
-		@NonNull
-		boolean onVariantLevel;
+		final boolean onVariantLevel;
 
 		@NonNull
 		// not using the FacetType enum here to support custom facet types
@@ -405,7 +404,6 @@ public class FacetConfigurationApplyer {
 	}
 
 	private List<Facet> facetsFromUnfilteredAggregations(Aggregations aggregations, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
-		int actualMaxFacets = maxFacets;
 		List<Facet> facets = new ArrayList<>();
 		Set<String> duplicateFacets = new HashSet<>();
 

@@ -30,7 +30,7 @@ public class AsciiFoldingDataProcessor implements DocumentPreProcessor {
 
 	@Override
 	public void initialize(FieldConfigAccess fieldConfig, Map<String, String> preProcessorConfig) {
-		searchableFields = new ArrayList(fieldConfig.getFieldsByUsage(FieldUsage.Search).keySet());
+		searchableFields = new ArrayList<>(fieldConfig.getFieldsByUsage(FieldUsage.Search).keySet());
 	}
 
 	@Override

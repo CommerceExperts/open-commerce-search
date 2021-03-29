@@ -24,13 +24,9 @@ import de.cxp.ocs.preprocessor.impl.SplitValueDataProcessor;
 import de.cxp.ocs.preprocessor.impl.WordSplitterDataProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Component
 public class IndexerFactory {
-
-	private static final String dataPreProcessorImplPackage = "de.cxp.ocs.preprocessor.impl.";
 
 	private final RestHighLevelClient elasticsearchClient;
 

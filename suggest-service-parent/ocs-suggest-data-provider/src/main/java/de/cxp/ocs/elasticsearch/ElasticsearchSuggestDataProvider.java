@@ -191,7 +191,8 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 		return fetchTermsFromAggregation(indexName, field, fieldPrefix + "." + field.getName(), dedupFilter);
 	}
 
-	private Collection<SuggestRecord> fetchTermsFromAggregation(String indexName, Field field, String aggFieldName, Optional<BloomFilter<CharSequence>> dedupFilter,
+	@SafeVarargs
+	private final Collection<SuggestRecord> fetchTermsFromAggregation(String indexName, Field field, String aggFieldName, Optional<BloomFilter<CharSequence>> dedupFilter,
 			Supplier<AggregationBuilder>... superAggSupplier) throws IOException {
 		AggregationBuilder[] allAggs = new AggregationBuilder[superAggSupplier.length + 1];
 		String[] allAggNames = new String[allAggs.length];

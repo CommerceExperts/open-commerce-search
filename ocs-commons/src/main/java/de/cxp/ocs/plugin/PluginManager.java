@@ -45,6 +45,7 @@ public class PluginManager {
 		return loadedServices;
 	}
 
+	@SuppressWarnings("unchecked")
 	public <T> Optional<T> loadPrefered(Class<T> serviceInterface) {
 		T preferedService = null;
 		String preferredServiceClass = preferredServies.get(serviceInterface.getCanonicalName());
@@ -55,6 +56,7 @@ public class PluginManager {
 				// loader issues, this is just optional - below we try to
 				// find that class as well using the serviceLoader
 				Class<?> loadedServiceImpl = this.getClass().getClassLoader().loadClass(preferredServiceClass);
+				preferedService = (T) loadedServiceImpl.getConstructor().newInstance();
 			}
 			catch (Exception e) {
 				log.warn("could not load prefered implementation {} for service {}", preferredServiceClass, serviceInterface.getCanonicalName(), e);
@@ -65,7 +67,6 @@ public class PluginManager {
 		if (preferedService == null) {
 			ServiceLoader<T> loader = ServiceLoader.load(serviceInterface);
 			Iterator<T> serviceImpls = loader.iterator();
-			List<T> loadedServices = new ArrayList<>();
 			while (serviceImpls.hasNext()) {
 				T next = serviceImpls.next();
 				if (disabledServies.contains(next.getClass().getCanonicalName())) {

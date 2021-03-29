@@ -58,7 +58,6 @@ public class FiltersBuilder {
 		Map<String, QueryBuilder> postFilterQueries = new HashMap<>();
 
 		// collect filter queries on master and variant level
-		boolean buildVariantQueryAfterwards = false;
 		for (InternalResultFilter filter : filters) {
 			@SuppressWarnings("unchecked")
 			InternalResultFilterAdapter<? super InternalResultFilter> filterAdapter = (InternalResultFilterAdapter<? super InternalResultFilter>) filterAdapters
@@ -137,10 +136,6 @@ public class FiltersBuilder {
 
 	private boolean isVariantField(String field) {
 		return indexedFieldConfig.getField(field).map(Field::isVariantLevel).orElse(false);
-	}
-
-	private boolean isMasterField(String field) {
-		return indexedFieldConfig.getField(field).map(Field::isMasterLevel).orElse(false);
 	}
 
 }
