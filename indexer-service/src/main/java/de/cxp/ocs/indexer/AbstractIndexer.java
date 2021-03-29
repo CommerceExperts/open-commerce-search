@@ -1,21 +1,22 @@
 package de.cxp.ocs.indexer;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.lang3.LocaleUtils;
 
 import de.cxp.ocs.api.indexer.FullIndexationService;
 import de.cxp.ocs.api.indexer.ImportSession;
-import de.cxp.ocs.conf.IndexConfiguration;
-import de.cxp.ocs.config.Field;
+import de.cxp.ocs.config.FieldConfigIndex;
+import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.model.index.BulkImportData;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.preprocessor.CombiFieldBuilder;
-import de.cxp.ocs.preprocessor.DataPreProcessor;
+import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
+import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
@@ -25,22 +26,24 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class AbstractIndexer implements FullIndexationService {
 
 	@NonNull
-	private final List<DataPreProcessor> dataPreProcessors;
+	private final List<DocumentPreProcessor> dataPreProcessors;
 	
 	@Getter(value = AccessLevel.PROTECTED)
 	@NonNull
-	final IndexConfiguration indexConf;
+	final FieldConfigIndex fieldConfIndex;
 
 	private final CombiFieldBuilder combiFieldBuilder;
 
 	private final IndexItemConverter indexItemConverter;
 
-	public AbstractIndexer(@NonNull List<DataPreProcessor> dataPreProcessors, @NonNull IndexConfiguration indexConf) {
+	public AbstractIndexer(
+			@NonNull List<DocumentPreProcessor> dataPreProcessors,
+			@NonNull List<DocumentPostProcessor> postProcessors,
+			@NonNull FieldConfigIndex fieldConfIndex) {
 		this.dataPreProcessors = dataPreProcessors;
-		this.indexConf = indexConf;
-		Map<String, Field> fields = Collections.unmodifiableMap(indexConf.getFieldConfiguration().getFields());
-		combiFieldBuilder = new CombiFieldBuilder(fields);
-		indexItemConverter = new IndexItemConverter(indexConf.getFieldConfiguration());
+		this.fieldConfIndex = fieldConfIndex;
+		combiFieldBuilder = new CombiFieldBuilder(fieldConfIndex.getFieldsByType(FieldType.combi));
+		indexItemConverter = new IndexItemConverter(fieldConfIndex, postProcessors);
 	}
 
 	@Override
@@ -54,14 +57,19 @@ public abstract class AbstractIndexer implements FullIndexationService {
 
 		log.info("starting import session for index {} with locale {}", indexName, locale);
 
-		return new ImportSession(
-				indexName,
-				initNewIndex(indexName, locale));
+		try {
+			return new ImportSession(
+					indexName,
+					initNewIndex(indexName, locale));
+		}
+		catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
 	}
 
 	public abstract boolean isImportRunning(String indexName);
 
-	protected abstract String initNewIndex(String indexName, String locale);
+	protected abstract String initNewIndex(String indexName, String locale) throws IOException;
 
 	@Override
 	public int add(BulkImportData data) throws Exception {
@@ -89,7 +97,7 @@ public abstract class AbstractIndexer implements FullIndexationService {
 		boolean isIndexable = true;
 
 		combiFieldBuilder.build(doc);
-		for (DataPreProcessor preProcessor : dataPreProcessors) {
+		for (DocumentPreProcessor preProcessor : dataPreProcessors) {
 			isIndexable = preProcessor.process(doc, isIndexable);
 		}
 		return isIndexable;

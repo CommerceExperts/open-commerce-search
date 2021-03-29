@@ -94,7 +94,7 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 	@Override
 	public List<Suggestion> suggest(String term, int maxResults, Set<String> tags) throws SuggestException {
 		if (isClosed || isBlank(term)) return emptyList();
-		final String normalizedTerm = term.trim().toLowerCase();
+		final String normalizedTerm = term.toLowerCase();
 
 		// only cache results, if no tags filter is given and the the limit
 		// of results is <= to the maxSuggestionPerCacheEntry level

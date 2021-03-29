@@ -1,11 +1,13 @@
 package de.cxp.ocs.indexer;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
 
+import de.cxp.ocs.conf.FieldUsageApplier;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
-import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.indexer.model.DataItem;
 import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.indexer.model.MasterItem;
@@ -13,6 +15,9 @@ import de.cxp.ocs.indexer.model.VariantItem;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
+import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -20,18 +25,17 @@ import lombok.extern.slf4j.Slf4j;
  * {@link DataItem}
  */
 @Slf4j
+@RequiredArgsConstructor
 public class IndexItemConverter {
 
-	private FieldConfigIndex fieldConfigIndex;
+	@NonNull
+	private final FieldConfigIndex					fieldConfigIndex;
 
-	/**
-	 * Constructor of the converter that prepares the given field configurations
-	 * for converting Documents into {@link IndexableItem}.
-	 * 
-	 * @param fieldConfiguration
-	 */
-	public IndexItemConverter(FieldConfiguration fieldConfiguration) {
-		fieldConfigIndex = new FieldConfigIndex(fieldConfiguration);
+	@NonNull
+	private final List<DocumentPostProcessor>	postProcessors;
+
+	public IndexItemConverter(FieldConfigIndex fieldConfigIndex) {
+		this(fieldConfigIndex, Collections.emptyList());
 	}
 
 	/**
@@ -39,10 +43,10 @@ public class IndexItemConverter {
 	 * for Elasticsearch.
 	 * 
 	 * @param doc
-	 * @return
+	 *        document to be transformed
+	 * @return indexable item
 	 */
 	public IndexableItem toIndexableItem(Document doc) {
-		// TODO: validate document (e.g. require IDs etc.)
 		IndexableItem indexableItem;
 		if (doc instanceof Product) {
 			indexableItem = toMasterVariantItem((Product) doc);
@@ -52,6 +56,10 @@ public class IndexItemConverter {
 		}
 
 		extractSourceValues(doc, indexableItem);
+
+		for (DocumentPostProcessor postProcessor : postProcessors) {
+			postProcessor.process(doc, indexableItem, fieldConfigIndex);
+		}
 
 		return indexableItem;
 	}
@@ -76,7 +84,7 @@ public class IndexItemConverter {
 				fieldConfigIndex.getMatchingFields(dataField.getKey(), dataField.getValue())
 						.stream()
 						.filter(fieldAtCorrectDocLevelPredicate)
-						.forEach(field -> targetItem.setValue(field, dataField.getValue()));
+						.forEach(field -> FieldUsageApplier.applyAll(targetItem, field, dataField.getValue()));
 			}
 		}
 
@@ -86,11 +94,11 @@ public class IndexItemConverter {
 				fieldConfigIndex.getMatchingFields(attribute.name, attribute)
 						.stream()
 						.filter(fieldAtCorrectDocLevelPredicate)
-						.forEach(field -> targetItem.setValue(field, attribute));
+						.forEach(field -> FieldUsageApplier.applyAll(targetItem, field, attribute));
 			}
 		}
 
-		fieldConfigIndex.getCategoryField().ifPresent(f -> targetItem.setValue(f, sourceDoc.getCategories()));
+		fieldConfigIndex.getPrimaryCategoryField().ifPresent(f -> FieldUsageApplier.applyAll(targetItem, f, sourceDoc.getCategories()));
 	}
 
 	private boolean isFieldAtVariantLevel(Field field) {

@@ -1,22 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.10.2</version>
+		<version>0.12.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>suggest-service-parent</artifactId>
 	<packaging>pom</packaging>
 	<description>intermediate parent project that splits the Suggest Service into several modules</description>
-	
-	<properties>
-		<smartsuggest-lib.version>0.3.2</smartsuggest-lib.version>
-	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>de.cxp.ocs</groupId>
+				<artifactId>smartsuggest-lib</artifactId>
+				<version>0.4.0-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>de.cxp.ocs</groupId>
+				<artifactId>ocs-suggest-data-provider</artifactId>
+				<version>0.2.1</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 
 	<modules>
 		<module>smartsuggest-lib</module>
@@ -24,7 +36,8 @@
 		<module>ocs-suggest-data-provider</module>
 	</modules>
 
-	<!-- copy repos from parent, which is necessary otherwise older versions of parent won't be found during public build -->
+	<!-- copy repos from parent, which is necessary otherwise older versions 
+		of parent won't be found during public build -->
 	<repositories>
 		<repository>
 			<id>cxp-public-releases</id>
@@ -35,5 +48,5 @@
 			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-public-snapshots/</url>
 		</repository>
 	</repositories>
-	
+
 </project>

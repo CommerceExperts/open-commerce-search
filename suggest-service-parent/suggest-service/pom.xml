@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>suggest-service-parent</artifactId>
-		<version>0.10.2</version>
+		<version>0.12.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>suggest-service</artifactId>
-	<version>0.3.2</version>
+	<version>0.4.0</version>
 	<packaging>jar</packaging>
 	<name>smartSuggest RESTful Service</name>
 
@@ -23,18 +24,16 @@
 		<dependency>
 			<groupId>de.cxp.ocs</groupId>
 			<artifactId>smartsuggest-lib</artifactId>
-			<version>${smartsuggest-lib.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>de.cxp.ocs</groupId>
 			<artifactId>ocs-suggest-data-provider</artifactId>
-			<version>0.2.1</version>
 		</dependency>
-		
+
 		<dependency>
-		    <groupId>org.rapidoid</groupId>
-		    <artifactId>rapidoid-http-server</artifactId>
-		    <version>5.5.5</version>
+			<groupId>org.rapidoid</groupId>
+			<artifactId>rapidoid-http-server</artifactId>
+			<version>5.5.5</version>
 		</dependency>
 		<dependency>
 			<groupId>io.micrometer</groupId>
@@ -64,14 +63,8 @@
 
 	<build>
 		<finalName>${project.artifactId}</finalName>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-			</plugin>
-		</plugins>
 	</build>
-	
+
 	<profiles>
 		<profile>
 			<id>searchhub</id>
@@ -108,7 +101,8 @@
 		</profile>
 	</profiles>
 
-	<!-- copy repos from parent, which is necessary otherwise older versions of parent won't be found during public build -->
+	<!-- copy repos from parent, which is necessary otherwise older versions 
+		of parent won't be found during public build -->
 	<repositories>
 		<repository>
 			<id>cxp-public-releases</id>
@@ -119,5 +113,5 @@
 			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-public-snapshots/</url>
 		</repository>
 	</repositories>
-	
+
 </project>

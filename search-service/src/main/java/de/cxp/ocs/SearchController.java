@@ -7,9 +7,11 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -32,17 +34,17 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 import de.cxp.ocs.api.searcher.SearchService;
-import de.cxp.ocs.config.ApplicationProperties;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.config.SearchConfiguration;
-import de.cxp.ocs.config.TenantSearchConfiguration;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.FieldConfigFetcher;
 import de.cxp.ocs.elasticsearch.Searcher;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
+import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import de.cxp.ocs.util.InternalSearchParams;
+import de.cxp.ocs.util.SearchParamsParser;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -60,12 +62,13 @@ public class SearchController implements SearchService {
 
 	@Autowired
 	@NonNull
-	private ApplicationProperties properties;
+	private SearchPlugins plugins;
 
 	@Autowired
 	private MeterRegistry registry;
 
-	private final Map<String, SearchConfiguration> searchConfigs = new HashMap<>();
+
+	private final Map<String, SearchContext> searchContexts = new ConcurrentHashMap<>();
 
 	private final Cache<String, Searcher> searchClientCache = CacheBuilder.newBuilder()
 			.expireAfterAccess(10, TimeUnit.MINUTES)
@@ -80,16 +83,17 @@ public class SearchController implements SearchService {
 	public ResponseEntity<HttpStatus> flushConfig(@PathVariable("tenant") String tenant) {
 		HttpStatus status;
 		brokenTenantsCache.invalidate(tenant);
-		SearchConfiguration oldConfig = searchConfigs.put(tenant, getConfigForTenant(tenant));
+		SearchContext searchContext = loadContext(tenant);
+		SearchContext oldConfig = searchContexts.put(tenant, searchContext);
 		if (oldConfig == null) {
 			status = HttpStatus.CREATED;
 		}
-		else if (oldConfig.equals(searchConfigs.get(tenant))) {
+		else if (oldConfig.equals(searchContexts.get(tenant))) {
 			status = HttpStatus.NOT_MODIFIED;
 		}
 		else {
 			status = HttpStatus.OK;
-			searchClientCache.invalidate(tenant);
+			searchClientCache.put(tenant, initializeSearcher(searchContext));
 		}
 
 		return new ResponseEntity<>(status, status);
@@ -105,22 +109,33 @@ public class SearchController implements SearchService {
 			throw latestTenantEx;
 		}
 
-		SearchConfiguration searchConfig = searchConfigs.computeIfAbsent(tenant, this::getConfigForTenant);
-		log.debug("Using index {} for tenant {}", searchConfig.getIndexName(), tenant);
+		SearchContext searchContext = searchContexts.computeIfAbsent(tenant, this::loadContext);
+		log.debug("Using index {} for tenant {}", searchContext.config.getIndexName(), tenant);
 
 		final InternalSearchParams parameters = new InternalSearchParams();
-		parameters.userQuery = searchQuery.q;
 		parameters.limit = searchQuery.limit;
 		parameters.offset = searchQuery.offset;
 		parameters.withFacets = searchQuery.withFacets;
-		if (searchQuery.sort != null) {
-			parameters.sortings = parseSortings(searchQuery.sort, searchConfig.getIndexedFieldConfig());
+
+		String userQuery = searchQuery.q;
+		for (UserQueryPreprocessor preprocessor : searchContext.userQueryPreprocessors) {
+			userQuery = preprocessor.preProcess(userQuery);
 		}
-		parameters.filters = parseFilters(filters, searchConfig.getIndexedFieldConfig());
+		parameters.userQuery = userQuery;
+		if (searchQuery.sort != null) {
+			parameters.sortings = parseSortings(searchQuery.sort, searchContext.getFieldConfigIndex());
+		}
+		parameters.filters = parseFilters(filters, searchContext.getFieldConfigIndex());
+
+		Map<String, String> customParams = new HashMap<>(filters);
+		parameters.filters.forEach(f -> {
+			customParams.remove(f.getField().getName());
+			customParams.remove(f.getField().getName() + SearchParamsParser.ID_FILTER_SUFFIX);
+		});
 
 		try {
-			final Searcher searcher = searchClientCache.get(tenant, () -> new Searcher(esBuilder.getRestHLClient(), searchConfig, registry));
-			return searcher.find(parameters);
+			final Searcher searcher = searchClientCache.get(tenant, () -> initializeSearcher(searchContext));
+			return searcher.find(parameters, customParams);
 		}
 		catch (ElasticsearchStatusException esx) {
 			// TODO: in case an index was requested where it fails because
@@ -130,7 +145,7 @@ public class SearchController implements SearchService {
 			// against ES _mapping endpoint
 			if (esx.getMessage().contains("type=index_not_found_exception")) {
 				// don't keep objects for invalid tenants
-				searchConfigs.remove(tenant);
+				searchContexts.remove(tenant);
 				searchClientCache.invalidate(tenant);
 				// and deny further requests for the next N minutes
 				brokenTenantsCache.put(tenant, esx);
@@ -156,68 +171,35 @@ public class SearchController implements SearchService {
 		catch (IOException e) {
 			log.warn("could not retrieve ES indices", e);
 		}
-		tenants.addAll(searchConfigs.keySet());
-		tenants.addAll(properties.getTenantConfig().keySet());
+		tenants.addAll(searchContexts.keySet());
+		tenants.addAll(plugins.getConfigurationProvider().getConfiguredTenants());
 		return tenants.toArray(new String[tenants.size()]);
 	}
 
-	private SearchConfiguration getConfigForTenant(String tenant) {
-		SearchConfiguration mergedConfig = new SearchConfiguration();
+	private Searcher initializeSearcher(SearchContext searchContext) {
+		return new Searcher(esBuilder.getRestHLClient(), searchContext, registry, plugins);
+	}
 
-		TenantSearchConfiguration defaultConfig = properties.getDefaultTenantConfig();
-		TenantSearchConfiguration specificConfig = properties.getTenantConfig().get(tenant);
+	private SearchContext loadContext(String tenant) {
+		SearchConfiguration searchConfig = plugins.getConfigurationProvider().getTenantSearchConfiguration(tenant);
+		FieldConfigIndex fieldConfigAccess = loadFieldConfiguration(tenant);
+		List<UserQueryPreprocessor> userQueryPreprocessors = SearchPlugins.initialize(
+				searchConfig.getQueryProcessing().getUserQueryPreprocessors(),
+				plugins.getUserQueryPreprocessors(),
+				searchConfig.getPluginConfiguration());
+		return new SearchContext(fieldConfigAccess, searchConfig, userQueryPreprocessors);
+	}
 
-		if (specificConfig != null && specificConfig.getIndexName() != null) {
-			mergedConfig.setIndexName(specificConfig.getIndexName());
-		}
-		else if (defaultConfig.getIndexName() != null) {
-			mergedConfig.setIndexName(defaultConfig.getIndexName());
-		}
-		else {
-			mergedConfig.setIndexName(tenant);
-		}
-
+	private FieldConfigIndex loadFieldConfiguration(String indexName) {
 		FieldConfiguration fieldConfig;
 		try {
-			fieldConfig = new FieldConfigFetcher(esBuilder.getRestHLClient()).fetchConfig(mergedConfig.getIndexName());
+			fieldConfig = new FieldConfigFetcher(esBuilder.getRestHLClient()).fetchConfig(indexName);
 		}
 		catch (IOException e) {
-			log.error("couldn't fetch field configuration from index {}", mergedConfig.getIndexName());
+			log.error("couldn't fetch field configuration from index {}", indexName);
 			throw new UncheckedIOException(e);
 		}
-
-		mergedConfig.setIndexedFieldConfig(new FieldConfigIndex(fieldConfig));
-
-		if (specificConfig != null && !specificConfig.getFacetConfiguration().getFacets().isEmpty()) {
-			// only set specific facet config, if a specific config exists and
-			// is not empty
-			mergedConfig.setFacetConfiguration(specificConfig.getFacetConfiguration());
-		}
-		else if (specificConfig == null || !specificConfig.isDisableFacets()) {
-			// only set default facet config, if specific config does not exist
-			// or if disableFacets is not activated/true
-			mergedConfig.setFacetConfiguration(defaultConfig.getFacetConfiguration());
-		}
-
-		if (specificConfig != null && !specificConfig.getQueryConfiguration().isEmpty()) {
-			mergedConfig.getQueryConfigs().putAll(specificConfig.getQueryConfiguration());
-		}
-		else if (specificConfig == null || !specificConfig.isDisableQueryConfig()) {
-			mergedConfig.getQueryConfigs().putAll(defaultConfig.getQueryConfiguration());
-		}
-
-		if (specificConfig != null && !specificConfig.getScoringConfiguration().getScoreFunctions().isEmpty()) {
-			mergedConfig.setScoring(specificConfig.getScoringConfiguration());
-		}
-		else if (specificConfig == null || !specificConfig.isDisableScorings()) {
-			mergedConfig.setScoring(defaultConfig.getScoringConfiguration());
-		}
-
-		if (specificConfig != null && specificConfig.getSortConfigs().isEmpty() && !defaultConfig.getSortConfigs().isEmpty()) {
-			mergedConfig.getSortConfigs().addAll(defaultConfig.getSortConfigs());
-		}
-
-		return mergedConfig;
+		return new FieldConfigIndex(fieldConfig);
 	}
 
 	@ExceptionHandler({ ElasticsearchStatusException.class })
@@ -237,7 +219,7 @@ public class SearchController implements SearchService {
 	public ResponseEntity<ExceptionResponse> handleInternalErrors(Exception e) {
 		final String errorId = UUID.randomUUID().toString();
 		log.error("Internal Server Error " + errorId, e);
-		
+
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(ExceptionResponse.builder()
 						.message("Internal Error")

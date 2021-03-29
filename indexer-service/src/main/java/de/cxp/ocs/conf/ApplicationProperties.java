@@ -1,7 +1,9 @@
 package de.cxp.ocs.conf;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
@@ -24,6 +26,10 @@ public class ApplicationProperties {
 
 	@NestedConfigurationProperty
 	private final ConnectionConfiguration connectionConfiguration = new ConnectionConfiguration();
+
+	private final Set<String> disabledPlugins = new HashSet<>();
+
+	private final Map<String, String> preferedPlugins = new HashMap<>();
 
 	@NestedConfigurationProperty
 	IndexConfiguration defaultIndexConfig = new IndexConfiguration();

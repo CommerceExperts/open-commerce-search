@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.conf.IndexConfiguration;
 import de.cxp.ocs.config.Field;
+import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.model.index.BulkImportData;
 import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.model.index.Document;
@@ -25,7 +26,11 @@ public class ElasticsearchIndexerTest {
 
 	ElasticsearchIndexClient mockedIndexClient = mock(ElasticsearchIndexClient.class);
 
-	ElasticsearchIndexer underTest = new ElasticsearchIndexer(getIndexConf(), Collections.emptyList(), mockedIndexClient);
+	ElasticsearchIndexer underTest = new ElasticsearchIndexer(
+			new FieldConfigIndex(getIndexConf().getFieldConfiguration()),
+			mockedIndexClient,
+			Collections.emptyList(),
+			Collections.emptyList());
 
 	@BeforeEach
 	public void setupDefaultEsIndexClient() throws IOException {

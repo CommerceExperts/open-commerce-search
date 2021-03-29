@@ -39,7 +39,10 @@ import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 
+import de.cxp.ocs.SearchContext;
+import de.cxp.ocs.SearchPlugins;
 import de.cxp.ocs.config.Field;
+import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.FieldUsage;
@@ -48,10 +51,10 @@ import de.cxp.ocs.config.SortOptionConfiguration;
 import de.cxp.ocs.elasticsearch.facets.FacetConfigurationApplyer;
 import de.cxp.ocs.elasticsearch.query.FiltersBuilder;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
-import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueryBuilder;
-import de.cxp.ocs.elasticsearch.query.builder.ESQueryBuilder;
-import de.cxp.ocs.elasticsearch.query.builder.ESQueryBuilderFactory;
-import de.cxp.ocs.elasticsearch.query.builder.MatchAllQueryBuilder;
+import de.cxp.ocs.elasticsearch.query.analyzer.WhitespaceAnalyzer;
+import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries;
+import de.cxp.ocs.elasticsearch.query.builder.ESQueryFactoryBuilder;
+import de.cxp.ocs.elasticsearch.query.builder.MatchAllQueryFactory;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
@@ -60,6 +63,9 @@ import de.cxp.ocs.model.result.ResultHit;
 import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.model.result.SearchResultSlice;
 import de.cxp.ocs.model.result.Sorting;
+import de.cxp.ocs.spi.search.ESQueryFactory;
+import de.cxp.ocs.spi.search.RescorerProvider;
+import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.SearchQueryBuilder;
@@ -83,11 +89,18 @@ public class Searcher {
 	@NonNull
 	private final MeterRegistry registry;
 
+	@NonNull
+	private final FieldConfigIndex fieldIndex;
+
+	private final UserQueryAnalyzer userQueryAnalyzer;
+
 	private final FacetConfigurationApplyer facetApplier;
 
 	private final FiltersBuilder filtersBuilder;
 
-	private final ConditionalQueryBuilder queryBuilder;
+	private final ConditionalQueries queryBuilder;
+
+	private final List<RescorerProvider> rescorers;
 
 	private final Map<String, Field> sortFields;
 	private final Map<String, SortOptionConfiguration>	sortFieldConfig;
@@ -105,10 +118,11 @@ public class Searcher {
 	private final Timer searchRequestTimer;
 	private final DistributionSummary summary;
 
-	public Searcher(RestHighLevelClient restClient, SearchConfiguration config, final MeterRegistry registry) {
+	public Searcher(RestHighLevelClient restClient, SearchContext searchContext, final MeterRegistry registry, final SearchPlugins plugins) {
 		this.restClient = restClient;
-		this.config = config;
+		this.config = searchContext.config;
 		this.registry = registry;
+		this.fieldIndex = searchContext.getFieldConfigIndex();
 
 		findTimer = getTimer("find", config.getIndexName());
 		sortTimer = getTimer("applySort", config.getIndexName());
@@ -120,15 +134,21 @@ public class Searcher {
 		summary = DistributionSummary.builder("stagedSearches").tag("indexName", config.getIndexName())
 				.register(registry);
 
-		facetApplier = new FacetConfigurationApplyer(config);
-		filtersBuilder = new FiltersBuilder(config);
-		scoringCreator = new ScoringCreator(config);
+		String queryAnalyzerClazz = config.getQueryProcessing().getUserQueryAnalyzer();
+		userQueryAnalyzer = SearchPlugins.initialize(queryAnalyzerClazz, plugins.getUserQueryAnalyzers(), config.getPluginConfiguration().get(queryAnalyzerClazz))
+				.orElseGet(WhitespaceAnalyzer::new);
+
+		facetApplier = new FacetConfigurationApplyer(searchContext);
+		filtersBuilder = new FiltersBuilder(searchContext);
+		scoringCreator = new ScoringCreator(searchContext);
 		sortFields = fetchSortFields();
 		sortFieldConfig = config.getSortConfigs().stream().collect(Collectors.toMap(SortOptionConfiguration::getField, s -> s));
 		spellCorrector = initSpellCorrection();
+		rescorers = SearchPlugins.initialize(config.getRescorers(), plugins.getRescorers(), config.getPluginConfiguration());
 
-		queryBuilder = new ESQueryBuilderFactory(restClient, config.getIndexName(), config).build();
+		queryBuilder = new ESQueryFactoryBuilder(restClient, searchContext, plugins.getEsQueryFactories()).build();
 	}
+
 
 	private Timer getTimer(final String name, final String indexName) {
 		return Timer.builder(name).tag("indexName", indexName).publishPercentiles(0.5, 0.8, 0.9, 0.95)
@@ -136,12 +156,12 @@ public class Searcher {
 	}
 
 	private SpellCorrector initSpellCorrection() {
-		Set<String> spellCorrectionFields = config.getIndexedFieldConfig().getFieldsByUsage(FieldUsage.Search).keySet();
+		Set<String> spellCorrectionFields = fieldIndex.getFieldsByUsage(FieldUsage.Search).keySet();
 		return new SpellCorrector(spellCorrectionFields.toArray(new String[spellCorrectionFields.size()]));
 	}
 
 	private Map<String, Field> fetchSortFields() {
-		Map<String, Field> tempSortFields = config.getIndexedFieldConfig().getFieldsByUsage(FieldUsage.Sort);
+		Map<String, Field> tempSortFields = fieldIndex.getFieldsByUsage(FieldUsage.Sort);
 		return Collections.unmodifiableMap(tempSortFields);
 	}
 
@@ -149,22 +169,25 @@ public class Searcher {
 	 * 
 	 * @param parameters
 	 *        internal validated state of the parameters
+	 * @param customParams
 	 * @return search result
 	 * @throws IOException
 	 */
 	// @Timed(value = "find", percentiles = { 0.5, 0.8, 0.95, 0.98 })
-	public SearchResult find(InternalSearchParams parameters) throws IOException {
+	public SearchResult find(InternalSearchParams parameters, Map<String, String> customParams) throws IOException {
 
 		long start = System.currentTimeMillis();
 
-		Iterator<ESQueryBuilder> stagedQueryBuilders;
+		Iterator<ESQueryFactory> stagedQueryBuilders;
 		List<QueryStringTerm> searchWords;
 		if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
+			// TODO: extract asciify into UserQueryPreprocessor
 			String asciiFoldedUserQuery = StringUtils.asciify(parameters.userQuery);
-			searchWords = UserQueryAnalyzer.defaultAnalyzer.analyze(asciiFoldedUserQuery);
-			stagedQueryBuilders = queryBuilder.getStagedQueryBuilders(searchWords);
+			searchWords = userQueryAnalyzer.analyze(asciiFoldedUserQuery);
+			stagedQueryBuilders = queryBuilder.getMatchingFactories(searchWords);
+
 		} else {
-			stagedQueryBuilders = Collections.<ESQueryBuilder>singletonList(new MatchAllQueryBuilder()).iterator();
+			stagedQueryBuilders = Collections.<ESQueryFactory>singletonList(new MatchAllQueryFactory()).iterator();
 			searchWords = Collections.emptyList();
 		}
 
@@ -201,9 +224,9 @@ public class Searcher {
 			StopWatch sw = new StopWatch();
 			sw.start();
 			Sample inputWordsSample = Timer.start(registry);
-			ESQueryBuilder stagedQueryBuilder = stagedQueryBuilders.next();
+			ESQueryFactory stagedQueryBuilder = stagedQueryBuilders.next();
 
-			MasterVariantQuery searchQuery = stagedQueryBuilder.buildQuery(searchWords);
+			MasterVariantQuery searchQuery = stagedQueryBuilder.createQuery(searchWords);
 			if (log.isTraceEnabled()) {
 				log.trace("query builder nr {}: {}: match query = {}", i, stagedQueryBuilder.getName(),
 						searchQuery == null ? "NULL"
@@ -221,6 +244,7 @@ public class Searcher {
 			}
 
 			searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
+			addRescorersFailsafe(parameters, customParams, searchSourceBuilder);
 			searchResponse = executeSearchRequest(searchSourceBuilder);
 
 			if (log.isDebugEnabled()) {
@@ -242,7 +266,7 @@ public class Searcher {
 				// if the current query builder didn't take corrected words into
 				// account, then try again with corrected words
 				if (correctedWords.size() > 0 && !searchQuery.isWithSpellCorrection()) {
-					searchQuery = stagedQueryBuilder.buildQuery(searchWords);
+					searchQuery = stagedQueryBuilder.createQuery(searchWords);
 					searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
 					searchResponse = executeSearchRequest(searchSourceBuilder);
 				}
@@ -264,6 +288,21 @@ public class Searcher {
 		findTimer.record(searchResult.tookInMillis, TimeUnit.MILLISECONDS);
 
 		return searchResult;
+	}
+
+	private void addRescorersFailsafe(InternalSearchParams parameters, Map<String, String> customParams, SearchSourceBuilder searchSourceBuilder) {
+		Iterator<RescorerProvider> rescorerProviders = rescorers.iterator();
+		while (rescorerProviders.hasNext()) {
+			RescorerProvider rescorerProvider = rescorerProviders.next();
+			try {
+				searchSourceBuilder.addRescorer(rescorerProvider.get(parameters.userQuery, customParams));
+			}
+			catch (Exception e) {
+				log.error("RescorerProvider {} caused exception when creating rescorer based on userQuery {} and customParams {}!"
+						+ "Will remove it until next configuration reload!",
+						rescorerProvider.getClass().getCanonicalName(), parameters.userQuery, customParams, e);
+			}
+		}
 	}
 
 	private SearchResponse executeSearchRequest(SearchSourceBuilder searchSourceBuilder) throws IOException {
@@ -511,7 +550,7 @@ public class Searcher {
 		// TODO: Only for development purposes, remove in production to save
 		// performance!!
 		resultFields.entrySet().stream().sorted(
-				Comparator.comparing(entry -> config.getIndexedFieldConfig().getField(entry.getKey()), (f1, f2) -> {
+				Comparator.comparing(entry -> fieldIndex.getField(entry.getKey()), (f1, f2) -> {
 					if (!f1.isPresent()) {
 						return 1;
 					} else if (!f2.isPresent()) {

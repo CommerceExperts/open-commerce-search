@@ -7,11 +7,12 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.11.0</version>
+	<version>0.12.0</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
 		<module>open-commerce-search-api</module>
+		<module>ocs-plugin-spi</module>
 		<module>ocs-java-client</module>
 		<module>ocs-commons</module>
 		<module>indexer-service</module>
@@ -27,7 +28,7 @@
 		<docker.prefix>ocs-</docker.prefix>
 		<dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
 
-		<elasticsearch.version>7.5.0</elasticsearch.version>
+		<elasticsearch.version>7.9.3</elasticsearch.version>
 		<spring-boot.version>1.5.22.RELEASE</spring-boot.version>
 		<spring-cloud.version>Dalston.SR5</spring-cloud.version>
 		<micrometer.version>1.0.6</micrometer.version>
@@ -43,25 +44,30 @@
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
-				<artifactId>ocs-commons</artifactId>
-				<version>0.5.0</version>
+				<artifactId>ocs-plugin-spi</artifactId>
+				<version>0.1.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
-				<artifactId>indexer-service</artifactId>
+				<artifactId>ocs-commons</artifactId>
 				<version>0.6.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
+				<artifactId>indexer-service</artifactId>
+				<version>0.7.0</version>
+			</dependency>
+			<dependency>
+				<groupId>de.cxp.ocs</groupId>
 				<artifactId>search-service</artifactId>
-				<version>0.9.0</version>
+				<version>0.10.0</version>
 			</dependency>
 			<!-- only including the suggest-service directly, because it depends on 
 				the other suggest modules -->
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>suggest-service</artifactId>
-				<version>0.2.0</version>
+				<version>0.4.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
@@ -331,6 +337,11 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<version>3.0.0-M1</version>
 			</plugin>
 		</plugins>
 	</build>

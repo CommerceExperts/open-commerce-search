@@ -8,17 +8,18 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
-import de.cxp.ocs.conf.IndexConfiguration;
 import de.cxp.ocs.conf.converter.FlagFieldConfiguration;
 import de.cxp.ocs.conf.converter.FlagFieldConfiguration.PatternMatch;
 import de.cxp.ocs.config.Field;
+import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.preprocessor.ConfigureableDataprocessor;
-import de.cxp.ocs.preprocessor.DataPreProcessor;
+import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import de.cxp.ocs.util.OnceInAWhileRunner;
 import de.cxp.ocs.util.Util;
 import lombok.NoArgsConstructor;
@@ -67,15 +68,14 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @NoArgsConstructor
-public class FlagFieldDataProcessor implements DataPreProcessor {
+public class FlagFieldDataProcessor implements DocumentPreProcessor {
 
 	private List<FlagFieldConfiguration>	flagFieldConf;
-	private Map<String, Field>				fieldConf;
+	private FieldConfigAccess				fieldConfAccess;
 
-	public void configure(IndexConfiguration properties) {
-		Map<String, Map<String, String>> configuration = properties.getDataProcessorConfiguration().getConfiguration();
-		Map<String, String> confMap = configuration.get(this.getClass().getSimpleName());
-		fieldConf = properties.getFieldConfiguration().getFields();
+	@Override
+	public void initialize(FieldConfigAccess fieldConfig, Map<String, String> confMap) {
+		fieldConfAccess = fieldConfig;
 		if (confMap != null) {
 			Map<String, Map<String, List<Entry<String, String>>>> groupToTypeConf = confMap.entrySet().stream()
 					.collect(Collectors
@@ -123,7 +123,8 @@ public class FlagFieldDataProcessor implements DataPreProcessor {
 		MatchResult matchRes = new MatchResult();
 		Map<String, Object> data = document.getData();
 		for (PatternMatch pm : ffc) {
-			if (fieldConf.containsKey(pm.getFieldName())) {
+			Optional<Field> field = fieldConfAccess.getField(pm.getFieldName());
+			if (field.isPresent()) {
 				Object value = data.get(pm.getFieldName());
 				if (value instanceof String) {
 					String strValue = (String) value;

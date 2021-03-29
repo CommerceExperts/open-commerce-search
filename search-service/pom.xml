@@ -7,12 +7,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.11.0</version>
+		<version>0.12.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>search-service</artifactId>
-	<version>0.9.0</version>
+	<version>0.10.0</version>
 	<packaging>jar</packaging>
 
 	<!-- Import dependency management from Spring Boot -->
@@ -43,6 +43,10 @@
 		<dependency>
 			<groupId>de.cxp.ocs</groupId>
 			<artifactId>ocs-commons</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>de.cxp.ocs</groupId>
+			<artifactId>ocs-plugin-spi</artifactId>
 		</dependency>
 
 		<dependency>
@@ -76,7 +80,6 @@
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
-			<version>1.2.3</version>
 		</dependency>
 
 		<dependency>
@@ -91,11 +94,6 @@
 			<groupId>pl.allegro.tech</groupId>
 			<artifactId>embedded-elasticsearch</artifactId>
 			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
 		</dependency>
 
 		<dependency>
@@ -168,9 +166,34 @@
 				</dependency>
 			</dependencies>
 		</profile>
+		<profile>
+			<id>searchhub</id>
+			<dependencyManagement>
+				<dependencies>
+					<dependency>
+						<groupId>io.github.openfeign</groupId>
+						<artifactId>feign-core</artifactId>
+						<version>10.8</version>
+					</dependency>
+					<dependency>
+						<groupId>io.github.openfeign</groupId>
+						<artifactId>feign-okhttp</artifactId>
+						<version>10.8</version>
+					</dependency>
+				</dependencies>
+			</dependencyManagement>
+			<dependencies>
+				<dependency>
+					<groupId>io.searchhub</groupId>
+					<artifactId>ocs-smartquery-plugin</artifactId>
+					<version>1.2.0</version>
+				</dependency>
+			</dependencies>
+		</profile>
 	</profiles>
-	
-	<!-- copy repos from parent, which is necessary otherwise older versions of parent won't be found during public build -->
+
+	<!-- copy repos from parent, which is necessary otherwise older versions 
+		of parent won't be found during public build -->
 	<repositories>
 		<repository>
 			<id>cxp-public-releases</id>

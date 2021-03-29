@@ -15,14 +15,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.cluster.metadata.AliasMetaData;
+import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.common.settings.Settings;
 
 import de.cxp.ocs.api.indexer.ImportSession;
-import de.cxp.ocs.conf.IndexConfiguration;
+import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.indexer.AbstractIndexer;
 import de.cxp.ocs.indexer.model.IndexableItem;
-import de.cxp.ocs.preprocessor.DataPreProcessor;
+import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
+import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
+import fr.pilato.elasticsearch.tools.ElasticsearchBeyonder;
+import fr.pilato.elasticsearch.tools.SettingsFinder.Defaults;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -32,16 +35,27 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	private final String	INDEX_PREFIX		= "ocs" + INDEX_DELIMITER;
 	private final Pattern	INDEX_NAME_PATTERN	= Pattern.compile(Pattern.quote(INDEX_PREFIX) + "(\\d+)\\" + INDEX_DELIMITER);
 
+	private final RestHighLevelClient		restClient;
 	private final ElasticsearchIndexClient indexClient;
 
-	public ElasticsearchIndexer(IndexConfiguration indexConf, RestHighLevelClient restClient, List<DataPreProcessor> dataProcessors) {
-		super(dataProcessors, indexConf);
+	public ElasticsearchIndexer(
+			FieldConfigIndex fieldConfAccess,
+			RestHighLevelClient restClient,
+			List<DocumentPreProcessor> preProcessors,
+			List<DocumentPostProcessor> postProcessors) {
+		super(preProcessors, postProcessors, fieldConfAccess);
+		this.restClient = restClient;
 		indexClient = new ElasticsearchIndexClient(restClient);
 	}
 
-	protected ElasticsearchIndexer(IndexConfiguration indexConf, List<DataPreProcessor> dataProcessors, ElasticsearchIndexClient esIndexClient) {
-		super(dataProcessors, indexConf);
-		indexClient = esIndexClient;
+	ElasticsearchIndexer(
+			FieldConfigIndex fieldConfAccess,
+			ElasticsearchIndexClient indexClient,
+			List<DocumentPreProcessor> dataProcessors,
+			List<DocumentPostProcessor> postProcessors) {
+		super(dataProcessors, postProcessors, fieldConfAccess);
+		this.restClient = null;
+		this.indexClient = indexClient;
 	}
 
 	@Override
@@ -51,7 +65,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 			return settings.map(s -> "-1".equals(s.get("index.refresh_interval"))).orElse(false);
 		}
 		else {
-			Map<String, Set<AliasMetaData>> aliases = indexClient.getAliases(INDEX_PREFIX + "*" + INDEX_DELIMITER + indexName + "*");
+			Map<String, Set<AliasMetadata>> aliases = indexClient.getAliases(INDEX_PREFIX + "*" + INDEX_DELIMITER + indexName + "*");
 			return (aliases.size() > 1 || (aliases.size() == 1 && aliases.values().iterator().next().isEmpty()));
 		}
 	}
@@ -61,12 +75,22 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	 * Expects a indexName ending with a number and will return a new index name
 	 */
 	@Override
-	protected String initNewIndex(final String indexName, String locale) {
+	protected String initNewIndex(final String indexName, String locale) throws IOException {
 		String localizedIndexName = getLocalizedIndexName(indexName, LocaleUtils.toLocale(locale));
 		String finalIndexName = getNextIndexName(indexName, localizedIndexName);
 
-		log.info("trying to create index {}", finalIndexName);
-		indexClient.createFreshIndex(finalIndexName);
+		try {
+			// only during testing we don't have a real connection to ES
+			if (restClient != null) {
+				ElasticsearchBeyonder.start(restClient.getLowLevelClient(), Defaults.ConfigDir, Defaults.MergeMappings, true);
+			}
+
+			log.info("trying to create index {}", finalIndexName);
+			indexClient.createFreshIndex(finalIndexName);
+		}
+		catch (Exception e) {
+			throw new IOException("failed to initialize template new index", e);
+		}
 
 		return finalIndexName;
 	}
@@ -102,7 +126,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	private String getNextIndexName(String indexName, String localizedIndexName) {
-		Map<String, Set<AliasMetaData>> aliases = indexClient.getAliases(indexName);
+		Map<String, Set<AliasMetadata>> aliases = indexClient.getAliases(indexName);
 		if (aliases.size() == 0) return getNumberedIndexName(localizedIndexName, 1);
 
 		String oldIndexName = aliases.keySet().iterator().next();
@@ -175,7 +199,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 			return false;
 		}
 
-		Map<String, Set<AliasMetaData>> currentAliasState = indexClient.getAliases(session.finalIndexName);
+		Map<String, Set<AliasMetadata>> currentAliasState = indexClient.getAliases(session.finalIndexName);
 
 		String oldIndexName = null;
 		if (currentAliasState != null && !currentAliasState.isEmpty()) {

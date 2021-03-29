@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -78,6 +79,10 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	public static final String	RELAXED_GROUP_NAME					= "relaxed matches";
 	public static final String	SHARPENED_GROUP_NAME				= "sharpened matches";
 
+	private static final String METRICS_PREFIX = Util.APP_NAME + ".lucene_suggester";
+
+	private static final Logger perfLog = LoggerFactory.getLogger("de.cxp.ocs.smartsuggest.performance");
+
 	private final AnalyzingInfixSuggester	infixSuggester;
 	private final AnalyzingInfixSuggester	typoSuggester;
 	private final AnalyzingInfixSuggester	shingleSuggester;
@@ -98,14 +103,14 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	private final Locale				locale;
 	private final ModifiedTermsService	modifiedTermsService;
 
-	private Instant	lastIndexTime;
-	private boolean	alwaysDoFuzzy	= Boolean.getBoolean("alwaysDoFuzzy");
+	// TODO move suggester configuration outside and make it configurable per
+	// index
+	private boolean	alwaysDoFuzzy				= Boolean.getBoolean("alwaysDoFuzzy");
+	private boolean	doReorderSecondaryMatches	= Boolean.getBoolean("doReorderSecondaryMatches");
 
-	private static final Logger perfLog = LoggerFactory.getLogger("de.cxp.ocs.smartsuggest.performance");
-
-	private static final String	METRICS_PREFIX	= Util.APP_NAME + ".lucene_suggester";
-	private long				recordCount		= 0;
-	private long				memUsageBytes	= 0;
+	private Instant lastIndexTime;
+	private long	recordCount		= 0;
+	private long	memUsageBytes	= 0;
 
 	private volatile boolean isClosed = false;
 
@@ -269,9 +274,6 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			if (modifiedTermsService.hasData()) {
 				int resultCount = collectModifiedSuggestions(term, modifiedTermsService.getSharpenedTerm(term), uniqueQueries, maxResults, SHARPENED_GROUP_NAME, results);
 				perfResult.addStep("sharpenedTerms", resultCount);
-
-				resultCount = collectModifiedSuggestions(term, modifiedTermsService.getRelaxedTerm(term), uniqueQueries, maxResults, RELAXED_GROUP_NAME, results);
-				perfResult.addStep("relaxedTerms", resultCount);
 			}
 
 			// lookup for best matches
@@ -284,6 +286,9 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			if (uniqueQueries.size() < maxResults) {
 				final int itemsToFetchTypos = maxResults - uniqueQueries.size();
 				int resultCount = collectSuggestions(term, contexts, typoSuggester, itemsToFetchTypos, uniqueQueries, itemsToFetchTypos, TYPO_MATCHES_GROUP_NAME, results);
+				if (doReorderSecondaryMatches) {
+					reorderPrimaryAndSecondaryMatches(results);
+				}
 				perfResult.addStep("variantMatches", resultCount);
 			}
 
@@ -309,6 +314,12 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 				int resultCount = collectSuggestions(term, contexts, shingleSuggester, itemsToFetchShingles, uniqueQueries, itemsToFetchShingles, SHINGLE_MATCHES_GROUP_NAME,
 						results);
 				perfResult.addStep("shingleMatches", resultCount);
+			}
+
+			if (modifiedTermsService.hasData() && uniqueQueries.size() < maxResults) {
+				final int itemsToFetchShingles = maxResults - uniqueQueries.size();
+				int resultCount = collectModifiedSuggestions(term, modifiedTermsService.getRelaxedTerm(term), uniqueQueries, itemsToFetchShingles, RELAXED_GROUP_NAME, results);
+				perfResult.addStep("relaxedTerms", resultCount);
 			}
 
 			perfResult.stop();
@@ -364,6 +375,22 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			return (int) count;
 		}
 		return 0;
+	}
+
+	private void reorderPrimaryAndSecondaryMatches(final List<Suggestion> results) {
+		Collections.sort(results, new Comparator<Suggestion>() {
+
+			@Override
+			public int compare(Suggestion o1, Suggestion o2) {
+				String matchGroup1 = o1.getPayload().get(PAYLOAD_GROUPMATCH_KEY);
+				String matchGroup2 = o2.getPayload().get(PAYLOAD_GROUPMATCH_KEY);
+				if (SHARPENED_GROUP_NAME.equals(matchGroup1) || SHARPENED_GROUP_NAME.equals(matchGroup2)) {
+					return matchGroup1.equals(matchGroup1) ? 0 : (SHARPENED_GROUP_NAME.equals(matchGroup1) ? -1 : 1);
+				}
+				// prefer higher weight => reverse order
+				return Long.compare(o2.getWeight(), o1.getWeight());
+			}
+		});
 	}
 
 	private Suggestion withPayloadEntry(Suggestion s, String key, String value) {

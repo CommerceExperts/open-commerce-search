@@ -32,7 +32,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.client.indices.CreateIndexRequest;
-import org.elasticsearch.cluster.metadata.AliasMetaData;
+import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentType;
 
@@ -58,7 +58,7 @@ class ElasticsearchIndexClient {
 	public static final String	ES_SETTINGS_REFRESH_INTERVAL	= "index.refresh_interval";
 
 	private final RestHighLevelClient	highLevelClient;
-	private final ObjectMapper			mapper	= new ObjectMapper();
+	private final ObjectMapper			mapper	= IndexableItemMapperFactory.createObjectMapper();
 
 	/**
 	 * Get actual index names with potential aliases.
@@ -66,7 +66,7 @@ class ElasticsearchIndexClient {
 	 * @param indexNames
 	 * @return
 	 */
-	public Map<String, Set<AliasMetaData>> getAliases(String indexName) {
+	public Map<String, Set<AliasMetadata>> getAliases(String indexName) {
 		try {
 			GetAliasesRequest getAliasesRequest = new GetAliasesRequest().indices(indexName);
 			GetAliasesResponse response = highLevelClient

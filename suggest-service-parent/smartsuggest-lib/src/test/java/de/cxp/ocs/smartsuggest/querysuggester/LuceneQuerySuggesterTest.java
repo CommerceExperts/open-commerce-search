@@ -7,14 +7,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Path;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.WordlistLoader;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester;
@@ -561,6 +572,38 @@ class LuceneQuerySuggesterTest {
 		underTest.destroy();
 
 		assertThat(underTest.suggest("fno")).isEmpty();
+	}
+
+	@DisplayName("If the proerpty 'doReorderSecondaryMatches=true' is set, primary and secondary matches should be reordered according to their weight")
+	@Test
+	void suggest_reorder_secondary_matches(@TempDir Path indexFolder) throws IOException {
+		System.setProperty("doReorderSecondaryMatches", "true");
+		try {
+			underTest = new LuceneQuerySuggester(indexFolder, Locale.GERMAN, modifiedTermsService, getWordSet(Locale.GERMAN));
+
+			// will search for "sh"
+			final String primary1 = "shirt"; // <<sh matches primary
+			final String primary2 = "socks";
+			final String primary3 = "shoes";// <<sh matches primary
+			List<SuggestRecord> toIndex = new ArrayList<>(asList(
+					asSuggestRecord("super nice stuff", primary1, 10),
+					asSuggestRecord("shiney", primary2, 20), // <<sh matches secondary
+					asSuggestRecord("sustainable", primary3, 30)));
+
+			underTest.index(toIndex).join();
+
+			List<Suggestion> results = underTest.suggest("sh");
+			System.out.println(results);
+			assertThat(results).hasSize(3);
+			assertLabel(results.get(0), primary3);
+			assertLabel(results.get(1), primary2);
+			assertLabel(results.get(2), primary1);
+
+			assertSuggestion(results.get(1), primary2, TYPO_MATCHES_GROUP_NAME);
+		}
+		finally {
+			System.clearProperty("doReorderSecondaryMatches");
+		}
 	}
 
 	private void assertLabel(Suggestion suggestion, String expectedLabel) {
