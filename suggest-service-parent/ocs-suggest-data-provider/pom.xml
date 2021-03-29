@@ -19,7 +19,6 @@
 		<dependency>
 			<groupId>de.cxp.ocs</groupId>
 			<artifactId>smartsuggest-lib</artifactId>
-			<version>${smartsuggest-lib.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>de.cxp.ocs</groupId>
