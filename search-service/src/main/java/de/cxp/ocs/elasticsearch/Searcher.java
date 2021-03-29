@@ -295,7 +295,7 @@ public class Searcher {
 		while (rescorerProviders.hasNext()) {
 			RescorerProvider rescorerProvider = rescorerProviders.next();
 			try {
-				searchSourceBuilder.addRescorer(rescorerProvider.get(parameters.userQuery, customParams));
+				rescorerProvider.get(parameters.userQuery, customParams).ifPresent(searchSourceBuilder::addRescorer);
 			}
 			catch (Exception e) {
 				log.error("RescorerProvider {} caused exception when creating rescorer based on userQuery {} and customParams {}!"
