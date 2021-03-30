@@ -306,6 +306,7 @@ public class Searcher {
 				log.error("RescorerProvider {} caused exception when creating rescorer based on userQuery {} and customParams {}!"
 						+ "Will remove it until next configuration reload!",
 						rescorerProvider.getClass().getCanonicalName(), parameters.userQuery, customParams, e);
+				rescorerProviders.remove();
 			}
 		}
 	}
