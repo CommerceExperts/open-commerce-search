@@ -18,6 +18,7 @@ import de.cxp.ocs.elasticsearch.RestClientBuilderFactory;
 import de.cxp.ocs.plugin.ExtensionSupplierRegistry;
 import de.cxp.ocs.plugin.PluginManager;
 import de.cxp.ocs.spi.search.ESQueryFactory;
+import de.cxp.ocs.spi.search.RescorerProvider;
 import de.cxp.ocs.spi.search.SearchConfigurationProvider;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.spi.search.UserQueryPreprocessor;
@@ -55,6 +56,7 @@ public class Application {
 		plugins.setEsQueryFactories(extensionsAsSuppliers(pluginManager.loadAll(ESQueryFactory.class)));
 		plugins.setUserQueryAnalyzers(extensionsAsSuppliers(pluginManager.loadAll(UserQueryAnalyzer.class)));
 		plugins.setUserQueryPreprocessors(extensionsAsSuppliers(pluginManager.loadAll(UserQueryPreprocessor.class)));
+		plugins.setRescorers(extensionsAsSuppliers(pluginManager.loadAll(RescorerProvider.class)));
 		return plugins;
 	}
 
