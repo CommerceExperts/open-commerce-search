@@ -7,20 +7,26 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import de.cxp.ocs.plugin.ExtensionSupplierRegistry;
+import de.cxp.ocs.plugin.PluginManager;
 import de.cxp.ocs.spi.search.ConfigurableExtension;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import de.cxp.ocs.spi.search.RescorerProvider;
 import de.cxp.ocs.spi.search.SearchConfigurationProvider;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.spi.search.UserQueryPreprocessor;
-import lombok.Data;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Data
 @Slf4j
+@RequiredArgsConstructor
 public class SearchPlugins {
 
-	private SearchConfigurationProvider configurationProvider;
+	private final PluginManager pluginManager;
+
+	@Getter
+	private final SearchConfigurationProvider configurationProvider;
 
 	private Map<String, Supplier<? extends ESQueryFactory>> esQueryFactories;
 
@@ -29,6 +35,45 @@ public class SearchPlugins {
 	private Map<String, Supplier<? extends UserQueryPreprocessor>> userQueryPreprocessors;
 
 	private Map<String, Supplier<? extends RescorerProvider>> rescorers;
+
+	// use lazy loading to guarantee, that
+	// a) all suppliers are only loaded once
+	// b) only the requested suppliers are loaded
+	// c) a new extension class is not forgotten at some registry routine
+
+	public Map<String, Supplier<? extends ESQueryFactory>> getEsQueryFactories() {
+		if (esQueryFactories == null) {
+			esQueryFactories = loadSuppliers(ESQueryFactory.class);
+		}
+		return esQueryFactories;
+	}
+
+	public Map<String, Supplier<? extends UserQueryAnalyzer>> getUserQueryAnalyzers() {
+		if (userQueryAnalyzers == null) {
+			userQueryAnalyzers = loadSuppliers(UserQueryAnalyzer.class);
+		}
+		return userQueryAnalyzers;
+	}
+
+	public Map<String, Supplier<? extends UserQueryPreprocessor>> getUserQueryPreprocessors() {
+		if (userQueryPreprocessors == null) {
+			userQueryPreprocessors = loadSuppliers(UserQueryPreprocessor.class);
+		}
+		return userQueryPreprocessors;
+	}
+
+	public Map<String, Supplier<? extends RescorerProvider>> getRescorerProviders() {
+		if (rescorers == null) {
+			rescorers = loadSuppliers(RescorerProvider.class);
+		}
+		return rescorers;
+	}
+
+	private <T> Map<String, Supplier<? extends T>> loadSuppliers(Class<T> clazz) {
+		ExtensionSupplierRegistry<T> registry = new ExtensionSupplierRegistry<T>();
+		pluginManager.loadAll(clazz).forEach(registry::register);
+		return Collections.unmodifiableMap(registry.getExtensionSuppliers());
+	}
 
 	public static <T> Optional<T> initialize(String clazz, Map<String, Supplier<? extends T>> suppliers, Map<String, String> settings) {
 		if (clazz == null || suppliers == null) return Optional.empty();

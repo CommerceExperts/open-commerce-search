@@ -146,7 +146,7 @@ public class Searcher {
 		sortFields = fetchSortFields();
 		sortFieldConfig = config.getSortConfigs().stream().collect(Collectors.toMap(SortOptionConfiguration::getField, s -> s));
 		spellCorrector = initSpellCorrection();
-		rescorers = SearchPlugins.initialize(config.getRescorers(), plugins.getRescorers(), config.getPluginConfiguration());
+		rescorers = SearchPlugins.initialize(config.getRescorers(), plugins.getRescorerProviders(), config.getPluginConfiguration());
 
 		queryBuilder = new ESQueryFactoryBuilder(restClient, searchContext, plugins.getEsQueryFactories()).build();
 	}
