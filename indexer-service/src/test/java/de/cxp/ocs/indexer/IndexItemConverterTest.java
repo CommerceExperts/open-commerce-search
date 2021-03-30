@@ -100,6 +100,7 @@ public class IndexItemConverterTest {
 				"document with invalid rating field should cause exception");
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void numericFieldUsedForSortAndFacet() {
 		underTest = new IndexItemConverter(
@@ -120,6 +121,7 @@ public class IndexItemConverterTest {
 		assertTrue(result.getTermFacetData().isEmpty());
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void sourceNamesConsidered() {
 		underTest = new IndexItemConverter(

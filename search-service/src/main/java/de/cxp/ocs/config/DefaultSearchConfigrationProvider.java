@@ -32,9 +32,14 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 		mergedConfig.getRescorers().addAll(properties.getTenantConfig()
 				.getOrDefault(tenant, properties.getDefaultTenantConfig())
 				.getRescorers());
-		mergedConfig.getPluginConfiguration().putAll(properties.getTenantConfig()
-				.getOrDefault(tenant, properties.getDefaultTenantConfig())
-				.getPluginConfiguration());
+
+		// merge plugin configuration
+		// (tenant specific may overwrite default config)
+		Optional.ofNullable(properties.getDefaultTenantConfig().getPluginConfiguration())
+				.ifPresent(mergedConfig.getPluginConfiguration()::putAll);
+		Optional.ofNullable(properties.getTenantConfig().get(tenant))
+				.map(ApplicationSearchProperties::getPluginConfiguration)
+				.ifPresent(mergedConfig.getPluginConfiguration()::putAll);
 
 		return mergedConfig;
 	}

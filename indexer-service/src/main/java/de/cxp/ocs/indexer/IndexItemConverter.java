@@ -18,13 +18,11 @@ import de.cxp.ocs.model.index.Product;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * converts {@link Document} / {@link Product} objects into
  * {@link DataItem}
  */
-@Slf4j
 @RequiredArgsConstructor
 public class IndexItemConverter {
 

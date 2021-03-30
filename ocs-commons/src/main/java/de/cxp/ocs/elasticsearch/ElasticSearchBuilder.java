@@ -4,9 +4,7 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 
 import fr.pilato.elasticsearch.tools.template.TemplateElasticsearchUpdater;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 public class ElasticSearchBuilder implements AutoCloseable {
 
 	private static String[] TEMPLATES = { "german_structured_search", "structured_search" };

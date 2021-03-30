@@ -66,10 +66,10 @@ import de.cxp.ocs.model.result.Sorting;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import de.cxp.ocs.spi.search.RescorerProvider;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
+import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.SearchQueryBuilder;
-import de.cxp.ocs.util.StringUtils;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -92,7 +92,8 @@ public class Searcher {
 	@NonNull
 	private final FieldConfigIndex fieldIndex;
 
-	private final UserQueryAnalyzer userQueryAnalyzer;
+	private final List<UserQueryPreprocessor>	userQueryPreprocessors;
+	private final UserQueryAnalyzer				userQueryAnalyzer;
 
 	private final FacetConfigurationApplyer facetApplier;
 
@@ -137,6 +138,7 @@ public class Searcher {
 		String queryAnalyzerClazz = config.getQueryProcessing().getUserQueryAnalyzer();
 		userQueryAnalyzer = SearchPlugins.initialize(queryAnalyzerClazz, plugins.getUserQueryAnalyzers(), config.getPluginConfiguration().get(queryAnalyzerClazz))
 				.orElseGet(WhitespaceAnalyzer::new);
+		userQueryPreprocessors = searchContext.userQueryPreprocessors;
 
 		facetApplier = new FacetConfigurationApplyer(searchContext);
 		filtersBuilder = new FiltersBuilder(searchContext);
@@ -144,7 +146,7 @@ public class Searcher {
 		sortFields = fetchSortFields();
 		sortFieldConfig = config.getSortConfigs().stream().collect(Collectors.toMap(SortOptionConfiguration::getField, s -> s));
 		spellCorrector = initSpellCorrection();
-		rescorers = SearchPlugins.initialize(config.getRescorers(), plugins.getRescorers(), config.getPluginConfiguration());
+		rescorers = SearchPlugins.initialize(config.getRescorers(), plugins.getRescorerProviders(), config.getPluginConfiguration());
 
 		queryBuilder = new ESQueryFactoryBuilder(restClient, searchContext, plugins.getEsQueryFactories()).build();
 	}
@@ -181,9 +183,12 @@ public class Searcher {
 		Iterator<ESQueryFactory> stagedQueryBuilders;
 		List<QueryStringTerm> searchWords;
 		if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
-			// TODO: extract asciify into UserQueryPreprocessor
-			String asciiFoldedUserQuery = StringUtils.asciify(parameters.userQuery);
-			searchWords = userQueryAnalyzer.analyze(asciiFoldedUserQuery);
+			String searchQuery = parameters.userQuery;
+			for (UserQueryPreprocessor preprocessor : userQueryPreprocessors) {
+				searchQuery = preprocessor.preProcess(searchQuery);
+			}
+
+			searchWords = userQueryAnalyzer.analyze(searchQuery);
 			stagedQueryBuilders = queryBuilder.getMatchingFactories(searchWords);
 
 		} else {
@@ -295,12 +300,13 @@ public class Searcher {
 		while (rescorerProviders.hasNext()) {
 			RescorerProvider rescorerProvider = rescorerProviders.next();
 			try {
-				searchSourceBuilder.addRescorer(rescorerProvider.get(parameters.userQuery, customParams));
+				rescorerProvider.get(parameters.userQuery, customParams).ifPresent(searchSourceBuilder::addRescorer);
 			}
 			catch (Exception e) {
 				log.error("RescorerProvider {} caused exception when creating rescorer based on userQuery {} and customParams {}!"
 						+ "Will remove it until next configuration reload!",
 						rescorerProvider.getClass().getCanonicalName(), parameters.userQuery, customParams, e);
+				rescorerProviders.remove();
 			}
 		}
 	}

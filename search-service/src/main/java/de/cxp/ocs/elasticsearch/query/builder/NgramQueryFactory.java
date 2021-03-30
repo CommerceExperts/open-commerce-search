@@ -24,13 +24,11 @@ import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.Util;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * builds a query that uses the ngram fields to handle decomposition and
  * fuzziness
  */
-@Slf4j
 public class NgramQueryFactory implements ESQueryFactory {
 
 	private final Map<QueryBuildingSetting, String>	querySettings	= new HashMap<>();

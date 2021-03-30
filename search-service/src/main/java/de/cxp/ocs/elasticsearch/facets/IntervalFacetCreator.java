@@ -120,8 +120,6 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 			if (currentEntryBuilder.currentDocumentCount == 0) {
 				currentEntryBuilder.lowerBound = (Double) valueBucket.getKey();
 			}
-			Double value = (Double) valueBucket.getKey();
-
 			long docCount = nestedFacetCorrector != null
 					? nestedFacetCorrector.getCorrectedDocumentCount(valueBucket)
 					: valueBucket.getDocCount();

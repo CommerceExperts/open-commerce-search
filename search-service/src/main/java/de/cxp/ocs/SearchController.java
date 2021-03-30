@@ -116,12 +116,8 @@ public class SearchController implements SearchService {
 		parameters.limit = searchQuery.limit;
 		parameters.offset = searchQuery.offset;
 		parameters.withFacets = searchQuery.withFacets;
+		parameters.userQuery = searchQuery.q;
 
-		String userQuery = searchQuery.q;
-		for (UserQueryPreprocessor preprocessor : searchContext.userQueryPreprocessors) {
-			userQuery = preprocessor.preProcess(userQuery);
-		}
-		parameters.userQuery = userQuery;
 		if (searchQuery.sort != null) {
 			parameters.sortings = parseSortings(searchQuery.sort, searchContext.getFieldConfigIndex());
 		}
