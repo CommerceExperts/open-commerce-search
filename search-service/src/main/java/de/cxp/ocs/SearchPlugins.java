@@ -31,7 +31,7 @@ public class SearchPlugins {
 	private Map<String, Supplier<? extends RescorerProvider>> rescorers;
 
 	public static <T> Optional<T> initialize(String clazz, Map<String, Supplier<? extends T>> suppliers, Map<String, String> settings) {
-		if (clazz == null) return Optional.empty();
+		if (clazz == null || suppliers == null) return Optional.empty();
 		Supplier<? extends T> supplier = suppliers.get(clazz);
 		if (supplier == null) return Optional.empty();
 
