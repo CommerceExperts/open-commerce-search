@@ -39,6 +39,7 @@ public class PluginManager {
 				log.info("Service {} for interface {} is disabled", next.getClass(), serviceInterface.getClass());
 			}
 			else {
+				log.info("Service {} for interface {} loaded", next.getClass(), serviceInterface.getClass());
 				loadedServices.add(next);
 			}
 		}
@@ -84,6 +85,13 @@ public class PluginManager {
 				}
 			}
 		}
+		if (preferedService != null) {
+			log.info("Prefered Service {} for interface {} loaded", preferedService.getClass(), serviceInterface.getClass());
+		}
+		else {
+			log.info("No Prefered Service found for interface {}", serviceInterface.getClass());
+		}
+
 		return Optional.ofNullable(preferedService);
 	}
 }
