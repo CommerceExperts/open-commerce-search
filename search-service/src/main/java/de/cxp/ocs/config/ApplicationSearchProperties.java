@@ -54,7 +54,7 @@ public class ApplicationSearchProperties {
 	private final Map<String, QueryConfiguration> queryConfiguration = new LinkedHashMap<>();
 
 	@NestedConfigurationProperty
-	private final List<SortOptionConfiguration> sortConfigs = new ArrayList<>();
+	private final List<SortOptionConfiguration> sortConfiguration = new ArrayList<>();
 
 	private final Map<String, Map<String, String>> pluginConfiguration = new LinkedHashMap<>();
 

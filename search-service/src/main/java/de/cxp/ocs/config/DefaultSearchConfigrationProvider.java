@@ -83,7 +83,7 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 		if (tenantConfig.disableSortingConfig) {
 			return Collections.emptyList();
 		}
-		return tenantConfig.getSortConfigs();
+		return tenantConfig.getSortConfiguration();
 	}
 
 
