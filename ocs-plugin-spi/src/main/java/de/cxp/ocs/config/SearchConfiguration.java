@@ -89,12 +89,11 @@ public class SearchConfiguration {
 
 	/**
 	 * <p>
-	 * Specific sorting configuration, e.g. to specify which sorting options
-	 * should be part of result.
+	 * Specific which sorting option should be part of result.
 	 * </p>
 	 * <p>
-	 * If empty list is retruned, the sortings will be delivered in default
-	 * style according to indexed sorting fields
+	 * If list is empty, all possible sorting options will be delivered in
+	 * default style according to indexed sorting fields.
 	 * </p>
 	 * 
 	 * @param tenant
