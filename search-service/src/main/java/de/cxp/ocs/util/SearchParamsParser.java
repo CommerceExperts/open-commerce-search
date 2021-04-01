@@ -115,7 +115,7 @@ public class SearchParamsParser {
 			}
 
 			if (fields.getMatchingField(fieldName, FieldUsage.Sort).isPresent()) {
-				sortings.add(new Sorting(fieldName, sortOrder, true, null));
+				sortings.add(new Sorting(null, fieldName, sortOrder, true, null));
 			}
 		}
 		return sortings;

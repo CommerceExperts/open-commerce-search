@@ -395,7 +395,7 @@ public class FacetConfigurationApplyer {
 				List<FacetCreator> matchingFacetCreators = getResponsibleFacetCreators(filterContext.getInternalFilters().get(postFilterName));
 				for (FacetCreator fc : matchingFacetCreators) {
 					fc.createFacets(exclusiveAgg.getAggregations(), filterContext, linkBuilder)
-							.forEach(f -> facets.put(getLabel(f), f));
+							.forEach(f -> facets.put(getLabel(f), f.setFiltered(true)));
 				}
 			}
 		}

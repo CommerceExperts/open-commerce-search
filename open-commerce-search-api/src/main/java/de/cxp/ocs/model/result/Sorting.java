@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Sorting {
 
+	public String 		label;
 	public String		field;
-
 	public SortOrder	sortOrder;
 
 	/**

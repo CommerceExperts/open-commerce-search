@@ -18,10 +18,17 @@ public class SortOptionConfiguration {
 	String field;
 
 	/**
-	 * specify which sort order options should be returned in the result. If
-	 * empty, sorting options won't be part of result.
+	 * Display label for the according sort option. Should be unique across all
+	 * the sort options.
 	 */
-	SortOrder[] shownOrders = new SortOrder[] { SortOrder.ASC, SortOrder.DESC };
+	String label;
+
+	/**
+	 * Specify the sort order of that configured option. If null, this sort
+	 * option will not be part of the result (but you could also skip the
+	 * configuration of this option at all to achive that)
+	 */
+	SortOrder order = SortOrder.ASC;
 
 	/**
 	 * From

@@ -36,18 +36,14 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.elasticsearch.search.sort.SortBuilder;
-import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.SearchPlugins;
-import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.config.SearchConfiguration;
-import de.cxp.ocs.config.SortOptionConfiguration;
 import de.cxp.ocs.elasticsearch.facets.FacetConfigurationApplyer;
 import de.cxp.ocs.elasticsearch.query.FiltersBuilder;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
@@ -62,7 +58,6 @@ import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.result.ResultHit;
 import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.model.result.SearchResultSlice;
-import de.cxp.ocs.model.result.Sorting;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import de.cxp.ocs.spi.search.RescorerProvider;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
@@ -103,15 +98,13 @@ public class Searcher {
 
 	private final List<RescorerProvider> rescorers;
 
-	private final Map<String, Field> sortFields;
-	private final Map<String, SortOptionConfiguration>	sortFieldConfig;
-
+	private final SortingHandler sortingHandler;
+	
 	private ScoringCreator scoringCreator;
 
 	private SpellCorrector spellCorrector;
 
 	private final Timer findTimer;
-	private final Timer sortTimer;
 	private final Timer sqbTimer;
 	private final Timer inputWordsTimer;
 	private final Timer correctedWordsTimer;
@@ -126,7 +119,6 @@ public class Searcher {
 		this.fieldIndex = searchContext.getFieldConfigIndex();
 
 		findTimer = getTimer("find", config.getIndexName());
-		sortTimer = getTimer("applySort", config.getIndexName());
 		resultTimer = getTimer("buildResult", config.getIndexName());
 		sqbTimer = getTimer("stagedSearch", config.getIndexName());
 		inputWordsTimer = getTimer("inputWordsSearch", config.getIndexName());
@@ -140,11 +132,10 @@ public class Searcher {
 				.orElseGet(WhitespaceAnalyzer::new);
 		userQueryPreprocessors = searchContext.userQueryPreprocessors;
 
+		sortingHandler = new SortingHandler(fieldIndex, config.getSortConfigs());
 		facetApplier = new FacetConfigurationApplyer(searchContext);
 		filtersBuilder = new FiltersBuilder(searchContext);
 		scoringCreator = new ScoringCreator(searchContext);
-		sortFields = fetchSortFields();
-		sortFieldConfig = config.getSortConfigs().stream().collect(Collectors.toMap(SortOptionConfiguration::getField, s -> s));
 		spellCorrector = initSpellCorrection();
 		rescorers = SearchPlugins.initialize(config.getRescorers(), plugins.getRescorerProviders(), config.getPluginConfiguration());
 
@@ -160,11 +151,6 @@ public class Searcher {
 	private SpellCorrector initSpellCorrection() {
 		Set<String> spellCorrectionFields = fieldIndex.getFieldsByUsage(FieldUsage.Search).keySet();
 		return new SpellCorrector(spellCorrectionFields.toArray(new String[spellCorrectionFields.size()]));
-	}
-
-	private Map<String, Field> fetchSortFields() {
-		Map<String, Field> tempSortFields = fieldIndex.getFieldsByUsage(FieldUsage.Sort);
-		return Collections.unmodifiableMap(tempSortFields);
 	}
 
 	/**
@@ -199,7 +185,7 @@ public class Searcher {
 		SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource().size(parameters.limit)
 				.from(parameters.offset);
 
-		List<SortBuilder<?>> variantSortings = applySorting(parameters.sortings, searchSourceBuilder);
+		List<SortBuilder<?>> variantSortings = sortingHandler.applySorting(parameters.sortings, searchSourceBuilder);
 		setFetchSources(searchSourceBuilder, variantSortings);
 
 		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters);
@@ -338,27 +324,11 @@ public class Searcher {
 				searchResult.slices.add(searchResultSlice);
 			}
 		});
-		searchResult.sortOptions = buildSortOptions(linkBuilder);
+		searchResult.sortOptions = sortingHandler.buildSortOptions(linkBuilder);
 
 		return searchResult;
 	}
 
-	private List<Sorting> buildSortOptions(SearchQueryBuilder linkBuilder) {
-		List<Sorting> sortings = new ArrayList<>();
-		for (Field sortField : sortFields.values()) {
-			// XXX check why both level might not work
-			// if (sortField.isBothLevel())
-			// continue;
-			SortOptionConfiguration sortOptionConfiguration = sortFieldConfig.get(sortField.getName());
-			de.cxp.ocs.model.result.SortOrder[] sortOrders = sortOptionConfiguration == null ? de.cxp.ocs.model.result.SortOrder.values()
-					: sortOptionConfiguration.getShownOrders();
-			for (de.cxp.ocs.model.result.SortOrder order : sortOrders) {
-				sortings.add(new Sorting(sortField.getName(), order, linkBuilder.isSortingActive(sortField, order),
-						linkBuilder.withSortingLink(sortField, order)));
-			}
-		}
-		return sortings;
-	}
 
 	private void setFetchSources(SearchSourceBuilder searchSourceBuilder, List<SortBuilder<?>> variantSortings) {
 		List<String> includeFields = new ArrayList<>();
@@ -372,42 +342,6 @@ public class Searcher {
 		searchSourceBuilder.fetchSource(includeFields.toArray(new String[includeFields.size()]), null);
 	}
 
-	/**
-	 * Applies sort definitions onto the searchSourceBuilder and if some of these
-	 * sorts also apply to the variant level, it will create these sort definitions
-	 * and return them as list.
-	 * 
-	 * @param parameters
-	 * @param searchSourceBuilder
-	 * @return a list of potential variant sorts
-	 */
-	private List<SortBuilder<?>> applySorting(List<Sorting> sortings, SearchSourceBuilder searchSourceBuilder) {
-		return sortTimer.record(() -> {
-			List<SortBuilder<?>> variantSortings = new ArrayList<>();
-			for (Sorting sorting : sortings) {
-				Field sortField = sortFields.get(sorting.field);
-				if (sortField != null) {
-					SortOptionConfiguration sortConf = sortFieldConfig.get(sortField.getName());
-					String missingParam = sortConf != null ? sortConf.getMissing() : null;
-
-					searchSourceBuilder.sort(SortBuilders.fieldSort(FieldConstants.SORT_DATA + "." + sorting.field)
-							.order(sorting.sortOrder == null ? SortOrder.ASC : SortOrder.fromString(sorting.sortOrder.name()))
-							.missing(missingParam));
-
-					if (sortField.isVariantLevel()) {
-						variantSortings.add(
-								SortBuilders
-										.fieldSort(FieldConstants.VARIANTS + "." + FieldConstants.SORT_DATA + "." + sorting.field)
-										.order(sorting.sortOrder == null ? SortOrder.ASC : SortOrder.fromString(sorting.sortOrder.name()))
-										.missing(missingParam));
-					}
-				} else {
-					log.debug("tried to sort by an unsortable field {}", sorting.field);
-				}
-			}
-			return variantSortings;
-		});
-	}
 
 	private QueryBuilder buildFinalQuery(MasterVariantQuery searchQuery, MasterVariantQuery basicFilters,
 			List<SortBuilder<?>> variantSortings) {
@@ -479,7 +413,7 @@ public class Searcher {
 		srSlice.resultLink = SearchQueryBuilder.toLink(parameters).toString();
 		srSlice.matchCount = searchHits.getTotalHits().value;
 
-		Map<String, SortOrder> sortedFields = getSortedNumericFields(parameters);
+		Map<String, SortOrder> sortedFields = sortingHandler.getSortedNumericFields(parameters);
 
 		ArrayList<ResultHit> resultHits = new ArrayList<>();
 		for (SearchHit hit : searchHits.getHits()) {
@@ -499,17 +433,6 @@ public class Searcher {
 		srSlice.hits = resultHits;
 		srSlice.nextOffset = parameters.offset + searchHits.getHits().length;
 		return srSlice;
-	}
-
-	private Map<String, SortOrder> getSortedNumericFields(InternalSearchParams parameters) {
-		Map<String, SortOrder> sortedNumberFields = new HashMap<>();
-		for (Sorting sorting : parameters.sortings) {
-			Field sortingField = sortFields.get(sorting.field);
-			if (sortingField != null && FieldType.number.equals(sortingField.getType())) {
-				sortedNumberFields.put(sorting.field, SortOrder.fromString(sorting.sortOrder.name()));
-			}
-		}
-		return sortedNumberFields;
 	}
 
 	/**

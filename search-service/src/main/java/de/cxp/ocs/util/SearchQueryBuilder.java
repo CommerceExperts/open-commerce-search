@@ -112,7 +112,7 @@ public class SearchQueryBuilder {
 				&& urlParams.get("sort").matches("(^|.*,)"+Pattern.quote(sortStringRepresentation(sortField.getName(), order))+"($|,.*)");
 	}
 
-	private String sortStringRepresentation(String fieldName, SortOrder order) {
+	public static String sortStringRepresentation(String fieldName, SortOrder order) {
 		return (order.equals(SortOrder.DESC) ? "-" + fieldName : fieldName);
 	}
 	

@@ -115,7 +115,7 @@ public class SerializationTest {
 
 				new ImportSession("foo-bar", "foo-bar-20191203"),
 
-				new Sorting("title", SortOrder.ASC, false, "sort=title"),
+				new Sorting("Title A-Z", "title", SortOrder.ASC, false, "sort=title"),
 
 				new SearchQuery()
 						.setQ("foo")

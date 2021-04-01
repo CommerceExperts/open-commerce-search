@@ -6,12 +6,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.11.0</version>
+		<version>0.14.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>ocs-java-client</artifactId>
-	<version>0.6.0</version>
+	<version>0.7.0</version>
 	<packaging>jar</packaging>
 
 	<description>A ready to use client for the OCS API</description>

@@ -111,8 +111,8 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 				}
 			}
 
+			// mark the whole path as selected
 			if (lastLevelEntry.isSelected()) {
-				// don't confuse with rude child ;)
 				HierarchialFacetEntry rootChild = entries.get(categories[0]);
 				rootChild.setSelected(true);
 				for (int i = 1; i < categories.length - 1; i++) {
@@ -142,7 +142,11 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		boolean isSelected = linkBuilder.isFilterSelected(facetConfig.getSourceField(), categoryPath);
 		String link;
 		if (isSelected) {
-			link = linkBuilder.withoutFilterAsLink(facetConfig, categoryPath);
+			int parentPathEndIndex = categoryPath.lastIndexOf('/');
+			if (parentPathEndIndex != -1)
+				link = linkBuilder.withFilterAsLink(facetConfig, categoryPath.substring(0, parentPathEndIndex));
+			else
+				link = linkBuilder.withoutFilterAsLink(facetConfig, categoryPath);
 		}
 		else {
 			link = linkBuilder.withFilterAsLink(facetConfig, categoryPath);

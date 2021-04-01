@@ -27,6 +27,6 @@
 		<appender-ref ref="STDOUT" />
 	</root>
 
-	<logger name="de.cxp.osc" level="${log.ocs.level:-INFO}" />
+	<logger name="de.cxp.ocs" level="${log.ocs.level:-INFO}" />
 
 </configuration>
