@@ -110,7 +110,6 @@ public class SearchController implements SearchService {
 		}
 
 		SearchContext searchContext = searchContexts.computeIfAbsent(tenant, this::loadContext);
-		log.debug("Using index {} for tenant {}", searchContext.config.getIndexName(), tenant);
 
 		final InternalSearchParams parameters = new InternalSearchParams();
 		parameters.limit = searchQuery.limit;
@@ -183,6 +182,7 @@ public class SearchController implements SearchService {
 				searchConfig.getQueryProcessing().getUserQueryPreprocessors(),
 				plugins.getUserQueryPreprocessors(),
 				searchConfig.getPluginConfiguration());
+		log.debug("Using index {} for tenant {}", searchConfig.getIndexName(), tenant);
 		return new SearchContext(fieldConfigAccess, searchConfig, userQueryPreprocessors);
 	}
 

@@ -239,8 +239,8 @@ public class Searcher {
 			searchResponse = executeSearchRequest(searchSourceBuilder);
 
 			if (log.isDebugEnabled()) {
-				log.debug("Query Builder Nr {} ({}) done in {}ms with {} hits", i, stagedQueryBuilder.getName(),
-						sw.getTime(), searchResponse.getHits().getTotalHits().value);
+				log.debug("Query Builder Nr {} ({}) for query '{}' done in {}ms with {} hits", i, stagedQueryBuilder.getName(),
+						parameters.userQuery, sw.getTime(), searchResponse.getHits().getTotalHits().value);
 			}
 			inputWordsSample.stop(inputWordsTimer);
 
