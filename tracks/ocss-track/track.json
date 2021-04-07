@@ -1,0 +1,43 @@
+{% import "rally.helpers" as rally with context %}
+{
+  "version": 2,
+  "description": "Tracker-generated track for ocss-track",
+  "indices": [
+    {
+      "name": "ocs-1-demo-olek-sven-de",
+      "body": "ocs-1-demo-olek-sven-de.json"
+    }
+  ],
+  "corpora": [
+  ],
+  "schedule": [
+    {
+      "operation": "delete-index"
+    },
+    {
+      "operation": {
+        "operation-type": "create-index",
+        "settings": {{index_settings | default({}) | tojson}}
+      }
+    },
+    {
+      "operation": {
+        "operation-type": "cluster-health",
+        "index": "ocs-1-demo-olek-sven-de",
+        "request-params": {
+          "wait_for_status": "{{cluster_health | default('green')}}",
+          "wait_for_no_relocating_shards": "true"
+        },
+        "retry-until-success": true
+      }
+    },
+    {
+      "operation": {
+        "operation-type": "bulk",
+        "bulk-size": {{bulk_size | default(5000)}},
+        "ingest-percentage": {{ingest_percentage | default(100)}}
+      },
+      "clients": {{bulk_indexing_clients | default(8)}}
+    }
+  ]
+}

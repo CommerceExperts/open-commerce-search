@@ -1,0 +1,375 @@
+{
+    "mappings": {
+        "dynamic_templates": [
+            {
+                "search_data": {
+                    "mapping": {
+                        "analyzer": "minimal",
+                        "copy_to": "searchable_numeric_patterns",
+                        "fielddata": true,
+                        "fields": {
+                            "ngram": {
+                                "analyzer": "ngram",
+                                "norms": false,
+                                "type": "text"
+                            },
+                            "shingles": {
+                                "analyzer": "shingles",
+                                "norms": false,
+                                "type": "text"
+                            },
+                            "standard": {
+                                "analyzer": "standard",
+                                "norms": false,
+                                "type": "text"
+                            }
+                        },
+                        "norms": false,
+                        "type": "text"
+                    },
+                    "path_match": "*searchData.*"
+                }
+            },
+            {
+                "result_data": {
+                    "mapping": {
+                        "doc_values": false,
+                        "index": false,
+                        "type": "text"
+                    },
+                    "path_match": "*resultData.*"
+                }
+            },
+            {
+                "scores": {
+                    "mapping": {
+                        "type": "float"
+                    },
+                    "path_match": "*scores.*"
+                }
+            },
+            {
+                "string_sort_data": {
+                    "mapping": {
+                        "eager_global_ordinals": true,
+                        "type": "keyword"
+                    },
+                    "match_mapping_type": "string",
+                    "path_match": "*sortData.*"
+                }
+            }
+        ],
+        "properties": {
+            "categories": {
+                "type": "object"
+            },
+            "numberFacetData": {
+                "properties": {
+                    "name": {
+                        "eager_global_ordinals": true,
+                        "type": "keyword"
+                    },
+                    "value": {
+                        "type": "float"
+                    }
+                },
+                "type": "nested"
+            },
+            "pathFacetData": {
+                "properties": {
+                    "id": {
+                        "eager_global_ordinals": true,
+                        "type": "keyword"
+                    },
+                    "name": {
+                        "eager_global_ordinals": true,
+                        "type": "keyword"
+                    },
+                    "value": {
+                        "eager_global_ordinals": true,
+                        "type": "keyword"
+                    }
+                },
+                "type": "nested"
+            },
+            "resultData": {
+                "type": "object"
+            },
+            "scores": {
+                "type": "object"
+            },
+            "searchData": {
+                "type": "object"
+            },
+            "searchable_numeric_patterns": {
+                "analyzer": "num_attributes",
+                "type": "text"
+            },
+            "sortData": {
+                "type": "object"
+            },
+            "suggest": {
+                "analyzer": "suggest",
+                "max_input_length": 50,
+                "preserve_position_increments": true,
+                "preserve_separators": true,
+                "type": "completion"
+            },
+            "termFacetData": {
+                "properties": {
+                    "id": {
+                        "eager_global_ordinals": true,
+                        "type": "keyword"
+                    },
+                    "name": {
+                        "eager_global_ordinals": true,
+                        "type": "keyword"
+                    },
+                    "value": {
+                        "eager_global_ordinals": true,
+                        "type": "keyword"
+                    }
+                },
+                "type": "nested"
+            },
+            "variants": {
+                "properties": {
+                    "numberFacetData": {
+                        "properties": {
+                            "name": {
+                                "eager_global_ordinals": true,
+                                "type": "keyword"
+                            },
+                            "value": {
+                                "type": "float"
+                            }
+                        },
+                        "type": "nested"
+                    },
+                    "termFacetData": {
+                        "properties": {
+                            "id": {
+                                "eager_global_ordinals": true,
+                                "type": "keyword"
+                            },
+                            "name": {
+                                "eager_global_ordinals": true,
+                                "type": "keyword"
+                            },
+                            "value": {
+                                "eager_global_ordinals": true,
+                                "type": "keyword"
+                            }
+                        },
+                        "type": "nested"
+                    }
+                },
+                "type": "nested"
+            }
+        }
+    },
+    "settings": {
+        "index": {
+            "analysis": {
+                "analyzer": {
+                    "category_analyzer": {
+                        "tokenizer": "path_hierarchy"
+                    },
+                    "id_sku_analyzer": {
+                        "filter": [
+                            "remove_whitespace",
+                            "lowercase"
+                        ],
+                        "tokenizer": "keyword",
+                        "type": "custom"
+                    },
+                    "minimal": {
+                        "char_filter": [
+                            "html",
+                            "german_special_letters",
+                            "irrelevant_chars"
+                        ],
+                        "filter": [
+                            "lowercase",
+                            "asciifolding"
+                        ],
+                        "tokenizer": "whitespace",
+                        "type": "custom"
+                    },
+                    "ngram": {
+                        "char_filter": [
+                            "html",
+                            "irrelevant_chars",
+                            "german_special_letters",
+                            "word_border_marker",
+                            "word_border_mark_dedup"
+                        ],
+                        "filter": [
+                            "lowercase"
+                        ],
+                        "tokenizer": "trigram_tokenizer",
+                        "type": "custom"
+                    },
+                    "num_attributes": {
+                        "filter": [
+                            "capture_separated_units",
+                            "remove_whitespace",
+                            "inch_unit",
+                            "lowercase",
+                            "normalize_punctuation",
+                            "remove_thousand_separator",
+                            "float_trunc",
+                            "unique"
+                        ],
+                        "tokenizer": "num_w_unit_tokens",
+                        "type": "custom"
+                    },
+                    "shingles": {
+                        "char_filter": [
+                            "html",
+                            "german_special_letters"
+                        ],
+                        "filter": [
+                            "lowercase",
+                            "asciifolding",
+                            "glued_shingle"
+                        ],
+                        "tokenizer": "standard",
+                        "type": "custom"
+                    },
+                    "standard": {
+                        "char_filter": [
+                            "html",
+                            "german_special_letters",
+                            "irrelevant_chars"
+                        ],
+                        "filter": [
+                            "lowercase",
+                            "aws_synonyms",
+                            "german_stemmer"
+                        ],
+                        "tokenizer": "standard",
+                        "type": "custom"
+                    },
+                    "suggest": {
+                        "filter": [
+                            "lowercase",
+                            "glued_shingle"
+                        ],
+                        "tokenizer": "whitespace",
+                        "type": "custom"
+                    }
+                },
+                "char_filter": {
+                    "german_special_letters": {
+                        "mappings": [
+                            "\u00c4 => ae",
+                            "\u00e4 => ae",
+                            "\u00d6 => oe",
+                            "\u00f6 => oe",
+                            "\u00dc => ue",
+                            "\u00fc => ue",
+                            "\u00df => ss"
+                        ],
+                        "type": "mapping"
+                    },
+                    "html": {
+                        "type": "html_strip"
+                    },
+                    "irrelevant_chars": {
+                        "pattern": "[^\\p{L}\\s\\d_-]",
+                        "replacement": " ",
+                        "type": "pattern_replace"
+                    },
+                    "word_border_mark_dedup": {
+                        "pattern": "_{2,}",
+                        "replacement": "_",
+                        "type": "pattern_replace"
+                    },
+                    "word_border_marker": {
+                        "pattern": "\\b",
+                        "replacement": "_",
+                        "type": "pattern_replace"
+                    }
+                },
+                "filter": {
+                    "aws_synonyms": {
+                        "synonyms": [
+                            "stuhl, st\u00fchle",
+                            "handtasche, hand tasche, handtaschen, hand taschen",
+                            "damenrock, damen rock, damenr\u00f6cke, damen r\u00f6cke",
+                            "damen hose, damenhose, damenhosen, damen hosen"
+                        ],
+                        "type": "synonym"
+                    },
+                    "capture_separated_units": {
+                        "patterns": "\\d\\s+[a-zA-Z]+",
+                        "type": "pattern_capture"
+                    },
+                    "float_trunc": {
+                        "pattern": "(\\d+)\\.\\d+([a-z]+)",
+                        "replacement": "$1$2",
+                        "type": "pattern_replace"
+                    },
+                    "german_stemmer": {
+                        "language": "light_german",
+                        "type": "stemmer"
+                    },
+                    "german_stop": {
+                        "stopwords": "_german_",
+                        "type": "stop"
+                    },
+                    "glued_shingle": {
+                        "token_separator": "",
+                        "type": "shingle"
+                    },
+                    "inch_unit": {
+                        "pattern": "\"",
+                        "replacement": "",
+                        "type": "pattern_replace"
+                    },
+                    "normalize_punctuation": {
+                        "pattern": "[.,']+",
+                        "replacement": ".",
+                        "type": "pattern_replace"
+                    },
+                    "remove_thousand_separator": {
+                        "pattern": "\\.(\\d{3,})",
+                        "replacement": "$1",
+                        "type": "pattern_replace"
+                    },
+                    "remove_whitespace": {
+                        "pattern": "\\s+",
+                        "replacement": "",
+                        "type": "pattern_replace"
+                    }
+                },
+                "tokenizer": {
+                    "num_w_unit_tokens": {
+                        "group": "1",
+                        "pattern": "(\\b[\\d.,']+(\\s*x\\s*[\\d.,']+)*+[\\s-]*[a-zA-Z\\\"]+)",
+                        "type": "pattern"
+                    },
+                    "trigram_tokenizer": {
+                        "max_gram": "3",
+                        "min_gram": "3",
+                        "token_chars": [
+                            "letter",
+                            "digit"
+                        ],
+                        "type": "ngram"
+                    }
+                }
+            },
+            "max_result_window": "10000",
+            "number_of_replicas": "{{number_of_replicas | default(1)}}",
+            "number_of_shards": "{{number_of_shards | default(1)}}",
+            "refresh_interval": "5s",
+            "similarity": {
+                "default": {
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+}
