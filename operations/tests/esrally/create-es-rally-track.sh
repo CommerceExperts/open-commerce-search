@@ -81,8 +81,27 @@ else
   log "Rally data from index $INDEX in $OUTPUT_PATH created.";
 fi
 
-# generate challenge from user search log
-log "Start with generating challenges from search log...";
+log "Manipulate generated $OUTPUT_PATH/$TRACK_NAME/track.json ...";
+echo '{% import "rally.helpers" as rally with context %}' > $OUTPUT_PATH/$TRACK_NAME/track.json.tmp;
+sed -i 's/{{/"/g' $OUTPUT_PATH/$TRACK_NAME/track.json;
+sed -i 's/}}/"/g' $OUTPUT_PATH/$TRACK_NAME/track.json;
+sed -i 's/{%.*%}//g' $OUTPUT_PATH/$TRACK_NAME/track.json;
+sed -i 's/""/"/g' $OUTPUT_PATH/$TRACK_NAME/track.json;
+cat $OUTPUT_PATH/$TRACK_NAME/track.json | jq '{ version: .version, description: .description, indices: .indices, corpora: .corpora, challenges: [ "{{ rally.collect(parts=\"challenges/*.json\") }}" ] }' >> $OUTPUT_PATH/$TRACK_NAME/track.json.tmp;
+sed -i 's/\\"/"/g' $OUTPUT_PATH/$TRACK_NAME/track.json.tmp;
+sed -i 's/"{{/{{/g' $OUTPUT_PATH/$TRACK_NAME/track.json.tmp;
+sed -i 's/}}"/}}/g' $OUTPUT_PATH/$TRACK_NAME/track.json.tmp;
+mv -f $OUTPUT_PATH/$TRACK_NAME/track.json.tmp $OUTPUT_PATH/$TRACK_NAME/track.json;
+log "Manipulated generated $OUTPUT_PATH/$TRACK_NAME/track.json.";
+
+# generate challenges
+log "Start with generating challenges...";
+SOURCE_DIR=$( dirname "${BASH_SOURCE[0]}" );
+mkdir -p $OUTPUT_PATH/$TRACK_NAME/challenges || log "$OUTPUT_PATH/$TRACK_NAME/challenges already exists.";
+
+# challenges from template
+sed -e "s/{{INDEX}}/${INDEX}/g" $SOURCE_DIR/challenges/bulk-index.json > $OUTPUT_PATH/$TRACK_NAME/challenges/bulk-index.json;
+
 while read -r line; do
   echo $line;
 done < $FILE
