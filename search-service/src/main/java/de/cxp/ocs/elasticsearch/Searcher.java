@@ -235,7 +235,9 @@ public class Searcher {
 			}
 
 			searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
-			addRescorersFailsafe(parameters, customParams, searchSourceBuilder);
+			if (searchSourceBuilder.sorts() == null || searchSourceBuilder.sorts().isEmpty()) {
+				addRescorersFailsafe(parameters, customParams, searchSourceBuilder);
+			}
 			searchResponse = executeSearchRequest(searchSourceBuilder);
 
 			if (log.isDebugEnabled()) {
