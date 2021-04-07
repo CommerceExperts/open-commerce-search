@@ -37,6 +37,9 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import org.slf4j.MDC;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.SearchPlugins;
@@ -74,6 +77,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Searcher {
+
+	private static final Marker QUERY_MARKER = MarkerFactory.getMarker("QUERY");
 
 	@NonNull
 	private final RestHighLevelClient restClient;
@@ -166,6 +171,10 @@ public class Searcher {
 
 		long start = System.currentTimeMillis();
 
+		if (log.isTraceEnabled()) {
+			MDC.put("query", parameters.userQuery);
+		}
+
 		Iterator<ESQueryFactory> stagedQueryBuilders;
 		List<QueryStringTerm> searchWords;
 		if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
@@ -221,6 +230,8 @@ public class Searcher {
 			if (log.isTraceEnabled()) {
 				log.trace("query nr {}: {}: match query = {}", i, stagedQueryBuilder.getName(),
 						searchQuery == null ? "NULL"
+								: searchQuery.getMasterLevelQuery().toString().replaceAll("[\n\\s]+", " "));
+				log.trace(QUERY_MARKER, "{}", searchQuery == null ? "NULL"
 								: searchQuery.getMasterLevelQuery().toString().replaceAll("[\n\\s]+", " "));
 			}
 			if (searchQuery == null)
