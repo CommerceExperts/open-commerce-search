@@ -97,8 +97,6 @@ ocs:
           title:
             name: title
             type: string
-            source-names: 
-              - title
             usage:
               - Search
               - Result
@@ -106,8 +104,6 @@ ocs:
           score:
             name: score
             type: number
-            source-names:
-              - score
             usage:
               - Facet
               - Result
@@ -115,8 +111,6 @@ ocs:
           url:
             name: url
             type: string
-            source-names:
-              - url
             usage:
               - Result
           number_of_comments:
@@ -143,8 +137,6 @@ ocs:
               - Result
           timestamp:
             name: timestamp
-            source-names:
-              - timestamp 
             usage:
               - Result
 ```
