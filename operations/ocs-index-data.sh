@@ -93,7 +93,7 @@ function finish {
 trap finish EXIT
 
 log "creating index $INDEX_NAME"
-resp="$(curl --no-progress-meter -v -w "%{http_code}\n" -H "$CTHJ" "$INDEXER_URL/start/$INDEX_NAME?locale=$LOCALE" -o .ocs-session 2>&1)"
+resp="$(curl -v -w "%{http_code}\n" -H "$CTHJ" "$INDEXER_URL/start/$INDEX_NAME?locale=$LOCALE" -o .ocs-session 2>&1)"
 http_code="$(echo "$resp" | tail -n1)"
 if [[ "$http_code" != 200 ]]; then
   log "response: $resp"
@@ -104,7 +104,7 @@ INDEX_SESSION="$(<.ocs-session jq -c .)"
 # enable exit on error
 set -e
 FULLSEP="${QUOTE}${SEP}${QUOTE}"
-tail -n +"$((1+SKIP))" ff_data/test/export.mind_sk_SK.csv |  
+tail -n +"$((1+SKIP))" $FILE |  
 	while read -r line; do 
 		data="$(echo "$line" | sed 's/'"$FULLSEP"'/\n/g' | sed -r 's/^'"$QUOTE"'|'"$QUOTE"'$//' | jq --slurp --raw-input 'split("\n")|{id:.['"$IDNR"'],data:'"$MAPPING"'}')"
     curl -s -H "$CTHJ" "$INDEXER_URL/add" -d '{"session":'"$INDEX_SESSION"', "documents":['"$data"']}' -o /dev/null
