@@ -363,14 +363,16 @@ public class Searcher {
 		FilterFunctionBuilder[] masterScoringFunctions = scoringCreator.getScoringFunctions(false);
 		if (masterScoringFunctions.length > 0) {
 			masterLevelQuery = QueryBuilders.functionScoreQuery(masterLevelQuery, masterScoringFunctions)
-					.boostMode(scoringCreator.getBoostMode()).scoreMode(scoringCreator.getScoreMode())
+					.boostMode(scoringCreator.getBoostMode())
+					.scoreMode(scoringCreator.getScoreMode())
 					.maxBoost(masterScoringFunctions.length);
 		}
 
 		QueryBuilder variantsMatchQuery;
+		// if sorting is available, scoring and boosting not necessary
 		if (variantSortings.isEmpty() && searchQuery.getVariantLevelQuery() != null) {
-			// if sorting is available, scoring and boosting not necessary
-			variantsMatchQuery = QueryBuilders.boolQuery().must(varFilterQuery)
+			variantsMatchQuery = QueryBuilders.boolQuery()
+					.must(varFilterQuery)
 					.should(searchQuery.getVariantLevelQuery().boost(2f));
 
 			FilterFunctionBuilder[] variantScoringFunctions = scoringCreator.getScoringFunctions(true);

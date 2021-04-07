@@ -3,6 +3,20 @@ package de.cxp.ocs.config;
 public enum ScoreOption {
 
 	/**
+	 * <p>
+	 * Option that should be set with a boolean value (true|false).
+	 * </p>
+	 * <p>
+	 * If set to "true", that scoring option will also be used to score the
+	 * variant records of a master among each other.
+	 * </p>
+	 * <p>
+	 * Defaults to "false"
+	 * </p>
+	 */
+	useForVariants,
+
+	/**
 	 * if not set, the random function won't be deterministic and change
 	 * for each request
 	 */

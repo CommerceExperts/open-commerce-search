@@ -51,6 +51,9 @@ public class ScoringCreator {
 		while (scoreFunctionIterator.hasNext()) {
 			ScoringFunction scoringFunction = scoreFunctionIterator.next();
 
+			boolean useForVariants = Boolean.parseBoolean(scoringFunction.getOptions().getOrDefault(ScoreOption.useForVariants, "false"));
+			if (isForVariantLevel && !useForVariants) continue;
+
 			try {
 				switch (scoringFunction.getType()) {
 					case script_score:
