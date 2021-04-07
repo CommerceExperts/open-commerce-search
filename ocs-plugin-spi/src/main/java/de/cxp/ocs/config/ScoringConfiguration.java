@@ -7,8 +7,6 @@ import java.util.Map;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 
 /**
@@ -26,11 +24,9 @@ public class ScoringConfiguration {
 
 	@Accessors(chain = true)
 	@Data
-	@RequiredArgsConstructor
 	@NoArgsConstructor
 	public static class ScoringFunction {
 
-		@NonNull
 		private String field;
 
 		private ScoreType type = ScoreType.field_value_factor;

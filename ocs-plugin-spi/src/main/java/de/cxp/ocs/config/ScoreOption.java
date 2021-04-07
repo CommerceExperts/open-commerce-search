@@ -1,6 +1,7 @@
 package de.cxp.ocs.config;
 
 public enum ScoreOption {
+
 	/**
 	 * if not set, the random function won't be deterministic and change
 	 * for each request
@@ -9,6 +10,11 @@ public enum ScoreOption {
 
 	// field_value_factor options:
 	missing, modifier,
+
+	/**
+	 * required option for script_score
+	 */
+	script_code,
 
 	/**
 	 * required option for the decay_* score types.
