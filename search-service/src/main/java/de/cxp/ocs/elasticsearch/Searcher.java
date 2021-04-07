@@ -149,7 +149,7 @@ public class Searcher {
 	}
 
 	private SpellCorrector initSpellCorrection() {
-		Set<String> spellCorrectionFields = fieldIndex.getFieldsByUsage(FieldUsage.Search).keySet();
+		Set<String> spellCorrectionFields = fieldIndex.getFieldsByUsage(FieldUsage.SEARCH).keySet();
 		return new SpellCorrector(spellCorrectionFields.toArray(new String[spellCorrectionFields.size()]));
 	}
 
@@ -489,8 +489,8 @@ public class Searcher {
 					} else if (!f2.isPresent()) {
 						return -1;
 					}
-					int o1 = f1.get().getUsage().contains(FieldUsage.Score) ? 1 : 0;
-					int o2 = f2.get().getUsage().contains(FieldUsage.Score) ? 1 : 0;
+					int o1 = f1.get().getUsage().contains(FieldUsage.SCORE) ? 1 : 0;
+					int o2 = f2.get().getUsage().contains(FieldUsage.SCORE) ? 1 : 0;
 
 					if (o1 == 0 && o1 == o2) {
 						return String.CASE_INSENSITIVE_ORDER.compare(f1.get().getName(), f2.get().getName());

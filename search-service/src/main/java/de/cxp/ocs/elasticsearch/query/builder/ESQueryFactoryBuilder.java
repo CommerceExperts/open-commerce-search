@@ -154,7 +154,7 @@ public class ESQueryFactoryBuilder {
 		String fieldName = fieldNamePattern.split("[\\.]")[0];
 		Field fieldConf = null;
 		if (fieldName.endsWith("*")) {
-			for (Field field : fieldConfig.getFieldsByUsage(FieldUsage.Search).values()) {
+			for (Field field : fieldConfig.getFieldsByUsage(FieldUsage.SEARCH).values()) {
 				if (field != null && field.getName() != null
 						&& field.getName().startsWith(fieldName.substring(0, fieldName.length() - 1))) {
 					fieldConf = field;
@@ -165,6 +165,6 @@ public class ESQueryFactoryBuilder {
 		else {
 			fieldConf = fieldConfig.getField(fieldName).orElse(null);
 		}
-		return (fieldConf != null && fieldConf.getUsage().contains(FieldUsage.Search));
+		return (fieldConf != null && fieldConf.getUsage().contains(FieldUsage.SEARCH));
 	}
 }

@@ -14,21 +14,21 @@ public enum ScoreOption {
 	 * Defaults to "false"
 	 * </p>
 	 */
-	useForVariants,
+	USE_FOR_VARIANTS,
 
 	/**
 	 * if not set, the random function won't be deterministic and change
 	 * for each request
 	 */
-	random_seed,
+	RANDOM_SEED,
 
 	// field_value_factor options:
-	missing, modifier,
+	MISSING, MODIFIER,
 
 	/**
 	 * required option for script_score
 	 */
-	script_code,
+	SCRIPT_CODE,
 
 	/**
 	 * required option for the decay_* score types.
@@ -42,7 +42,7 @@ public enum ScoreOption {
 	 * see
 	 * https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-decay
 	 */
-	origin,
+	ORIGIN,
 
 	/**
 	 * required option for the decay_* score types.
@@ -56,7 +56,7 @@ public enum ScoreOption {
 	 * see
 	 * https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-decay
 	 */
-	scale,
+	SCALE,
 
 	/**
 	 * The decay parameter defines how documents are scored at the distance
@@ -65,7 +65,7 @@ public enum ScoreOption {
 	 * 
 	 * Only used for decay_* score types
 	 */
-	decay,
+	DECAY,
 
 	/**
 	 * If an offset is defined, the decay function will only compute the
@@ -74,5 +74,5 @@ public enum ScoreOption {
 	 * 
 	 * Only used for decay_* score types.
 	 */
-	offset
+	OFFSET
 }

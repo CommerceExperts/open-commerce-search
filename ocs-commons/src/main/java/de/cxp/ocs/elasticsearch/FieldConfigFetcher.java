@@ -46,16 +46,16 @@ public class FieldConfigFetcher {
 
 		@SuppressWarnings("unchecked")
 		Map<String, Object> mappings = (Map<String, Object>) mappingsData.getSourceAsMap().get("properties");
-		modifyFields(resultFields, getProperties(mappings, "searchData").keySet(), f -> f.setUsage(FieldUsage.Search));
-		modifyFields(resultFields, getProperties(mappings, "resultData").keySet(), f -> f.setUsage(FieldUsage.Result));
-		modifyFields(resultFields, getProperties(mappings, "sortData").keySet(), f -> f.setUsage(FieldUsage.Sort));
-		modifyFields(resultFields, getProperties(mappings, "scores").keySet(), f -> f.setUsage(FieldUsage.Score).setType(FieldType.number));
+		modifyFields(resultFields, getProperties(mappings, "searchData").keySet(), f -> f.setUsage(FieldUsage.SEARCH));
+		modifyFields(resultFields, getProperties(mappings, "resultData").keySet(), f -> f.setUsage(FieldUsage.RESULT));
+		modifyFields(resultFields, getProperties(mappings, "sortData").keySet(), f -> f.setUsage(FieldUsage.SORT));
+		modifyFields(resultFields, getProperties(mappings, "scores").keySet(), f -> f.setUsage(FieldUsage.SCORE).setType(FieldType.NUMBER));
 
 		Map<String, Object> variantMappings = getProperties(mappings, "variants");
-		modifyVariantFields(resultFields, getProperties(variantMappings, "searchData").keySet(), f -> f.setUsage(FieldUsage.Search));
-		modifyVariantFields(resultFields, getProperties(variantMappings, "resultData").keySet(), f -> f.setUsage(FieldUsage.Result));
-		modifyVariantFields(resultFields, getProperties(variantMappings, "sortData").keySet(), f -> f.setUsage(FieldUsage.Sort));
-		modifyVariantFields(resultFields, getProperties(variantMappings, "scores").keySet(), f -> f.setUsage(FieldUsage.Score).setType(FieldType.number));
+		modifyVariantFields(resultFields, getProperties(variantMappings, "searchData").keySet(), f -> f.setUsage(FieldUsage.SEARCH));
+		modifyVariantFields(resultFields, getProperties(variantMappings, "resultData").keySet(), f -> f.setUsage(FieldUsage.RESULT));
+		modifyVariantFields(resultFields, getProperties(variantMappings, "sortData").keySet(), f -> f.setUsage(FieldUsage.SORT));
+		modifyVariantFields(resultFields, getProperties(variantMappings, "scores").keySet(), f -> f.setUsage(FieldUsage.SCORE).setType(FieldType.NUMBER));
 
 		// get facet fields
 		SearchSourceBuilder sourceBuilder = SearchSourceBuilder.searchSource()
@@ -75,11 +75,11 @@ public class FieldConfigFetcher {
 		SearchResponse searchResponse = restHLClient.search(searchRequest, RequestOptions.DEFAULT);
 
 		// use facet names to set according field information
-		modifyFields(resultFields, extractFacetFields(searchResponse, "_master_term_facets"), f -> f.setUsage(FieldUsage.Facet));
-		modifyFields(resultFields, extractFacetFields(searchResponse, "_master_path_facets"), f -> f.setUsage(FieldUsage.Facet).setType(FieldType.category));
-		modifyFields(resultFields, extractFacetFields(searchResponse, "_master_number_facets"), f -> f.setUsage(FieldUsage.Facet).setType(FieldType.number));
-		modifyVariantFields(resultFields, extractFacetFields(searchResponse, "_variant_term_facets"), f -> f.setUsage(FieldUsage.Facet));
-		modifyVariantFields(resultFields, extractFacetFields(searchResponse, "_variant_number_facets"), f -> f.setUsage(FieldUsage.Facet).setType(FieldType.number));
+		modifyFields(resultFields, extractFacetFields(searchResponse, "_master_term_facets"), f -> f.setUsage(FieldUsage.FACET));
+		modifyFields(resultFields, extractFacetFields(searchResponse, "_master_path_facets"), f -> f.setUsage(FieldUsage.FACET).setType(FieldType.CATEGORY));
+		modifyFields(resultFields, extractFacetFields(searchResponse, "_master_number_facets"), f -> f.setUsage(FieldUsage.FACET).setType(FieldType.NUMBER));
+		modifyVariantFields(resultFields, extractFacetFields(searchResponse, "_variant_term_facets"), f -> f.setUsage(FieldUsage.FACET));
+		modifyVariantFields(resultFields, extractFacetFields(searchResponse, "_variant_number_facets"), f -> f.setUsage(FieldUsage.FACET).setType(FieldType.NUMBER));
 
 		// deduplicate FieldUsages which can't be a Set natively because of some
 		// spring config mapper thing...
@@ -105,9 +105,9 @@ public class FieldConfigFetcher {
 
 	private void modifyVariantFields(Map<String, Field> resultFields, Set<String> fieldNames, Consumer<Field> fieldModifier) {
 		for (String fieldName : fieldNames) {
-			Field field = resultFields.computeIfAbsent(fieldName, n -> new Field(n).setFieldLevel(FieldLevel.variant));
+			Field field = resultFields.computeIfAbsent(fieldName, n -> new Field(n).setFieldLevel(FieldLevel.VARIANT));
 			if (field.isMasterLevel()) {
-				field.setFieldLevel(FieldLevel.both);
+				field.setFieldLevel(FieldLevel.BOTH);
 			}
 			fieldModifier.accept(field);
 		}

@@ -41,7 +41,7 @@ public class ScoringCreator {
 		scoreConf = context.config.getScoring();
 		// copy into array, so that we can remove invalid score definitions
 		scoreFunctions = new ArrayList<>(scoreConf.getScoreFunctions());
-		Map<String, Field> tempScoreFields = context.getFieldConfigIndex().getFieldsByUsage(FieldUsage.Score);
+		Map<String, Field> tempScoreFields = context.getFieldConfigIndex().getFieldsByUsage(FieldUsage.SCORE);
 		scoreFields = Collections.unmodifiableMap(tempScoreFields);
 	}
 
@@ -51,20 +51,20 @@ public class ScoringCreator {
 		while (scoreFunctionIterator.hasNext()) {
 			ScoringFunction scoringFunction = scoreFunctionIterator.next();
 
-			boolean useForVariants = Boolean.parseBoolean(scoringFunction.getOptions().getOrDefault(ScoreOption.useForVariants, "false"));
+			boolean useForVariants = Boolean.parseBoolean(scoringFunction.getOptions().getOrDefault(ScoreOption.USE_FOR_VARIANTS, "false"));
 			if (isForVariantLevel && !useForVariants) continue;
 
 			try {
 				switch (scoringFunction.getType()) {
-					case script_score:
+					case SCRIPT_SCORE:
 						buildScriptScoreFunction(scoringFunction)
 								.ifPresent(f -> filterFunctionBuilders.add(new FilterFunctionBuilder(f)));
 						break;
-					case weight:
+					case WEIGHT:
 						filterFunctionBuilders.add(
 								new FilterFunctionBuilder(ScoreFunctionBuilders.weightFactorFunction(scoringFunction.getWeight())));
 						break;
-					case random_score:
+					case RANDOM_SCORE:
 						buildRandomScoreFunction(scoringFunction, scoreFields.get(scoringFunction.getField()), isForVariantLevel)
 								.ifPresent(f -> filterFunctionBuilders.add(new FilterFunctionBuilder(f)));
 						break;
@@ -93,44 +93,44 @@ public class ScoringCreator {
 		if (isForVariantLevel && scoreField.isVariantLevel() || !isForVariantLevel && scoreField.isMasterLevel()) {
 			String fullFieldName = getFullName(scoreField, isForVariantLevel);
 			switch (scoringFunction.getType()) {
-				case field_value_factor:
+				case FIELD_VALUE_FACTOR:
 					function = getFieldValueFactorFunction(scoringFunction, fullFieldName);
 					break;
-				case decay_exp:
-				case decay_gauss:
-				case decay_linear:
+				case DECAY_EXP:
+				case DECAY_GAUSS:
+				case DECAY_LINEAR:
 					Map<ScoreOption, String> options = scoringFunction.getOptions();
-					if (!options.containsKey(ScoreOption.origin)) {
+					if (!options.containsKey(ScoreOption.ORIGIN)) {
 						throw new ConfigurationException("missing required option 'origin' for " + scoringFunction.getType() + " scoring on field " + scoringFunction.getField());
 					}
-					if (!options.containsKey(ScoreOption.scale)) {
+					if (!options.containsKey(ScoreOption.SCALE)) {
 						throw new ConfigurationException("missing required option 'scale' for " + scoringFunction.getType() + " scoring on field " + scoringFunction.getField());
 					}
 
 					DecayFunctionBuilder<?> decayFunct = null;
-					if (ScoreType.decay_exp.equals(scoringFunction.getType())) {
+					if (ScoreType.DECAY_EXP.equals(scoringFunction.getType())) {
 						decayFunct = ScoreFunctionBuilders.exponentialDecayFunction(
 								fullFieldName,
-								options.get(ScoreOption.origin),
-								options.get(ScoreOption.scale),
-								options.getOrDefault(ScoreOption.offset, "0"),
-								Double.parseDouble(options.getOrDefault(ScoreOption.decay, "0.5")));
+								options.get(ScoreOption.ORIGIN),
+								options.get(ScoreOption.SCALE),
+								options.getOrDefault(ScoreOption.OFFSET, "0"),
+								Double.parseDouble(options.getOrDefault(ScoreOption.DECAY, "0.5")));
 					}
-					else if (ScoreType.decay_gauss.equals(scoringFunction.getType())) {
+					else if (ScoreType.DECAY_GAUSS.equals(scoringFunction.getType())) {
 						decayFunct = ScoreFunctionBuilders.gaussDecayFunction(
 								fullFieldName,
-								options.get(ScoreOption.origin),
-								options.get(ScoreOption.scale),
-								options.getOrDefault(ScoreOption.offset, "0"),
-								Double.parseDouble(options.getOrDefault(ScoreOption.decay, "0.5")));
+								options.get(ScoreOption.ORIGIN),
+								options.get(ScoreOption.SCALE),
+								options.getOrDefault(ScoreOption.OFFSET, "0"),
+								Double.parseDouble(options.getOrDefault(ScoreOption.DECAY, "0.5")));
 					}
 					else {
 						decayFunct = ScoreFunctionBuilders.linearDecayFunction(
 								fullFieldName,
-								options.get(ScoreOption.origin),
-								options.get(ScoreOption.scale),
-								options.getOrDefault(ScoreOption.offset, "0"),
-								Double.parseDouble(options.getOrDefault(ScoreOption.decay, "0.5")));
+								options.get(ScoreOption.ORIGIN),
+								options.get(ScoreOption.SCALE),
+								options.getOrDefault(ScoreOption.OFFSET, "0"),
+								Double.parseDouble(options.getOrDefault(ScoreOption.DECAY, "0.5")));
 					}
 					decayFunct.setWeight(scoringFunction.getWeight());
 					function = decayFunct;
@@ -147,8 +147,8 @@ public class ScoringCreator {
 		FieldValueFactorFunctionBuilder fieldFunct = ScoreFunctionBuilders.fieldValueFactorFunction(fullFieldName);
 		fieldFunct.setWeight(scoreMethod.getWeight());
 		Map<ScoreOption, String> options = scoreMethod.getOptions();
-		fieldFunct.modifier(Modifier.fromString(options.getOrDefault(ScoreOption.modifier, "NONE")));
-		fieldFunct.missing(Double.parseDouble(options.getOrDefault(ScoreOption.missing, "0")));
+		fieldFunct.modifier(Modifier.fromString(options.getOrDefault(ScoreOption.MODIFIER, "NONE")));
+		fieldFunct.missing(Double.parseDouble(options.getOrDefault(ScoreOption.MISSING, "0")));
 		return fieldFunct;
 	}
 
@@ -156,7 +156,7 @@ public class ScoringCreator {
 			Field field, boolean isForVariants) throws ConfigurationException {
 		RandomScoreFunctionBuilder randomFunction = ScoreFunctionBuilders.randomFunction()
 				.setWeight(scoreMethod.getWeight());
-		Object randomSeed = scoreMethod.getOptions().get(ScoreOption.random_seed);
+		Object randomSeed = scoreMethod.getOptions().get(ScoreOption.RANDOM_SEED);
 		if (randomSeed != null) {
 			if (field == null) {
 				throw new ConfigurationException("Random Score Function with seed requires a configured field, but non configured.");
@@ -177,7 +177,7 @@ public class ScoringCreator {
 	}
 
 	private Optional<ScriptScoreFunctionBuilder> buildScriptScoreFunction(ScoringFunction scoringFunction) throws ConfigurationException {
-		String scriptCode = scoringFunction.getOptions().get(ScoreOption.script_code);
+		String scriptCode = scoringFunction.getOptions().get(ScoreOption.SCRIPT_CODE);
 		if (scriptCode == null || scriptCode.isEmpty()) {
 			throw new ConfigurationException("Configured script score function has no 'script_code' defined!");
 		}

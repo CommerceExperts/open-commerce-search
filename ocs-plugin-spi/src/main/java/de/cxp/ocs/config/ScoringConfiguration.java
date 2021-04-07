@@ -17,8 +17,8 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor
 public class ScoringConfiguration {
 
-	private ScoreMode	scoreMode	= ScoreMode.avg;
-	private BoostMode	boostMode	= BoostMode.avg;
+	private ScoreMode	scoreMode	= ScoreMode.AVG;
+	private BoostMode	boostMode	= BoostMode.AVG;
 
 	private List<ScoringFunction> scoreFunctions = new ArrayList<>();
 
@@ -29,7 +29,7 @@ public class ScoringConfiguration {
 
 		private String field;
 
-		private ScoreType type = ScoreType.field_value_factor;
+		private ScoreType type = ScoreType.FIELD_VALUE_FACTOR;
 
 		private float weight = 1f;
 

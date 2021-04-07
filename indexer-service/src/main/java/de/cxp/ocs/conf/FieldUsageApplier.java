@@ -51,19 +51,19 @@ public class FieldUsageApplier {
 
 	public static void apply(FieldUsage fieldUsage, DataItem indexableItem, Field field, @NonNull Object value) {
 		switch (fieldUsage) {
-			case Facet:
+			case FACET:
 				handleFacetField(indexableItem, field, value);
 				break;
-			case Result:
+			case RESULT:
 				handleResultField(indexableItem, field, value);
 				break;
-			case Sort:
+			case SORT:
 				handleSortField(indexableItem, field, value);
 				break;
-			case Score:
+			case SCORE:
 				handleScoreField(indexableItem, field, value);
 				break;
-			case Search:
+			case SEARCH:
 				handleSearchField(indexableItem, field, value);
 				break;
 		}
@@ -79,7 +79,7 @@ public class FieldUsageApplier {
 			value = ((Attribute) value).getValue();
 		}
 
-		if (FieldType.category.equals(field.getType())) {
+		if (FieldType.CATEGORY.equals(field.getType())) {
 			// for search only extract category names
 			value = convertCategoryDataToString(value, catPath -> {
 				StringBuilder searchableCategoryPath = new StringBuilder();
@@ -122,7 +122,7 @@ public class FieldUsageApplier {
 	};
 
 	public static void handleResultField(final DataItem record, final Field field, Object value) {
-		if (FieldType.category.equals(field.getType())) {
+		if (FieldType.CATEGORY.equals(field.getType())) {
 			value = convertCategoryDataToString(value, FieldUsageApplier::toCategoryPathString);
 		}
 
@@ -166,7 +166,7 @@ public class FieldUsageApplier {
 
 	private static Object ensureCorrectValueType(final Field field, final Object value) {
 		Object parsedValue = value;
-		if (FieldType.number.equals(field.getType()) && !(value instanceof Number)) {
+		if (FieldType.NUMBER.equals(field.getType()) && !(value instanceof Number)) {
 			if (value instanceof Collection || value.getClass().isArray()) {
 				parsedValue = toNumberCollection(value);
 			}
@@ -177,7 +177,7 @@ public class FieldUsageApplier {
 								+ (value.toString().length() > 12 ? "..." : "")));
 			}
 		}
-		if (FieldType.category.equals(field.getType())) {
+		if (FieldType.CATEGORY.equals(field.getType())) {
 			parsedValue = convertCategoryDataToString(value, FieldUsageApplier::toCategoryPathString);
 		}
 		return parsedValue;
@@ -207,10 +207,10 @@ public class FieldUsageApplier {
 		}
 
 		switch (field.getType()) {
-			case number:
+			case NUMBER:
 				handleNumberFacetData(record, field, value);
 				break;
-			case category:
+			case CATEGORY:
 				handleCategoryFacetData(record, field, value);
 				break;
 			default:

@@ -65,7 +65,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 	@Override
 	protected Optional<Facet> createFacet(Terms.Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter,
 			SearchQueryBuilder linkBuilder) {
-		Facet facet = FacetFactory.create(facetConfig, FacetType.term);
+		Facet facet = FacetFactory.create(facetConfig, FacetType.TERM);
 		if (facetFilter != null && facetFilter instanceof TermResultFilter) {
 			facet.setFiltered(true);
 			fillFacet(facet, facetNameBucket, (TermResultFilter) facetFilter, facetConfig, linkBuilder);

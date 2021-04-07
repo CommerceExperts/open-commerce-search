@@ -34,7 +34,7 @@ public class SortingHandler {
 	private final Map<String, SortOptionConfiguration>	sortConfigIndex;
 
 	public SortingHandler(@NonNull FieldConfigIndex fieldIndex, @NonNull List<SortOptionConfiguration> sortConfigs) {
-		Map<String, Field> tempSortFields = fieldIndex.getFieldsByUsage(FieldUsage.Sort);
+		Map<String, Field> tempSortFields = fieldIndex.getFieldsByUsage(FieldUsage.SORT);
 		sortFields = Collections.unmodifiableMap(tempSortFields);
 		this.sortConfigs = sortConfigs;
 		sortConfigIndex = sortConfigs.stream().collect(Collectors.toMap(s -> sortStringRepresentation(s.getField(), s.getOrder()), s -> s));
@@ -110,7 +110,7 @@ public class SortingHandler {
 		Map<String, SortOrder> sortedNumberFields = new HashMap<>();
 		for (Sorting sorting : parameters.sortings) {
 			Field sortingField = sortFields.get(sorting.field);
-			if (sortingField != null && FieldType.number.equals(sortingField.getType())) {
+			if (sortingField != null && FieldType.NUMBER.equals(sortingField.getType())) {
 				sortedNumberFields.put(sorting.field, SortOrder.fromString(sorting.sortOrder.name()));
 			}
 		}

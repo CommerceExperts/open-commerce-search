@@ -42,7 +42,7 @@ public class CombiFieldBuilder {
 
 	public CombiFieldBuilder(Map<String, Field> fieldConf) {
 		combiFields = fieldConf.values().stream()
-				.filter(f -> FieldType.combi.equals(f.getType()))
+				.filter(f -> FieldType.COMBI.equals(f.getType()))
 				.collect(Collectors.toList());
 	}
 

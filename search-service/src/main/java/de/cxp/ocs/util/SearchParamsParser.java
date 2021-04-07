@@ -55,17 +55,17 @@ public class SearchParamsParser {
 				paramName = paramName.substring(0, paramName.length() - 3);
 			}
 
-			Optional<Field> matchingField = fieldConfig.getMatchingField(paramName, paramValue, FieldUsage.Facet);
+			Optional<Field> matchingField = fieldConfig.getMatchingField(paramName, paramValue, FieldUsage.FACET);
 
 			if (matchingField.isPresent()) {
 				Field field = matchingField.get();
 				switch (field.getType()) {
-					case category:
+					case CATEGORY:
 						filters.add(new TermResultFilter(field, split(paramValue, VALUE_DELIMITER))
 										.setFieldPrefix(FieldConstants.PATH_FACET_DATA)
 										.setFilterOnId(isIdFilter));
 						break;
-					case number:
+					case NUMBER:
 						String[] paramValues = splitPreserveAllTokens(paramValue, VALUE_DELIMITER);
 						if (paramValues.length != 2) {
 							// Fallback logic to allow numeric filter values
@@ -114,7 +114,7 @@ public class SearchParamsParser {
 				sortOrder = SortOrder.DESC;
 			}
 
-			if (fields.getMatchingField(fieldName, FieldUsage.Sort).isPresent()) {
+			if (fields.getMatchingField(fieldName, FieldUsage.SORT).isPresent()) {
 				sortings.add(new Sorting(null, fieldName, sortOrder, true, null));
 			}
 		}

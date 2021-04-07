@@ -85,7 +85,7 @@ public class SearchQueryBuilderTest {
 				new InternalSearchParams()
 						.setUserQuery("foo")
 						.withFilter(new TermResultFilter(new Field("brand"), "apple", "orange"))
-						.withFilter(new NumberResultFilter(new Field("price").setType(FieldType.number), 1.23, 4.56)));
+						.withFilter(new NumberResultFilter(new Field("price").setType(FieldType.NUMBER), 1.23, 4.56)));
 		String baseLink = underTest.toString();
 		assertTrue(baseLink.contains("price=1.23%2C4.56"), baseLink);
 		assertTrue(baseLink.contains("brand=apple%2Corange"), baseLink);

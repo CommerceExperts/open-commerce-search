@@ -27,7 +27,7 @@ public class IndexItemConverterTest {
 		underTest = new IndexItemConverter(
 				new FieldConfigIndex(
 						new FieldConfiguration()
-								.addField(new Field("title").setUsage(FieldUsage.Search))));
+								.addField(new Field("title").setUsage(FieldUsage.SEARCH))));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("1").set("title", "foo"));
 		assertEquals("foo", result.getSearchData().get("title"));
@@ -45,7 +45,7 @@ public class IndexItemConverterTest {
 		underTest = new IndexItemConverter(
 				new FieldConfigIndex(
 						new FieldConfiguration()
-								.addField(new Field("size").setUsage(FieldUsage.Facet).setType(FieldType.number))));
+								.addField(new Field("size").setUsage(FieldUsage.FACET).setType(FieldType.NUMBER))));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("2").set("size", "34"));
 		assertEquals("size", result.getNumberFacetData().get(0).getName());
@@ -64,7 +64,7 @@ public class IndexItemConverterTest {
 		underTest = new IndexItemConverter(
 				new FieldConfigIndex(
 						new FieldConfiguration()
-								.addField(new Field("brand").setUsage(FieldUsage.Result, FieldUsage.Facet))));
+								.addField(new Field("brand").setUsage(FieldUsage.RESULT, FieldUsage.FACET))));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("1").set("brand", "fancy"));
 		assertEquals("fancy", result.getResultData().get("brand"));
@@ -83,7 +83,7 @@ public class IndexItemConverterTest {
 		underTest = new IndexItemConverter(
 				new FieldConfigIndex(
 						new FieldConfiguration()
-								.addField(new Field("rating").setUsage(FieldUsage.Score))));
+								.addField(new Field("rating").setUsage(FieldUsage.SCORE))));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("1").set("rating", "4.56"));
 		assertEquals(4.56f, result.getScores().get("rating"));
@@ -106,7 +106,7 @@ public class IndexItemConverterTest {
 		underTest = new IndexItemConverter(
 				new FieldConfigIndex(
 						new FieldConfiguration()
-								.addField(new Field("price").setUsage(FieldUsage.Sort, FieldUsage.Facet).setType(FieldType.number))));
+								.addField(new Field("price").setUsage(FieldUsage.SORT, FieldUsage.FACET).setType(FieldType.NUMBER))));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("1").set("price", "99.5"));
 		assertEquals(99.5f, ((MinMaxSet<Float>) result.getSortData().get("price")).min());
@@ -128,14 +128,14 @@ public class IndexItemConverterTest {
 				new FieldConfigIndex(
 						new FieldConfiguration()
 								.addField(new Field("price")
-										.setType(FieldType.number)
-										.setUsage(FieldUsage.Facet)
+										.setType(FieldType.NUMBER)
+										.setUsage(FieldUsage.FACET)
 										.setSourceNames(Arrays.asList("PRICES")))
 								.addField(new Field("title")
-										.setUsage(FieldUsage.Search, FieldUsage.Result)
+										.setUsage(FieldUsage.SEARCH, FieldUsage.RESULT)
 										.setSourceNames(Arrays.asList("TITLES")))
 								.addField(new Field("rating")
-										.setUsage(FieldUsage.Score, FieldUsage.Sort)
+										.setUsage(FieldUsage.SCORE, FieldUsage.SORT)
 										.setSourceNames(Arrays.asList("RATINGS")))));
 
 		IndexableItem result = underTest.toIndexableItem(
@@ -170,8 +170,8 @@ public class IndexItemConverterTest {
 		underTest = new IndexItemConverter(
 				new FieldConfigIndex(
 						new FieldConfiguration()
-								.addField(new Field("text").setUsage(FieldUsage.Search).addSourceName("TEXT"))
-								.addDynamicField(new Field("text_size").setUsage(FieldUsage.Result).addSourceName("t.*"))));
+								.addField(new Field("text").setUsage(FieldUsage.SEARCH).addSourceName("TEXT"))
+								.addDynamicField(new Field("text_size").setUsage(FieldUsage.RESULT).addSourceName("t.*"))));
 
 		IndexableItem result1 = underTest.toIndexableItem(new Document("1").set("text", "one"));
 		assertEquals("one", result1.getSearchData().get("text"));
@@ -195,8 +195,8 @@ public class IndexItemConverterTest {
 		underTest = new IndexItemConverter(
 				new FieldConfigIndex(
 						new FieldConfiguration()
-								.addField(new Field("color").setUsage(FieldUsage.Search))
-								.addDynamicField(new Field("attributes").setUsage(FieldUsage.Facet))));
+								.addField(new Field("color").setUsage(FieldUsage.SEARCH))
+								.addDynamicField(new Field("attributes").setUsage(FieldUsage.FACET))));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("1")
 				.setAttributes(new Attribute().setName("color").setValue("red")));
@@ -209,8 +209,8 @@ public class IndexItemConverterTest {
 		underTest = new IndexItemConverter(
 				new FieldConfigIndex(
 						new FieldConfiguration()
-								.addField(new Field("title").setUsage(FieldUsage.Search))
-								.addDynamicField(new Field("attributes").addSourceName(".*").setUsage(FieldUsage.Facet))));
+								.addField(new Field("title").setUsage(FieldUsage.SEARCH))
+								.addDynamicField(new Field("attributes").addSourceName(".*").setUsage(FieldUsage.FACET))));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("1")
 				.setAttributes(new Attribute().setName("color").setValue("red")));
@@ -226,14 +226,14 @@ public class IndexItemConverterTest {
 						new FieldConfiguration()
 								// this pattern at the standard field MUST NOT
 								// work!
-								.addField(new Field("title").addSourceName(".*").setUsage(FieldUsage.Search))
+								.addField(new Field("title").addSourceName(".*").setUsage(FieldUsage.SEARCH))
 								// special case: if field is named "attribute"
 								// it will
 								// only apply to attribute data and not to other
 								// unknown
 								// fields
-								.addDynamicField(new Field("attribute").setType(FieldType.number).setUsage(FieldUsage.Facet))
-								.addDynamicField(new Field("attribute").setType(FieldType.string).setUsage(FieldUsage.Facet))));
+								.addDynamicField(new Field("attribute").setType(FieldType.NUMBER).setUsage(FieldUsage.FACET))
+								.addDynamicField(new Field("attribute").setType(FieldType.STRING).setUsage(FieldUsage.FACET))));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("1")
 				.set("unknown", "must be ignored")
@@ -262,7 +262,7 @@ public class IndexItemConverterTest {
 		underTest = new IndexItemConverter(
 				new FieldConfigIndex(
 						new FieldConfiguration()
-								.addField(new Field("title").setUsage(FieldUsage.Search))));
+								.addField(new Field("title").setUsage(FieldUsage.SEARCH))));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("1")
 				.setAttributes(new Attribute().setName("color").setValue("red")));
@@ -280,7 +280,7 @@ public class IndexItemConverterTest {
 		underTest = new IndexItemConverter(
 				new FieldConfigIndex(
 						new FieldConfiguration()
-								.addField(new Field("category").setUsage(FieldUsage.Facet).setType(FieldType.category))));
+								.addField(new Field("category").setUsage(FieldUsage.FACET).setType(FieldType.CATEGORY))));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("1")
 				.set("category", "foo/bar"));
@@ -301,7 +301,7 @@ public class IndexItemConverterTest {
 		underTest = new IndexItemConverter(
 				new FieldConfigIndex(
 						new FieldConfiguration()
-								.addField(new Field("category").setUsage(FieldUsage.Facet).setType(FieldType.category))));
+								.addField(new Field("category").setUsage(FieldUsage.FACET).setType(FieldType.CATEGORY))));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("1")
 				.addCategory(
@@ -324,7 +324,7 @@ public class IndexItemConverterTest {
 		underTest = new IndexItemConverter(
 				new FieldConfigIndex(
 						new FieldConfiguration()
-								.addField(new Field("category").setUsage(FieldUsage.Facet).setType(FieldType.category))));
+								.addField(new Field("category").setUsage(FieldUsage.FACET).setType(FieldType.CATEGORY))));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("1")
 				.addCategory(
@@ -354,8 +354,8 @@ public class IndexItemConverterTest {
 		underTest = new IndexItemConverter(
 				new FieldConfigIndex(
 						new FieldConfiguration()
-								.addField(new Field("category").setUsage(FieldUsage.Facet).setType(FieldType.category))
-								.addField(new Field("color").setUsage(FieldUsage.Facet).setType(FieldType.category))));
+								.addField(new Field("category").setUsage(FieldUsage.FACET).setType(FieldType.CATEGORY))
+								.addField(new Field("color").setUsage(FieldUsage.FACET).setType(FieldType.CATEGORY))));
 
 		IndexableItem result = underTest.toIndexableItem(new Document("1")
 				.set("color", "red/dark red/bordeaux")

@@ -69,9 +69,9 @@ public class ElasticsearchIndexerTest {
 	private IndexConfiguration getIndexConf() {
 		IndexConfiguration config = new IndexConfiguration();
 		config.getFieldConfiguration()
-				.addField(new Field("id").setType(id).setUsage(Result))
-				.addField(new Field("title").setType(string).setUsage(Result, Search))
-				.addField(new Field("cagories").setType(category).setUsage(Result, Search, Facet));
+				.addField(new Field("id").setType(ID).setUsage(RESULT))
+				.addField(new Field("title").setType(STRING).setUsage(RESULT, SEARCH))
+				.addField(new Field("cagories").setType(CATEGORY).setUsage(RESULT, SEARCH, FACET));
 		return config;
 	}
 
