@@ -2,7 +2,6 @@ package de.cxp.ocs.config;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -66,7 +65,16 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 	public Collection<QueryConfiguration> getQueryConfiguration(String tenant) {
 		return getSubConfiguration(tenant, ApplicationSearchProperties::getQueryConfiguration,
 				tenantConfig -> tenantConfig == null || tenantConfig.useDefaultQueryConfig)
-						.map(Map::values)
+						.map(map -> {
+							// if no name is specified for the query configs,
+							// set it to the map key
+							map.forEach((key, conf) -> {
+								if (conf.getName() == null) {
+									conf.setName(key);
+								}
+							});
+							return map.values();
+						})
 						.orElseGet(Collections::emptyList);
 	}
 

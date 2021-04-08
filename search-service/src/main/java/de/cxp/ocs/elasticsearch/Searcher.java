@@ -219,7 +219,7 @@ public class Searcher {
 
 			MasterVariantQuery searchQuery = stagedQueryBuilder.createQuery(searchWords);
 			if (log.isTraceEnabled()) {
-				log.trace("query builder nr {}: {}: match query = {}", i, stagedQueryBuilder.getName(),
+				log.trace("query nr {}: {}: match query = {}", i, stagedQueryBuilder.getName(),
 						searchQuery == null ? "NULL"
 								: searchQuery.getMasterLevelQuery().toString().replaceAll("[\n\\s]+", " "));
 			}
@@ -241,7 +241,7 @@ public class Searcher {
 			searchResponse = executeSearchRequest(searchSourceBuilder);
 
 			if (log.isDebugEnabled()) {
-				log.debug("Query Builder Nr {} ({}) for query '{}' done in {}ms with {} hits", i, stagedQueryBuilder.getName(),
+				log.debug("query nr {} ({}) for user-query '{}' done in {}ms with {} hits", i, stagedQueryBuilder.getName(),
 						parameters.userQuery, sw.getTime(), searchResponse.getHits().getTotalHits().value);
 			}
 			inputWordsSample.stop(inputWordsTimer);
