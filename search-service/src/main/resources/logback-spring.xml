@@ -24,7 +24,7 @@
 		<file>searches.log</file>
 		<append>true</append>
 		<layout class="ch.qos.logback.classic.PatternLayout">
-			<pattern>{ "user_query": "%X{query}", "query": %msg }%n</pattern>
+			<pattern>%msg%n</pattern>
 		</layout>
 	</appender>
 
