@@ -1,7 +1,6 @@
 {
-  "name": "bulk-index",
-  "description": "simple-bulk-index",
-  "default": true,
+  "name": "search-while-indexing",
+  "description": "perfrom-search-while-indexing-{{INDEX}}",
   "schedule": [
     {
       "operation": {
@@ -28,15 +27,30 @@
       }
     },
     {
-      "name": "bulk index documents into {{INDEX}}",
-      "operation": {
-        "operation-type": "bulk",
-        "corpora": "{{INDEX}}",
-        "indices": [
-          "{{INDEX}}"
-        ],
-        "bulk-size": 1000,
-        "clients": 4
+      "parallel": {
+        "tasks": [
+          {
+            "name": "bulk index documents into {{INDEX}}",
+            "operation": {
+              "operation-type": "bulk",
+              "corpora": "{{INDEX}}",
+              "indices": [
+                "{{INDEX}}"
+              ],
+              "bulk-size": 1000,
+              "clients": 4
+            }
+          },
+          {
+            "operation": {
+              "name": "perform ocss-search",
+              "operation-type": "ocss-search",
+              "index": "{{INDEX}}",
+              "source-file": "../searches.json"
+            },
+            "iterations": 10000
+          }
+        ]
       }
     },
     {

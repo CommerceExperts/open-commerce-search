@@ -100,12 +100,16 @@ SOURCE_DIR=$( dirname "${BASH_SOURCE[0]}" );
 mkdir -p $OUTPUT_PATH/$TRACK_NAME/challenges || log "$OUTPUT_PATH/$TRACK_NAME/challenges already exists.";
 
 # challenges from template
-sed -e "s/{{INDEX}}/${INDEX}/g" $SOURCE_DIR/challenges/bulk-index.json > $OUTPUT_PATH/$TRACK_NAME/challenges/bulk-index.json;
+cp -rf $SOURCE_DIR/challenges/* $OUTPUT_PATH/$TRACK_NAME/challenges/
+cp -rf $FILE $OUTPUT_PATH/$TRACK_NAME/searches.json
+sed -i "s/{{INDEX}}/${INDEX}/g" $OUTPUT_PATH/$TRACK_NAME/challenges/bulk-index.json;
+sed -i "s/{{INDEX}}/${INDEX}/g" $OUTPUT_PATH/$TRACK_NAME/challenges/search-while-indexing.json;
+sed -i "s/{{INDEX}}/${INDEX}/g" $OUTPUT_PATH/$TRACK_NAME/challenges/search.json;
 
-while read -r line; do
-  echo $line;
-done < $FILE
+# other resources
+cp -rf $SOURCE_DIR/custom_runner $OUTPUT_PATH/$TRACK_NAME/;
+cp -rf $SOURCE_DIR/track.py $OUTPUT_PATH/$TRACK_NAME/;
+
 log "Challenges from search log created.";
-
 
 exit 0;
