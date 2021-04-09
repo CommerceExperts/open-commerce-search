@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import json
-import random
 
 
 class OCSSSearchRunner:
@@ -26,13 +25,13 @@ class OCSSSearchRunner:
         if self.search_data is None or len(self.search_data) < 1:
             with open(params["source-file"]) as json_file:
                 for line in json_file:
-                  self.search_data.append(json.load(line))
+                    self.search_data.append(json.loads(line))
 
     async def __call__(self, es, params):
         self.initialize(params=params)
         # perform search here
         search = self.search_data.pop()
-        search_body = search.query
+        search_body = search["query"]
         search_response = await es.search(body=search_body, index=self.index)
 
         # get time

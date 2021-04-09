@@ -226,8 +226,6 @@ public class Searcher {
 				log.trace("query nr {}: {}: match query = {}", i, stagedQueryBuilder.getName(),
 						searchQuery == null ? "NULL"
 								: searchQuery.getMasterLevelQuery().toString().replaceAll("[\n\\s]+", " "));
-				log.trace(QUERY_MARKER, "{ \"user_query\": \"{}\", \"query\": {} }", parameters.userQuery, searchQuery == null ? "NULL"
-								: searchQuery.getMasterLevelQuery().toString().replaceAll("[\n\\s]+", " "));
 			}
 			if (searchQuery == null)
 				continue;
@@ -244,6 +242,11 @@ public class Searcher {
 			if (searchSourceBuilder.sorts() == null || searchSourceBuilder.sorts().isEmpty()) {
 				addRescorersFailsafe(parameters, customParams, searchSourceBuilder);
 			}
+
+			if (log.isTraceEnabled()) {
+				log.trace(QUERY_MARKER, "{ \"user_query\": \"{}\", \"query\": {} }", parameters.userQuery, searchSourceBuilder.toString().replaceAll("[\n\\s]+", " "));
+			}
+
 			searchResponse = executeSearchRequest(searchSourceBuilder);
 
 			if (log.isDebugEnabled()) {

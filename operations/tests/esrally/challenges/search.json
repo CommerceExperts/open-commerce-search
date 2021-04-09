@@ -43,7 +43,7 @@
         "name": "perform ocss-search",
         "operation-type": "ocss-search",
         "index": "{{INDEX}}",
-        "source-file": "../searches.json"
+        "source-file": "./track/searches.json"
       },
       "iterations": 10000
     },

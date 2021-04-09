@@ -10,3 +10,11 @@
 ```
 esrally --distribution-version=7.7.0 --track-path=/tmp/ocss-track/
 ```
+
+```
+docker run -v "/tmp/ocss-track:/rally/track" --network host elastic/rally race --distribution-version=7.7.0 --track-path=/rally/track --pipeline=benchmark-only --challenge=search
+```
+
+```
+docker run -v "/tmp/ocss-track:/rally/track" -v "/tmp/logs:/rally/.rally/logs" --network host elastic/rally race --track-path=/rally/track --pipeline=benchmark-only --challenge=search --target-hosts=127.0.0.1:9400
+```
