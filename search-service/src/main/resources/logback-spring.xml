@@ -42,4 +42,11 @@
 	<logger name="de.cxp.ocs.elasticsearch.Searcher" level="${log.ocs.level:-TRACE}">
 		<appender-ref ref="QUERYSTDOUT" />
 	</logger>
+
+  <springProfile name="trace-searches">
+    <logger name="de.cxp.ocs.elasticsearch.Searcher" level="${log.ocs.level:-TRACE}">
+      <appender-ref ref="QUERYSTDOUT" />
+    </logger>
+  </springProfile>
+
 </configuration>
