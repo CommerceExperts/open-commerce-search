@@ -109,6 +109,7 @@ sed -i "s/{{INDEX}}/${INDEX}/g" $OUTPUT_PATH/$TRACK_NAME/challenges/search.json;
 # other resources
 cp -rf $SOURCE_DIR/custom_runner $OUTPUT_PATH/$TRACK_NAME/;
 cp -rf $SOURCE_DIR/track.py $OUTPUT_PATH/$TRACK_NAME/;
+cp -rf $SOURCE_DIR/rally.ini $OUTPUT_PATH/$TRACK_NAME/;
 
 log "Challenges from search log created.";
 
