@@ -87,7 +87,7 @@ sed -i 's/{{/"/g' $OUTPUT_PATH/$TRACK_NAME/track.json;
 sed -i 's/}}/"/g' $OUTPUT_PATH/$TRACK_NAME/track.json;
 sed -i 's/{%.*%}//g' $OUTPUT_PATH/$TRACK_NAME/track.json;
 sed -i 's/""/"/g' $OUTPUT_PATH/$TRACK_NAME/track.json;
-cat $OUTPUT_PATH/$TRACK_NAME/track.json | jq '{ version: .version, description: .description, indices: .indices, corpora: .corpora, challenges: [ "{{ rally.collect(parts=\"challenges/*.json\") }}" ] }' >> $OUTPUT_PATH/$TRACK_NAME/track.json.tmp;
+cat $OUTPUT_PATH/$TRACK_NAME/track.json | jq '{ version: .version, description: .description, indices: [ .indices[0], (.indices[0].name += "-2" | .indices[0]) ], corpora: [ .corpora[0], (.corpora[0].documents[0]."target-index" += "-2" | .corpora[0].name += "-2" | .corpora[0]) ], challenges: [ "{{ rally.collect(parts=\"challenges/*.json\") }}" ] }' >> $OUTPUT_PATH/$TRACK_NAME/track.json.tmp;
 sed -i 's/\\"/"/g' $OUTPUT_PATH/$TRACK_NAME/track.json.tmp;
 sed -i 's/"{{/{{/g' $OUTPUT_PATH/$TRACK_NAME/track.json.tmp;
 sed -i 's/}}"/}}/g' $OUTPUT_PATH/$TRACK_NAME/track.json.tmp;

@@ -27,15 +27,45 @@
       }
     },
     {
+      "name": "bulk index documents into {{INDEX}}",
+      "operation": {
+        "operation-type": "bulk",
+        "corpora": "{{INDEX}}",
+        "indices": [
+          "{{INDEX}}"
+        ],
+        "bulk-size": 1000,
+        "clients": 4
+      }
+    },
+    {
+      "operation": {
+        "name": "check cluster health after first indexing",
+        "operation-type": "cluster-health",
+        "requerst-params": {
+          "wait_for_status": "green",
+          "wait_for_no_relocating_shards": "true",
+          "include-in-reporting": "true"
+        }
+      }
+    },
+    {
+      "name": "create index {{INDEX}}-2",
+      "operation": {
+        "operation-type": "create-index",
+        "index": "{{INDEX}}-2"
+      }
+    },
+    {
       "parallel": {
         "tasks": [
           {
-            "name": "bulk index documents into {{INDEX}}",
+            "name": "bulk index documents into {{INDEX}}-2",
             "operation": {
               "operation-type": "bulk",
-              "corpora": "{{INDEX}}",
+              "corpora": "{{INDEX}}-2",
               "indices": [
-                "{{INDEX}}"
+                "{{INDEX}}-2"
               ],
               "bulk-size": 1000,
               "clients": 4
