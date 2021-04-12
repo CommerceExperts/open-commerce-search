@@ -168,10 +168,20 @@
         }
       },
       {
-        "scores": {
+        "scores_float": {
           "path_match": "*scores.*",
+          "match_mapping_type": "double",
           "mapping": {
             "type": "float"
+          }
+        }
+      },
+      {
+        "scores_date": {
+          "path_match": "*scores.*",
+          "match_mapping_type": "string",
+          "mapping": {
+            "type": "date"
           }
         }
       },

@@ -310,7 +310,9 @@ public class FieldUsageApplier {
 			}
 		}
 		else {
-			throw new IllegalArgumentException("value must be a numeric value (field: " + field.getName() + ")");
+			// allow non-numeric values - they should be processed by date
+			// detection
+			record.getScores().compute(fieldName, joinDataValueFunction(value));
 		}
 
 	};
