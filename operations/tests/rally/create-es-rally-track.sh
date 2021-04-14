@@ -102,8 +102,8 @@ mkdir -p $OUTPUT_PATH/$TRACK_NAME/challenges || log "$OUTPUT_PATH/$TRACK_NAME/ch
 # challenges from template
 cp -rf $SOURCE_DIR/challenges/* $OUTPUT_PATH/$TRACK_NAME/challenges/
 cp -rf $FILE $OUTPUT_PATH/$TRACK_NAME/searches.json
-sed -i "s/{{INDEX}}/${INDEX}/g" $OUTPUT_PATH/$TRACK_NAME/challenges/bulk-index.json;
-sed -i "s/{{INDEX}}/${INDEX}/g" $OUTPUT_PATH/$TRACK_NAME/challenges/search-while-indexing.json;
+sed -i "s/{{INDEX}}/${INDEX}/g" $OUTPUT_PATH/$TRACK_NAME/challenges/index.json;
+sed -i "s/{{INDEX}}/${INDEX}/g" $OUTPUT_PATH/$TRACK_NAME/challenges/search-while-index.json;
 sed -i "s/{{INDEX}}/${INDEX}/g" $OUTPUT_PATH/$TRACK_NAME/challenges/search.json;
 
 # other resources

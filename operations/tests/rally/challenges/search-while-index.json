@@ -1,5 +1,5 @@
 {
-  "name": "search-while-indexing",
+  "name": "search-while-index",
   "description": "perfrom-search-while-indexing-{{INDEX}}",
   "schedule": [
     {
@@ -67,8 +67,8 @@
               "indices": [
                 "{{INDEX}}-2"
               ],
-              "bulk-size": 1000,
-              "clients": 4
+              "bulk-size": 10,
+              "clients": 1
             }
           },
           {
@@ -78,7 +78,7 @@
               "index": "{{INDEX}}",
               "source-file": "./track/searches.json"
             },
-            "iterations": 10000
+            "iterations": 3000
           }
         ]
       }

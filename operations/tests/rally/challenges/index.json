@@ -1,6 +1,7 @@
 {
-  "name": "search",
-  "description": "perfrom-search-on-index-{{INDEX}}",
+  "name": "index",
+  "description": "simple-bulk-index",
+  "default": true,
   "schedule": [
     {
       "operation": {
@@ -40,15 +41,6 @@
     },
     {
       "operation": {
-        "name": "perform ocss-search",
-        "operation-type": "ocss-search",
-        "index": "{{INDEX}}",
-        "source-file": "./track/searches.json"
-      },
-      "iterations": 10000
-    },
-    {
-      "operation": {
         "name": "check cluster health after bulk indexing {{INDEX}}",
         "operation-type": "cluster-health",
         "requerst-params": {
@@ -60,5 +52,3 @@
     }
   ]
 }
-
-
