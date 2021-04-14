@@ -148,6 +148,7 @@ public class ScoringCreator {
 		fieldFunct.setWeight(scoreMethod.getWeight());
 		Map<ScoreOption, String> options = scoreMethod.getOptions();
 		fieldFunct.modifier(Modifier.fromString(options.getOrDefault(ScoreOption.MODIFIER, "NONE")));
+		fieldFunct.factor(Float.parseFloat(options.getOrDefault(ScoreOption.FACTOR, "1")));
 		fieldFunct.missing(Double.parseDouble(options.getOrDefault(ScoreOption.MISSING, "0")));
 		return fieldFunct;
 	}

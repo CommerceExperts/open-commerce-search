@@ -26,6 +26,7 @@ hs_err_pid*
 .project
 .settings
 .classpath
+.checkstyle
 **/.classpath
 **/.factorypath
 

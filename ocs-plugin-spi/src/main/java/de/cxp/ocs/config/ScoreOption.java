@@ -23,7 +23,7 @@ public enum ScoreOption {
 	RANDOM_SEED,
 
 	// field_value_factor options:
-	MISSING, MODIFIER,
+	MISSING, MODIFIER, FACTOR,
 
 	/**
 	 * required option for script_score
