@@ -5,5 +5,5 @@ package de.cxp.ocs.config;
  * query.
  */
 public enum BoostMode {
-	multiply, replace, sum, avg, max, min
+	MULTIPLY, REPLACE, SUM, AVG, MAX, MIN
 }

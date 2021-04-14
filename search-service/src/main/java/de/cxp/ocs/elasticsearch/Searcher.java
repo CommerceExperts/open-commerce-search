@@ -149,7 +149,7 @@ public class Searcher {
 	}
 
 	private SpellCorrector initSpellCorrection() {
-		Set<String> spellCorrectionFields = fieldIndex.getFieldsByUsage(FieldUsage.Search).keySet();
+		Set<String> spellCorrectionFields = fieldIndex.getFieldsByUsage(FieldUsage.SEARCH).keySet();
 		return new SpellCorrector(spellCorrectionFields.toArray(new String[spellCorrectionFields.size()]));
 	}
 
@@ -219,7 +219,7 @@ public class Searcher {
 
 			MasterVariantQuery searchQuery = stagedQueryBuilder.createQuery(searchWords);
 			if (log.isTraceEnabled()) {
-				log.trace("query builder nr {}: {}: match query = {}", i, stagedQueryBuilder.getName(),
+				log.trace("query nr {}: {}: match query = {}", i, stagedQueryBuilder.getName(),
 						searchQuery == null ? "NULL"
 								: searchQuery.getMasterLevelQuery().toString().replaceAll("[\n\\s]+", " "));
 			}
@@ -235,12 +235,14 @@ public class Searcher {
 			}
 
 			searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
-			addRescorersFailsafe(parameters, customParams, searchSourceBuilder);
+			if (searchSourceBuilder.sorts() == null || searchSourceBuilder.sorts().isEmpty()) {
+				addRescorersFailsafe(parameters, customParams, searchSourceBuilder);
+			}
 			searchResponse = executeSearchRequest(searchSourceBuilder);
 
 			if (log.isDebugEnabled()) {
-				log.debug("Query Builder Nr {} ({}) done in {}ms with {} hits", i, stagedQueryBuilder.getName(),
-						sw.getTime(), searchResponse.getHits().getTotalHits().value);
+				log.debug("query nr {} ({}) for user-query '{}' done in {}ms with {} hits", i, stagedQueryBuilder.getName(),
+						parameters.userQuery, sw.getTime(), searchResponse.getHits().getTotalHits().value);
 			}
 			inputWordsSample.stop(inputWordsTimer);
 
@@ -361,14 +363,16 @@ public class Searcher {
 		FilterFunctionBuilder[] masterScoringFunctions = scoringCreator.getScoringFunctions(false);
 		if (masterScoringFunctions.length > 0) {
 			masterLevelQuery = QueryBuilders.functionScoreQuery(masterLevelQuery, masterScoringFunctions)
-					.boostMode(scoringCreator.getBoostMode()).scoreMode(scoringCreator.getScoreMode())
+					.boostMode(scoringCreator.getBoostMode())
+					.scoreMode(scoringCreator.getScoreMode())
 					.maxBoost(masterScoringFunctions.length);
 		}
 
 		QueryBuilder variantsMatchQuery;
+		// if sorting is available, scoring and boosting not necessary
 		if (variantSortings.isEmpty() && searchQuery.getVariantLevelQuery() != null) {
-			// if sorting is available, scoring and boosting not necessary
-			variantsMatchQuery = QueryBuilders.boolQuery().must(varFilterQuery)
+			variantsMatchQuery = QueryBuilders.boolQuery()
+					.must(varFilterQuery)
 					.should(searchQuery.getVariantLevelQuery().boost(2f));
 
 			FilterFunctionBuilder[] variantScoringFunctions = scoringCreator.getScoringFunctions(true);
@@ -485,8 +489,8 @@ public class Searcher {
 					} else if (!f2.isPresent()) {
 						return -1;
 					}
-					int o1 = f1.get().getUsage().contains(FieldUsage.Score) ? 1 : 0;
-					int o2 = f2.get().getUsage().contains(FieldUsage.Score) ? 1 : 0;
+					int o1 = f1.get().getUsage().contains(FieldUsage.SCORE) ? 1 : 0;
+					int o2 = f2.get().getUsage().contains(FieldUsage.SCORE) ? 1 : 0;
 
 					if (o1 == 0 && o1 == o2) {
 						return String.CASE_INSENSITIVE_ORDER.compare(f1.get().getName(), f2.get().getName());

@@ -73,7 +73,7 @@ public final class FieldConfigIndex implements FieldConfigAccess {
 		Map<String, Field> categoryFields = new HashMap<>();
 		for (Field field : fieldConfiguration.getFields().values()) {
 
-			if (FieldType.category.equals(field.getType())) {
+			if (FieldType.CATEGORY.equals(field.getType())) {
 				categoryFields.put(field.getName(), field);
 			}
 
@@ -88,10 +88,10 @@ public final class FieldConfigIndex implements FieldConfigAccess {
 		for (Field dynamicField : fieldConfiguration.getDynamicFields()) {
 
 			Predicate<Object> valuePredicate = null;
-			if (FieldType.string.equals(dynamicField.getType())) {
+			if (FieldType.STRING.equals(dynamicField.getType())) {
 				valuePredicate = value -> (value instanceof Attribute ? ((Attribute) value).getValue() : value) instanceof String;
 			}
-			else if (FieldType.number.equals(dynamicField.getType())) {
+			else if (FieldType.NUMBER.equals(dynamicField.getType())) {
 				valuePredicate = value -> Util.tryToParseAsNumber(value instanceof Attribute ? ((Attribute) value).getValue() : value).isPresent();
 			}
 			else if (dynamicField.getType() != null) {
@@ -104,10 +104,10 @@ public final class FieldConfigIndex implements FieldConfigAccess {
 			// XXX find better solution to make dynamic fields only work for
 			// attributes
 			if ("attribute".equals(dynamicField.getName())) {
-				if (FieldType.string.equals(dynamicField.getType())) {
+				if (FieldType.STRING.equals(dynamicField.getType())) {
 					valuePredicate = valuePredicate.and(value -> value instanceof Attribute);
 				}
-				else if (FieldType.number.equals(dynamicField.getType())) {
+				else if (FieldType.NUMBER.equals(dynamicField.getType())) {
 					valuePredicate = valuePredicate.and(value -> value instanceof Attribute);
 				}
 			}
@@ -277,7 +277,7 @@ public final class FieldConfigIndex implements FieldConfigAccess {
 	public Optional<Field> getMatchingField(String fieldName, Object value, FieldUsage usage) {
 		return getMatchingFields(fieldName, value)
 				.stream()
-				.filter(f -> f.getUsage().contains(FieldUsage.Facet))
+				.filter(f -> f.getUsage().contains(FieldUsage.FACET))
 				.findFirst();
 	}
 

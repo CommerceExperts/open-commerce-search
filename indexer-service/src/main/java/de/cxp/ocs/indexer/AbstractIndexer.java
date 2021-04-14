@@ -15,8 +15,8 @@ import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.model.index.BulkImportData;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.preprocessor.CombiFieldBuilder;
-import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
+import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
@@ -42,7 +42,7 @@ public abstract class AbstractIndexer implements FullIndexationService {
 			@NonNull FieldConfigIndex fieldConfIndex) {
 		this.dataPreProcessors = dataPreProcessors;
 		this.fieldConfIndex = fieldConfIndex;
-		combiFieldBuilder = new CombiFieldBuilder(fieldConfIndex.getFieldsByType(FieldType.combi));
+		combiFieldBuilder = new CombiFieldBuilder(fieldConfIndex.getFieldsByType(FieldType.COMBI));
 		indexItemConverter = new IndexItemConverter(fieldConfIndex, postProcessors);
 	}
 

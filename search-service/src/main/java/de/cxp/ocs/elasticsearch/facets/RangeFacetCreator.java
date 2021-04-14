@@ -80,7 +80,7 @@ public class RangeFacetCreator extends NestedFacetCreator {
 				rangeFacetEntry.setSelectedMax(((NumberResultFilter) facetFilter).getUpperBound());
 			}
 			return Optional.of(
-					FacetFactory.create(facetConfig, FacetType.range)
+					FacetFactory.create(facetConfig, FacetType.RANGE)
 							.setAbsoluteFacetCoverage(stats.getCount())
 							.addEntry(rangeFacetEntry));
 		}

@@ -61,7 +61,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 
 	@Override
 	protected boolean isMatchingFilterType(InternalResultFilter internalResultFilter) {
-		return FieldType.category.equals(internalResultFilter.getField().getType());
+		return FieldType.CATEGORY.equals(internalResultFilter.getField().getType());
 	}
 
 	@Override
@@ -73,7 +73,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		// let it crash if it's from the wrong type
 		TermResultFilter facetFilter = (TermResultFilter) intFacetFilter;
 
-		Facet facet = FacetFactory.create(facetConfig, FacetType.hierarchical);
+		Facet facet = FacetFactory.create(facetConfig, FacetType.HIERARCHICAL);
 
 		Map<String, HierarchialFacetEntry> entries = new LinkedHashMap<>(catBuckets.size());
 		long absDocCount = 0;

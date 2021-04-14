@@ -1,10 +1,11 @@
 package de.cxp.ocs.config;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import de.cxp.ocs.spi.search.SearchConfigurationProvider;
 import lombok.NonNull;
@@ -28,10 +29,7 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 
 		mergedConfig.getQueryConfigs().addAll(getQueryConfiguration(tenant));
 		mergedConfig.getSortConfigs().addAll(getSortConfigs(tenant));
-
-		mergedConfig.getRescorers().addAll(properties.getTenantConfig()
-				.getOrDefault(tenant, properties.getDefaultTenantConfig())
-				.getRescorers());
+		mergedConfig.getRescorers().addAll(getRescorers(tenant));
 
 		// merge plugin configuration
 		// (tenant specific may overwrite default config)
@@ -50,42 +48,55 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 	}
 
 	public Optional<QueryProcessingConfiguration> getQueryProcessing(String tenant) {
-		return Optional.ofNullable(properties.getTenantConfig()
-				.getOrDefault(tenant, properties.getDefaultTenantConfig()).getQueryProcessing());
+		return getSubConfiguration(tenant, ApplicationSearchProperties::getQueryProcessing,
+				tenantConfig -> tenantConfig == null || tenantConfig.useDefaultQueryConfig);
 	}
 
 	public Optional<ScoringConfiguration> getScoringConfiguration(String tenant) {
-		ApplicationSearchProperties tenantConfig = properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
-		if (tenantConfig.disableScorings) {
-			return Optional.empty();
-		}
-		return Optional.ofNullable(tenantConfig.getScoringConfiguration());
+		return getSubConfiguration(tenant, ApplicationSearchProperties::getScoringConfiguration,
+				tenantConfig -> tenantConfig == null || tenantConfig.useDefaultScoringConfig);
 	}
 
 	public Optional<FacetConfiguration> getFacetConfiguration(String tenant) {
-		ApplicationSearchProperties tenantConfig = properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
-		if (tenantConfig.disableFacets) {
-			return Optional.empty();
-		}
-		return Optional.ofNullable(tenantConfig.getFacetConfiguration());
+		return getSubConfiguration(tenant, ApplicationSearchProperties::getFacetConfiguration,
+				tenantConfig -> tenantConfig == null || tenantConfig.useDefaultFacetConfig);
 	}
 
-	public List<QueryConfiguration> getQueryConfiguration(String tenant) {
-		ApplicationSearchProperties tenantConfig = properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
-		if (tenantConfig.disableQueryConfig) {
-			return null;
-		}
-		return new ArrayList<>(tenantConfig.getQueryConfiguration().values());
+	public Collection<QueryConfiguration> getQueryConfiguration(String tenant) {
+		return getSubConfiguration(tenant, ApplicationSearchProperties::getQueryConfiguration,
+				tenantConfig -> tenantConfig == null || tenantConfig.useDefaultQueryConfig)
+						.map(map -> {
+							// if no name is specified for the query configs,
+							// set it to the map key
+							map.forEach((key, conf) -> {
+								if (conf.getName() == null) {
+									conf.setName(key);
+								}
+							});
+							return map.values();
+						})
+						.orElseGet(Collections::emptyList);
 	}
 
-	public List<SortOptionConfiguration> getSortConfigs(String tenant) {
-		ApplicationSearchProperties tenantConfig = properties.getTenantConfig().getOrDefault(tenant, properties.getDefaultTenantConfig());
-		if (tenantConfig.disableSortingConfig) {
-			return Collections.emptyList();
-		}
-		return tenantConfig.getSortConfiguration();
+	public Collection<SortOptionConfiguration> getSortConfigs(String tenant) {
+		return getSubConfiguration(tenant, ApplicationSearchProperties::getSortConfiguration,
+				tenantConfig -> tenantConfig == null || tenantConfig.useDefaultSortConfig)
+						.orElseGet(Collections::emptyList);
 	}
 
+	private Collection<String> getRescorers(String tenant) {
+		return getSubConfiguration(tenant, ApplicationSearchProperties::getRescorers,
+				tenantConfig -> tenantConfig == null)
+						.orElseGet(Collections::emptyList);
+	}
+
+	private <T> Optional<T> getSubConfiguration(String tenant, Function<ApplicationSearchProperties, T> getter, Predicate<ApplicationSearchProperties> useDefault) {
+		ApplicationSearchProperties tenantConfig = properties.getTenantConfig().get(tenant);
+		if (useDefault.test(tenantConfig)) {
+			return Optional.ofNullable(getter.apply(properties.getDefaultTenantConfig()));
+		}
+		return Optional.ofNullable(getter.apply(tenantConfig));
+	}
 
 	@Override
 	public Set<String> getConfiguredTenants() {

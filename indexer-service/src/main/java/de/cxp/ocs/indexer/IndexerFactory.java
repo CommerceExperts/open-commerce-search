@@ -1,6 +1,7 @@
 package de.cxp.ocs.indexer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -24,7 +25,9 @@ import de.cxp.ocs.preprocessor.impl.SplitValueDataProcessor;
 import de.cxp.ocs.preprocessor.impl.WordSplitterDataProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 public class IndexerFactory {
 
@@ -64,16 +67,23 @@ public class IndexerFactory {
 
 		for (String processorName : indexConfiguration.getDataProcessorConfiguration().getProcessors()) {
 			Supplier<? extends DocumentPreProcessor> preProcessorSupplier = docPreProcessorSuppliers.get(processorName);
+			boolean processorFound = false;
 			if (preProcessorSupplier != null) {
 				DocumentPreProcessor processor = preProcessorSupplier.get();
-				processor.initialize(fieldConfigIndex, dataProcessorsConfig.get(processor.getClass().getCanonicalName()));
+				processor.initialize(fieldConfigIndex, dataProcessorsConfig.getOrDefault(processor.getClass().getCanonicalName(), Collections.emptyMap()));
 				preProcessors.add(processor);
+				processorFound = true;
 			}
 
 			Supplier<? extends DocumentPostProcessor> postProcessorSupplier = indexableItemProcessorSuppliers.get(processorName);
 			if (postProcessorSupplier != null) {
 				DocumentPostProcessor postProcessor = postProcessorSupplier.get();
-				postProcessor.initialize(fieldConfigIndex, dataProcessorsConfig.get(postProcessor.getClass().getCanonicalName()));
+				postProcessor.initialize(fieldConfigIndex, dataProcessorsConfig.getOrDefault(postProcessor.getClass().getCanonicalName(), Collections.emptyMap()));
+				processorFound = true;
+			}
+
+			if (!processorFound) {
+				log.error("Processor '{}' not found!");
 			}
 		}
 

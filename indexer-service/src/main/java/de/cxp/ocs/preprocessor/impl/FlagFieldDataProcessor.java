@@ -8,14 +8,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
 import de.cxp.ocs.conf.converter.FlagFieldConfiguration;
 import de.cxp.ocs.conf.converter.FlagFieldConfiguration.PatternMatch;
-import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.preprocessor.ConfigureableDataprocessor;
@@ -109,10 +107,8 @@ public class FlagFieldDataProcessor implements DocumentPreProcessor {
 				if (matchRes.value != null) {
 					document.set(ffc.getDestinationFieldName(), matchRes.value);
 				}
-				else {
-					if (matchRes.validField) {
-						document.set(ffc.getDestinationFieldName(), ffc.getNoMatch());
-					}
+				else if (ffc.getNoMatch() != null) {
+					document.set(ffc.getDestinationFieldName(), ffc.getNoMatch());
 				}
 			});
 		}
@@ -123,42 +119,32 @@ public class FlagFieldDataProcessor implements DocumentPreProcessor {
 		MatchResult matchRes = new MatchResult();
 		Map<String, Object> data = document.getData();
 		for (PatternMatch pm : ffc) {
-			Optional<Field> field = fieldConfAccess.getField(pm.getFieldName());
-			if (field.isPresent()) {
-				Object value = data.get(pm.getFieldName());
-				if (value instanceof String) {
-					String strValue = (String) value;
-					pm.matches(strValue).ifPresent(matchVal -> matchRes.value = matchVal);
-					if (matchRes.value != null) {
-						break;
-					}
-				}
-				else if (Util.isStringCollection(value)) {
-					@SuppressWarnings("unchecked")
-					final Collection<String> valueCollection = (Collection<String>) value;
-					for (String val : valueCollection) {
-						pm.matches(val).ifPresent(matchVal -> matchRes.value = matchVal);
-						if (matchRes.value != null) {
-							break;
-						}
-					}
-					if (matchRes.value != null) {
-						break;
-					}
-				}
-				else {
-					OnceInAWhileRunner.runAgainAfter(() -> log.warn(
-							"Value '{}' could not be matched against a pattern for group '{}' and field '{}' as the value is not a String or a Collection of Strings",
-							value, ffc.getGroupName(), pm.getFieldName()), this.getClass().getSimpleName() + pm
-									.getFieldName(), ChronoUnit.SECONDS, 60);
+			Object value = data.get(pm.getFieldName());
+			if (value instanceof String) {
+				String strValue = (String) value;
+				pm.matches(strValue).ifPresent(matchVal -> matchRes.value = matchVal);
+				if (matchRes.value != null) {
+					break;
 				}
 			}
-			else {
-				matchRes.validField = false;
+			else if (Util.isStringCollection(value)) {
+				@SuppressWarnings("unchecked")
+				final Collection<String> valueCollection = (Collection<String>) value;
+				for (String val : valueCollection) {
+					pm.matches(val).ifPresent(matchVal -> matchRes.value = matchVal);
+					if (matchRes.value != null) {
+						break;
+					}
+				}
+				if (matchRes.value != null) {
+					break;
+				}
+			}
+			else if (value != null) {
 				OnceInAWhileRunner.runAgainAfter(() -> log.warn(
-						"No field with name '{}' found in the field conf, please review your group configuratiuon '{}'",
-						pm.getFieldName(), ffc.getGroupName()), this.getClass().getSimpleName() + pm.getFieldName()
-								+ ffc.getGroupName(), ChronoUnit.SECONDS, 60);
+						"Value '{}' could not be matched against a pattern for group '{}' and field '{}' as the value is not a String or a Collection of Strings",
+						value, ffc.getGroupName(), pm.getFieldName()), this.getClass().getSimpleName() + pm.getFieldName(),
+						ChronoUnit.SECONDS, 60);
 			}
 		}
 		return matchRes;
@@ -166,7 +152,6 @@ public class FlagFieldDataProcessor implements DocumentPreProcessor {
 
 	private class MatchResult {
 
-		String	value;
-		boolean	validField	= true;
+		String value;
 	}
 }

@@ -24,9 +24,9 @@ import de.cxp.ocs.model.result.Sorting;
 public class SearchParamsParserTest {
 
 	private FieldConfiguration	fields		= new FieldConfiguration()
-			.addField(new Field().setName("price").setType(FieldType.number).setUsage(FieldUsage.Facet, FieldUsage.Sort))
-			.addField(new Field().setName("brand").setUsage(FieldUsage.Facet))
-			.addField(new Field().setName("image").setUsage(FieldUsage.Result));
+			.addField(new Field().setName("price").setType(FieldType.NUMBER).setUsage(FieldUsage.FACET, FieldUsage.SORT))
+			.addField(new Field().setName("brand").setUsage(FieldUsage.FACET))
+			.addField(new Field().setName("image").setUsage(FieldUsage.RESULT));
 	private FieldConfigIndex	fieldConfIndex	= new FieldConfigIndex(fields);
 
 	@Test

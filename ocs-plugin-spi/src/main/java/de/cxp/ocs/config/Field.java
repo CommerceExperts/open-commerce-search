@@ -27,13 +27,13 @@ public class Field {
 	 * Sets the type of the field.
 	 * Default: String
 	 */
-	private FieldType type = FieldType.string;
+	private FieldType type = FieldType.STRING;
 
 	/**
 	 * Sets weather the filed is on variant level or not. If not, it
 	 * will be treated as on master level.
 	 */
-	private FieldLevel fieldLevel = FieldLevel.master;
+	private FieldLevel fieldLevel = FieldLevel.MASTER;
 
 	/**
 	 * Checks weather the field is on variant level.
@@ -42,7 +42,7 @@ public class Field {
 	 *         <code>false</code> otherwise.
 	 */
 	public boolean isVariantLevel() {
-		return FieldLevel.variant.equals(fieldLevel) || FieldLevel.both.equals(fieldLevel);
+		return FieldLevel.VARIANT.equals(fieldLevel) || FieldLevel.BOTH.equals(fieldLevel);
 	}
 
 	/**
@@ -52,7 +52,7 @@ public class Field {
 	 *         <code>false</code> otherwise.
 	 */
 	public boolean isMasterLevel() {
-		return FieldLevel.master.equals(fieldLevel) || FieldLevel.both.equals(fieldLevel);
+		return FieldLevel.MASTER.equals(fieldLevel) || FieldLevel.BOTH.equals(fieldLevel);
 	}
 	
 	/**
@@ -62,7 +62,7 @@ public class Field {
 	 *         <code>false</code> otherwise.
 	 */
 	public boolean isBothLevel() {
-		return FieldLevel.both.equals(fieldLevel);
+		return FieldLevel.BOTH.equals(fieldLevel);
 	}
 	
 	/**

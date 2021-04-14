@@ -5,6 +5,6 @@ package de.cxp.ocs.config;
  */
 public enum FieldUsage {
 
-	Search, Result, Sort, Facet, Score;
+	SEARCH, RESULT, SORT, FACET, SCORE;
 
 }

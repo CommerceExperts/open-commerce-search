@@ -49,13 +49,13 @@ public abstract class ConfigureableDataprocessor<T extends ConfigureableField> i
 				}
 				else {
 					log.warn(
-							"ConfigureableDataprocessor configuration must have a key and a value, but got key={}, value={} for processor {}",
-							key, val, this.getClass().getSimpleName());
+							"configuration for processor {} invalid. must have a key and a value, but got key={}, value={} ",
+							this.getClass().getSimpleName(), key, val);
 				}
 			});
 		}
 		else {
-			log.warn("ConfigureableDataprocessor configuration is missing, processor {} will not work", this.getClass()
+			log.warn("configuration is missing for processor {}. It won't work", this.getClass()
 					.getSimpleName());
 		}
 	}

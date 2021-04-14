@@ -60,15 +60,15 @@ public class FacetConfigurationApplyer {
 	@RequiredArgsConstructor
 	private static class FacetCreatorClassifier {
 
-		final static FacetCreatorClassifier hierarchicalFacet = new FacetCreatorClassifier(false, FacetType.hierarchical.name());
+		final static FacetCreatorClassifier hierarchicalFacet = new FacetCreatorClassifier(false, FacetType.HIERARCHICAL.name());
 
-		final static FacetCreatorClassifier	masterIntervalFacet	= new FacetCreatorClassifier(false, FacetType.interval.name());
-		final static FacetCreatorClassifier	masterRangeFacet	= new FacetCreatorClassifier(false, FacetType.range.name());
-		final static FacetCreatorClassifier	masterTermFacet		= new FacetCreatorClassifier(false, FacetType.term.name());
+		final static FacetCreatorClassifier	masterIntervalFacet	= new FacetCreatorClassifier(false, FacetType.INTERVAL.name());
+		final static FacetCreatorClassifier	masterRangeFacet	= new FacetCreatorClassifier(false, FacetType.RANGE.name());
+		final static FacetCreatorClassifier	masterTermFacet		= new FacetCreatorClassifier(false, FacetType.TERM.name());
 
-		final static FacetCreatorClassifier	variantIntervalFacet	= new FacetCreatorClassifier(true, FacetType.interval.name());
-		final static FacetCreatorClassifier	variantRangeFacet		= new FacetCreatorClassifier(true, FacetType.range.name());
-		final static FacetCreatorClassifier	variantTermFacet		= new FacetCreatorClassifier(true, FacetType.term.name());
+		final static FacetCreatorClassifier	variantIntervalFacet	= new FacetCreatorClassifier(true, FacetType.INTERVAL.name());
+		final static FacetCreatorClassifier	variantRangeFacet		= new FacetCreatorClassifier(true, FacetType.RANGE.name());
+		final static FacetCreatorClassifier	variantTermFacet		= new FacetCreatorClassifier(true, FacetType.TERM.name());
 
 		final boolean onVariantLevel;
 
@@ -116,11 +116,11 @@ public class FacetConfigurationApplyer {
 				facetConfig.setType(getDefaultFacetType(facetField.getType()).name());
 			}
 
-			if (FieldType.category.equals(facetField.getType())) {
-				if (!FacetType.hierarchical.name().equals(facetConfig.getType())) {
+			if (FieldType.CATEGORY.equals(facetField.getType())) {
+				if (!FacetType.HIERARCHICAL.name().equals(facetConfig.getType())) {
 					log.warn("facet {} based on *category* field {} was configured as {} facet, but only 'hierarchical' type is supported",
 							facetConfig.getLabel(), facetField.getName(), facetConfig.getType());
-					facetConfig.setType(FacetType.hierarchical.name());
+					facetConfig.setType(FacetType.HIERARCHICAL.name());
 				}
 				if (!facetField.isVariantLevel()) {
 					hierarchicalFacets.put(facetField.getName(), facetConfig);
@@ -130,13 +130,13 @@ public class FacetConfigurationApplyer {
 							facetConfig.getLabel(), facetField.getName());
 				}
 			}
-			else if (FieldType.number.equals(facetField.getType())) {
-				if (facetConfig.getType().equals(FacetType.range.name())) {
+			else if (FieldType.NUMBER.equals(facetField.getType())) {
+				if (facetConfig.getType().equals(FacetType.RANGE.name())) {
 					if (facetField.isMasterLevel()) rangeFacets.put(facetField.getName(), facetConfig);
 					if (facetField.isVariantLevel()) variantRangeFacets.put(facetField.getName(), facetConfig);
 				}
 				else {
-					if (!facetConfig.getType().equals(FacetType.interval.name())) {
+					if (!facetConfig.getType().equals(FacetType.INTERVAL.name())) {
 						log.warn("facet {} based on *number* field {} was configured as {} facet, but only 'interval' or 'range' type is supported."
 								+ " To create a 'term' facet on numeric data, the according field has to be indexed as *string* field.",
 								facetConfig.getLabel(), facetField.getName(), facetConfig.getType());
@@ -146,7 +146,7 @@ public class FacetConfigurationApplyer {
 				}
 			}
 			else {
-				if (!FacetType.term.name().equals(facetConfig.getType())) {
+				if (!FacetType.TERM.name().equals(facetConfig.getType())) {
 					log.warn("facet {} based on *{}* field {} was configured as {} facet, but only 'term' type is supported",
 							facetConfig.getLabel(), facetField.getType(), facetField.getName(), facetConfig.getType());
 				}
@@ -204,15 +204,15 @@ public class FacetConfigurationApplyer {
 
 	private FacetType getDefaultFacetType(FieldType type) {
 		switch (type) {
-			case number:
-				return FacetType.interval;
-			case category:
-				return FacetType.hierarchical;
-			case combi:
-			case id:
-			case string:
+			case NUMBER:
+				return FacetType.INTERVAL;
+			case CATEGORY:
+				return FacetType.HIERARCHICAL;
+			case COMBI:
+			case ID:
+			case STRING:
 			default:
-				return FacetType.term;
+				return FacetType.TERM;
 		}
 	}
 
