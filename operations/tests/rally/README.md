@@ -14,7 +14,7 @@ Because in OCSS we are always operating with the Elasticsearch index alias
 
 ## Generate esrally track with your data by usig helper script
 ```
-./create-es-rally-track.sh -i demo-olek-sven -f ../../../search-service/searches.log -o /tmp -v
+./create-es-rally-track.sh -i demo-index -f ../../../search-service/searches.log -o /tmp -v
 ```
 
 ## Run es rally track
