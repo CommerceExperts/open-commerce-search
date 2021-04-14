@@ -10,7 +10,7 @@ public enum ScoreType {
 
 	/**
 	 * score using custom script. Make sure to provide the required option
-	 * 'script_id_or_code'.
+	 * 'SCRIPT_CODE'.
 	 */
 	SCRIPT_SCORE,
 
