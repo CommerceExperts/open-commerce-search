@@ -22,7 +22,7 @@ public class FacetFactory {
 		Facet facet = new Facet(facetConfig.getSourceField());
 		facet.getMeta().putAll(facetConfig.getMetaData());
 
-		facet.setType(type.name());
+		facet.setType(type.name().toLowerCase());
 		facet.meta.put(MetaDataValues.label.name(), facetConfig.getLabel());
 		facet.meta.put(MetaDataValues.multiSelect.name(), facetConfig.isMultiSelect());
 		facet.meta.put(MetaDataValues.order.name(), facetConfig.getOrder());
