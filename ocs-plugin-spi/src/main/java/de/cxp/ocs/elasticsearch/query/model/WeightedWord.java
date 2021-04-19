@@ -1,5 +1,7 @@
 package de.cxp.ocs.elasticsearch.query.model;
 
+import org.apache.lucene.search.BooleanClause.Occur;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,6 +23,7 @@ public class WeightedWord implements QueryStringTerm {
 	// TODO: remove because unused?
 	private int		termFrequency	= -1;
 	private boolean	isFuzzy			= false;
+	private Occur	occur			= Occur.MUST;
 
 	public WeightedWord(String word, float weight) {
 		this.word = word;
@@ -35,7 +38,8 @@ public class WeightedWord implements QueryStringTerm {
 
 	@Override
 	public String toQueryString() {
-		return EscapeUtil.escapeReservedESCharacters(word)
+		return occur.toString()
+				+ EscapeUtil.escapeReservedESCharacters(word)
 				+ (isFuzzy ? "~" : "")
 				+ (weight != 1f ? "^" + weight : "");
 	}
