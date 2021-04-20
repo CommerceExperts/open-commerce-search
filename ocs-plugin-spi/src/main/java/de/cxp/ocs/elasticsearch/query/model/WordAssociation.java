@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.lucene.search.BooleanClause.Occur;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,6 +24,7 @@ public class WordAssociation implements QueryStringTerm {
 
 	@NonNull
 	private String originalWord;
+	private Occur	occur	= Occur.MUST;
 
 	private Map<String, WeightedWord> relatedWords = new HashMap<>();
 
@@ -54,12 +57,17 @@ public class WordAssociation implements QueryStringTerm {
 	 */
 	@Override
 	public String toQueryString() {
-		StringBuilder queryString = new StringBuilder("(")
+		StringBuilder queryString = new StringBuilder(occur.toString())
+				.append("(")
 				.append(EscapeUtil.escapeReservedESCharacters(originalWord));
 		for (WeightedWord relatedWord : relatedWords.values()) {
-			// TODO: move query-quoting or enclosing brackets into WeightedWord
-			// in case it contains spaces so it's not necessary here
-			queryString.append(" OR ").append('"').append(relatedWord.toQueryString().replace("^", "\"^"));
+			queryString.append(" OR ").append(relatedWord.getWord());
+			if (relatedWord.isFuzzy()) {
+				queryString.append('~');
+			}
+			if (relatedWord.getWeight() != 1f) {
+				queryString.append('^').append(relatedWord.getWeight());
+			}
 		}
 		return queryString.append(")").toString();
 	}

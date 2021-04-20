@@ -49,7 +49,7 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 
 	public Optional<QueryProcessingConfiguration> getQueryProcessing(String tenant) {
 		return getSubConfiguration(tenant, ApplicationSearchProperties::getQueryProcessing,
-				tenantConfig -> tenantConfig == null || tenantConfig.useDefaultQueryConfig);
+				tenantConfig -> tenantConfig == null);
 	}
 
 	public Optional<ScoringConfiguration> getScoringConfiguration(String tenant) {

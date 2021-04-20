@@ -42,6 +42,7 @@ bin
 application-*properties
 application-*yml
 application-*yaml
+rules
 
 #kubernetes ops custom files
 operations/k8s/custom/

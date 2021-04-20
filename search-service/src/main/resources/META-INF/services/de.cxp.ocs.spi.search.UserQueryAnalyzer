@@ -1,0 +1,3 @@
+de.cxp.ocs.elasticsearch.query.analyzer.WhitespaceAnalyzer
+de.cxp.ocs.elasticsearch.query.analyzer.WhitespaceWithShingles
+de.cxp.ocs.elasticsearch.query.analyzer.QuerqyQueryExpander

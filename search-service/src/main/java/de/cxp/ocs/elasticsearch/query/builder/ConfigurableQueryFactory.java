@@ -7,7 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder.Type;
 import org.elasticsearch.index.query.Operator;
@@ -114,25 +117,44 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 				.append(ESQueryUtils.buildQueryString(searchTerms, " "))
 				.append('"')
 				.append(")^1.5");
+
 		// build shingle variants if enabled
 		if (querySettings.getOrDefault(isQueryWithShingles, "false").equalsIgnoreCase("true")) {
-			for (int i = 0; i < searchTerms.size() - 1; i++) {
-				List<QueryStringTerm> shingledSearchTerms = new ArrayList<>(searchTerms);
-				QueryStringTerm wordA = shingledSearchTerms.remove(i);
-				// shingled word has double weight, since it practically matches
-				// two input tokens
-				WeightedWord shingleWord = new WeightedWord(wordA.getWord() + searchTerms.get(i + 1).getWord(), 2f);
-				shingleWord.setFuzzy(wordA instanceof WeightedWord && ((WeightedWord) wordA).isFuzzy());
-				shingledSearchTerms.set(i, shingleWord);
-				queryStringBuilder.append(" OR ")
-						.append('(')
-						.append(ESQueryUtils.buildQueryString(shingledSearchTerms, " "))
-						// the whole variant with shingles has a lower weight
-						// than the original terms
-						.append(")^0.9");
-			}
+			attachQueryTermsAsShingles(searchTerms, queryStringBuilder);
 		}
 		return queryStringBuilder.toString();
+	}
+
+	private void attachQueryTermsAsShingles(List<QueryStringTerm> searchTerms, StringBuilder queryStringBuilder) {
+		Predicate<QueryStringTerm> isMustNot = q -> Occur.MUST_NOT.equals(q.getOccur());
+		List<QueryStringTerm> withoutExcludes = new ArrayList<>(searchTerms);
+		List<QueryStringTerm> excludes = withoutExcludes.stream()
+				.filter(isMustNot)
+				.collect(Collectors.toList());
+		if (!excludes.isEmpty()) withoutExcludes.removeIf(isMustNot);
+
+		for (int i = 0; i < withoutExcludes.size() - 1; i++) {
+			List<QueryStringTerm> shingledSearchTerms = new ArrayList<>(withoutExcludes);
+
+			QueryStringTerm wordA = shingledSearchTerms.remove(i);
+			// shingled word has double weight, since it practically matches
+			// two input tokens
+			WeightedWord shingleWord = new WeightedWord(wordA.getWord() + withoutExcludes.get(i + 1).getWord(), 2f);
+			shingleWord.setFuzzy(wordA instanceof WeightedWord && ((WeightedWord) wordA).isFuzzy());
+			shingledSearchTerms.set(i, shingleWord);
+			queryStringBuilder.append(" OR ")
+					.append('(')
+					.append(ESQueryUtils.buildQueryString(shingledSearchTerms, " "));
+
+			// add excludes if available
+			if (excludes.size() > 0) {
+				queryStringBuilder.append(' ').append(ESQueryUtils.buildQueryString(excludes, " "));
+			}
+
+			// the whole variant with shingles has a lower weight
+			// than the original terms
+			queryStringBuilder.append(")^0.9");
+		}
 	}
 
 	@Override
