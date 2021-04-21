@@ -68,6 +68,9 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 		catch (Exception e) {
 			log.error("Failed to load common rules from url {}", commonRulesLocation, e);
 		}
+		if (rewriteChain != null) {
+			log.info("Successfully initialized querqy from rules at {}", commonRulesLocation);
+		}
 	}
 
 	private RewriteChain initFromStream(InputStream resourceStream) throws IOException {

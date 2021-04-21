@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.client.RequestOptions;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.http.HttpStatus;
@@ -81,6 +82,7 @@ public class SearchController implements SearchService {
 
 	@GetMapping("/flushConfig/{tenant}")
 	public ResponseEntity<HttpStatus> flushConfig(@PathVariable("tenant") String tenant) {
+		MDC.put("tenant", tenant);
 		HttpStatus status;
 		brokenTenantsCache.invalidate(tenant);
 		SearchContext searchContext = loadContext(tenant);
@@ -95,6 +97,7 @@ public class SearchController implements SearchService {
 			status = HttpStatus.OK;
 			searchClientCache.put(tenant, initializeSearcher(searchContext));
 		}
+		MDC.remove("tenant");
 
 		return new ResponseEntity<>(status, status);
 	}
@@ -102,15 +105,52 @@ public class SearchController implements SearchService {
 	@GetMapping("/search/{tenant}")
 	@Override
 	public SearchResult search(@PathVariable("tenant") String tenant, SearchQuery searchQuery, @RequestParam Map<String, String> filters) throws Exception {
-		// deny access to tenants that were considered invalid before
-		// this is done until the latestTenantsCache invalidates that
-		Exception latestTenantEx = brokenTenantsCache.getIfPresent(tenant);
-		if (latestTenantEx != null) {
-			throw latestTenantEx;
+		MDC.put("tenant", tenant);
+		try {
+			// deny access to tenants that were considered invalid before
+			// this is done until the latestTenantsCache invalidates that
+			Exception latestTenantEx = brokenTenantsCache.getIfPresent(tenant);
+			if (latestTenantEx != null) {
+				throw latestTenantEx;
+			}
+
+			SearchContext searchContext = searchContexts.computeIfAbsent(tenant, this::loadContext);
+
+			final InternalSearchParams parameters = extractInternalParams(searchQuery, filters, searchContext);
+
+			Map<String, String> customParams = new HashMap<>(filters);
+			parameters.filters.forEach(f -> {
+				customParams.remove(f.getField().getName());
+				customParams.remove(f.getField().getName() + SearchParamsParser.ID_FILTER_SUFFIX);
+			});
+
+			try {
+				final Searcher searcher = searchClientCache.get(tenant, () -> initializeSearcher(searchContext));
+				return searcher.find(parameters, customParams);
+			}
+			catch (ElasticsearchStatusException esx) {
+				// TODO: in case an index was requested where it fails because
+				// fields are missing (so the application field configuration is
+				// not
+				// in sync with the fields indexed into ES)
+				// => try to re-build the configuration by validating the fields
+				// against ES _mapping endpoint
+				if (esx.getMessage().contains("type=index_not_found_exception")) {
+					// don't keep objects for invalid tenants
+					searchContexts.remove(tenant);
+					searchClientCache.invalidate(tenant);
+					// and deny further requests for the next N minutes
+					brokenTenantsCache.put(tenant, esx);
+				}
+				throw esx;
+			}
 		}
+		finally {
+			MDC.remove("tenant");
+		}
+	}
 
-		SearchContext searchContext = searchContexts.computeIfAbsent(tenant, this::loadContext);
-
+	private InternalSearchParams extractInternalParams(SearchQuery searchQuery, Map<String, String> filters, SearchContext searchContext) {
 		final InternalSearchParams parameters = new InternalSearchParams();
 		parameters.limit = searchQuery.limit;
 		parameters.offset = searchQuery.offset;
@@ -121,32 +161,7 @@ public class SearchController implements SearchService {
 			parameters.sortings = parseSortings(searchQuery.sort, searchContext.getFieldConfigIndex());
 		}
 		parameters.filters = parseFilters(filters, searchContext.getFieldConfigIndex());
-
-		Map<String, String> customParams = new HashMap<>(filters);
-		parameters.filters.forEach(f -> {
-			customParams.remove(f.getField().getName());
-			customParams.remove(f.getField().getName() + SearchParamsParser.ID_FILTER_SUFFIX);
-		});
-
-		try {
-			final Searcher searcher = searchClientCache.get(tenant, () -> initializeSearcher(searchContext));
-			return searcher.find(parameters, customParams);
-		}
-		catch (ElasticsearchStatusException esx) {
-			// TODO: in case an index was requested where it fails because
-			// fields are missing (so the application field configuration is not
-			// in sync with the fields indexed into ES)
-			// => try to re-build the configuration by validating the fields
-			// against ES _mapping endpoint
-			if (esx.getMessage().contains("type=index_not_found_exception")) {
-				// don't keep objects for invalid tenants
-				searchContexts.remove(tenant);
-				searchClientCache.invalidate(tenant);
-				// and deny further requests for the next N minutes
-				brokenTenantsCache.put(tenant, esx);
-			}
-			throw esx;
-		}
+		return parameters;
 	}
 
 	@GetMapping("/tenants")
