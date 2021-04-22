@@ -40,7 +40,7 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>open-commerce-search-api</artifactId>
-				<version>0.10.0</version>
+				<version>0.11.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>

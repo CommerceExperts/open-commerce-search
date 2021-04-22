@@ -17,6 +17,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,14 +39,18 @@ import com.google.common.cache.CacheBuilder;
 import de.cxp.ocs.api.searcher.SearchService;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.FieldConfigFetcher;
+import de.cxp.ocs.elasticsearch.ResultMapper;
 import de.cxp.ocs.elasticsearch.Searcher;
+import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import de.cxp.ocs.util.InternalSearchParams;
+import de.cxp.ocs.util.NotFoundException;
 import de.cxp.ocs.util.SearchParamsParser;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.NonNull;
@@ -141,6 +147,7 @@ public class SearchController implements SearchService {
 					searchClientCache.invalidate(tenant);
 					// and deny further requests for the next N minutes
 					brokenTenantsCache.put(tenant, esx);
+					throw new NotFoundException("Index " + searchContext.config.getIndexName());
 				}
 				throw esx;
 			}
@@ -162,6 +169,34 @@ public class SearchController implements SearchService {
 		}
 		parameters.filters = parseFilters(filters, searchContext.getFieldConfigIndex());
 		return parameters;
+	}
+
+	@GetMapping("/doc/{tenant}/{id}")
+	@Override
+	public Document getDocument(@PathVariable("tenant") String tenant, @PathVariable("id") String docId) throws Exception {
+		MDC.put("tenant", tenant);
+		Document foundDoc = null;
+		try {
+			SearchContext searchContext = searchContexts.computeIfAbsent(tenant, this::loadContext);
+			GetRequest getRequest = new GetRequest(searchContext.getConfig().getIndexName(), docId);
+			GetResponse getResponse = esBuilder.getRestHLClient().get(getRequest, RequestOptions.DEFAULT);
+			if (getResponse.isExists()) {
+				foundDoc = new ResultMapper(searchContext.fieldConfigIndex).mapToOriginalDocument(getResponse.getId(), getResponse.getSource());
+
+				Object resultData = getResponse.getSource().get(FieldConstants.RESULT_DATA);
+				if (resultData != null && resultData instanceof Map) {
+					foundDoc = new Document(getResponse.getId());
+					foundDoc.setData((Map<String, Object>) resultData);
+				}
+			}
+		}
+		finally {
+			MDC.remove("tenant");
+		}
+		if (foundDoc == null) {
+			throw new NotFoundException("Document " + docId);
+		}
+		return foundDoc;
 	}
 
 	@GetMapping("/tenants")
@@ -213,20 +248,17 @@ public class SearchController implements SearchService {
 		return new FieldConfigIndex(fieldConfig);
 	}
 
-	@ExceptionHandler({ ElasticsearchStatusException.class })
-	public ResponseEntity<ExceptionResponse> handleElasticsearchExceptions(ElasticsearchStatusException e) {
-		if (e.getMessage().contains("type=index_not_found_exception")) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND)
-					.body(ExceptionResponse.builder()
-							.message(e.getMessage())
-							.code(HttpStatus.NOT_FOUND.value())
-							.build());
-		}
-
-		return handleInternalErrors(e);
+	@ExceptionHandler({ NotFoundException.class })
+	public ResponseEntity<ExceptionResponse> handleNotFoundException(NotFoundException e) {
+		return ResponseEntity.status(HttpStatus.NOT_FOUND)
+				.body(ExceptionResponse.builder()
+						.message(e.getMessage())
+						.code(HttpStatus.NOT_FOUND.value())
+						.build());
 	}
 
-	@ExceptionHandler({ ExecutionException.class, IOException.class, UncheckedIOException.class, RuntimeException.class, ClassNotFoundException.class })
+	@ExceptionHandler({ ElasticsearchStatusException.class, ExecutionException.class, IOException.class, UncheckedIOException.class, RuntimeException.class,
+			ClassNotFoundException.class })
 	public ResponseEntity<ExceptionResponse> handleInternalErrors(Exception e) {
 		final String errorId = UUID.randomUUID().toString();
 		log.error("Internal Server Error " + errorId, e);
