@@ -7,7 +7,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.16.0</version>
+	<version>0.16.1</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -67,7 +67,7 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>suggest-service</artifactId>
-				<version>0.4.1</version>
+				<version>0.4.2</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
