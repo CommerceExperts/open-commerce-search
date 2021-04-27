@@ -35,18 +35,14 @@
 		</appender>
 	</springProfile>
 
+	<springProfile name="trace-searches">
+		<logger name="de.cxp.ocs.elasticsearch.Searcher" level="TRACE">
+			<appender-ref ref="QUERYSTDOUT" />
+		</logger>
+	</springProfile>
+
 	<root level="${log.root.level:-INFO}">
 		<appender-ref ref="STDOUT" />
 	</root>
-
-	<logger name="de.cxp.ocs.elasticsearch.Searcher" level="${log.ocs.level:-TRACE}">
-		<appender-ref ref="QUERYSTDOUT" />
-	</logger>
-
-  <springProfile name="trace-searches">
-    <logger name="de.cxp.ocs.elasticsearch.Searcher" level="${log.ocs.level:-TRACE}">
-      <appender-ref ref="QUERYSTDOUT" />
-    </logger>
-  </springProfile>
 
 </configuration>
