@@ -50,12 +50,12 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-commons</artifactId>
-				<version>0.7.0</version>
+				<version>0.7.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>indexer-service</artifactId>
-				<version>0.8.0</version>
+				<version>0.8.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>

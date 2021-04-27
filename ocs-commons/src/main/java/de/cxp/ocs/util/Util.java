@@ -71,45 +71,56 @@ public final class Util {
 		if (oldValue.equals(newValue)) return oldValue;
 
 		if (oldValue instanceof Collection<?>) {
-			if (newValue instanceof Collection<?>) {
-				((Collection<Object>) oldValue).addAll((Collection<Object>) newValue);
+			try {
+				if (newValue instanceof Collection<?>) {
+					((Collection<Object>) oldValue).addAll((Collection<Object>) newValue);
+				}
+				else if (newValue.getClass().isArray()) {
+					((Collection<Object>) oldValue).addAll(Arrays.asList((Object[]) newValue));
+				}
+				else {
+					((Collection<Object>) oldValue).add(newValue);
+				}
+				return oldValue;
 			}
-			else if (newValue.getClass().isArray()) {
-				((Collection<Object>) oldValue).addAll(Arrays.asList((Object[]) newValue));
+			catch (UnsupportedOperationException gnah) {
+				// oldValue seems to be immutable, try to put into "newValue"...
 			}
-			else {
-				((Collection<Object>) oldValue).add(newValue);
-			}
-			return oldValue;
 		}
-		else if (newValue instanceof Collection<?>) {
-			if (oldValue instanceof Collection<?>) {
-				((Collection<Object>) newValue).addAll((Collection<Object>) oldValue);
+
+		if (newValue instanceof Collection<?>) {
+			try {
+				if (oldValue instanceof Collection<?>) {
+					((Collection<Object>) newValue).addAll((Collection<Object>) oldValue);
+				}
+				else if (newValue.getClass().isArray()) {
+					((Collection<Object>) newValue).addAll(Arrays.asList((Object[]) oldValue));
+				}
+				else {
+					((Collection<Object>) newValue).add(oldValue);
+				}
+				return newValue;
 			}
-			else if (newValue.getClass().isArray()) {
-				((Collection<Object>) newValue).addAll(Arrays.asList((Object[]) oldValue));
+			catch (UnsupportedOperationException gnah) {
+				// newValue seems to be immutable,
+				// try to put the values into a new collection
 			}
-			else {
-				((Collection<Object>) newValue).add(oldValue);
-			}
-			return newValue;
+		}
+
+		Set<Object> collection = new HashSet<>();
+		if (oldValue.getClass().isArray()) {
+			collection.addAll(Arrays.asList((Object[]) oldValue));
 		}
 		else {
-			Set<Object> collection = new HashSet<>();
-			if (oldValue.getClass().isArray()) {
-				collection.addAll(Arrays.asList((Object[]) oldValue));
-			}
-			else {
-				collection.add(oldValue);
-			}
-			if (newValue.getClass().isArray()) {
-				collection.addAll(Arrays.asList((Object[]) newValue));
-			}
-			else {
-				collection.add(newValue);
-			}
-			return collection;
+			collection.add(oldValue);
 		}
+		if (newValue.getClass().isArray()) {
+			collection.addAll(Arrays.asList((Object[]) newValue));
+		}
+		else {
+			collection.add(newValue);
+		}
+		return collection;
 	}
 
 	public static Collection<String> toStringCollection(Object value) {
