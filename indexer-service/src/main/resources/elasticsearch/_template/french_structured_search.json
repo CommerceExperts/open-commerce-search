@@ -1,33 +1,21 @@
 {
-  "index_patterns": "ocs-*-de",
+  "index_patterns": "ocs-*-fr",
   "order": 100,
   "settings": {
     "analysis": {
       "filter": {
         "custom_stemmer": {
           "type": "stemmer",
-          "language": "light_german"
+          "language": "light_french"
         },
         "custom_stop_filter": {
           "type": "stop",
-          "stopwords": "_german_"
+          "stopwords": "_french_"
         }
       },
       "char_filter": {
         "html": {
           "type": "html_strip"
-        },
-        "german_special_letters": {
-          "type": "mapping",
-          "mappings": [
-            "Ä => ae",
-            "ä => ae",
-            "Ö => oe",
-            "ö => oe",
-            "Ü => ue",
-            "ü => ue",
-            "ß => ss"
-          ]
         },
         "irrelevant_chars": {
           "pattern": "[^\\p{L}\\s\\d_-]",
@@ -44,7 +32,6 @@
           ],
           "char_filter": [
             "html",
-            "german_special_letters",
             "irrelevant_chars"
           ],
           "type": "custom",
