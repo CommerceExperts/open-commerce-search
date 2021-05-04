@@ -67,9 +67,10 @@ public class Application {
 					}
 				});
 
-		On.get("/metrics").plain(() -> meterRegistry.scrape().getBytes());
-		On.get("/prometheus").plain(() -> meterRegistry.scrape().getBytes());
-		On.get("/health").plain("up");
+		String mgmPathPrefix = properties.getManagementPathPrefix();
+		On.get(mgmPathPrefix + "/metrics").plain(() -> meterRegistry.scrape().getBytes());
+		On.get(mgmPathPrefix + "/prometheus").plain(() -> meterRegistry.scrape().getBytes());
+		On.get(mgmPathPrefix + "/health").plain("up");
 	}
 
 	public static QuerySuggestManager getQuerySuggestManager(SuggestProperties props, MeterRegistry meterRegistry) {

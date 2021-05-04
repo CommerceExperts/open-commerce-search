@@ -236,6 +236,16 @@ public class SuggestProperties {
 				.map(val -> StringUtils.split(val, ','));
 	}
 
+	/**
+	 * Prefix for /health and /metrics path. Should start with a slash and end
+	 * without. Defaults to empty string.
+	 * 
+	 * @return
+	 */
+	public String getManagementPathPrefix() {
+		return getVarValue("SUGGEST_MGMT_PATH_PREFIX").orElse("");
+	}
+
 	private <T> LinkedHashMap<String, T> toLinkedHashMap(String rawConf, Function<String, T> valParser) {
 		String[] splitConf = StringUtils.split(rawConf, ',');
 		LinkedHashMap<String, T> map = new LinkedHashMap<>(splitConf.length);
