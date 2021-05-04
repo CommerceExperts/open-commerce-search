@@ -124,10 +124,10 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 		for (Field field : sourceFields) {
 			fetchWatch.reset();
 			fetchWatch.start();
-			if (field.getUsage().contains(FieldUsage.Facet)) {
+			if (field.getUsage().contains(FieldUsage.FACET)) {
 				suggestRecords.addAll(fetchTermsFromFacetAggregation(indexName, field, dedupFilter));
 			}
-			else if (field.getUsage().contains(FieldUsage.Sort)) {
+			else if (field.getUsage().contains(FieldUsage.SORT)) {
 				suggestRecords.addAll(fetchTermsFromKeywordsField(indexName, FieldConstants.SORT_DATA, field, dedupFilter));
 			}
 			else if (field.isMasterLevel()) {
@@ -174,7 +174,7 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 
 	private String getNestedPath(Field field) {
 		String nestedPath;
-		if (FieldType.category.equals(field.getType())) {
+		if (FieldType.CATEGORY.equals(field.getType())) {
 			nestedPath = FieldConstants.PATH_FACET_DATA;
 		}
 		else {
@@ -253,10 +253,10 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 	private Collection<SuggestRecord> fetchTermsFromResultData(String indexName, Field field, Optional<BloomFilter<CharSequence>> dedupFilter) throws IOException {
 		int maxFetchSize = settings.getMaxFetchSize(indexName);
 		String prefix;
-		if (field.getUsage().contains(FieldUsage.Search)) {
+		if (field.getUsage().contains(FieldUsage.SEARCH)) {
 			prefix = FieldConstants.SEARCH_DATA;
 		}
-		else if (field.getUsage().contains(FieldUsage.Result)) {
+		else if (field.getUsage().contains(FieldUsage.RESULT)) {
 			prefix = FieldConstants.RESULT_DATA;
 		}
 		else {
@@ -318,7 +318,7 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 		Map<String, String> payload = CommonPayloadFields.payloadOfTypeAndCount(sourceField.getName(), String.valueOf(termCount));
 
 		String secondaryText = EMPTY_STRING;
-		if (FieldType.category.equals(sourceField.getType()) && label.indexOf('/') > -1) {
+		if (FieldType.CATEGORY.equals(sourceField.getType()) && label.indexOf('/') > -1) {
 			int lastPathIndex = StringUtils.lastIndexOf(label, '/');
 			secondaryText = label.substring(0, lastPathIndex);
 			payload.put("catPath", secondaryText);
