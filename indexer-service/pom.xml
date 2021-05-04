@@ -7,12 +7,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.15.0</version>
+		<version>0.17.0</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<artifactId>indexer-service</artifactId>
-	<version>0.8.0</version>
+	<version>0.8.1</version>
 	<packaging>jar</packaging>
 
 	<!-- Import dependency management from Spring Boot -->
@@ -31,6 +31,11 @@
 				<version>${spring-cloud.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>com.google.guava</groupId>
+				<artifactId>guava</artifactId>
+				<version>30.1.1-jre</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

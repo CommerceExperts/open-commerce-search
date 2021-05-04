@@ -418,7 +418,8 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		sort(suggestions, (s1, s2) -> {
 			final double s1CommonChars = Util.commonChars(locale, s1.getLabel(), term);
 			final double s2CommonChars = Util.commonChars(locale, s2.getLabel(), term);
-			return Double.compare(s1CommonChars, s2CommonChars);
+			// prefer more common chars => desc order
+			return Double.compare(s2CommonChars, s1CommonChars);
 		});
 	}
 

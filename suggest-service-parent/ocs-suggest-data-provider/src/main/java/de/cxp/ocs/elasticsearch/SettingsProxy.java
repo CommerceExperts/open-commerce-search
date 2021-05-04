@@ -48,9 +48,9 @@ public class SettingsProxy {
 	}
 
 	public String get(String propertyName) {
-		String property = properties.getProperty(propertyName);
+		String property = System.getProperty(propertyName);
 		if (property == null) {
-			property = System.getProperty(propertyName);
+			property = properties.getProperty(propertyName);
 		}
 		return property;
 	}

@@ -83,7 +83,7 @@ public class IndexerFactory {
 			}
 
 			if (!processorFound) {
-				log.error("Processor '{}' not found!");
+				log.error("Processor '{}' not found!", processorName);
 			}
 		}
 

@@ -5,6 +5,7 @@ import java.util.Map;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 
+import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
 import io.swagger.v3.oas.annotations.Operation;
@@ -159,6 +160,10 @@ public interface SearchService {
 					style = ParameterStyle.FORM,
 					required = false) Map<String, String> filters)
 			throws Exception;
+
+	@GET
+	@Path("doc/{tenant}/{id}")
+	public Document getDocument(String tenant, String docId) throws Exception;
 
 	@GET
 	@Path("tenants")

@@ -16,4 +16,6 @@ public class ExceptionResponse {
 	 * Unique ID of the error that is also logged to the server log output.
 	 */
 	String errorId;
+
+	final long timestamp = System.currentTimeMillis();
 }
