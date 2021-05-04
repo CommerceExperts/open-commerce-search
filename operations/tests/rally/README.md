@@ -71,11 +71,11 @@ docker run -v "/tmp/ocss-track:/rally/track" elastic/rally race --distribution-v
 ```
 ### run search challenge:
 ```
-docker run -v "/tmp/ocss-track:/rally/track" elastic/rally race --distribution-version=7.9.2 --track-path=/rally/track --pipeline=benchmark-only --challenge=index
+docker run -v "/tmp/ocss-track:/rally/track" elastic/rally race --distribution-version=7.9.2 --track-path=/rally/track --pipeline=benchmark-only --challenge=search
 ```
 ### run search-while-index challenge:
 ```
-docker run -v "/tmp/ocss-track:/rally/track" elastic/rally race --distribution-version=7.9.2 --track-path=/rally/track --pipeline=benchmark-only --challenge=index
+docker run -v "/tmp/ocss-track:/rally/track" elastic/rally race --distribution-version=7.9.2 --track-path=/rally/track --pipeline=benchmark-only --challenge=search-while-index
 ```
 
 ## Run a challenge with storing metrics in Kibana
