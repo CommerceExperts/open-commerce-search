@@ -7,15 +7,25 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>suggest-service-parent</artifactId>
-		<version>0.17.1</version>
+		<version>0.17.2</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>suggest-service</artifactId>
-	<version>0.5.1</version>
+	<version>0.5.2</version>
 	<packaging>jar</packaging>
 	<name>smartSuggest RESTful Service</name>
 
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.yaml</groupId>
+				<artifactId>snakeyaml</artifactId>
+				<version>1.26</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+	
 	<dependencies>
 		<dependency>
 			<groupId>de.cxp.ocs</groupId>
@@ -40,12 +50,6 @@
 			<groupId>org.rapidoid</groupId>
 			<artifactId>rapidoid-http-server</artifactId>
 			<version>5.5.5</version>
-			<exclusions>
-				<exclusion>
-					<groupId>com.fasterxml.jackson.dataformat</groupId>
-					<artifactId>jackson-dataformat-yaml</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>io.micrometer</groupId>
@@ -125,5 +129,4 @@
 			<url>https://nexus.commerce-experts.com/content/repositories/searchhub-public-snapshots/</url>
 		</repository>
 	</repositories>
-
 </project>
