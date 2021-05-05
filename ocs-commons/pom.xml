@@ -7,12 +7,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.17.0</version>
+		<version>0.17.4</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>ocs-commons</artifactId>
-	<version>0.7.1</version>
+	<version>0.7.2</version>
 	<packaging>jar</packaging>
 
 	<description>Library that contains common models and utility for the open-commerce-search stack</description>
@@ -29,6 +29,12 @@
 		<dependency>
 			<groupId>org.elasticsearch.client</groupId>
 			<artifactId>elasticsearch-rest-high-level-client</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.hdrhistogram</groupId>
+					<artifactId>HdrHistogram</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>fr.pilato.elasticsearch</groupId>

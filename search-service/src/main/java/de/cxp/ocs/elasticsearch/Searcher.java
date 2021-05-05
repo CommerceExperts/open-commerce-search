@@ -473,7 +473,7 @@ public class Searcher {
 
 	private Document getResultDocument(SearchHit hit, SearchHit variantHit) {
 		Map<String, Object> resultFields = new HashMap<>();
-		for (String sourceDataField : new String[] { FieldConstants.RESULT_DATA, FieldConstants.SEARCH_DATA }) {
+		for (String sourceDataField : new String[] { FieldConstants.SEARCH_DATA, FieldConstants.RESULT_DATA }) {
 			putDataIntoResult(hit, resultFields, sourceDataField);
 			if (variantHit != null) {
 				putDataIntoResult(variantHit, resultFields, sourceDataField);
