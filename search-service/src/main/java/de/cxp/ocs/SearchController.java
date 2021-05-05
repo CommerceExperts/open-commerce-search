@@ -227,7 +227,7 @@ public class SearchController implements SearchService {
 
 	private SearchContext loadContext(String tenant) {
 		SearchConfiguration searchConfig = plugins.getConfigurationProvider().getTenantSearchConfiguration(tenant);
-		FieldConfigIndex fieldConfigAccess = loadFieldConfiguration(tenant);
+		FieldConfigIndex fieldConfigAccess = loadFieldConfiguration(searchConfig.getIndexName());
 		List<UserQueryPreprocessor> userQueryPreprocessors = SearchPlugins.initialize(
 				searchConfig.getQueryProcessing().getUserQueryPreprocessors(),
 				plugins.getUserQueryPreprocessors(),
