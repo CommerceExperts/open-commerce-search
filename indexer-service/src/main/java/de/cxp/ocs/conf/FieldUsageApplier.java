@@ -189,10 +189,6 @@ public class FieldUsageApplier {
 	 * numeric facet. Otherwise it will be indexed as String, even if the string
 	 * contains a number.
 	 * </p>
-	 * <p>
-	 * For fields that should be indexed on both levels, facets will only be
-	 * indexed on variant level to avoid conflicts during facet creation.
-	 * </p>
 	 * 
 	 * @param record
 	 *        where the facet value should be put
@@ -202,7 +198,7 @@ public class FieldUsageApplier {
 	 *        value to be applied to the record
 	 */
 	public static void handleFacetField(final DataItem record, final Field field, Object value) {
-		if (isEmpty(value) || field.isBothLevel() && record instanceof MasterItem) {
+		if (isEmpty(value)) {
 			return;
 		}
 

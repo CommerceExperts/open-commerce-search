@@ -50,6 +50,18 @@ public class RangeFacetEntry extends FacetEntry {
 		this.upperBound = upperBound;
 	}
 
+	public RangeFacetEntry setLowerBound(Number lowerBound) {
+		this.lowerBound = lowerBound;
+		this.key = getLabel(lowerBound, upperBound);
+		return this;
+	}
+
+	public RangeFacetEntry setUpperBound(Number upperBound) {
+		this.upperBound = upperBound;
+		this.key = getLabel(lowerBound, upperBound);
+		return this;
+	}
+
 	/**
 	 * simple label that considers nullable lower or upper bound value.
 	 * 

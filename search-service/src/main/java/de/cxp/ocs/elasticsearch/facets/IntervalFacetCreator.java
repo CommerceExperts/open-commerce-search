@@ -22,7 +22,9 @@ import de.cxp.ocs.util.SearchQueryBuilder;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Accessors(chain = true)
 public class IntervalFacetCreator extends NestedFacetCreator {
 
@@ -151,6 +153,18 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 				isSelected ? linkBuilder.withoutFilterAsLink(facetConfig, currentValueInterval.getFilterValues())
 						: linkBuilder.withFilterAsLink(facetConfig, currentValueInterval.getFilterValues()),
 				isSelected);
+	}
+
+	@Override
+	public Optional<Facet> mergeFacets(Facet first, Facet second) {
+		if (!first.getFieldName().equals(second.getFieldName())
+				|| !FacetType.INTERVAL.name().toLowerCase().equals(first.getType())
+				|| !first.getType().equals(second.getType())) {
+			return Optional.empty();
+		}
+		log.warn("Merging Interval facet is hardly possible! Please consider range facet. Will drop facet for field {} with lower coverage.", first.getFieldName());
+
+		return Optional.of(first.absoluteFacetCoverage >= second.absoluteFacetCoverage ? first : second);
 	}
 
 	@NoArgsConstructor

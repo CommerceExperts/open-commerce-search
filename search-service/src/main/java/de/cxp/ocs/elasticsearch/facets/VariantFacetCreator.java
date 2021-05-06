@@ -3,6 +3,7 @@ package de.cxp.ocs.elasticsearch.facets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -61,6 +62,18 @@ public class VariantFacetCreator implements FacetCreator {
 			facets.addAll(creator.createFacets(nestedAgg.getAggregations(), filterContext, linkBuilder));
 		}
 		return facets;
+	}
+
+	@Override
+	public Optional<Facet> mergeFacets(Facet first, Facet second) {
+		Optional<Facet> mergedFacet = Optional.empty();
+		for (FacetCreator creator : innerCreators) {
+			mergedFacet = creator.mergeFacets(first, second);
+			if (mergedFacet.isPresent()) {
+				break;
+			}
+		}
+		return mergedFacet;
 	}
 
 }
