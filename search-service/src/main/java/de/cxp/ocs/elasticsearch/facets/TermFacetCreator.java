@@ -83,7 +83,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 		Set<String> filterValues = facetFilter == null ? Collections.emptySet() : asSet(facetFilter.getValues());
 		long absDocCount = 0;
 		for (Bucket valueBucket : facetValues.getBuckets()) {
-			long docCount = getDocumentCount(valueBucket);
+
 			String facetValue = valueBucket.getKeyAsString();
 
 			String facetValueId = null;
@@ -100,7 +100,13 @@ public class TermFacetCreator extends NestedFacetCreator {
 				else {
 					isSelected = filterValues.contains(facetValue);
 				}
+
+				if (!facetConfig.isMultiSelect() && !facetConfig.isShowUnselectedOptions() && !isSelected) {
+					continue;
+				}
 			}
+
+			long docCount = getDocumentCount(valueBucket);
 
 			String link;
 			if (isSelected) {
