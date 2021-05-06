@@ -7,13 +7,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -269,7 +267,7 @@ public class FacetConfigurationApplyer {
 		// => at the getFacets method this has to be considered
 		if (filterContext.getPostFilterQueries().isEmpty()) {
 			for (FacetCreator creator : facetCreators) {
-				aggregators.add(creator.buildAggregation(filterContext));
+				aggregators.add(creator.buildAggregation());
 			}
 		}
 		else {
@@ -281,7 +279,7 @@ public class FacetConfigurationApplyer {
 				FilterAggregationBuilder filterAgg = AggregationBuilders.filter(EXCLUSIVE_AGG_PREFIX + postFilterName, exclusiveFilterQuery);
 
 				getResponsibleFacetCreators(internalFilter)
-						.forEach(facetCreator -> filterAgg.subAggregation(facetCreator.buildAggregation(filterContext)));
+						.forEach(facetCreator -> filterAgg.subAggregation(facetCreator.buildIncludeFilteredAggregation(Collections.singleton(postFilterName))));
 
 				aggregators.add(filterAgg);
 			}
@@ -290,7 +288,7 @@ public class FacetConfigurationApplyer {
 			// that are not specialized for all the post filters
 			FilterAggregationBuilder fullFilteredAgg = AggregationBuilders.filter(FILTERED_AGG_NAME, filterContext.getJoinedPostFilters());
 			for (FacetCreator creator : facetCreators) {
-				fullFilteredAgg.subAggregation(creator.buildAggregationWithNamesExcluded(filterContext, filterContext.getPostFilterQueries().keySet()));
+				fullFilteredAgg.subAggregation(creator.buildExcludeFilteredAggregation(filterContext.getPostFilterQueries().keySet()));
 			}
 			aggregators.add(fullFilteredAgg);
 		}
@@ -302,17 +300,9 @@ public class FacetConfigurationApplyer {
 		String nestedPrefix = internalFilter.getFieldPrefix();
 		String nestedFilterNamePath = nestedPrefix + ".name";
 
-		// create a filter that filters on the name of the post filter
-		QueryBuilder nameFilter = QueryBuilders.nestedQuery(
-				nestedPrefix,
-				QueryBuilders.termQuery(nestedFilterNamePath, postFilterName),
-				ScoreMode.None);
-
 		// and combines that with all other post filters
 		QueryBuilder finalAggFilter = FilterContext.joinAllButOne(postFilterName, postFilters)
-				// .map(q -> (QueryBuilder)
-				// ESQueryUtils.mapToBoolQueryBuilder(q).must(nameFilter))
-				.orElse(nameFilter);
+				.orElse(QueryBuilders.matchAllQuery());
 		return finalAggFilter;
 	}
 
@@ -385,18 +375,14 @@ public class FacetConfigurationApplyer {
 
 		Filter filteredAggregation = aggregations.get(FILTERED_AGG_NAME);
 		if (filteredAggregation != null) {
-			facetsFromUnfilteredAggregations(filteredAggregation.getAggregations(), filterContext, linkBuilder)
-					.forEach(f -> facets.put(getLabel(f), f));
+			collectFacets(facets, facetCreators, filteredAggregation.getAggregations(), filterContext, linkBuilder);
 		}
 
 		for (String postFilterName : filterContext.getPostFilterQueries().keySet()) {
 			Filter exclusiveAgg = aggregations.get(EXCLUSIVE_AGG_PREFIX + postFilterName);
 			if (exclusiveAgg != null && exclusiveAgg.getDocCount() > 0L) {
 				List<FacetCreator> matchingFacetCreators = getResponsibleFacetCreators(filterContext.getInternalFilters().get(postFilterName));
-				for (FacetCreator fc : matchingFacetCreators) {
-					fc.createFacets(exclusiveAgg.getAggregations(), filterContext, linkBuilder)
-							.forEach(f -> facets.put(getLabel(f), f.setFiltered(true)));
-				}
+				collectFacets(facets, matchingFacetCreators, exclusiveAgg.getAggregations(), filterContext, linkBuilder);
 			}
 		}
 
@@ -404,19 +390,30 @@ public class FacetConfigurationApplyer {
 	}
 
 	private List<Facet> facetsFromUnfilteredAggregations(Aggregations aggregations, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
-		List<Facet> facets = new ArrayList<>();
-		Set<String> duplicateFacets = new HashSet<>();
+		Map<String, Facet> facets = new HashMap<>();
+		collectFacets(facets, facetCreators, aggregations, filterContext, linkBuilder);
+		return new ArrayList<>(facets.values());
+	}
 
-		// get filtered facets
+	private void collectFacets(Map<String, Facet> facets, List<FacetCreator> facetCreators, Aggregations aggregations, FilterContext filterContext,
+			SearchQueryBuilder linkBuilder) {
 		Set<String> appliedFilters = filterContext.getInternalFilters().keySet();
 
 		for (FacetCreator fc : facetCreators) {
 			Collection<Facet> createdFacets = fc.createFacets(aggregations, filterContext, linkBuilder);
 			for (Facet f : createdFacets) {
-				// skip facets with the identical name
-				if (!duplicateFacets.add(getLabel(f))) {
-					log.warn("duplicate facet with label " + getLabel(f));
-					continue;
+				Facet previousFacet = facets.get(getLabel(f));
+
+				if (previousFacet != null) {
+					Optional<Facet> mergedFacet = fc.mergeFacets(previousFacet, f);
+					if (!mergedFacet.isPresent()) {
+						log.warn("Not able to merge duplicate facet of label {}! Will drop the one of type {} from field {}",
+								getLabel(f), f.type, f.fieldName);
+						continue;
+					}
+					else {
+						f = mergedFacet.get();
+					}
 				}
 				if (appliedFilters.contains(f.getFieldName())) {
 					f.setFiltered(true);
@@ -426,10 +423,9 @@ public class FacetConfigurationApplyer {
 				if (facetConfig != null && facetConfig.isExcludeFromFacetLimit()) {
 					f.meta.put(IS_MANDATORY_META_KEY, true);
 				}
-				facets.add(f);
+				facets.put(getLabel(f), f);
 			}
 		}
-		return facets;
 	}
 
 }

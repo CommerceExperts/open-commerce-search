@@ -1,0 +1,64 @@
+{
+  "name": "search",
+  "description": "perfrom-search-on-index-{{INDEX}}",
+  "schedule": [
+    {
+      "operation": {
+        "name": "clean elasticsearch",
+        "operation-type": "delete-index"
+      }
+    },
+    {
+      "operation": {
+        "name": "check cluster health after cleaning",
+        "operation-type": "cluster-health",
+        "requerst-params": {
+          "wait_for_status": "green",
+          "wait_for_no_relocating_shards": "true",
+          "include-in-reporting": "true"
+        }
+      }
+    },
+    {
+      "name": "create index {{INDEX}}",
+      "operation": {
+        "operation-type": "create-index",
+        "index": "{{INDEX}}"
+      }
+    },
+    {
+      "name": "bulk index documents into {{INDEX}}",
+      "operation": {
+        "operation-type": "bulk",
+        "corpora": "{{INDEX}}",
+        "indices": [
+          "{{INDEX}}"
+        ],
+        "bulk-size": 1000,
+        "clients": 4
+      }
+    },
+    {
+      "operation": {
+        "name": "perform ocss-search",
+        "operation-type": "ocss-search",
+        "index": "{{INDEX}}",
+        "source-file": "./track/searches.json"
+      },
+      "iterations": 3000
+    },
+    {
+      "operation": {
+        "name": "check cluster health after bulk indexing {{INDEX}}",
+        "operation-type": "cluster-health",
+        "requerst-params": {
+          "wait_for_status": "green",
+          "wait_for_no_relocating_shards": "true",
+          "include-in-reporting": "true"
+        }
+      }
+    }
+  ]
+}
+
+

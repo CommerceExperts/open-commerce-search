@@ -1,6 +1,8 @@
 package de.cxp.ocs.elasticsearch.facets;
 
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -21,7 +23,9 @@ import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.util.SearchQueryBuilder;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Accessors(chain = true)
 public class TermFacetCreator extends NestedFacetCreator {
 
@@ -78,12 +82,45 @@ public class TermFacetCreator extends NestedFacetCreator {
 		return facet.entries.isEmpty() ? Optional.empty() : Optional.of(facet);
 	}
 
+	@Override
+	public Optional<Facet> mergeFacets(Facet first, Facet second) {
+		if (!FacetType.TERM.name().toLowerCase().equals(first.getType())
+				|| !first.getType().equals(second.getType())) {
+			return Optional.empty();
+		}
+
+		Map<String, FacetEntry> facetEntriesByKey = new HashMap();
+		first.getEntries().forEach(e -> facetEntriesByKey.put(e.key, e));
+		for (FacetEntry additionalEntry : second.getEntries()) {
+			FacetEntry prevEntry = facetEntriesByKey.get(additionalEntry.key);
+			if (prevEntry == null) {
+				first.absoluteFacetCoverage += additionalEntry.docCount;
+				first.getEntries().add(additionalEntry);
+			}
+			else {
+				if (prevEntry.id != null && additionalEntry.id != null && !prevEntry.id.equals(additionalEntry.id)) {
+					log.warn("merging term facets with same values but different IDs ({} and {}) might lead to unexpected results!"
+							+ " Consider to reconfigure facet for fields {} and {}", prevEntry.id, additionalEntry.id, first.fieldName, second.fieldName);
+				}
+				long newDocCount = Math.max(prevEntry.docCount, additionalEntry.docCount);
+				first.absoluteFacetCoverage += newDocCount - prevEntry.docCount;
+				prevEntry.docCount = newDocCount;
+			}
+		}
+
+		second.getMeta().forEach(first.getMeta()::putIfAbsent);
+
+		Collections.sort(first.getEntries(), Comparator.comparingLong(FacetEntry::getDocCount).reversed());
+
+		return Optional.of(first);
+	}
+
 	private void fillFacet(Facet facet, Bucket facetNameBucket, TermResultFilter facetFilter, FacetConfig facetConfig, SearchQueryBuilder linkBuilder) {
 		Terms facetValues = ((Terms) facetNameBucket.getAggregations().get(FACET_VALUES_AGG));
 		Set<String> filterValues = facetFilter == null ? Collections.emptySet() : asSet(facetFilter.getValues());
 		long absDocCount = 0;
 		for (Bucket valueBucket : facetValues.getBuckets()) {
-			long docCount = getDocumentCount(valueBucket);
+
 			String facetValue = valueBucket.getKeyAsString();
 
 			String facetValueId = null;
@@ -100,7 +137,13 @@ public class TermFacetCreator extends NestedFacetCreator {
 				else {
 					isSelected = filterValues.contains(facetValue);
 				}
+
+				if (!facetConfig.isMultiSelect() && !facetConfig.isShowUnselectedOptions() && !isSelected) {
+					continue;
+				}
 			}
+
+			long docCount = getDocumentCount(valueBucket);
 
 			String link;
 			if (isSelected) {

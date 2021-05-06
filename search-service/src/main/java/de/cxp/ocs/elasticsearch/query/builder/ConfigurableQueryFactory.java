@@ -67,13 +67,14 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 			});
 		}
 
-		String queryString = buildQueryString(searchTerms);
+		String defaultOperator = querySettings.getOrDefault(operator, "OR");
+		String queryString = buildQueryString(searchTerms, defaultOperator);
 		QueryStringQueryBuilder esQuery = QueryBuilders.queryStringQuery(queryString)
 				.minimumShouldMatch(querySettings.getOrDefault(minShouldMatch, null))
 				.analyzer(querySettings.getOrDefault(analyzer, null))
 				.quoteAnalyzer("whitespace")
 				.fuzziness(fuzziness)
-				.defaultOperator(Operator.fromString(querySettings.getOrDefault(operator, "OR")))
+				.defaultOperator(Operator.fromString(defaultOperator))
 				.tieBreaker(Util.tryToParseAsNumber(querySettings.getOrDefault(tieBreaker, "0")).orElse(0).floatValue())
 				.autoGenerateSynonymsPhraseQuery(false);
 
@@ -102,12 +103,19 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 				Boolean.parseBoolean(querySettings.getOrDefault(acceptNoResult, "false")));
 	}
 
-	private String buildQueryString(List<QueryStringTerm> searchTerms) {
+	private String buildQueryString(List<QueryStringTerm> searchTerms, String operator) {
 		StringBuilder queryStringBuilder = new StringBuilder();
-		queryStringBuilder
+		if ("OR".equals(operator)) {
+			queryStringBuilder
+					.append(ESQueryUtils.buildQueryString(searchTerms, " OR "));
+		}
+		else {
+			queryStringBuilder
 				.append('(')
 				.append(ESQueryUtils.buildQueryString(searchTerms, " "))
 				.append(')');
+		}
+
 		// search for all terms quoted with higher weight,
 		// in order to prefer phrase matches generally
 		queryStringBuilder

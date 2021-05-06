@@ -86,4 +86,25 @@ public class RangeFacetCreator extends NestedFacetCreator {
 		}
 	}
 
+	@Override
+	public Optional<Facet> mergeFacets(Facet first, Facet second) {
+		if (!first.getFieldName().equals(second.getFieldName())
+				|| !FacetType.RANGE.name().toLowerCase().equals(first.getType())
+				|| !first.getType().equals(second.getType())) {
+			return Optional.empty();
+		}
+
+		RangeFacetEntry firstEntry = (RangeFacetEntry) first.getEntries().get(0);
+		RangeFacetEntry secondEntry = (RangeFacetEntry) second.getEntries().get(0);
+
+		if (secondEntry.getLowerBound().doubleValue() < firstEntry.getLowerBound().doubleValue()) {
+			firstEntry.setLowerBound(secondEntry.getLowerBound());
+		}
+		if (secondEntry.getUpperBound().doubleValue() > firstEntry.getUpperBound().doubleValue()) {
+			firstEntry.setUpperBound(secondEntry.getUpperBound());
+		}
+
+		return Optional.of(first);
+	}
+
 }

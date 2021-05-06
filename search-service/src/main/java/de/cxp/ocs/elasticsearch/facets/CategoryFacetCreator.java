@@ -23,7 +23,9 @@ import de.cxp.ocs.model.result.HierarchialFacetEntry;
 import de.cxp.ocs.util.SearchQueryBuilder;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Accessors(chain = true)
 public class CategoryFacetCreator extends NestedFacetCreator {
 
@@ -152,6 +154,12 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 			link = linkBuilder.withFilterAsLink(facetConfig, categoryPath);
 		}
 		return new HierarchialFacetEntry(value, null, 0, link, isSelected);
+	}
+
+	@Override
+	public Optional<Facet> mergeFacets(Facet a, Facet b) {
+		log.warn("YAGNI: merging category facets not implemented! Will keep first facet and drop second one!");
+		return Optional.of(a);
 	}
 
 }
