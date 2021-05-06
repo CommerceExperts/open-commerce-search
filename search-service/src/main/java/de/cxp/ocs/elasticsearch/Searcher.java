@@ -37,6 +37,8 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.SearchPlugins;
@@ -74,6 +76,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class Searcher {
+
+	private static final Marker QUERY_MARKER = MarkerFactory.getMarker("QUERY");
 
 	@NonNull
 	private final RestHighLevelClient restClient;
@@ -238,6 +242,11 @@ public class Searcher {
 			if (searchSourceBuilder.sorts() == null || searchSourceBuilder.sorts().isEmpty()) {
 				addRescorersFailsafe(parameters, customParams, searchSourceBuilder);
 			}
+
+			if (log.isTraceEnabled()) {
+				log.trace(QUERY_MARKER, "{ \"user_query\": \"{}\", \"query\": {} }", parameters.userQuery, searchSourceBuilder.toString().replaceAll("[\n\\s]+", " "));
+			}
+
 			searchResponse = executeSearchRequest(searchSourceBuilder);
 
 			if (log.isDebugEnabled()) {

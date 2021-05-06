@@ -9,6 +9,8 @@ Framework for building Commerce Search Solutions around open source search techn
   - [Generated API Doc](#generated-API-doc)
 - [Operations](#operations)
   - [Kubernetes](#kubernetes)
+  - [Tests](#tests)
+    - [Rally Benchmark](#rally-Benchmark)
 
 ## Overview
 
@@ -22,3 +24,7 @@ If you want to get an overview over the complete open-commerce-api have a look a
 ## Operations
 ### Kubernetes
 If you have to run the OCSS in kubernetes, you can take a look at the [README.md](operations/k8s/README.md) in the [operations/k8s/](operations/k8s/) folder.
+
+### Tests
+#### Elasticsearch Bechmark
+Because the reference implementation of the OCS-API is done with Elasticsearch as search backend we are providing a way to benchmark Elasticsearch with your data. Please have a look at [operations/tests/rally/README.md](operations/tests/rally/README.md) if you want to know more about this.

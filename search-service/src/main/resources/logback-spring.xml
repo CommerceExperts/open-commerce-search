@@ -5,8 +5,7 @@
 
 	<!-- "This makes it reasonable for real-world applications to use the jul-to-slf4j 
 		bridge." see https://logback.qos.ch/manual/configuration.html#LevelChangePropagator -->
-	<contextListener
-		class="ch.qos.logback.classic.jul.LevelChangePropagator">
+	<contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
 		<resetJUL>true</resetJUL>
 	</contextListener>
 
@@ -16,11 +15,30 @@
 		</encoder>
 	</appender>
 
+	<appender name="QUERYSTDOUT" class="ch.qos.logback.core.FileAppender">
+		<filter class="de.cxp.ocs.config.logging.MarkerFilter">
+			<marker>QUERY</marker>
+			<OnMismatch>DENY</OnMismatch>
+			<OnMatch>NEUTRAL</OnMatch>
+		</filter>
+		<file>searches.log</file>
+		<append>true</append>
+		<layout class="ch.qos.logback.classic.PatternLayout">
+			<pattern>%msg%n</pattern>
+		</layout>
+	</appender>
+
 	<!-- with docker profile overwrite STDOUT appender to use JSON encoder -->
 	<springProfile name="docker">
 		<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
 			<encoder class="net.logstash.logback.encoder.LogstashEncoder"></encoder>
 		</appender>
+	</springProfile>
+
+	<springProfile name="trace-searches">
+		<logger name="de.cxp.ocs.elasticsearch.Searcher" level="TRACE">
+			<appender-ref ref="QUERYSTDOUT" />
+		</logger>
 	</springProfile>
 
 	<root level="${log.root.level:-INFO}">
