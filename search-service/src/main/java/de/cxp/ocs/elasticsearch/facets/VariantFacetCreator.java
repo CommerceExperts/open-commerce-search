@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 
-import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -32,21 +32,23 @@ public class VariantFacetCreator implements FacetCreator {
 	}
 
 	@Override
-	public AbstractAggregationBuilder<?> buildAggregation(FilterContext filters) {
-		if (innerCreators.size() == 0) return null;
-		NestedAggregationBuilder nestedAggBuilder = AggregationBuilders.nested("_variants", FieldConstants.VARIANTS);
-		innerCreators.forEach(creator -> {
-			nestedAggBuilder.subAggregation(creator.buildAggregation(filters));
-		});
-		return nestedAggBuilder;
+	public AggregationBuilder buildAggregation() {
+		return _buildAggregation(FacetCreator::buildAggregation);
 	}
 
-	@Override
-	public AggregationBuilder buildAggregationWithNamesExcluded(FilterContext filterContext, Set<String> excludedNames) {
+	public AggregationBuilder buildIncludeFilteredAggregation(Set<String> includeNames) {
+		return _buildAggregation(creator -> creator.buildIncludeFilteredAggregation(includeNames));
+	}
+
+	public AggregationBuilder buildExcludeFilteredAggregation(Set<String> excludeNames) {
+		return _buildAggregation(creator -> creator.buildExcludeFilteredAggregation(excludeNames));
+	}
+
+	public AggregationBuilder _buildAggregation(Function<FacetCreator, AggregationBuilder> subAggCreatorCall) {
 		if (innerCreators.size() == 0) return null;
 		NestedAggregationBuilder nestedAggBuilder = AggregationBuilders.nested("_variants", FieldConstants.VARIANTS);
 		innerCreators.forEach(creator -> {
-			nestedAggBuilder.subAggregation(creator.buildAggregationWithNamesExcluded(filterContext, excludedNames));
+			nestedAggBuilder.subAggregation(subAggCreatorCall.apply(creator));
 		});
 		return nestedAggBuilder;
 	}

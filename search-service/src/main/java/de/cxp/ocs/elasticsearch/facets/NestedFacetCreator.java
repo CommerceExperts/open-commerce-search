@@ -9,10 +9,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.aggregations.AbstractAggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
@@ -70,12 +68,21 @@ public abstract class NestedFacetCreator implements FacetCreator {
 	protected abstract Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, SearchQueryBuilder linkBuilder);
 
 	@Override
-	public AbstractAggregationBuilder<?> buildAggregation(FilterContext filters) {
-		return buildAggregationWithNamesExcluded(filters, Collections.emptySet());
+	public AggregationBuilder buildAggregation() {
+		return buildFilteredAggregation(Collections.emptySet(), Collections.emptySet());
 	}
 
 	@Override
-	public AbstractAggregationBuilder<?> buildAggregationWithNamesExcluded(FilterContext filterContext, Set<String> excludedNames) {
+	public AggregationBuilder buildIncludeFilteredAggregation(Set<String> includeNames) {
+		return buildFilteredAggregation(includeNames, Collections.emptySet());
+	}
+
+	@Override
+	public AggregationBuilder buildExcludeFilteredAggregation(Set<String> excludeNames) {
+		return buildFilteredAggregation(Collections.emptySet(), excludeNames);
+	}
+
+	private AggregationBuilder buildFilteredAggregation(Set<String> includedNames, Set<String> excludedNames) {
 		String nestedPathPrefix = "";
 		if (nestedFacetCorrector != null) nestedPathPrefix = nestedFacetCorrector.getNestedPathPrefix();
 		nestedPathPrefix += getNestedPath();
@@ -83,7 +90,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 		AggregationBuilder valueAggBuilder = getNestedValueAggregation(nestedPathPrefix);
 		if (nestedFacetCorrector != null && correctedNestedDocumentCount()) nestedFacetCorrector.correctValueAggBuilder(valueAggBuilder);
 
-		QueryBuilder facetNameFilter = getNameFilter(nestedPathPrefix + ".name", excludedNames);
+		QueryBuilder facetNameFilter = getNameFilter(nestedPathPrefix + ".name", includedNames, excludedNames);
 
 		return AggregationBuilders.nested(uniqueAggregationName, nestedPathPrefix)
 				.subAggregation(
@@ -95,34 +102,49 @@ public abstract class NestedFacetCreator implements FacetCreator {
 												.subAggregation(valueAggBuilder)));
 	}
 
+	private QueryBuilder getNameFilter(String nestedFilterNamePath, Set<String> includedNames, Set<String> excludes) {
+		final QueryBuilder nameFilter;
+		Set<String> finalIncludes = new HashSet<>();
+		if (onlyFetchAggregationsForConfiguredFacets()) {
+			finalIncludes.addAll(facetConfigs.keySet());
 
-	public QueryBuilder getNameFilter(String nestedFilterNamePath, Set<String> excludedNames) {
-		QueryBuilder allFilter;
-		if (!excludedNames.isEmpty() || onlyFetchAggregationsForConfiguredFacets() || !generalExcludedFields.isEmpty()) {
-			allFilter = QueryBuilders.boolQuery();
-			// apply all post filters and
-			// exclude facets that are currently active trough post filtering
-			Set<String> allExcludeFields = new HashSet<>();
-			if (!excludedNames.isEmpty()) {
-				allExcludeFields.addAll(excludedNames);
-			}
-
-			// if facet creator should only create the configured facets, filter
-			// the names accordingly
-			if (onlyFetchAggregationsForConfiguredFacets()) {
-				((BoolQueryBuilder) allFilter).must(QueryBuilders.termsQuery(nestedFilterNamePath, facetConfigs.keySet()));
-			}
-
-			// if facet creator should exclude some facets, this is done here
-			allExcludeFields.addAll(generalExcludedFields);
-			if (!allExcludeFields.isEmpty()) {
-				((BoolQueryBuilder) allFilter).mustNot(QueryBuilders.termsQuery(nestedFilterNamePath, allExcludeFields));
+			// if we have an explicit include list, use the intersection of
+			// those both lists
+			if (!includedNames.isEmpty()) {
+				finalIncludes.retainAll(includedNames);
 			}
 		}
 		else {
-			allFilter = QueryBuilders.matchAllQuery();
+			finalIncludes.addAll(includedNames);
 		}
-		return allFilter;
+
+		finalIncludes.removeAll(generalExcludedFields);
+		finalIncludes.removeAll(excludes);
+
+		if (finalIncludes.isEmpty()) {
+			if (onlyFetchAggregationsForConfiguredFacets()) {
+				// special case: this facet creator was configured to deliver
+				// facets only for the configured fields, however these fields
+				// were all excluded. So make sure the aggregation returns empty
+				// result
+				nameFilter = QueryBuilders.wrapperQuery("{\"match_none\": {}}");
+			}
+			else {
+				Set<String> finalExcludes = new HashSet<>(excludes);
+				finalExcludes.addAll(generalExcludedFields);
+				if (finalExcludes.isEmpty()) {
+					// no includes and no excludes defined
+					nameFilter = QueryBuilders.matchAllQuery();
+				}
+				else {
+					nameFilter = QueryBuilders.boolQuery().mustNot(QueryBuilders.termsQuery(nestedFilterNamePath, finalExcludes));
+				}
+			}
+		}
+		else {
+			nameFilter = QueryBuilders.boolQuery().must(QueryBuilders.termsQuery(nestedFilterNamePath, finalIncludes));
+		}
+		return nameFilter;
 	}
 
 	@Override

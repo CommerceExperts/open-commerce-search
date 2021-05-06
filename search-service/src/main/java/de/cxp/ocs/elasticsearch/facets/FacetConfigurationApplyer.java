@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -269,7 +268,7 @@ public class FacetConfigurationApplyer {
 		// => at the getFacets method this has to be considered
 		if (filterContext.getPostFilterQueries().isEmpty()) {
 			for (FacetCreator creator : facetCreators) {
-				aggregators.add(creator.buildAggregation(filterContext));
+				aggregators.add(creator.buildAggregation());
 			}
 		}
 		else {
@@ -281,7 +280,7 @@ public class FacetConfigurationApplyer {
 				FilterAggregationBuilder filterAgg = AggregationBuilders.filter(EXCLUSIVE_AGG_PREFIX + postFilterName, exclusiveFilterQuery);
 
 				getResponsibleFacetCreators(internalFilter)
-						.forEach(facetCreator -> filterAgg.subAggregation(facetCreator.buildAggregation(filterContext)));
+						.forEach(facetCreator -> filterAgg.subAggregation(facetCreator.buildIncludeFilteredAggregation(Collections.singleton(postFilterName))));
 
 				aggregators.add(filterAgg);
 			}
@@ -290,7 +289,7 @@ public class FacetConfigurationApplyer {
 			// that are not specialized for all the post filters
 			FilterAggregationBuilder fullFilteredAgg = AggregationBuilders.filter(FILTERED_AGG_NAME, filterContext.getJoinedPostFilters());
 			for (FacetCreator creator : facetCreators) {
-				fullFilteredAgg.subAggregation(creator.buildAggregationWithNamesExcluded(filterContext, filterContext.getPostFilterQueries().keySet()));
+				fullFilteredAgg.subAggregation(creator.buildExcludeFilteredAggregation(filterContext.getPostFilterQueries().keySet()));
 			}
 			aggregators.add(fullFilteredAgg);
 		}
@@ -302,17 +301,9 @@ public class FacetConfigurationApplyer {
 		String nestedPrefix = internalFilter.getFieldPrefix();
 		String nestedFilterNamePath = nestedPrefix + ".name";
 
-		// create a filter that filters on the name of the post filter
-		QueryBuilder nameFilter = QueryBuilders.nestedQuery(
-				nestedPrefix,
-				QueryBuilders.termQuery(nestedFilterNamePath, postFilterName),
-				ScoreMode.None);
-
 		// and combines that with all other post filters
 		QueryBuilder finalAggFilter = FilterContext.joinAllButOne(postFilterName, postFilters)
-				// .map(q -> (QueryBuilder)
-				// ESQueryUtils.mapToBoolQueryBuilder(q).must(nameFilter))
-				.orElse(nameFilter);
+				.orElse(QueryBuilders.matchAllQuery());
 		return finalAggFilter;
 	}
 
