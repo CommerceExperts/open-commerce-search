@@ -15,6 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import javax.servlet.http.HttpServletRequest;
+
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.get.GetRequest;
@@ -259,9 +261,9 @@ public class SearchController implements SearchService {
 
 	@ExceptionHandler({ ElasticsearchStatusException.class, ExecutionException.class, IOException.class, UncheckedIOException.class, RuntimeException.class,
 			ClassNotFoundException.class })
-	public ResponseEntity<ExceptionResponse> handleInternalErrors(Exception e) {
+	public ResponseEntity<ExceptionResponse> handleInternalErrors(final HttpServletRequest request, Exception e) {
 		final String errorId = UUID.randomUUID().toString();
-		log.error("Internal Server Error " + errorId, e);
+		log.error("Internal Server Error {} for {}", errorId, request, e);
 
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 				.body(ExceptionResponse.builder()
