@@ -359,44 +359,42 @@ public class Searcher {
 		QueryBuilder masterLevelQuery = ESQueryUtils.mergeQueries(searchQuery.getMasterLevelQuery(),
 				basicFilters.getMasterLevelQuery());
 
-		boolean variantQueryMustMatch = false;
-		QueryBuilder varFilterQuery = basicFilters.getVariantLevelQuery();
-		if (varFilterQuery == null) {
-			varFilterQuery = QueryBuilders.matchAllQuery();
-		} else {
-			// if variant query contains hard filters, it should go into a
-			// boolean must clause
-			variantQueryMustMatch = true;
-		}
-
 		FilterFunctionBuilder[] masterScoringFunctions = scoringCreator.getScoringFunctions(false);
 		if (masterScoringFunctions.length > 0) {
 			masterLevelQuery = QueryBuilders.functionScoreQuery(masterLevelQuery, masterScoringFunctions)
 					.boostMode(scoringCreator.getBoostMode())
-					.scoreMode(scoringCreator.getScoreMode())
-					.maxBoost(masterScoringFunctions.length);
+					.scoreMode(scoringCreator.getScoreMode());
 		}
 
+		QueryBuilder varFilterQuery = basicFilters.getVariantLevelQuery();
 		QueryBuilder variantsMatchQuery;
+
 		// if sorting is available, scoring and boosting not necessary
 		if (variantSortings.isEmpty() && searchQuery.getVariantLevelQuery() != null) {
-			variantsMatchQuery = QueryBuilders.boolQuery()
-					.must(varFilterQuery)
-					.should(searchQuery.getVariantLevelQuery().boost(2f));
+			variantsMatchQuery = QueryBuilders.boolQuery();
+			if (varFilterQuery != null) {
+				((BoolQueryBuilder) variantsMatchQuery).must(varFilterQuery);
+			}
+			((BoolQueryBuilder) variantsMatchQuery).should(searchQuery.getVariantLevelQuery().boost(2f));
 
 			FilterFunctionBuilder[] variantScoringFunctions = scoringCreator.getScoringFunctions(true);
 			if (variantScoringFunctions.length > 0) {
 				variantsMatchQuery = QueryBuilders.functionScoreQuery(variantsMatchQuery, variantScoringFunctions);
 			}
-		} else {
+		}
+		else if (varFilterQuery != null) {
 			variantsMatchQuery = varFilterQuery;
+		} else {
+			variantsMatchQuery = QueryBuilders.matchAllQuery();
 		}
 
 		NestedQueryBuilder variantLevelQuery = QueryBuilders
 				.nestedQuery(FieldConstants.VARIANTS, variantsMatchQuery, ScoreMode.Avg)
 				.innerHit(getVariantInnerHits(variantSortings));
 
-		if (variantQueryMustMatch) {
+		// if variant query contains hard filters, it should go into a
+		// boolean must clause
+		if (varFilterQuery != null) {
 			return ESQueryUtils.mergeQueries(masterLevelQuery, variantLevelQuery);
 		}
 
