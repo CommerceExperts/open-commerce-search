@@ -45,7 +45,7 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-plugin-spi</artifactId>
-				<version>0.5.1</version>
+				<version>0.6.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>

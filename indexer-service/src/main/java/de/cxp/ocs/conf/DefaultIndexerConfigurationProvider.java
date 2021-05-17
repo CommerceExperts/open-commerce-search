@@ -6,6 +6,7 @@ import java.util.Optional;
 import de.cxp.ocs.config.DataProcessorConfiguration;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.config.IndexSettings;
 import de.cxp.ocs.spi.indexer.IndexerConfigurationProvider;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,11 @@ public class DefaultIndexerConfigurationProvider implements IndexerConfiguration
 
 	@NonNull
 	private final ApplicationProperties properties;
+
+	@Override
+	public IndexSettings getIndexSettings(String indexName) {
+		return getIndexConf(indexName).getIndexSettings();
+	}
 
 	@Override
 	public FieldConfiguration getFieldConfiguration(String indexName) {

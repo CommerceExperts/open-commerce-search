@@ -87,7 +87,7 @@ public class IndexerFactory {
 			}
 		}
 
-		return new ElasticsearchIndexer(fieldConfigIndex, elasticsearchClient, preProcessors, postProcessors);
+		return new ElasticsearchIndexer(indexConfiguration.getIndexSettings(), fieldConfigIndex, elasticsearchClient, preProcessors, postProcessors);
 	}
 
 }

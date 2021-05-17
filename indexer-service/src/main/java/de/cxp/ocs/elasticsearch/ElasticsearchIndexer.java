@@ -20,6 +20,7 @@ import org.elasticsearch.common.settings.Settings;
 
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.config.FieldConfigIndex;
+import de.cxp.ocs.config.IndexSettings;
 import de.cxp.ocs.indexer.AbstractIndexer;
 import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
@@ -35,16 +36,19 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	private final String	INDEX_PREFIX		= "ocs" + INDEX_DELIMITER;
 	private final Pattern	INDEX_NAME_PATTERN	= Pattern.compile(Pattern.quote(INDEX_PREFIX) + "(\\d+)\\" + INDEX_DELIMITER);
 
+	private final IndexSettings				indexSettings;
 	private final RestHighLevelClient		restClient;
 	private final ElasticsearchIndexClient indexClient;
 
 	public ElasticsearchIndexer(
+			IndexSettings settings,
 			FieldConfigIndex fieldConfAccess,
 			RestHighLevelClient restClient,
 			List<DocumentPreProcessor> preProcessors,
 			List<DocumentPostProcessor> postProcessors) {
 		super(preProcessors, postProcessors, fieldConfAccess);
 		this.restClient = restClient;
+		this.indexSettings = settings;
 		indexClient = new ElasticsearchIndexClient(restClient);
 	}
 
@@ -55,6 +59,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 			List<DocumentPostProcessor> postProcessors) {
 		super(dataProcessors, postProcessors, fieldConfAccess);
 		this.restClient = null;
+		this.indexSettings = new IndexSettings();
 		this.indexClient = indexClient;
 	}
 
@@ -190,8 +195,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	@Override
 	public boolean deploy(ImportSession session) {
 		try {
-			// TODO: move those values into configuration
-			boolean success = indexClient.finalizeIndex(session.temporaryIndexName, 1, "5s");
+			boolean success = indexClient.finalizeIndex(session.temporaryIndexName, indexSettings.replicaCount, indexSettings.refreshInterval);
 			log.info("applying live settings to index {} was {}successful", session.temporaryIndexName, success ? "" : "not ");
 		}
 		catch (IOException e) {

@@ -15,8 +15,8 @@ import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest.AliasActions;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.flush.FlushRequest;
-import org.elasticsearch.action.admin.indices.flush.FlushResponse;
+import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
+import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
@@ -137,13 +137,13 @@ class ElasticsearchIndexClient {
 	public boolean finalizeIndex(String indexName, int numberOfReplicas, String refreshInterval) throws IOException {
 		boolean success = applyIndexSettings(indexName, numberOfReplicas, refreshInterval);
 
-		FlushRequest flushRequest = new FlushRequest(indexName);
-		flushRequest.waitIfOngoing(true);
-		FlushResponse flushResponse = highLevelClient.indices().flush(flushRequest, RequestOptions.DEFAULT);
+		ForceMergeRequest forceMergeRequest = new ForceMergeRequest(indexName);
+		forceMergeRequest.flush(true);
+		ForceMergeResponse forceMergeResponse = highLevelClient.indices().forcemerge(forceMergeRequest, RequestOptions.DEFAULT);
 
-		if (flushResponse.getFailedShards() > 0) {
-			log.error("Failed to flush complete index. {} out of {} shards failed.",
-					flushResponse.getFailedShards(), flushResponse.getTotalShards());
+		if (forceMergeResponse.getFailedShards() > 0) {
+			log.error("Failed to force-merge & flush complete index. {} out of {} shards failed.",
+					forceMergeResponse.getFailedShards(), forceMergeResponse.getTotalShards());
 			return false;
 		}
 		return success;
