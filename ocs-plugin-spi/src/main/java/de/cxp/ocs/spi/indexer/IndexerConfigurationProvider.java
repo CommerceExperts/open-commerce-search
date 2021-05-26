@@ -4,8 +4,11 @@ import java.util.Optional;
 
 import de.cxp.ocs.config.DataProcessorConfiguration;
 import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.config.IndexSettings;
 
 public interface IndexerConfigurationProvider {
+
+	IndexSettings getIndexSettings(String indexName);
 
 	/**
 	 * Required configuration about which data fields should be indexed in which

@@ -4,12 +4,18 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import de.cxp.ocs.config.DataProcessorConfiguration;
 import de.cxp.ocs.config.FieldConfiguration;
+import de.cxp.ocs.config.IndexSettings;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
 @Getter
 public class IndexConfiguration {
+
+	@Setter
+	@NonNull
+	@NestedConfigurationProperty
+	private IndexSettings indexSettings = new IndexSettings();
 
 	@Setter
 	@NonNull

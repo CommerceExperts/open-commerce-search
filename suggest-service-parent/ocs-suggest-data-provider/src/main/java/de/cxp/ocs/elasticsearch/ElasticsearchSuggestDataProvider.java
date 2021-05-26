@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -34,6 +35,7 @@ import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.HasAggregations;
 import org.elasticsearch.search.aggregations.bucket.terms.IncludeExclude;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
+import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
 import org.elasticsearch.search.aggregations.metrics.Cardinality;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -61,6 +63,7 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 	private static final String	_FILTER			= "_filter";
 	private static final String	_CARDINALITY	= "_cardinality";
 	private static final String	_VALUES			= "_values";
+	private static final String	_IDS			= "_ids";
 
 	private final SettingsProxy settings = new SettingsProxy();
 
@@ -169,7 +172,7 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 		Supplier<AggregationBuilder> nestedAggSupplier = () -> AggregationBuilders.nested(_NESTED, nestedPath);
 		Supplier<AggregationBuilder> filterAggSupplier = () -> AggregationBuilders.filter(_FILTER, QueryBuilders.termQuery(nestedPath + ".name", field.getName()));
 
-		return fetchTermsFromAggregation(indexName, field, nestedPath + ".value", dedupFilter, nestedAggSupplier, filterAggSupplier);
+		return fetchTermsFromAggregation(indexName, field, nestedPath + ".value", Optional.of(nestedPath + ".id"), dedupFilter, nestedAggSupplier, filterAggSupplier);
 	}
 
 	private String getNestedPath(Field field) {
@@ -188,66 +191,74 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 
 	private Collection<SuggestRecord> fetchTermsFromKeywordsField(String indexName, String fieldPrefix, Field field, Optional<BloomFilter<CharSequence>> dedupFilter)
 			throws IOException {
-		return fetchTermsFromAggregation(indexName, field, fieldPrefix + "." + field.getName(), dedupFilter);
+		return fetchTermsFromAggregation(indexName, field, fieldPrefix + "." + field.getName(), Optional.empty(), dedupFilter);
 	}
 
 	@SafeVarargs
-	private final Collection<SuggestRecord> fetchTermsFromAggregation(String indexName, Field field, String aggFieldName, Optional<BloomFilter<CharSequence>> dedupFilter,
+	private final Collection<SuggestRecord> fetchTermsFromAggregation(String indexName, Field field, String aggFieldName, Optional<String> idSubField,
+			Optional<BloomFilter<CharSequence>> dedupFilter,
 			Supplier<AggregationBuilder>... superAggSupplier) throws IOException {
-		AggregationBuilder[] allAggs = new AggregationBuilder[superAggSupplier.length + 1];
-		String[] allAggNames = new String[allAggs.length];
-		int lastIndex = superAggSupplier.length;
-
-		for (int i = 0; i < superAggSupplier.length; i++) {
-			allAggs[i] = superAggSupplier[i].get();
-			allAggNames[i] = allAggs[i].getName();
-		}
-
 		// guess the amount of terms that can be fetched from that field
-		allAggNames[lastIndex] = _CARDINALITY;
-		allAggs[lastIndex] = AggregationBuilders.cardinality(_CARDINALITY).field(aggFieldName);
-
-		SearchSourceBuilder cardinalityReq = new SearchSourceBuilder().size(0)
-				.aggregation(subordinateAggregations(allAggs));
-		SearchResponse cardinalityResp = execSearch(indexName, cardinalityReq);
-		long cardinality = ((Cardinality) extractSubAggregation(cardinalityResp.getAggregations(), allAggNames)).getValue();
+		long cardinality = getValueCardinality(indexName, aggFieldName, superAggSupplier);
 		log.info("expecting {} values from field {} at index {}", cardinality, field.getName(), indexName);
 
 		List<SuggestRecord> extractedRecords = new ArrayList<>((int) cardinality);
 		int maxFetchSize = settings.getMaxFetchSize(indexName);
 		int numPartitions = (int) Math.ceil(((double) cardinality / maxFetchSize));
 
-		// rebuild aggregation builders, because they are statefule and
-		// cardinality aggregation is already included to them
-		for (int i = 0; i < superAggSupplier.length; i++) {
-			allAggs[i] = superAggSupplier[i].get();
-		}
-		allAggNames[lastIndex] = _VALUES;
-		allAggs[lastIndex] = AggregationBuilders.terms(_VALUES)
+		List<AggregationBuilder> aggBuilders = getAll(superAggSupplier);
+		TermsAggregationBuilder valueAgg = AggregationBuilders.terms(_VALUES)
 				.field(aggFieldName)
 				.size(maxFetchSize);
-		AggregationBuilder compoundAggregation = subordinateAggregations(allAggs);
+		aggBuilders.add(valueAgg);
+
+		List<String> extractAggNames = aggBuilders.stream().map(AggregationBuilder::getName).collect(Collectors.toList());
+
+		// id aggregation not part of the aggregations to be extracted later
+		idSubField.ifPresent(idFieldName -> aggBuilders.add(
+				AggregationBuilders.terms(_IDS)
+						.field(idFieldName)
+						.size(1)));
+
+		AggregationBuilder compoundAggregation = subordinateAggregations(aggBuilders);
 
 		SearchSourceBuilder valuesAggReq;
 		for (int partition = 0; partition < numPartitions; partition++) {
 
 			// only use partitioning when necessary
 			if (numPartitions > 1) {
-				((TermsAggregationBuilder) allAggs[lastIndex]).includeExclude(new IncludeExclude(partition, numPartitions));
+				valueAgg.includeExclude(new IncludeExclude(partition, numPartitions));
 			}
 
 			valuesAggReq = new SearchSourceBuilder().size(0).aggregation(compoundAggregation);
 			SearchResponse valuesAggResp = execSearch(indexName, valuesAggReq);
-			Terms valuesAggResult = extractSubAggregation(valuesAggResp.getAggregations(), allAggNames);
+			Terms valuesAggResult = extractSubAggregation(valuesAggResp.getAggregations(), extractAggNames);
 
 			valuesAggResult.getBuckets().stream()
 					.filter(b -> dedupFilter.map(filter -> filter.put(b.getKeyAsString().toLowerCase())).orElse(true))
-					.map(b -> toSuggestRecord(b.getKeyAsString(), (int) b.getDocCount(), field))
+					.map(b -> toSuggestRecord(b, idSubField.isPresent(), field))
 					.forEach(extractedRecords::add);
 		}
 		log.info("loaded {} values from field {} at index {}", extractedRecords.size(), field.getName(), indexName);
 
 		return extractedRecords;
+	}
+
+	private long getValueCardinality(String indexName, String aggFieldName, Supplier<AggregationBuilder>[] superAggSupplier) throws IOException {
+		// we put the aggregations that should be subordinated into a flat list
+		// first, so we can fetch their names also remember their names, so the
+		// extraction can be done
+		// using the general method 'extractSubAggregation'
+		List<AggregationBuilder> aggBuilders = getAll(superAggSupplier);
+		aggBuilders.add(AggregationBuilders.cardinality(_CARDINALITY).field(aggFieldName));
+
+		SearchSourceBuilder cardinalityReq = new SearchSourceBuilder().size(0)
+				.aggregation(subordinateAggregations(aggBuilders));
+		SearchResponse cardinalityResp = execSearch(indexName, cardinalityReq);
+		long cardinality = ((Cardinality) extractSubAggregation(
+				cardinalityResp.getAggregations(),
+				aggBuilders.stream().map(AggregationBuilder::getName).collect(Collectors.toList()))).getValue();
+		return cardinality;
 	}
 
 	private Collection<SuggestRecord> fetchTermsFromResultData(String indexName, Field field, Optional<BloomFilter<CharSequence>> dedupFilter) throws IOException {
@@ -314,6 +325,17 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 		return records;
 	}
 
+	private SuggestRecord toSuggestRecord(Bucket b, boolean idFieldPresent, Field field) {
+		SuggestRecord suggestRecord = toSuggestRecord(b.getKeyAsString(), (int) b.getDocCount(), field);
+		if (idFieldPresent) {
+			Terms idsAggResult = b.getAggregations().get(_IDS);
+			if (idsAggResult != null && idsAggResult.getBuckets().size() > 0) {
+				suggestRecord.getPayload().put("id", idsAggResult.getBuckets().get(0).getKeyAsString());
+			}
+		}
+		return suggestRecord;
+	}
+
 	private SuggestRecord toSuggestRecord(String label, int termCount, Field sourceField) {
 		Map<String, String> payload = CommonPayloadFields.payloadOfTypeAndCount(sourceField.getName(), String.valueOf(termCount));
 
@@ -326,6 +348,14 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 		}
 
 		return new SuggestRecord(label, secondaryText, payload, Collections.emptySet(), termCount);
+	}
+
+	private List<AggregationBuilder> getAll(Supplier<AggregationBuilder>[] aggSuppliers) {
+		List<AggregationBuilder> supplied = new ArrayList<>(aggSuppliers.length + 2);
+		for (Supplier<AggregationBuilder> aggSupplier : aggSuppliers) {
+			supplied.add(aggSupplier.get());
+		}
+		return supplied;
 	}
 
 	/**
@@ -341,16 +371,17 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 	 * @param subAggs
 	 * @return
 	 */
-	private AggregationBuilder subordinateAggregations(AggregationBuilder... subAggs) {
-		AggregationBuilder lastAgg = subAggs[0];
-		for (int i = 1; i < subAggs.length; i++) {
-			lastAgg.subAggregation(subAggs[i]);
-			lastAgg = subAggs[i];
+	private AggregationBuilder subordinateAggregations(List<AggregationBuilder> subAggs) {
+		AggregationBuilder lastAgg = subAggs.get(0);
+		for (int i = 1; i < subAggs.size(); i++) {
+			AggregationBuilder subAgg = subAggs.get(i);
+			lastAgg.subAggregation(subAgg);
+			lastAgg = subAgg;
 		}
-		return subAggs[0];
+		return subAggs.get(0);
 	}
 
-	private <A extends Aggregation> A extractSubAggregation(Aggregations aggregations, String... aggNames) {
+	private <A extends Aggregation> A extractSubAggregation(Aggregations aggregations, List<String> aggNames) {
 		A extractedAgg = null;
 		for (String aggName : aggNames) {
 			if (extractedAgg == null) {
