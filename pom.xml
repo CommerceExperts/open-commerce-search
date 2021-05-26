@@ -7,7 +7,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.19.0</version>
+	<version>0.19.1</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -45,7 +45,7 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-plugin-spi</artifactId>
-				<version>0.6.0</version>
+				<version>0.6.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
@@ -55,7 +55,7 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>indexer-service</artifactId>
-				<version>0.10.0</version>
+				<version>0.10.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
