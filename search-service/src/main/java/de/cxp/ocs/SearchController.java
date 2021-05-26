@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -79,6 +80,8 @@ public class SearchController implements SearchService {
 
 	private final Map<String, SearchContext> searchContexts = new ConcurrentHashMap<>();
 
+	private final Map<String, String> actualIndexPerTenant = new ConcurrentHashMap<>();
+
 	private final Cache<String, Searcher> searchClientCache = CacheBuilder.newBuilder()
 			.expireAfterAccess(10, TimeUnit.MINUTES)
 			.maximumSize(10)
@@ -96,12 +99,15 @@ public class SearchController implements SearchService {
 		SearchContext searchContext = loadContext(tenant);
 		SearchContext oldConfig = searchContexts.put(tenant, searchContext);
 		if (oldConfig == null) {
+			log.info("config successfuly loaded for tenant {}", tenant);
 			status = HttpStatus.CREATED;
 		}
 		else if (oldConfig.equals(searchContexts.get(tenant))) {
+			log.info("config flush did not modify config for tenant {}", tenant);
 			status = HttpStatus.NOT_MODIFIED;
 		}
 		else {
+			log.info("config successfuly reloaded for tenant {}", tenant);
 			status = HttpStatus.OK;
 			searchClientCache.put(tenant, initializeSearcher(searchContext));
 		}
@@ -134,7 +140,9 @@ public class SearchController implements SearchService {
 
 			try {
 				final Searcher searcher = searchClientCache.get(tenant, () -> initializeSearcher(searchContext));
-				return searcher.find(parameters, customParams);
+				SearchResult result = searcher.find(parameters, customParams);
+				triggerFlushIfNecessary(tenant, result);
+				return result;
 			}
 			catch (ElasticsearchStatusException esx) {
 				// TODO: in case an index was requested where it fails because
@@ -156,6 +164,17 @@ public class SearchController implements SearchService {
 		}
 		finally {
 			MDC.remove("tenant");
+		}
+	}
+
+	private void triggerFlushIfNecessary(String tenant, SearchResult result) {
+		if (result.getSlices().size() > 0 && result.getSlices().get(0).hits.size() > 0) {
+			String indexName = result.getSlices().get(0).hits.get(0).index;
+			String prevIndexName = actualIndexPerTenant.put(tenant, indexName);
+			if (prevIndexName != null && !indexName.equals(prevIndexName)) {
+				log.info("flushing config for tenant {} because actual index changed from {} to {}", prevIndexName, indexName);
+				CompletableFuture.runAsync(() -> flushConfig(tenant));
+			}
 		}
 	}
 
