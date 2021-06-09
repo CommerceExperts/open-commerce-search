@@ -127,6 +127,10 @@ public class SerializationTest {
 						.setOffset(42)
 						.setSort("margin"),
 
+				new StaticProductSet(new String[] { "123", "asf2" }, "test2"),
+
+				new DynamicProductSet("dynTest", "foo bar", "price", null, 8),
+
 				new ArrangedSearchQuery()
 						.setArrangedProductSets(new ProductSet[] {
 								new StaticProductSet(new String[] { "123", "asf2" }, "test2"),
