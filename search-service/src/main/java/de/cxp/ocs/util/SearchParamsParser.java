@@ -6,6 +6,7 @@ import static org.apache.commons.lang3.StringUtils.split;
 import static org.apache.commons.lang3.StringUtils.splitPreserveAllTokens;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +44,7 @@ public class SearchParamsParser {
 		}
 		parameters.filters = parseFilters(filters, searchContext.getFieldConfigIndex());
 
-		Map<String, String> customParams = new HashMap<>(filters);
+		Map<String, String> customParams = filters == null ? Collections.emptyMap() : new HashMap<>(filters);
 		parameters.filters.forEach(f -> {
 			customParams.remove(f.getField().getName());
 			customParams.remove(f.getField().getName() + SearchParamsParser.ID_FILTER_SUFFIX);
@@ -64,53 +65,57 @@ public class SearchParamsParser {
 	 * @return validated and enriched filter values for internal usage
 	 */
 	public static List<InternalResultFilter> parseFilters(Map<String, String> filterValues, FieldConfigIndex fieldConfig) {
-		List<InternalResultFilter> filters = new ArrayList<>();
+		List<InternalResultFilter> filters = filterValues == null ? Collections.emptyList() : new ArrayList<>();
 
-		for (Entry<String, String> p : filterValues.entrySet()) {
-			// special handling for spring: filters maps contains all parameters
-			// and the mapping result objects
-			if (!(p.getValue() instanceof String)) continue;
+		if (filterValues != null) {
+			for (Entry<String, String> p : filterValues.entrySet()) {
+				// special handling for spring: filters maps contains all
+				// parameters
+				// and the mapping result objects
+				if (!(p.getValue() instanceof String)) continue;
 
-			String paramName = p.getKey();
-			String paramValue = p.getValue();
+				String paramName = p.getKey();
+				String paramValue = p.getValue();
 
-			boolean isIdFilter = false;
-			if (paramName.endsWith(ID_FILTER_SUFFIX)) {
-				isIdFilter = true;
-				paramName = paramName.substring(0, paramName.length() - 3);
-			}
+				boolean isIdFilter = false;
+				if (paramName.endsWith(ID_FILTER_SUFFIX)) {
+					isIdFilter = true;
+					paramName = paramName.substring(0, paramName.length() - 3);
+				}
 
-			Optional<Field> matchingField = fieldConfig.getMatchingField(paramName, paramValue, FieldUsage.FACET);
+				Optional<Field> matchingField = fieldConfig.getMatchingField(paramName, paramValue, FieldUsage.FACET);
 
-			if (matchingField.isPresent()) {
-				Field field = matchingField.get();
-				switch (field.getType()) {
-					case CATEGORY:
-						filters.add(new TermResultFilter(field, split(paramValue, VALUE_DELIMITER))
-										.setFieldPrefix(FieldConstants.PATH_FACET_DATA)
-										.setFilterOnId(isIdFilter));
-						break;
-					case NUMBER:
-						String[] paramValues = splitPreserveAllTokens(paramValue, VALUE_DELIMITER);
-						if (paramValues.length != 2) {
-							// Fallback logic to allow numeric filter values
-							// separated by dash, e.g. "50 - 100"
-							// however this is error prone, because dash is
-							// also used as minus for negative values. In such
-							// case this will simply fail
-							paramValues = splitPreserveAllTokens(paramValue, '-');
+				if (matchingField.isPresent()) {
+					Field field = matchingField.get();
+					switch (field.getType()) {
+						case CATEGORY:
+							filters.add(new TermResultFilter(field, split(paramValue, VALUE_DELIMITER))
+									.setFieldPrefix(FieldConstants.PATH_FACET_DATA)
+									.setFilterOnId(isIdFilter));
+							break;
+						case NUMBER:
+							String[] paramValues = splitPreserveAllTokens(paramValue, VALUE_DELIMITER);
 							if (paramValues.length != 2) {
-								throw new IllegalArgumentException("unexpected numeric filter value: " + paramValue);
+								// Fallback logic to allow numeric filter values
+								// separated by dash, e.g. "50 - 100"
+								// however this is error prone, because dash is
+								// also used as minus for negative values. In
+								// such
+								// case this will simply fail
+								paramValues = splitPreserveAllTokens(paramValue, '-');
+								if (paramValues.length != 2) {
+									throw new IllegalArgumentException("unexpected numeric filter value: " + paramValue);
+								}
 							}
-						}
-						filters.add(new NumberResultFilter(
-								field,
-								Util.tryToParseAsNumber(paramValues[0]).orElse(null),
-								Util.tryToParseAsNumber(paramValues[1]).orElse(null)));
-						break;
-					default:
-						filters.add(new TermResultFilter(field, split(paramValue, VALUE_DELIMITER))
-								.setFilterOnId(isIdFilter));
+							filters.add(new NumberResultFilter(
+									field,
+									Util.tryToParseAsNumber(paramValues[0]).orElse(null),
+									Util.tryToParseAsNumber(paramValues[1]).orElse(null)));
+							break;
+						default:
+							filters.add(new TermResultFilter(field, split(paramValue, VALUE_DELIMITER))
+									.setFilterOnId(isIdFilter));
+					}
 				}
 			}
 		}
