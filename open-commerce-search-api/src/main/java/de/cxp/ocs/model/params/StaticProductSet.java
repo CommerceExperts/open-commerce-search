@@ -14,7 +14,7 @@ import lombok.experimental.Accessors;
 @RequiredArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode
 @Schema(allOf = { ProductSet.class })
 public class StaticProductSet extends ProductSet {
 
