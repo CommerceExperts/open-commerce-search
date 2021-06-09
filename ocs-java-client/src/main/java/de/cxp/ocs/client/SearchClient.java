@@ -40,6 +40,7 @@ public class SearchClient implements SearchService {
 	public SearchClient(String endpointUrl) {
 		this(endpointUrl, f -> {
 			f.decoder(ObjectMapperFactory.createJacksonDecoder());
+			f.encoder(ObjectMapperFactory.createJacksonEncoder());
 			return;
 		});
 	}
