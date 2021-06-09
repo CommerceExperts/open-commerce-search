@@ -102,8 +102,6 @@ public class Searcher {
 
 	private SpellCorrector spellCorrector;
 
-	private final HeroProductHandler heroProductHandler = new HeroProductHandler();
-
 	private final Timer findTimer;
 	private final Timer sqbTimer;
 	private final Timer inputWordsTimer;
@@ -202,7 +200,7 @@ public class Searcher {
 
 		int minHitCount = 1;
 		if (parameters.heroProductSets != null) {
-			minHitCount = heroProductHandler.getCorrectedMinHitCount(parameters);
+			minHitCount = HeroProductHandler.getCorrectedMinHitCount(parameters);
 		}
 		while ((searchResponse == null || searchResponse.getHits().getTotalHits().value < minHitCount)
 				&& stagedQueryBuilders.hasNext()) {
@@ -221,7 +219,7 @@ public class Searcher {
 				continue;
 
 			if (parameters.heroProductSets != null) {
-				heroProductHandler.extendQuery(searchQuery, parameters);
+				HeroProductHandler.extendQuery(searchQuery, parameters);
 			}
 
 			if (correctedWords == null && spellCorrector != null
@@ -265,7 +263,7 @@ public class Searcher {
 				if (correctedWords.size() > 0 && !searchQuery.isWithSpellCorrection()) {
 					searchQuery = stagedQueryBuilder.createQuery(searchWords);
 					if (parameters.heroProductSets != null) {
-						heroProductHandler.extendQuery(searchQuery, parameters);
+						HeroProductHandler.extendQuery(searchQuery, parameters);
 					}
 					searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
 					searchResponse = executeSearchRequest(searchSourceBuilder);
@@ -327,7 +325,7 @@ public class Searcher {
 			if (searchResponse != null) {
 				int fetchOffset = 0;
 				if (parameters.heroProductSets != null) {
-					fetchOffset = heroProductHandler.extractSlices(searchResponse, parameters, searchResult);
+					fetchOffset = HeroProductHandler.extractSlices(searchResponse, parameters, searchResult);
 				}
 
 				SearchResultSlice searchResultSlice = toSearchResult(searchResponse, parameters, fetchOffset);

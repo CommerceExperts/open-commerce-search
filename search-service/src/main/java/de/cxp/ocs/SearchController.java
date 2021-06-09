@@ -4,7 +4,6 @@ import static de.cxp.ocs.util.SearchParamsParser.extractInternalParams;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +14,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 
 import org.elasticsearch.ElasticsearchStatusException;
@@ -50,16 +48,11 @@ import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.FieldConfigFetcher;
 import de.cxp.ocs.elasticsearch.ResultMapper;
 import de.cxp.ocs.elasticsearch.Searcher;
-import de.cxp.ocs.elasticsearch.prodset.DynamicProductSetResolver;
-import de.cxp.ocs.elasticsearch.prodset.ProductSetResolver;
-import de.cxp.ocs.elasticsearch.prodset.ProductSetResolverUtil;
-import de.cxp.ocs.elasticsearch.prodset.StaticProductSetResolver;
+import de.cxp.ocs.elasticsearch.prodset.HeroProductHandler;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.params.ArrangedSearchQuery;
-import de.cxp.ocs.model.params.DynamicProductSet;
 import de.cxp.ocs.model.params.ProductSet;
 import de.cxp.ocs.model.params.SearchQuery;
-import de.cxp.ocs.model.params.StaticProductSet;
 import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import de.cxp.ocs.util.InternalSearchParams;
@@ -86,8 +79,6 @@ public class SearchController implements SearchService {
 	@Autowired
 	private MeterRegistry registry;
 
-	private ProductSetResolverUtil productSetResolverUtil;
-
 	private final Map<String, SearchContext> searchContexts = new ConcurrentHashMap<>();
 
 	private final Map<String, String> actualIndexPerTenant = new ConcurrentHashMap<>();
@@ -100,16 +91,6 @@ public class SearchController implements SearchService {
 	private final Cache<String, Exception> brokenTenantsCache = CacheBuilder.newBuilder()
 			.expireAfterWrite(5, TimeUnit.MINUTES)
 			.build();
-
-	@PostConstruct
-	public void init() {
-		Map<String, ProductSetResolver> resolvers = new HashMap<>(2);
-		resolvers.put(new DynamicProductSet().type, new DynamicProductSetResolver());
-		resolvers.put(new StaticProductSet().type, new StaticProductSetResolver());
-		// if the dependency to the Searcher & SearchContext could be removed,
-		// the product set resolver could be part of the SPI/plug-in mechanism
-		productSetResolverUtil = new ProductSetResolverUtil(resolvers);
-	}
 
 	@GetMapping("/flushConfig/{tenant}")
 	public ResponseEntity<HttpStatus> flushConfig(@PathVariable("tenant") String tenant) {
@@ -164,7 +145,7 @@ public class SearchController implements SearchService {
 			try {
 				final Searcher searcher = searchClientCache.get(tenant, () -> initializeSearcher(searchContext));
 				if (heroProducts != null) {
-					parameters.heroProductSets = productSetResolverUtil.resolve(heroProducts, searcher, searchContext);
+					parameters.heroProductSets = HeroProductHandler.resolve(heroProducts, searcher, searchContext);
 				}
 
 				SearchResult result = searcher.find(parameters);
