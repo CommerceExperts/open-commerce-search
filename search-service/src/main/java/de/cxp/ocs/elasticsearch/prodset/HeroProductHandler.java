@@ -39,6 +39,16 @@ public class HeroProductHandler {
 		resolvers.put(new StaticProductSet().type, new StaticProductSetResolver());
 	}
 
+	/**
+	 * Resolve the given product sets into static product sets. For given static
+	 * product sets, the specified IDs are verified. For dynamic product sets,
+	 * the matching IDs are fetched.
+	 * 
+	 * @param productSets
+	 * @param searcher
+	 * @param searchContext
+	 * @return
+	 */
 	public static StaticProductSet[] resolve(ProductSet[] productSets, Searcher searcher, SearchContext searchContext) {
 		StaticProductSet[] resolvedSets = new StaticProductSet[productSets.length];
 		@SuppressWarnings("unchecked")
@@ -122,6 +132,12 @@ public class HeroProductHandler {
 			BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
 			float boost = 100f * (float) Math.pow(10, productSets.length);
 			for (int i = 0; i < productSets.length; i++) {
+				// since this is "just" another should clause, the product sets
+				// are still influenced by the matches of the generic user
+				// query.
+				// Also the whole query is wrapped into a function-score query
+				// to apply the scoring rules
+				// TODO: add possibility to guarantee the order of IDs of a set.
 				boolQuery.should(
 						QueryBuilders.idsQuery().addIds(productSets[i].ids).boost(boost));
 				boost /= 10;
