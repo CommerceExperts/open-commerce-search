@@ -6,12 +6,16 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.NamedType;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
+import de.cxp.ocs.model.params.DynamicProductSet;
+import de.cxp.ocs.model.params.ProductSet;
 import de.cxp.ocs.model.params.SearchQuery;
+import de.cxp.ocs.model.params.StaticProductSet;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import feign.codec.Decoder;
@@ -37,6 +41,11 @@ public class ObjectMapperFactory {
 		objectMapper.addMixIn(Facet.class, FacetMixin.class);
 		objectMapper.addMixIn(SearchQuery.class, SearchQueryCreator.class);
 
+		objectMapper.addMixIn(ProductSet.class, WithTypeInfo.class);
+		objectMapper.registerSubtypes(
+				new NamedType(DynamicProductSet.class, "dynamic"),
+				new NamedType(StaticProductSet.class, "static"));
+
 		SimpleModule deserializerModule = new SimpleModule();
 		deserializerModule.addDeserializer(Document.class, new DocumentDeserializer());
 		deserializerModule.addDeserializer(Product.class, new ProductDeserializer());
@@ -45,7 +54,7 @@ public class ObjectMapperFactory {
 		return objectMapper;
 	}
 
-	@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "_type")
+	@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 	public static abstract class WithTypeInfo {}
 
 	public static abstract class SearchQueryCreator {

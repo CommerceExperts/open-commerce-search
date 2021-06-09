@@ -2,8 +2,10 @@ package de.cxp.ocs.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.model.params.StaticProductSet;
 import de.cxp.ocs.model.result.Sorting;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -29,6 +31,10 @@ public class InternalSearchParams {
 	public List<Sorting> sortings = new ArrayList<>();
 
 	public List<InternalResultFilter> filters = new ArrayList<>();
+
+	public Map<String, String> customParams;
+
+	public StaticProductSet[] heroProductSets;
 
 	public InternalSearchParams withSorting(Sorting sorting) {
 		sortings.add(sorting);

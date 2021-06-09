@@ -1,5 +1,6 @@
 package de.cxp.ocs.model.result;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -55,7 +56,7 @@ public class SearchResult {
 					+ " This can also be used to deliver some special advertised products or to split the result in different ranked slices"
 					+ " (e.g. the first 3 results are ranked by popularity, the next 3 are sorted by price and the rest is ranked by 'default' relevance)."
 					+ " Each slice contains the {@link SearchQuery} that represent that exact slice. At least 1 slice should be expected. If there is no slice, no results were found.")
-	public List<SearchResultSlice> slices;
+	public List<SearchResultSlice> slices = new ArrayList<>(1);
 
 	public List<Sorting> sortOptions;
 

@@ -6,11 +6,13 @@ import static org.apache.commons.lang3.StringUtils.split;
 import static org.apache.commons.lang3.StringUtils.splitPreserveAllTokens;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 
+import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConstants;
@@ -18,6 +20,7 @@ import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
+import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SortOrder;
 import de.cxp.ocs.model.result.Sorting;
 
@@ -27,6 +30,28 @@ import de.cxp.ocs.model.result.Sorting;
 public class SearchParamsParser {
 
 	public final static String ID_FILTER_SUFFIX = ".id";
+
+	public static InternalSearchParams extractInternalParams(SearchQuery searchQuery, Map<String, String> filters, SearchContext searchContext) {
+		final InternalSearchParams parameters = new InternalSearchParams();
+		parameters.limit = searchQuery.limit;
+		parameters.offset = searchQuery.offset;
+		parameters.withFacets = searchQuery.withFacets;
+		parameters.userQuery = searchQuery.q;
+
+		if (searchQuery.sort != null) {
+			parameters.sortings = parseSortings(searchQuery.sort, searchContext.getFieldConfigIndex());
+		}
+		parameters.filters = parseFilters(filters, searchContext.getFieldConfigIndex());
+
+		Map<String, String> customParams = new HashMap<>(filters);
+		parameters.filters.forEach(f -> {
+			customParams.remove(f.getField().getName());
+			customParams.remove(f.getField().getName() + SearchParamsParser.ID_FILTER_SUFFIX);
+		});
+		parameters.customParams = customParams;
+
+		return parameters;
+	}
 
 	/**
 	 * Checks the parameter map for valid filters and extracts them into

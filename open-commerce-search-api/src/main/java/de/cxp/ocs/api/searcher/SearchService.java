@@ -3,9 +3,11 @@ package de.cxp.ocs.api.searcher;
 import java.util.Map;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 
 import de.cxp.ocs.model.index.Document;
+import de.cxp.ocs.model.params.ArrangedSearchQuery;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,6 +19,7 @@ import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
@@ -159,6 +162,19 @@ public interface SearchService {
 					explode = Explode.TRUE,
 					style = ParameterStyle.FORM,
 					required = false) Map<String, String> filters)
+			throws Exception;
+
+	@POST
+	@Path("search/arranged/{tenant}")
+	public SearchResult arrangedSearch(
+			@Parameter(
+					in = ParameterIn.PATH,
+					name = "tenant",
+					description = "tenant name",
+					required = true) String tenant,
+			@RequestBody(
+					description = "A list of all search requests that should be part of a single response",
+					required = true) ArrangedSearchQuery searchQuery)
 			throws Exception;
 
 	@GET

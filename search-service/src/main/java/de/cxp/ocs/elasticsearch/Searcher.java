@@ -5,17 +5,11 @@ import static de.cxp.ocs.config.FieldConstants.VARIANTS;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.lucene.search.join.ScoreMode;
@@ -47,6 +41,7 @@ import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.elasticsearch.facets.FacetConfigurationApplyer;
+import de.cxp.ocs.elasticsearch.prodset.HeroProductHandler;
 import de.cxp.ocs.elasticsearch.query.FiltersBuilder;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.elasticsearch.query.analyzer.WhitespaceAnalyzer;
@@ -56,7 +51,6 @@ import de.cxp.ocs.elasticsearch.query.builder.MatchAllQueryFactory;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
-import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.result.ResultHit;
 import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.model.result.SearchResultSlice;
@@ -108,6 +102,8 @@ public class Searcher {
 
 	private SpellCorrector spellCorrector;
 
+	private final HeroProductHandler heroProductHandler = new HeroProductHandler();
+
 	private final Timer findTimer;
 	private final Timer sqbTimer;
 	private final Timer inputWordsTimer;
@@ -157,19 +153,9 @@ public class Searcher {
 		return new SpellCorrector(spellCorrectionFields.toArray(new String[spellCorrectionFields.size()]));
 	}
 
-	/**
-	 * 
-	 * @param parameters
-	 *        internal validated state of the parameters
-	 * @param customParams
-	 * @return search result
-	 * @throws IOException
-	 */
 	// @Timed(value = "find", percentiles = { 0.5, 0.8, 0.95, 0.98 })
-	public SearchResult find(InternalSearchParams parameters, Map<String, String> customParams) throws IOException {
-
-		long start = System.currentTimeMillis();
-
+	public SearchResult find(InternalSearchParams parameters) throws IOException {
+		Sample findTimerSample = Timer.start(registry);
 		Iterator<ESQueryFactory> stagedQueryBuilders;
 		List<QueryStringTerm> searchWords;
 		if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
@@ -205,8 +191,7 @@ public class Searcher {
 			}
 		}
 
-		// TODO: add a "hint" to the params for follow-up searches or at least a
-		// cache to pick the correct query for known search terms
+		// TODO: add a cache to pick the correct query for known search terms
 
 		// staged search: try each query builder until we get a result
 		// + try and use spell correction with first query
@@ -230,6 +215,10 @@ public class Searcher {
 			if (searchQuery == null)
 				continue;
 
+			if (parameters.heroProductSets != null) {
+				heroProductHandler.extendQuery(searchQuery, parameters);
+			}
+
 			if (correctedWords == null && spellCorrector != null
 					&& stagedQueryBuilder.allowParallelSpellcheckExecution()
 					&& (!searchQuery.isWithSpellCorrection() || stagedQueryBuilders.hasNext())) {
@@ -240,7 +229,7 @@ public class Searcher {
 
 			searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
 			if (searchSourceBuilder.sorts() == null || searchSourceBuilder.sorts().isEmpty()) {
-				addRescorersFailsafe(parameters, customParams, searchSourceBuilder);
+				addRescorersFailsafe(parameters, searchSourceBuilder);
 			}
 
 			if (log.isTraceEnabled()) {
@@ -255,9 +244,14 @@ public class Searcher {
 			}
 			inputWordsSample.stop(inputWordsTimer);
 
+			int minHitCount = 1;
+			if (parameters.heroProductSets != null) {
+				minHitCount = heroProductHandler.getCorrectedMinHitCount(searchResponse, parameters);
+			}
+
 			// if we don't have any hits, but there's a chance to get corrected
 			// words, then enrich the search words with the corrected words
-			if (searchResponse.getHits().getTotalHits().value == 0 && correctedWords == null && spellCorrector != null
+			if (searchResponse.getHits().getTotalHits().value < minHitCount && correctedWords == null && spellCorrector != null
 					&& searchResponse.getSuggest() != null) {
 				Sample correctedWordsSample = Timer.start(registry);
 				correctedWords = spellCorrector.extractRelatedWords(searchWords, searchResponse.getSuggest());
@@ -269,40 +263,46 @@ public class Searcher {
 				// account, then try again with corrected words
 				if (correctedWords.size() > 0 && !searchQuery.isWithSpellCorrection()) {
 					searchQuery = stagedQueryBuilder.createQuery(searchWords);
+					if (parameters.heroProductSets != null) {
+						heroProductHandler.extendQuery(searchQuery, parameters);
+					}
 					searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
 					searchResponse = executeSearchRequest(searchSourceBuilder);
+
+					if (parameters.heroProductSets != null) {
+						minHitCount = heroProductHandler.getCorrectedMinHitCount(searchResponse, parameters);
+					}
 				}
 				correctedWordsSample.stop(correctedWordsTimer);
 			}
 
-			if (searchResponse.getHits().getTotalHits().value == 0 && searchQuery.isAcceptNoResult()) {
+			if (searchResponse.getHits().getTotalHits().value < minHitCount && searchQuery.isAcceptNoResult()) {
 				break;
 			}
 
 			i++;
 		}
 		sqbSample.stop(sqbTimer);
-		summary.record(i);
 
 		SearchResult searchResult = buildResult(parameters, filterContext, searchResponse);
-		searchResult.tookInMillis = System.currentTimeMillis() - start;
 
-		findTimer.record(searchResult.tookInMillis, TimeUnit.MILLISECONDS);
+		summary.record(i);
+		findTimerSample.stop(findTimer);
 
 		return searchResult;
 	}
 
-	private void addRescorersFailsafe(InternalSearchParams parameters, Map<String, String> customParams, SearchSourceBuilder searchSourceBuilder) {
+	private void addRescorersFailsafe(InternalSearchParams parameters, SearchSourceBuilder searchSourceBuilder) {
 		Iterator<RescorerProvider> rescorerProviders = rescorers.iterator();
 		while (rescorerProviders.hasNext()) {
 			RescorerProvider rescorerProvider = rescorerProviders.next();
 			try {
-				rescorerProvider.get(parameters.userQuery, customParams).ifPresent(searchSourceBuilder::addRescorer);
+				rescorerProvider.get(parameters.userQuery, parameters.customParams).ifPresent(searchSourceBuilder::addRescorer);
 			}
 			catch (Exception e) {
 				log.error("RescorerProvider {} caused exception when creating rescorer based on userQuery {} and customParams {}!"
 						+ "Will remove it until next configuration reload!",
-						rescorerProvider.getClass().getCanonicalName(), parameters.userQuery, customParams, e);
+						rescorerProvider.getClass().getCanonicalName(), parameters.userQuery, parameters.customParams, e);
 				rescorerProviders.remove();
 			}
 		}
@@ -328,7 +328,12 @@ public class Searcher {
 
 		resultTimer.record(() -> {
 			if (searchResponse != null) {
-				SearchResultSlice searchResultSlice = toSearchResult(searchResponse, parameters);
+				int fetchOffset = 0;
+				if (parameters.heroProductSets != null) {
+					fetchOffset = heroProductHandler.extractSlices(searchResponse, parameters, searchResult);
+				}
+
+				SearchResultSlice searchResultSlice = toSearchResult(searchResponse, parameters, fetchOffset);
 				if (parameters.isWithFacets()) {
 					searchResultSlice.facets = facetApplier.getFacets(searchResponse.getAggregations(), searchResultSlice.matchCount, filterContext, linkBuilder);
 				}
@@ -416,7 +421,7 @@ public class Searcher {
 		return variantInnerHits;
 	}
 
-	private SearchResultSlice toSearchResult(SearchResponse search, InternalSearchParams parameters) {
+	private SearchResultSlice toSearchResult(SearchResponse search, InternalSearchParams parameters, int fetchOffset) {
 		SearchHits searchHits = search.getHits();
 		SearchResultSlice srSlice = new SearchResultSlice();
 		// XXX think about building parameters according to the actual performed
@@ -427,17 +432,9 @@ public class Searcher {
 		Map<String, SortOrder> sortedFields = sortingHandler.getSortedNumericFields(parameters);
 
 		ArrayList<ResultHit> resultHits = new ArrayList<>();
-		for (SearchHit hit : searchHits.getHits()) {
-			SearchHits variantHits = hit.getInnerHits().get("variants");
-			SearchHit variantHit = null;
-			if (variantHits.getHits().length > 0) {
-				variantHit = variantHits.getAt(0);
-			}
-
-			ResultHit resultHit = new ResultHit().setDocument(getResultDocument(hit, variantHit))
-					.setIndex(hit.getIndex()).setMatchedQueries(hit.getMatchedQueries());
-
-			addSortFieldPrefix(hit, resultHit, sortedFields);
+		for (int i = fetchOffset; i < searchHits.getHits().length; i++) {
+			SearchHit hit = searchHits.getHits()[i];
+			ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields);
 
 			resultHits.add(resultHit);
 		}
@@ -446,75 +443,5 @@ public class Searcher {
 		return srSlice;
 	}
 
-	/**
-	 * If we sort by a numeric value (e.g. price) and there are several different
-	 * values at a product for that given field (e.g. multiple prices from the
-	 * variants), then add a prefix "from" or "to" depending on sort order.
-	 * 
-	 * The goal is to show "from 10€" if sorted by price ascending and "to 59€" if
-	 * sorted by price descending.
-	 * 
-	 * @param hit
-	 * @param resultHit
-	 * @param sortedFields
-	 */
-	@SuppressWarnings("unchecked")
-	private void addSortFieldPrefix(SearchHit hit, ResultHit resultHit, Map<String, SortOrder> sortedFields) {
-		Object sortData = hit.getSourceAsMap().get(FieldConstants.SORT_DATA);
-		if (sortData != null && sortData instanceof Map && sortedFields.size() > 0) {
-			sortedFields.forEach((fieldName, order) -> {
-				resultHit.document.getData().computeIfPresent(fieldName, (fn, v) -> {
-					Object fieldSortData = ((Map<String, Object>) sortData).get(fn);
-					if (fieldSortData != null && fieldSortData instanceof Collection
-							&& ((Collection<?>) fieldSortData).size() > 1) {
-						resultHit.document.set(fn + "_prefix", SortOrder.ASC.equals(order) ? "{from}" : "{to}");
-						// collection is already sorted asc/desc: first value is
-						// the relevant one
-						return ((Collection<?>) fieldSortData).iterator().next();
-					}
-					return v;
-				});
-			});
-		}
-	}
-
-	private Document getResultDocument(SearchHit hit, SearchHit variantHit) {
-		Map<String, Object> resultFields = new HashMap<>();
-		for (String sourceDataField : new String[] { FieldConstants.SEARCH_DATA, FieldConstants.RESULT_DATA }) {
-			putDataIntoResult(hit, resultFields, sourceDataField);
-			if (variantHit != null) {
-				putDataIntoResult(variantHit, resultFields, sourceDataField);
-			}
-		}
-
-		// TODO: Only for development purposes, remove in production to save
-		// performance!!
-		resultFields.entrySet().stream().sorted(
-				Comparator.comparing(entry -> fieldIndex.getField(entry.getKey()), (f1, f2) -> {
-					if (!f1.isPresent()) {
-						return 1;
-					} else if (!f2.isPresent()) {
-						return -1;
-					}
-					int o1 = f1.get().getUsage().contains(FieldUsage.SCORE) ? 1 : 0;
-					int o2 = f2.get().getUsage().contains(FieldUsage.SCORE) ? 1 : 0;
-
-					if (o1 == 0 && o1 == o2) {
-						return String.CASE_INSENSITIVE_ORDER.compare(f1.get().getName(), f2.get().getName());
-					}
-					return Integer.compare(o2, o1);
-				})).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (oldValue, newValue) -> oldValue,
-						LinkedHashMap::new));
-
-		return new Document(hit.getId()).setData(resultFields);
-	}
-
-	@SuppressWarnings("unchecked")
-	private void putDataIntoResult(SearchHit hit, Map<String, Object> resultFields, String sourceDataField) {
-		Object sourceData = hit.getSourceAsMap().get(sourceDataField);
-		if (sourceData != null && sourceData instanceof Map) {
-			resultFields.putAll((Map<String, Object>) sourceData);
-		}
-	}
 
 }

@@ -4,6 +4,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * A carrier of Elasticsearch queries on master and variant level. Both will be
@@ -13,6 +14,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class MasterVariantQuery {
 
+	@Setter
 	private QueryBuilder masterLevelQuery;
 
 	private QueryBuilder variantLevelQuery;

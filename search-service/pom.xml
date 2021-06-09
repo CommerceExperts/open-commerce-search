@@ -15,6 +15,10 @@
 	<version>0.16.1</version>
 	<packaging>jar</packaging>
 
+	<properties>
+		<springdoc.version>1.5.9</springdoc.version>
+	</properties>
+
 	<!-- Import dependency management from Spring Boot -->
 	<dependencyManagement>
 		<dependencies>
@@ -71,17 +75,29 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-jetty</artifactId>
 		</dependency>
-		
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-ui</artifactId>
+			<version>${springdoc.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-webmvc-core</artifactId>
+			<version>${springdoc.version}</version>
+		</dependency>
+
+
+
 		<dependency>
 			<groupId>org.querqy</groupId>
-		    <artifactId>querqy-core</artifactId>
-		    <version>3.10.1</version>
-		    <exclusions>
-		    	<exclusion>
-		    		<groupId>org.ow2.asm</groupId>
-		    		<artifactId>asm</artifactId>
-		    	</exclusion>
-		    </exclusions>
+			<artifactId>querqy-core</artifactId>
+			<version>3.10.1</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.ow2.asm</groupId>
+					<artifactId>asm</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
