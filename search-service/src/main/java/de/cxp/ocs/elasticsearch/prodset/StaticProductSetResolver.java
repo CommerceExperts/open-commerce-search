@@ -23,7 +23,10 @@ public class StaticProductSetResolver implements ProductSetResolver {
 		IdsQueryBuilder addIds = QueryBuilders.idsQuery().addIds(staticSet.getIds());
 		try {
 			SearchResponse searchResponse = searcher.executeSearchRequest(SearchSourceBuilder.searchSource().query(addIds).size(productSet.getSize()));
-			if (searchResponse.getHits().getTotalHits().value < productSet.getSize()
+			if (searchResponse.getHits().getTotalHits().value == 0) {
+				staticSet.setIds(new String[0]);
+			}
+			else if (searchResponse.getHits().getTotalHits().value < productSet.getSize()
 					&& searchResponse.getHits().getTotalHits().relation.equals(TotalHits.Relation.EQUAL_TO)) {
 				staticSet.setIds((String[]) StreamSupport.stream(searchResponse.getHits().spliterator(), false)
 						.map(hit -> hit.getId())
