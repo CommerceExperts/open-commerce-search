@@ -2,7 +2,10 @@ package de.cxp.ocs.client;
 
 import java.util.Map;
 
+import de.cxp.ocs.model.index.Document;
+import de.cxp.ocs.model.params.ArrangedSearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
+import feign.Headers;
 import feign.Param;
 import feign.QueryMap;
 import feign.RequestLine;
@@ -21,4 +24,11 @@ interface SearchApi {
 			@Param("limit") int limit,
 			@Param("withFacets") boolean withFacets,
 			@QueryMap Map<String, String> filters) throws Exception;
+
+	@RequestLine("POST /search-api/v1/search/arranged/{tenant}")
+	@Headers("Content-Type: application/json")
+	SearchResult arrangedSearch(@Param("tenant") String tenant, ArrangedSearchQuery searchQuery);
+
+	@RequestLine("GET /search-api/v1/doc/{tenant}/{id}")
+	Document getDocument(@Param("tenant") String tenant, @Param("id") String docId);
 }

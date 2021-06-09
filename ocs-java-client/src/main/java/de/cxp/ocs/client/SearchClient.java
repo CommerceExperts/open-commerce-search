@@ -5,6 +5,8 @@ import java.util.function.Consumer;
 
 import de.cxp.ocs.api.searcher.SearchService;
 import de.cxp.ocs.client.deserializer.ObjectMapperFactory;
+import de.cxp.ocs.model.index.Document;
+import de.cxp.ocs.model.params.ArrangedSearchQuery;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
 import feign.Feign;
@@ -38,6 +40,7 @@ public class SearchClient implements SearchService {
 	public SearchClient(String endpointUrl) {
 		this(endpointUrl, f -> {
 			f.decoder(ObjectMapperFactory.createJacksonDecoder());
+			f.encoder(ObjectMapperFactory.createJacksonEncoder());
 			return;
 		});
 	}
@@ -50,5 +53,15 @@ public class SearchClient implements SearchService {
 	@Override
 	public SearchResult search(String tenant, SearchQuery searchParams, Map<String, String> filters) throws Exception {
 		return target.search(tenant, searchParams.q, searchParams.sort, searchParams.offset, searchParams.limit, searchParams.withFacets, filters);
+	}
+
+	@Override
+	public SearchResult arrangedSearch(String tenant, ArrangedSearchQuery searchQuery) throws Exception {
+		return target.arrangedSearch(tenant, searchQuery);
+	}
+
+	@Override
+	public Document getDocument(String tenant, String docId) throws Exception {
+		return target.getDocument(tenant, docId);
 	}
 }

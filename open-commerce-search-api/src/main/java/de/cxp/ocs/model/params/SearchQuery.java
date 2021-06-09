@@ -6,6 +6,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+/**
+ * <p>
+ * SearchQuery model that contains all "explicit" parameters for a search
+ * requests, so not the filters. The main reason for this is how query-expansion
+ * works with spring boot.
+ * </p>
+ * <p>
+ * For a full search query, the extended class FilteredSearchQuery can be used.
+ * </p>
+ */
 @NoArgsConstructor
 @Accessors(chain = true)
 @Data

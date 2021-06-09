@@ -7,10 +7,18 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.jsontype.NamedType;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+
 import de.cxp.ocs.config.ApplicationProperties;
 import de.cxp.ocs.config.DefaultSearchConfigrationProvider;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.RestClientBuilderFactory;
+import de.cxp.ocs.model.params.DynamicProductSet;
+import de.cxp.ocs.model.params.ProductSet;
+import de.cxp.ocs.model.params.StaticProductSet;
 import de.cxp.ocs.plugin.PluginManager;
 import de.cxp.ocs.spi.search.SearchConfigurationProvider;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -46,5 +54,18 @@ public class Application {
 		SearchPlugins plugins = new SearchPlugins(pluginManager, configurationProvider);
 		return plugins;
 	}
+
+	@Bean
+	public Module mixinModule() {
+		SimpleModule module = new SimpleModule();
+
+		module.setMixInAnnotation(ProductSet.class, WithTypeInfo.class);
+		module.registerSubtypes(new NamedType(DynamicProductSet.class, "dynamic"), new NamedType(StaticProductSet.class, "static"));
+
+		return module;
+	}
+
+	@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+	public static abstract class WithTypeInfo {}
 
 }

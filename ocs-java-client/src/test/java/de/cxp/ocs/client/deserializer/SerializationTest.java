@@ -18,7 +18,11 @@ import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
+import de.cxp.ocs.model.params.ArrangedSearchQuery;
+import de.cxp.ocs.model.params.DynamicProductSet;
+import de.cxp.ocs.model.params.ProductSet;
 import de.cxp.ocs.model.params.SearchQuery;
+import de.cxp.ocs.model.params.StaticProductSet;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
@@ -122,6 +126,21 @@ public class SerializationTest {
 						.setLimit(8)
 						.setOffset(42)
 						.setSort("margin"),
+
+				new StaticProductSet(new String[] { "123", "asf2" }, "test2"),
+
+				new DynamicProductSet("dynTest", "foo bar", "price", null, 8),
+
+				new ArrangedSearchQuery()
+						.setArrangedProductSets(new ProductSet[] {
+								new StaticProductSet(new String[] { "123", "asf2" }, "test2"),
+								new DynamicProductSet("dynTest", null, "-margin", Collections.singletonMap("brand", "fancy"), 4)
+						})
+						.setFilters(Collections.singletonMap("category", "shoes"))
+						.setQ("bar")
+						.setLimit(4)
+						.setOffset(12)
+						.setSort("-title"),
 
 				new FacetEntry("red", null, 2, null, false),
 
