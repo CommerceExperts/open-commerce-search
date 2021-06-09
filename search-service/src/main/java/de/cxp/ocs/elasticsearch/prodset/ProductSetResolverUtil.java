@@ -41,7 +41,7 @@ public class ProductSetResolverUtil {
 				futures[position] = CompletableFuture.completedFuture(null);
 			}
 			// only run async, if there are more than 1 sets
-			else if (resolver.runAsync() && productSets.length > nextPos) {
+			else if (resolver.runAsync() && productSets.length > 1) {
 				futures[position] = CompletableFuture.supplyAsync(() -> resolver.resolve(set, extraBuffer[0], searcher, searchContext))
 						.thenAccept(resolvedIds -> resolvedSets[position] = resolvedIds);
 				extraBuffer[0] += set.getSize();

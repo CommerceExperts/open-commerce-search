@@ -34,7 +34,7 @@ public class HeroProductHandler {
 		StaticProductSet[] productSets = internalParams.heroProductSets;
 		if (productSets.length > 0) {
 			BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-			float boost = 10f * (float) Math.pow(10, productSets.length);
+			float boost = 100f * (float) Math.pow(10, productSets.length);
 			for (int i = 0; i < productSets.length; i++) {
 				boolQuery.should(
 						QueryBuilders.idsQuery().addIds(productSets[i].ids).boost(boost));
@@ -55,14 +55,7 @@ public class HeroProductHandler {
 	 * @param heroProductSets
 	 * @return
 	 */
-	public int getCorrectedMinHitCount(SearchResponse searchResponse, InternalSearchParams internalParams) {
-		// FIXME: if the result was sorted or filtered, we can't tell for sure,
-		// how many of the hero products actually matched. Imagine a static IDs
-		// list passed trough the API, but only some of these IDs actually
-		// exist. If we now expect a higher hitcount, the query-relaxation loop
-		// could go to the next - undesired - stage
-		// possible fix: verify IDs list prior searching for it (=> worse
-		// performance)
+	public int getCorrectedMinHitCount(InternalSearchParams internalParams) {
 		return internalParams.heroProductSets.length == 0 ? 0 : Arrays.stream(internalParams.heroProductSets).mapToInt(ProductSet::getSize).sum();
 	}
 
@@ -88,22 +81,25 @@ public class HeroProductHandler {
 			StaticProductSet[] productSets = internalParams.heroProductSets;
 			int hitIndex = 0;
 			SearchHit[] hits = searchResponse.getHits().getHits();
+			// expected min boost is factor 10 smaller, because the scoring is
+			// also multiplied by values below 1
+			float expectedMinBoost = 10f * (float) Math.pow(10, productSets.length);
 			for (StaticProductSet productSet : productSets) {
 				List<ResultHit> resultHits = new ArrayList<>();
-				for (int i = 0; i < productSet.ids.length && hitIndex < hits.length; i++) {
-					String expectedId = productSet.ids[i];
-					if (expectedId.equals(hits[hitIndex].getId())) {
-						ResultHit resultHit = ResultMapper.mapSearchHit(hits[hitIndex], Collections.emptyMap());
-						resultHits.add(resultHit);
-						hitIndex++;
-					}
+				for (int i = 0; i < productSet.ids.length && hitIndex < hits.length && expectedMinBoost < hits[hitIndex].getScore(); i++) {
+					ResultHit resultHit = ResultMapper.mapSearchHit(hits[hitIndex], Collections.emptyMap());
+					resultHits.add(resultHit);
+					hitIndex++;
 				}
+				expectedMinBoost /= 10;
 
-				SearchResultSlice slice = new SearchResultSlice();
-				slice.setLabel(productSet.getName());
-				slice.setHits(resultHits);
-				slice.setMatchCount(resultHits.size());
-				searchResult.slices.add(slice);
+				if (resultHits.size() > 0) {
+					SearchResultSlice slice = new SearchResultSlice();
+					slice.setLabel(productSet.getName());
+					slice.setHits(resultHits);
+					slice.setMatchCount(resultHits.size());
+					searchResult.slices.add(slice);
+				}
 			}
 			return hitIndex;
 		}

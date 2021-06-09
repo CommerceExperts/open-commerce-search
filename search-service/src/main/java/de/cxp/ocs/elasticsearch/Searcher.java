@@ -199,7 +199,12 @@ public class Searcher {
 		SearchResponse searchResponse = null;
 		Map<String, WordAssociation> correctedWords = null;
 		Sample sqbSample = Timer.start(registry);
-		while ((searchResponse == null || searchResponse.getHits().getTotalHits().value == 0)
+
+		int minHitCount = 1;
+		if (parameters.heroProductSets != null) {
+			minHitCount = heroProductHandler.getCorrectedMinHitCount(parameters);
+		}
+		while ((searchResponse == null || searchResponse.getHits().getTotalHits().value < minHitCount)
 				&& stagedQueryBuilders.hasNext()) {
 			StopWatch sw = new StopWatch();
 			sw.start();
@@ -244,10 +249,6 @@ public class Searcher {
 			}
 			inputWordsSample.stop(inputWordsTimer);
 
-			int minHitCount = 1;
-			if (parameters.heroProductSets != null) {
-				minHitCount = heroProductHandler.getCorrectedMinHitCount(searchResponse, parameters);
-			}
 
 			// if we don't have any hits, but there's a chance to get corrected
 			// words, then enrich the search words with the corrected words
@@ -268,10 +269,6 @@ public class Searcher {
 					}
 					searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
 					searchResponse = executeSearchRequest(searchSourceBuilder);
-
-					if (parameters.heroProductSets != null) {
-						minHitCount = heroProductHandler.getCorrectedMinHitCount(searchResponse, parameters);
-					}
 				}
 				correctedWordsSample.stop(correctedWordsTimer);
 			}
@@ -308,7 +305,7 @@ public class Searcher {
 		}
 	}
 
-	private SearchResponse executeSearchRequest(SearchSourceBuilder searchSourceBuilder) throws IOException {
+	public SearchResponse executeSearchRequest(SearchSourceBuilder searchSourceBuilder) throws IOException {
 		Sample sample = Timer.start(registry);
 		SearchResponse searchResponse;
 		{
@@ -337,6 +334,7 @@ public class Searcher {
 				if (parameters.isWithFacets()) {
 					searchResultSlice.facets = facetApplier.getFacets(searchResponse.getAggregations(), searchResultSlice.matchCount, filterContext, linkBuilder);
 				}
+				searchResultSlice.label = "main";
 				searchResult.slices.add(searchResultSlice);
 			}
 		});
