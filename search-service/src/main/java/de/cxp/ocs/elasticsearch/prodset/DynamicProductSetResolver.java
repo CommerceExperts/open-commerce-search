@@ -37,6 +37,7 @@ public class DynamicProductSetResolver implements ProductSetResolver {
 				searchQuery,
 				productSet.filters == null ? Collections.emptyMap() : productSet.filters,
 				searchContext);
+		productSetParams.setWithResultData(false);
 
 		try {
 			SearchResult prodSetResult = searcher.find(productSetParams);

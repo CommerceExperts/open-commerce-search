@@ -28,6 +28,13 @@ public class InternalSearchParams {
 	 */
 	public boolean withFacets = true;
 
+	/**
+	 * Flag to specify if the full documents should be returned or not. Default:
+	 * true.
+	 * If set to "false", the documents are just returned with their IDs.
+	 */
+	public boolean withResultData = true;
+
 	public List<Sorting> sortings = new ArrayList<>();
 
 	public List<InternalResultFilter> filters = new ArrayList<>();

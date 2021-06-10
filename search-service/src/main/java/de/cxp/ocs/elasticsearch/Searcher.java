@@ -174,7 +174,7 @@ public class Searcher {
 				.from(parameters.offset);
 
 		List<SortBuilder<?>> variantSortings = sortingHandler.applySorting(parameters.sortings, searchSourceBuilder);
-		setFetchSources(searchSourceBuilder, variantSortings);
+		setFetchSources(searchSourceBuilder, variantSortings, parameters.withResultData);
 
 		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters);
 		QueryBuilder postFilter = filterContext.getJoinedPostFilters();
@@ -342,16 +342,21 @@ public class Searcher {
 	}
 
 
-	private void setFetchSources(SearchSourceBuilder searchSourceBuilder, List<SortBuilder<?>> variantSortings) {
-		List<String> includeFields = new ArrayList<>();
-		includeFields.add(FieldConstants.RESULT_DATA + ".*");
-		// TODO: return search data only if configured
-		includeFields.add(FieldConstants.SEARCH_DATA + ".*");
-		if (variantSortings.size() > 0) {
-			includeFields.add(FieldConstants.SORT_DATA + ".*");
-		}
+	private void setFetchSources(SearchSourceBuilder searchSourceBuilder, List<SortBuilder<?>> variantSortings, boolean fetchSources) {
+		if (fetchSources) {
+			List<String> includeFields = new ArrayList<>();
+			includeFields.add(FieldConstants.RESULT_DATA + ".*");
+			// TODO: return search data only if configured
+			includeFields.add(FieldConstants.SEARCH_DATA + ".*");
+			if (variantSortings.size() > 0) {
+				includeFields.add(FieldConstants.SORT_DATA + ".*");
+			}
 
-		searchSourceBuilder.fetchSource(includeFields.toArray(new String[includeFields.size()]), null);
+			searchSourceBuilder.fetchSource(includeFields.toArray(new String[includeFields.size()]), null);
+		}
+		else {
+			searchSourceBuilder.fetchSource(FetchSourceContext.DO_NOT_FETCH_SOURCE);
+		}
 	}
 
 

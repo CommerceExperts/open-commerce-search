@@ -7,6 +7,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.jsontype.NamedType;
@@ -16,6 +18,7 @@ import de.cxp.ocs.config.ApplicationProperties;
 import de.cxp.ocs.config.DefaultSearchConfigrationProvider;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.RestClientBuilderFactory;
+import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.params.DynamicProductSet;
 import de.cxp.ocs.model.params.ProductSet;
 import de.cxp.ocs.model.params.StaticProductSet;
@@ -60,6 +63,7 @@ public class Application {
 		SimpleModule module = new SimpleModule();
 
 		module.setMixInAnnotation(ProductSet.class, WithTypeInfo.class);
+		module.setMixInAnnotation(Document.class, NoNullValues.class);
 		module.registerSubtypes(new NamedType(DynamicProductSet.class, "dynamic"), new NamedType(StaticProductSet.class, "static"));
 
 		return module;
@@ -67,5 +71,8 @@ public class Application {
 
 	@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 	public static abstract class WithTypeInfo {}
+
+	@JsonInclude(Include.NON_NULL)
+	public static abstract class NoNullValues {}
 
 }

@@ -3,7 +3,6 @@ package de.cxp.ocs.elasticsearch;
 import static com.google.common.base.Predicates.instanceOf;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
@@ -29,8 +28,10 @@ public class ResultMapper {
 			variantHit = variantHits.getAt(0);
 		}
 
-		ResultHit resultHit = new ResultHit().setDocument(getResultDocument(hit, variantHit))
-				.setIndex(hit.getIndex()).setMatchedQueries(hit.getMatchedQueries());
+		ResultHit resultHit = new ResultHit()
+				.setDocument(getResultDocument(hit, variantHit))
+				.setIndex(hit.getIndex())
+				.setMatchedQueries(hit.getMatchedQueries());
 
 		addSortFieldPrefix(hit, resultHit, sortedFields);
 		return resultHit;
@@ -52,7 +53,10 @@ public class ResultMapper {
 	 */
 	@SuppressWarnings("unchecked")
 	private static void addSortFieldPrefix(SearchHit hit, ResultHit resultHit, Map<String, SortOrder> sortedFields) {
-		Object sortData = hit.getSourceAsMap().get(FieldConstants.SORT_DATA);
+		Map<String, Object> source = hit.getSourceAsMap();
+		if (source == null) return;
+
+		Object sortData = source.get(FieldConstants.SORT_DATA);
 		if (sortData != null && sortData instanceof Map && sortedFields.size() > 0) {
 			sortedFields.forEach((fieldName, order) -> {
 				resultHit.document.getData().computeIfPresent(fieldName, (fn, v) -> {
@@ -71,15 +75,19 @@ public class ResultMapper {
 	}
 
 	private static Document getResultDocument(SearchHit hit, SearchHit variantHit) {
-		Map<String, Object> resultFields = new HashMap<>();
-		for (String sourceDataField : new String[] { FieldConstants.SEARCH_DATA, FieldConstants.RESULT_DATA }) {
-			putDataIntoResult(hit.getSourceAsMap(), resultFields, sourceDataField);
-			if (variantHit != null) {
-				putDataIntoResult(variantHit.getSourceAsMap(), resultFields, sourceDataField);
+		Map<String, Object> source = hit.getSourceAsMap();
+		Document document = new Document(hit.getId());
+
+		if (source != null) {
+			for (String sourceDataField : new String[] { FieldConstants.SEARCH_DATA, FieldConstants.RESULT_DATA }) {
+				putDataIntoResult(hit.getSourceAsMap(), document.getData(), sourceDataField);
+				if (variantHit != null) {
+					putDataIntoResult(variantHit.getSourceAsMap(), document.getData(), sourceDataField);
+				}
 			}
 		}
 
-		return new Document(hit.getId()).setData(resultFields);
+		return document;
 	}
 
 	@SuppressWarnings("unchecked")
