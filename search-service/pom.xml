@@ -212,6 +212,9 @@
 		</profile>
 		<profile>
 			<id>searchhub</id>
+			<properties>
+				<docker.tag>searchhub-latest</docker.tag>
+			</properties>
 			<dependencyManagement>
 				<dependencies>
 					<dependency>

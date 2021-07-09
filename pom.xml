@@ -26,6 +26,7 @@
 
 		<docker.repository>commerceexperts</docker.repository>
 		<docker.prefix>ocs-</docker.prefix>
+		<docker.tag>latest</docker.tag>
 		<dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
 
 		<elasticsearch.version>7.12.1</elasticsearch.version>
@@ -246,7 +247,7 @@
 						<to>
 							<image>${docker.repository}/${docker.prefix}${project.artifactId}:${project.version}</image>
 							<tags>
-								<tag>latest</tag>
+								<tag>${docker.tag}</tag>
 							</tags>
 						</to>
 						<container>
