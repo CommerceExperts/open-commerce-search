@@ -1,6 +1,7 @@
 package de.cxp.ocs.elasticsearch;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -12,6 +13,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.action.DocWriteRequest.OpType;
+import org.elasticsearch.action.DocWriteResponse.Result;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -38,7 +41,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 
 	private final IndexSettings				indexSettings;
 	private final RestHighLevelClient		restClient;
-	private final ElasticsearchIndexClient indexClient;
+	private final ElasticsearchIndexClient	indexClient;
 
 	public ElasticsearchIndexer(
 			IndexSettings settings,
@@ -187,7 +190,8 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 				log.warn("{} bulk insertions failed. {} successes", failures, success);
 			}
 			return success;
-		} else {
+		}
+		else {
 			return bulkResponse.getItems().length;
 		}
 	}
@@ -238,4 +242,44 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		indexClient.deleteIndex(indexName, false);
 	}
 
+	@Override
+	protected boolean _update(String index, IndexableItem doc) {
+		// do some validation?
+		try {
+			return indexClient.updateDocument(index, doc).getResult().equals(Result.UPDATED);
+		}
+		catch (IOException e) {
+			log.error("update for document with id {} failed", doc.getId(), e);
+			throw new UncheckedIOException(e);
+		}
+	}
+
+	@Override
+	protected boolean _put(String indexName, Boolean replaceExisting, IndexableItem doc) {
+		try {
+			if (replaceExisting) {
+				Result result = indexClient.indexRecord(indexName, doc, OpType.INDEX).getResult();
+				return result.equals(Result.CREATED) || result.equals(Result.UPDATED);
+			}
+			else {
+				Result result = indexClient.indexRecord(indexName, doc, OpType.CREATE).getResult();
+				return result.equals(Result.CREATED);
+			}
+		}
+		catch (IOException e) {
+			log.error("indexing document with id {} failed", doc.getId(), e);
+			throw new UncheckedIOException(e);
+		}
+	}
+
+	@Override
+	public boolean delete(String index, String id) {
+		try {
+			return indexClient.deleteDocument(index, id).getResult().equals(Result.DELETED);
+		}
+		catch (IOException e) {
+			log.error("deleting document with id {} failed", id, e);
+			throw new UncheckedIOException(e);
+		}
+	}
 }

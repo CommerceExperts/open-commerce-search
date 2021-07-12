@@ -121,4 +121,22 @@ public abstract class AbstractIndexer implements FullIndexationService {
 
 	protected abstract void deleteIndex(String indexName);
 
+	public boolean update(String index, Document doc) {
+		boolean isIndexable = preProcess(doc);
+		if (isIndexable) return _update(index, indexItemConverter.toIndexableItem(doc));
+		else return false;
+	}
+
+	protected abstract boolean _update(String index, IndexableItem indexableItem);
+
+	public boolean putDocument(String indexName, Boolean replaceExisting, Document doc) {
+		boolean isIndexable = preProcess(doc);
+		if (isIndexable) return _put(indexName, replaceExisting, indexItemConverter.toIndexableItem(doc));
+		else return false;
+	}
+
+	protected abstract boolean _put(String indexName, Boolean replaceExisting, IndexableItem indexableItem);
+
+	public abstract boolean delete(String index, String id);
+
 }

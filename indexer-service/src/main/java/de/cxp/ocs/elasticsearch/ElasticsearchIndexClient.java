@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
+import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest.AliasActions;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
@@ -22,10 +23,14 @@ import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteRequest;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.support.IndicesOptions;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.action.update.UpdateRequest;
+import org.elasticsearch.action.update.UpdateResponse;
 import org.elasticsearch.client.GetAliasesResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
@@ -40,7 +45,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.cxp.ocs.indexer.model.IndexableItem;
-import de.cxp.ocs.indexer.model.MasterItem;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -210,11 +214,13 @@ class ElasticsearchIndexClient {
 	 * use indexRecords() or indexRecordsChunkwise() instead.
 	 * 
 	 * @param record
+	 * @param opType
 	 * @return
 	 * @throws IOException
 	 */
-	public IndexResponse indexRecord(String indexName, MasterItem record) throws IOException {
+	public IndexResponse indexRecord(String indexName, IndexableItem record, OpType opType) throws IOException {
 		IndexRequest indexRequest = asIndexRequest(indexName, record);
+		indexRequest.opType(opType);
 		return highLevelClient.index(indexRequest, RequestOptions.DEFAULT);
 	}
 
@@ -307,5 +313,16 @@ class ElasticsearchIndexClient {
 			return Optional.empty();
 		}
 		return Optional.ofNullable(settings.getIndexToSettings().get(indexName));
+	}
+
+	public UpdateResponse updateDocument(String index, IndexableItem doc) throws IOException {
+		UpdateRequest updateRequest = new UpdateRequest(index, doc.getId());
+		updateRequest.doc(asIndexRequest(index, doc));
+		return highLevelClient.update(updateRequest, RequestOptions.DEFAULT);
+	}
+
+	public DeleteResponse deleteDocument(String index, String id) throws IOException {
+		DeleteRequest deleteRequest = new DeleteRequest(index, id);
+		return highLevelClient.delete(deleteRequest, RequestOptions.DEFAULT);
 	}
 }
