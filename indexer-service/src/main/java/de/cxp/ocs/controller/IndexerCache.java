@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.elasticsearch.common.inject.Singleton;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -15,6 +16,7 @@ import de.cxp.ocs.indexer.AbstractIndexer;
 import de.cxp.ocs.indexer.IndexerFactory;
 import de.cxp.ocs.spi.indexer.IndexerConfigurationProvider;
 
+@Component
 @Singleton
 public class IndexerCache {
 
