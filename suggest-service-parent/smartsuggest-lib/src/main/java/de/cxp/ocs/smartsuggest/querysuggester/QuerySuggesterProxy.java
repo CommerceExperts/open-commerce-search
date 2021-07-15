@@ -105,7 +105,7 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 				List<Suggestion> cachedResults = firstLetterCache.get(normalizedTerm,
 						() -> innerQuerySuggester.get().suggest(normalizedTerm, maxSuggestionsPerCacheEntry, tags));
 
-				if (maxResults < maxSuggestionsPerCacheEntry) {
+				if (maxResults < maxSuggestionsPerCacheEntry && cachedResults.size() > maxResults) {
 					cachedResults = cachedResults.subList(0, maxResults);
 				}
 
