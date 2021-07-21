@@ -12,6 +12,11 @@ endpoints:
   prometheus:
     sensitive: true
 
+management:
+  metrics:
+    tags:
+      application: "${spring.application.name}"
+
 spring:
   jackson:
     deserialization:

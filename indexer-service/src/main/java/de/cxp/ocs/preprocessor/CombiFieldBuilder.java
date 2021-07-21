@@ -54,12 +54,10 @@ public class CombiFieldBuilder {
 	 *        the item to index.
 	 */
 	public void build(Document targetItem) {
-		if (targetItem instanceof Product) {
-			generateCombiFields(targetItem, Field::isMasterLevel);
-			if (((Product) targetItem).getVariants() != null) {
-				for (Document variant : ((Product) targetItem).getVariants()) {
-					generateCombiFields(variant, Field::isVariantLevel);
-				}
+		generateCombiFields(targetItem, Field::isMasterLevel);
+		if (targetItem instanceof Product && ((Product) targetItem).getVariants() != null) {
+			for (Document variant : ((Product) targetItem).getVariants()) {
+				generateCombiFields(variant, Field::isVariantLevel);
 			}
 		}
 	}

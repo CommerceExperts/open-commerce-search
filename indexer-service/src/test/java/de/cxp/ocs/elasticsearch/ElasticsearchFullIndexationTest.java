@@ -2,9 +2,8 @@ package de.cxp.ocs.elasticsearch;
 
 import static de.cxp.ocs.config.FieldType.*;
 import static de.cxp.ocs.config.FieldUsage.*;
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Matchers.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
@@ -13,6 +12,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.internal.matchers.Equals;
 
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.conf.IndexConfiguration;
@@ -22,7 +22,7 @@ import de.cxp.ocs.model.index.BulkImportData;
 import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.model.index.Document;
 
-public class ElasticsearchIndexerTest {
+public class ElasticsearchFullIndexationTest {
 
 	ElasticsearchIndexClient mockedIndexClient = mock(ElasticsearchIndexClient.class);
 
@@ -53,7 +53,7 @@ public class ElasticsearchIndexerTest {
 
 		when(mockedIndexClient.indexRecords(any(), any())).thenReturn(Optional.empty());
 		underTest.add(data);
-		verify(mockedIndexClient).indexRecords(argThat(is(importSession.temporaryIndexName)), anyObject());
+		verify(mockedIndexClient).indexRecords((String) argThat(new Equals(importSession.temporaryIndexName)), anyObject());
 
 		underTest.done(importSession);
 		verify(mockedIndexClient).updateAlias(importSession.finalIndexName, null, importSession.temporaryIndexName);

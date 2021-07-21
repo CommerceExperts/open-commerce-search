@@ -30,7 +30,7 @@ public class UpdateIndexController implements UpdateIndexService {
 	@Override
 	public boolean patchDocument(@PathVariable("indexName") String indexName, @RequestBody Document doc) {
 		try {
-			return indexerManager.getIndexer(indexName).update(indexName, doc);
+			return indexerManager.getIndexer(indexName).patchDocument(indexName, doc);
 		}
 		catch (ExecutionException e) {
 			log.error("failed to get indexer", e);
@@ -43,7 +43,7 @@ public class UpdateIndexController implements UpdateIndexService {
 	@Override
 	public boolean putDocument(
 			@PathVariable("indexName") String indexName, 
-			@RequestParam(name = "replaceExisting", defaultValue = "false") Boolean replaceExisting, 
+			@RequestParam(name = "replaceExisting", defaultValue = "true") Boolean replaceExisting,
 			@RequestBody Document doc) {
 		try {
 			return indexerManager.getIndexer(indexName).putDocument(indexName, replaceExisting, doc);

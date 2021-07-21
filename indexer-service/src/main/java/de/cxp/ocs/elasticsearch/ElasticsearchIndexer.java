@@ -17,19 +17,25 @@ import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.DocWriteResponse.Result;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.common.settings.Settings;
 
+import de.cxp.ocs.DocumentMapper;
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.IndexSettings;
 import de.cxp.ocs.indexer.AbstractIndexer;
 import de.cxp.ocs.indexer.model.IndexableItem;
+import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import fr.pilato.elasticsearch.tools.ElasticsearchBeyonder;
 import fr.pilato.elasticsearch.tools.SettingsFinder.Defaults;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -243,7 +249,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	@Override
-	protected boolean _update(String index, IndexableItem doc) {
+	protected boolean _patch(String index, IndexableItem doc) {
 		// do some validation?
 		try {
 			return indexClient.updateDocument(index, doc).getResult().equals(Result.UPDATED);
@@ -282,4 +288,17 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 			throw new UncheckedIOException(e);
 		}
 	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	protected Document _get(String indexName, @NonNull String id) {
+		try {
+			GetResponse esDoc = restClient.get(new GetRequest(indexName, id), RequestOptions.DEFAULT);
+			return DocumentMapper.mapToOriginalDocument(id, esDoc.getSource(), getFieldConfIndex());
+		}
+		catch (IOException ioe) {
+			throw new UncheckedIOException(ioe);
+		}
+	}
+
 }

@@ -174,6 +174,11 @@ public class Searcher {
 				.from(parameters.offset);
 
 		List<SortBuilder<?>> variantSortings = sortingHandler.applySorting(parameters.sortings, searchSourceBuilder);
+
+		if (searchSourceBuilder.sorts() == null || searchSourceBuilder.sorts().isEmpty()) {
+			addRescorersFailsafe(parameters, searchSourceBuilder);
+		}
+
 		setFetchSources(searchSourceBuilder, variantSortings, parameters.withResultData);
 
 		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters);
@@ -231,9 +236,6 @@ public class Searcher {
 			}
 
 			searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
-			if (searchSourceBuilder.sorts() == null || searchSourceBuilder.sorts().isEmpty()) {
-				addRescorersFailsafe(parameters, searchSourceBuilder);
-			}
 
 			if (log.isTraceEnabled()) {
 				log.trace(QUERY_MARKER, "{ \"user_query\": \"{}\", \"query\": {} }", parameters.userQuery, searchSourceBuilder.toString().replaceAll("[\n\\s]+", " "));

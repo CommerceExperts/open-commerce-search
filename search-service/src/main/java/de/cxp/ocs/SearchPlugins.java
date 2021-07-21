@@ -80,7 +80,10 @@ public class SearchPlugins {
 	public static <T> Optional<T> initialize(String clazz, Map<String, Supplier<? extends T>> suppliers, Map<String, String> settings) {
 		if (clazz == null || suppliers == null) return Optional.empty();
 		Supplier<? extends T> supplier = suppliers.get(clazz);
-		if (supplier == null) return Optional.empty();
+		if (supplier == null) {
+			log.error("no supplier found for configured plugin class {}", clazz);
+			return Optional.empty();
+		}
 
 		try {
 			T instance = supplier.get();

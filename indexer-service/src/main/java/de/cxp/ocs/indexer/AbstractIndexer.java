@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang3.LocaleUtils;
 
@@ -27,7 +28,7 @@ public abstract class AbstractIndexer implements FullIndexationService {
 
 	@NonNull
 	private final List<DocumentPreProcessor> dataPreProcessors;
-	
+
 	@Getter(value = AccessLevel.PROTECTED)
 	@NonNull
 	final FieldConfigIndex fieldConfIndex;
@@ -121,13 +122,27 @@ public abstract class AbstractIndexer implements FullIndexationService {
 
 	protected abstract void deleteIndex(String indexName);
 
-	public boolean update(String index, Document doc) {
-		boolean isIndexable = preProcess(doc);
-		if (isIndexable) return _update(index, indexItemConverter.toIndexableItem(doc));
-		else return false;
+	public boolean patchDocument(String index, Document doc) {
+		Set<String> fetchFields = DocumentPatcher.getRequiredFieldsForMerge(doc, fieldConfIndex);
+
+		Document patchedDoc = doc;
+		if (!fetchFields.isEmpty()) {
+			// fetch the document from ES and patch it
+			Document indexedDoc = _get(index, doc.getId());
+			patchedDoc = DocumentPatcher.patchDocument(doc, indexedDoc, fieldConfIndex);
+
+		}
+		// XXX for some Preprocessor this might lead to unwanted results,
+		// because we also have data from the index, which were already
+		// preprocessed => Preprocessor should be idempotent!
+		preProcess(patchedDoc);
+		IndexableItem indexableDoc = indexItemConverter.toIndexableItem(patchedDoc);
+		return _patch(index, indexableDoc);
 	}
 
-	protected abstract boolean _update(String index, IndexableItem indexableItem);
+	protected abstract Document _get(@NonNull String indexName, @NonNull String docId);
+
+	protected abstract boolean _patch(String index, IndexableItem indexableItem);
 
 	public boolean putDocument(String indexName, Boolean replaceExisting, Document doc) {
 		boolean isIndexable = preProcess(doc);
