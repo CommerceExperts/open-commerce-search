@@ -267,10 +267,21 @@ public class ElasticsearchCRUDTest {
 		putDocument(indexName, doc);
 		assertIndexExists(indexName, true);
 
-		deleteDocument(indexName, id, doc);
+		deleteDocument(indexName, id);
 
 		IndexableItem indexedDoc = getIndexedDocument(indexName, id);
 		assertNull(indexedDoc);
+	}
+
+	@Test
+	public void deleteNonExistingDoc() throws Exception {
+		String indexName = "patch_test";
+		String id = "h1";
+		Document doc = new Document(id).set("title", "document h");
+		putDocument(indexName, doc);
+		assertIndexExists(indexName, true);
+
+		deleteDocument(indexName, "other", 404, false);
 	}
 
 	void assertIndexExists(String indexName, boolean exists) throws Exception {
@@ -298,13 +309,16 @@ public class ElasticsearchCRUDTest {
 				.andExpect(MockMvcResultMatchers.content().string("true"));
 	}
 
-	void deleteDocument(String indexName, String id, Document doc) throws JsonProcessingException, Exception {
-		String docBody = objectMapper.writeValueAsString(doc);
+	void deleteDocument(String indexName, String id) throws JsonProcessingException, Exception {
+		deleteDocument(indexName, id, 200, true);
+	}
+
+	void deleteDocument(String indexName, String id, int expectedStatus, boolean expectedResponse) throws JsonProcessingException, Exception {
 		mockMvc.perform(MockMvcRequestBuilders
 				.delete("/indexer-api/v1/update/" + indexName + "?id=" + id)
 				.contentType(MediaType.APPLICATION_JSON))
-				.andExpect(MockMvcResultMatchers.status().is(200))
-				.andExpect(MockMvcResultMatchers.content().string("true"));
+				.andExpect(MockMvcResultMatchers.status().is(expectedStatus))
+				.andExpect(MockMvcResultMatchers.content().string(Boolean.toString(expectedResponse)));
 	}
 
 	IndexableItem getIndexedDocument(String indexName, String id) throws IOException {

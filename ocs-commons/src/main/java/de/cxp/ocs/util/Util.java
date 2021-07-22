@@ -5,11 +5,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -72,15 +73,7 @@ public final class Util {
 
 		if (oldValue instanceof Collection<?>) {
 			try {
-				if (newValue instanceof Collection<?>) {
-					((Collection<Object>) oldValue).addAll((Collection<Object>) newValue);
-				}
-				else if (newValue.getClass().isArray()) {
-					((Collection<Object>) oldValue).addAll(Arrays.asList((Object[]) newValue));
-				}
-				else {
-					((Collection<Object>) oldValue).add(newValue);
-				}
+				unwrapIterable(newValue, ((Collection<Object>) oldValue)::addAll, ((Collection<Object>) oldValue)::add);
 				return oldValue;
 			}
 			catch (UnsupportedOperationException gnah) {
@@ -90,15 +83,7 @@ public final class Util {
 
 		if (newValue instanceof Collection<?>) {
 			try {
-				if (oldValue instanceof Collection<?>) {
-					((Collection<Object>) newValue).addAll((Collection<Object>) oldValue);
-				}
-				else if (newValue.getClass().isArray()) {
-					((Collection<Object>) newValue).addAll(Arrays.asList((Object[]) oldValue));
-				}
-				else {
-					((Collection<Object>) newValue).add(oldValue);
-				}
+				unwrapIterable(oldValue, ((Collection<Object>) newValue)::addAll, ((Collection<Object>) newValue)::add);
 				return newValue;
 			}
 			catch (UnsupportedOperationException gnah) {
@@ -107,20 +92,23 @@ public final class Util {
 			}
 		}
 
-		Set<Object> collection = new HashSet<>();
-		if (oldValue.getClass().isArray()) {
-			collection.addAll(Arrays.asList((Object[]) oldValue));
-		}
-		else {
-			collection.add(oldValue);
-		}
-		if (newValue.getClass().isArray()) {
-			collection.addAll(Arrays.asList((Object[]) newValue));
-		}
-		else {
-			collection.add(newValue);
-		}
+		Set<Object> collection = new LinkedHashSet<>();
+		unwrapIterable(oldValue, collection::addAll, collection::add);
+		unwrapIterable(newValue, collection::addAll, collection::add);
 		return collection;
+	}
+
+	private static void unwrapIterable(Object o, Consumer<Collection<Object>> collectionConsumer, Consumer<Object> objectConsumer) {
+		if (o == null) return;
+		if (o instanceof Collection<?>) {
+			collectionConsumer.accept(((Collection<Object>) o));
+		}
+		else if (o.getClass().isArray()) {
+			collectionConsumer.accept(Arrays.asList((Object[]) o));
+		}
+		else {
+			objectConsumer.accept(o);
+		}
 	}
 
 	public static Collection<String> toStringCollection(Object value) {

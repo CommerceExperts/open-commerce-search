@@ -10,6 +10,7 @@ import org.apache.commons.lang3.LocaleUtils;
 
 import de.cxp.ocs.api.indexer.FullIndexationService;
 import de.cxp.ocs.api.indexer.ImportSession;
+import de.cxp.ocs.api.indexer.UpdateIndexService;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.indexer.model.IndexableItem;
@@ -24,7 +25,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public abstract class AbstractIndexer implements FullIndexationService {
+public abstract class AbstractIndexer implements FullIndexationService, UpdateIndexService {
 
 	@NonNull
 	private final List<DocumentPreProcessor> dataPreProcessors;
@@ -122,7 +123,9 @@ public abstract class AbstractIndexer implements FullIndexationService {
 
 	protected abstract void deleteIndex(String indexName);
 
-	public boolean patchDocument(String index, Document doc) {
+	protected abstract Document _get(@NonNull String indexName, @NonNull String docId);
+
+	public Result patchDocument(String index, Document doc) {
 		Set<String> fetchFields = DocumentPatcher.getRequiredFieldsForMerge(doc, fieldConfIndex);
 
 		Document patchedDoc = doc;
@@ -140,18 +143,14 @@ public abstract class AbstractIndexer implements FullIndexationService {
 		return _patch(index, indexableDoc);
 	}
 
-	protected abstract Document _get(@NonNull String indexName, @NonNull String docId);
+	protected abstract Result _patch(String index, IndexableItem indexableItem);
 
-	protected abstract boolean _patch(String index, IndexableItem indexableItem);
-
-	public boolean putDocument(String indexName, Boolean replaceExisting, Document doc) {
+	public Result putDocument(String indexName, Boolean replaceExisting, Document doc) {
 		boolean isIndexable = preProcess(doc);
 		if (isIndexable) return _put(indexName, replaceExisting, indexItemConverter.toIndexableItem(doc));
-		else return false;
+		else return Result.NOOP;
 	}
 
-	protected abstract boolean _put(String indexName, Boolean replaceExisting, IndexableItem indexableItem);
-
-	public abstract boolean delete(String index, String id);
+	protected abstract Result _put(String indexName, Boolean replaceExisting, IndexableItem indexableItem);
 
 }

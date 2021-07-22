@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.DocWriteRequest.OpType;
-import org.elasticsearch.action.DocWriteResponse.Result;
+import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.get.GetRequest;
@@ -26,6 +26,7 @@ import org.elasticsearch.common.settings.Settings;
 
 import de.cxp.ocs.DocumentMapper;
 import de.cxp.ocs.api.indexer.ImportSession;
+import de.cxp.ocs.api.indexer.UpdateIndexService;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.IndexSettings;
 import de.cxp.ocs.indexer.AbstractIndexer;
@@ -249,10 +250,11 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	@Override
-	protected boolean _patch(String index, IndexableItem doc) {
+	protected UpdateIndexService.Result _patch(String index, IndexableItem doc) {
 		// do some validation?
 		try {
-			return indexClient.updateDocument(index, doc).getResult().equals(Result.UPDATED);
+			DocWriteResponse.Result result = indexClient.updateDocument(index, doc).getResult();
+			return translateResult(result);
 		}
 		catch (IOException e) {
 			log.error("update for document with id {} failed", doc.getId(), e);
@@ -261,15 +263,15 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	@Override
-	protected boolean _put(String indexName, Boolean replaceExisting, IndexableItem doc) {
+	protected UpdateIndexService.Result _put(String indexName, Boolean replaceExisting, IndexableItem doc) {
 		try {
 			if (replaceExisting) {
-				Result result = indexClient.indexRecord(indexName, doc, OpType.INDEX).getResult();
-				return result.equals(Result.CREATED) || result.equals(Result.UPDATED);
+				DocWriteResponse.Result result = indexClient.indexRecord(indexName, doc, OpType.INDEX).getResult();
+				return translateResult(result);
 			}
 			else {
-				Result result = indexClient.indexRecord(indexName, doc, OpType.CREATE).getResult();
-				return result.equals(Result.CREATED);
+				DocWriteResponse.Result result = indexClient.indexRecord(indexName, doc, OpType.CREATE).getResult();
+				return translateResult(result);
 			}
 		}
 		catch (IOException e) {
@@ -279,9 +281,10 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	@Override
-	public boolean delete(String index, String id) {
+	public UpdateIndexService.Result deleteDocument(String indexName, String id) {
 		try {
-			return indexClient.deleteDocument(index, id).getResult().equals(Result.DELETED);
+			DocWriteResponse.Result result = indexClient.deleteDocument(indexName, id).getResult();
+			return translateResult(result);
 		}
 		catch (IOException e) {
 			log.error("deleting document with id {} failed", id, e);
@@ -299,6 +302,22 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		catch (IOException ioe) {
 			throw new UncheckedIOException(ioe);
 		}
+	}
+
+	private UpdateIndexService.Result translateResult(org.elasticsearch.action.DocWriteResponse.Result result) {
+		switch (result) {
+			case CREATED:
+				return UpdateIndexService.Result.CREATED;
+			case DELETED:
+				return UpdateIndexService.Result.DELETED;
+			case NOOP:
+				return UpdateIndexService.Result.NOOP;
+			case NOT_FOUND:
+				return UpdateIndexService.Result.NOT_FOUND;
+			case UPDATED:
+				return UpdateIndexService.Result.UPDATED;
+		}
+		return null;
 	}
 
 }
