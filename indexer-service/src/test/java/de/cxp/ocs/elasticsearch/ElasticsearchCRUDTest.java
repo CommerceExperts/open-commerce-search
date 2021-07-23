@@ -40,6 +40,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.cxp.ocs.Application;
+import de.cxp.ocs.api.indexer.UpdateIndexService.Result;
 import de.cxp.ocs.conf.ApplicationProperties;
 import de.cxp.ocs.controller.IndexerCache;
 import de.cxp.ocs.controller.UpdateIndexController;
@@ -281,7 +282,7 @@ public class ElasticsearchCRUDTest {
 		putDocument(indexName, doc);
 		assertIndexExists(indexName, true);
 
-		deleteDocument(indexName, "other", 404, false);
+		deleteDocument(indexName, "other", 200, Result.NOT_FOUND);
 	}
 
 	void assertIndexExists(String indexName, boolean exists) throws Exception {
@@ -289,36 +290,44 @@ public class ElasticsearchCRUDTest {
 		assertEquals(exists, actualExists);
 	}
 
-	void putDocument(String indexName, Document doc) throws Exception {
+	private void putDocument(String indexName, Document doc) throws Exception {
+		putDocument(indexName, doc, 200, Result.CREATED);
+	}
+
+	void putDocument(String indexName, Document doc, int expectedStatus, Result expectedResult) throws Exception {
 		String docBody = objectMapper.writeValueAsString(doc);
 		mockMvc.perform(MockMvcRequestBuilders
 				.put("/indexer-api/v1/update/" + indexName)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(docBody))
-				.andExpect(MockMvcResultMatchers.status().is(201))
-				.andExpect(MockMvcResultMatchers.content().string("true"));
+				.andExpect(MockMvcResultMatchers.status().is(expectedStatus))
+				.andExpect(MockMvcResultMatchers.content().string(objectMapper.writeValueAsString(expectedResult)));
 	}
 
-	void patchDocument(String indexName, Document doc) throws Exception {
+	private void patchDocument(String indexName, Document doc) throws Exception {
+		patchDocument(indexName, doc, 200, Result.UPDATED);
+	}
+
+	void patchDocument(String indexName, Document doc, int expectedStatus, Result expectedResult) throws Exception {
 		String docBody = objectMapper.writeValueAsString(doc);
 		mockMvc.perform(MockMvcRequestBuilders
 				.patch("/indexer-api/v1/update/" + indexName)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(docBody))
-				.andExpect(MockMvcResultMatchers.status().is(200))
-				.andExpect(MockMvcResultMatchers.content().string("true"));
+				.andExpect(MockMvcResultMatchers.status().is(expectedStatus))
+				.andExpect(MockMvcResultMatchers.content().string(objectMapper.writeValueAsString(expectedResult)));
 	}
 
 	void deleteDocument(String indexName, String id) throws JsonProcessingException, Exception {
-		deleteDocument(indexName, id, 200, true);
+		deleteDocument(indexName, id, 200, Result.DELETED);
 	}
 
-	void deleteDocument(String indexName, String id, int expectedStatus, boolean expectedResponse) throws JsonProcessingException, Exception {
+	void deleteDocument(String indexName, String id, int expectedStatus, Result expectedResult) throws JsonProcessingException, Exception {
 		mockMvc.perform(MockMvcRequestBuilders
 				.delete("/indexer-api/v1/update/" + indexName + "?id=" + id)
 				.contentType(MediaType.APPLICATION_JSON))
 				.andExpect(MockMvcResultMatchers.status().is(expectedStatus))
-				.andExpect(MockMvcResultMatchers.content().string(Boolean.toString(expectedResponse)));
+				.andExpect(MockMvcResultMatchers.content().string(objectMapper.writeValueAsString(expectedResult)));
 	}
 
 	IndexableItem getIndexedDocument(String indexName, String id) throws IOException {
