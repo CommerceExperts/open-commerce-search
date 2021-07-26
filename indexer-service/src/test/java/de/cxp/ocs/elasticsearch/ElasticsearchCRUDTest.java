@@ -106,6 +106,17 @@ public class ElasticsearchCRUDTest {
 	@Test
 	public void freshIndexNotExists() throws Exception {
 		assertIndexExists("nonexisting_index", false);
+
+		mockMvc.perform(MockMvcRequestBuilders
+				.patch("/indexer-api/v1/update/nonexisting")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{}"))
+				.andExpect(MockMvcResultMatchers.status().is(404));
+
+		mockMvc.perform(MockMvcRequestBuilders
+				.delete("/indexer-api/v1/update/nonexisting?id=123")
+				.contentType(MediaType.APPLICATION_JSON))
+				.andExpect(MockMvcResultMatchers.status().is(404));
 	}
 
 	@Test
