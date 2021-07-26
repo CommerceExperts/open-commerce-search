@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.19.0</version>
+		<version>0.21.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
@@ -17,6 +17,7 @@
 
 	<properties>
 		<lucene.version>8.8.0</lucene.version>
+		<micrometer.version>1.5.14</micrometer.version>
 	</properties>
 	
 	<dependencyManagement>
@@ -24,12 +25,12 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>smartsuggest-lib</artifactId>
-				<version>0.4.3</version>
+				<version>0.5.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-suggest-data-provider</artifactId>
-				<version>0.3.0</version>
+				<version>0.4.0</version>
 			</dependency>
 			
 			<dependency>
@@ -46,6 +47,22 @@
 				<groupId>org.apache.lucene</groupId>
 				<artifactId>lucene-suggest</artifactId>
 				<version>${lucene.version}</version>
+			</dependency>
+			
+			<dependency>
+				<groupId>io.micrometer</groupId>
+				<artifactId>micrometer-core</artifactId>
+				<version>${micrometer.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.micrometer</groupId>
+				<artifactId>micrometer-registry-prometheus</artifactId>
+				<version>${micrometer.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.micrometer</groupId>
+				<artifactId>micrometer-registry-jmx</artifactId>
+				<version>${micrometer.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

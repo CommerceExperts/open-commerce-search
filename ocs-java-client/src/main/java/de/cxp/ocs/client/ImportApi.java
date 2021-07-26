@@ -1,6 +1,7 @@
 package de.cxp.ocs.client;
 
 import de.cxp.ocs.api.indexer.ImportSession;
+import de.cxp.ocs.api.indexer.UpdateIndexService.Result;
 import de.cxp.ocs.model.index.BulkImportData;
 import de.cxp.ocs.model.index.Document;
 import feign.Headers;
@@ -26,12 +27,12 @@ interface ImportApi {
 
 	@RequestLine("PATCH /indexer-api/v1/update/{indexName}")
 	@Headers("Content-Type: application/json")
-	boolean patchDocument(@Param("indexName") String indexName, Document doc);
+	Result patchDocument(@Param("indexName") String indexName, Document doc);
 
 	@RequestLine("PUT /indexer-api/v1/update/{indexName}?replaceExisting={replaceExisting}")
 	@Headers("Content-Type: application/json")
-	boolean putDocument(@Param("indexName") String indexName, @Param("replaceExisting") Boolean replaceExisting, Document doc);
+	Result putDocument(@Param("indexName") String indexName, @Param("replaceExisting") Boolean replaceExisting, Document doc);
 
 	@RequestLine("DELETE /indexer-api/v1/update/{indexName}?id={id}")
-	boolean deleteDocument(@Param("indexName") String indexName, @Param("id") String id);
+	Result deleteDocument(@Param("indexName") String indexName, @Param("id") String id);
 }

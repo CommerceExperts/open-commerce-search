@@ -7,12 +7,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.17.4</version>
+		<version>0.21.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>ocs-commons</artifactId>
-	<version>0.7.2</version>
+	<version>0.8.0</version>
 	<packaging>jar</packaging>
 
 	<description>Library that contains common models and utility for the open-commerce-search stack</description>
@@ -39,11 +39,6 @@
 		<dependency>
 			<groupId>fr.pilato.elasticsearch</groupId>
 			<artifactId>elasticsearch-beyonder</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>io.micrometer</groupId>
-			<artifactId>micrometer-registry-prometheus</artifactId>
 		</dependency>
 
 		<dependency>

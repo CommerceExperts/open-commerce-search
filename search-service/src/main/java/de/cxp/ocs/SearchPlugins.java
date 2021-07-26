@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import org.slf4j.MDC;
+
 import de.cxp.ocs.plugin.ExtensionSupplierRegistry;
 import de.cxp.ocs.plugin.PluginManager;
 import de.cxp.ocs.spi.search.ConfigurableExtension;
@@ -78,7 +80,10 @@ public class SearchPlugins {
 	public static <T> Optional<T> initialize(String clazz, Map<String, Supplier<? extends T>> suppliers, Map<String, String> settings) {
 		if (clazz == null || suppliers == null) return Optional.empty();
 		Supplier<? extends T> supplier = suppliers.get(clazz);
-		if (supplier == null) return Optional.empty();
+		if (supplier == null) {
+			log.error("no supplier found for configured plugin class {}", clazz);
+			return Optional.empty();
+		}
 
 		try {
 			T instance = supplier.get();
@@ -96,8 +101,11 @@ public class SearchPlugins {
 	public static <T> List<T> initialize(List<String> classNames, Map<String, Supplier<? extends T>> suppliers, Map<String, Map<String, String>> pluginSettings) {
 		List<T> instances = new ArrayList<>(classNames.size());
 		for (String clazz : classNames) {
-			SearchPlugins.initialize(clazz, suppliers, pluginSettings.get(clazz))
-					.ifPresent(instances::add);
+			Optional<T> initialized = SearchPlugins.initialize(clazz, suppliers, pluginSettings.get(clazz));
+			initialized.ifPresent(i -> {
+				instances.add(i);
+				log.info("initialized plugin class {} for tenant {}", clazz, MDC.get("tenant"));
+			});
 		}
 		return instances;
 	}

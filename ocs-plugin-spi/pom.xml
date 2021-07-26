@@ -7,12 +7,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.20.0</version>
+		<version>0.21.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>ocs-plugin-spi</artifactId>
-	<version>0.7.0</version>
+	<version>0.8.0</version>
 	<packaging>jar</packaging>
 
 	<description>Service Provider Interface for Plugins that could be optionally added to the services</description>

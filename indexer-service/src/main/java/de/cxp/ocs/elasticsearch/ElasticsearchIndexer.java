@@ -1,6 +1,7 @@
 package de.cxp.ocs.elasticsearch;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -12,21 +13,30 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.action.DocWriteRequest.OpType;
+import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.common.settings.Settings;
 
+import de.cxp.ocs.DocumentMapper;
 import de.cxp.ocs.api.indexer.ImportSession;
+import de.cxp.ocs.api.indexer.UpdateIndexService;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.IndexSettings;
 import de.cxp.ocs.indexer.AbstractIndexer;
 import de.cxp.ocs.indexer.model.IndexableItem;
+import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import fr.pilato.elasticsearch.tools.ElasticsearchBeyonder;
 import fr.pilato.elasticsearch.tools.SettingsFinder.Defaults;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -38,7 +48,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 
 	private final IndexSettings				indexSettings;
 	private final RestHighLevelClient		restClient;
-	private final ElasticsearchIndexClient indexClient;
+	private final ElasticsearchIndexClient	indexClient;
 
 	public ElasticsearchIndexer(
 			IndexSettings settings,
@@ -187,7 +197,8 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 				log.warn("{} bulk insertions failed. {} successes", failures, success);
 			}
 			return success;
-		} else {
+		}
+		else {
 			return bulkResponse.getItems().length;
 		}
 	}
@@ -236,6 +247,77 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 
 	public void deleteIndex(String indexName) {
 		indexClient.deleteIndex(indexName, false);
+	}
+
+	@Override
+	protected UpdateIndexService.Result _patch(String index, IndexableItem doc) {
+		// do some validation?
+		try {
+			DocWriteResponse.Result result = indexClient.updateDocument(index, doc).getResult();
+			return translateResult(result);
+		}
+		catch (IOException e) {
+			log.error("update for document with id {} failed", doc.getId(), e);
+			throw new UncheckedIOException(e);
+		}
+	}
+
+	@Override
+	protected UpdateIndexService.Result _put(String indexName, Boolean replaceExisting, IndexableItem doc) {
+		try {
+			if (replaceExisting) {
+				DocWriteResponse.Result result = indexClient.indexRecord(indexName, doc, OpType.INDEX).getResult();
+				return translateResult(result);
+			}
+			else {
+				DocWriteResponse.Result result = indexClient.indexRecord(indexName, doc, OpType.CREATE).getResult();
+				return translateResult(result);
+			}
+		}
+		catch (IOException e) {
+			log.error("indexing document with id {} failed", doc.getId(), e);
+			throw new UncheckedIOException(e);
+		}
+	}
+
+	@Override
+	public UpdateIndexService.Result deleteDocument(String indexName, String id) {
+		try {
+			DocWriteResponse.Result result = indexClient.deleteDocument(indexName, id).getResult();
+			return translateResult(result);
+		}
+		catch (IOException e) {
+			log.error("deleting document with id {} failed", id, e);
+			throw new UncheckedIOException(e);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	protected Document _get(String indexName, @NonNull String id) {
+		try {
+			GetResponse esDoc = restClient.get(new GetRequest(indexName, id), RequestOptions.DEFAULT);
+			return DocumentMapper.mapToOriginalDocument(id, esDoc.getSource(), getFieldConfIndex());
+		}
+		catch (IOException ioe) {
+			throw new UncheckedIOException(ioe);
+		}
+	}
+
+	private UpdateIndexService.Result translateResult(org.elasticsearch.action.DocWriteResponse.Result result) {
+		switch (result) {
+			case CREATED:
+				return UpdateIndexService.Result.CREATED;
+			case DELETED:
+				return UpdateIndexService.Result.DELETED;
+			case NOOP:
+				return UpdateIndexService.Result.NOOP;
+			case NOT_FOUND:
+				return UpdateIndexService.Result.NOT_FOUND;
+			case UPDATED:
+				return UpdateIndexService.Result.UPDATED;
+		}
+		return null;
 	}
 
 }

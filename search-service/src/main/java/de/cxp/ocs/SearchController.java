@@ -263,7 +263,7 @@ public class SearchController implements SearchService {
 				searchConfig.getQueryProcessing().getUserQueryPreprocessors(),
 				plugins.getUserQueryPreprocessors(),
 				searchConfig.getPluginConfiguration());
-		log.debug("Using index {} for tenant {}", searchConfig.getIndexName(), tenant);
+		log.info("Using index {} for tenant {}", searchConfig.getIndexName(), tenant);
 		return new SearchContext(fieldConfigAccess, searchConfig, userQueryPreprocessors);
 	}
 

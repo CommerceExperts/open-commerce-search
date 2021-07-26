@@ -26,6 +26,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Path("indexer-api/v1/update/{indexName}")
 public interface UpdateIndexService {
 
+	// similar to org.elasticsearch.action.DocWriteResponse.Result
+	public enum Result {
+		CREATED, UPDATED, DELETED, NOT_FOUND, NOOP,
+		/**
+		 * Used if the update was not done due to a negative precondition.
+		 */
+		DISMISSED
+	}
+
 	/**
 	 * <p>
 	 * Partial update of an existing document. If the document does not exist,
@@ -43,7 +52,7 @@ public interface UpdateIndexService {
 	 *        name of the index that should receive that update
 	 * @param doc
 	 *        Full or partial document that carries the data for the update
-	 * @return true, if product was patched successful
+	 * @return Result code, one of UPDATED, NOT_FOUND, NOOP, DISMISSED
 	 */
 	@PATCH
 	@Operation(
@@ -53,10 +62,10 @@ public interface UpdateIndexService {
 					+ " However if some data at the product variants are updated, all data from all variant products are required,"
 					+ " otherwise missing variants won't be there after the update! This is how single variants can be deleted.",
 			responses = {
-					@ApiResponse(responseCode = "200", description = "document successfuly patched"),
-					@ApiResponse(responseCode = "404", description = "index does not exist or document not found")
+					@ApiResponse(responseCode = "200", description = "OK. Check returned result"),
+					@ApiResponse(responseCode = "404", description = "index does not exist")
 			})
-	boolean patchDocument(@PathParam("indexName") String indexName, @RequestBody Document doc);
+	Result patchDocument(@PathParam("indexName") String indexName, @RequestBody Document doc);
 
 	/**
 	 * <p>
@@ -79,7 +88,7 @@ public interface UpdateIndexService {
 	 * @param replaceExisting
 	 *        set to false to avoid overriding a document with that ID. Defaults
 	 *        to 'true'
-	 * @return true, if product was replaced or added.
+	 * @return Result code, one of CREATED, UPDATED, NOOP, DISMISSED
 	 */
 	@PUT
 	@Operation(
@@ -87,11 +96,10 @@ public interface UpdateIndexService {
 					+ " An existing product will be overwritten unless the parameter 'replaceExisting\" is set to \"false\"."
 					+ " Provided document should be a complete object, partial updates should be  done using the updateDocument method.",
 			responses = {
-					@ApiResponse(responseCode = "201", description = "Document created"),
+					@ApiResponse(responseCode = "200", description = "OK. Check returned result"),
 					@ApiResponse(responseCode = "404", description = "index does not exist"),
-					@ApiResponse(responseCode = "409", description = "Document already exists but replaceExisting is set to false")
 			})
-	boolean putDocument(
+	Result putDocument(
 			@Parameter(
 					in = ParameterIn.PATH,
 					name = "indexName",
@@ -103,7 +111,6 @@ public interface UpdateIndexService {
 					required = false) Boolean replaceExisting,
 			@RequestBody Document doc);
 
-
 	/**
 	 * Delete existing document. If document does not exist, it returns code
 	 * 404.
@@ -112,17 +119,15 @@ public interface UpdateIndexService {
 	 *        name of the index that should receive that update
 	 * @param id
 	 *        ID of the document that should be deleted
-	 * @return true if document was not found or deleted. If deletion fails for
-	 *         some reason, false is returned.
+	 * @return Result code, one of DELETED, NOT_FOUND
 	 */
 	@DELETE
 	@Operation(
 			description = "Delete existing document. If document does not exist, it returns code 304.",
 			responses = {
-					@ApiResponse(responseCode = "200", description = "document deleted"),
-					@ApiResponse(responseCode = "304", description = "document not found"),
+					@ApiResponse(responseCode = "200", description = "OK. Check returned result"),
 					@ApiResponse(responseCode = "404", description = "index does not exist")
 			})
-	boolean deleteDocument(@PathParam("indexName") String indexName, @QueryParam("id") String id);
+	Result deleteDocument(@PathParam("indexName") String indexName, @QueryParam("id") String id);
 
 }

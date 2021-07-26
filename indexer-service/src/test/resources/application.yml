@@ -1,0 +1,84 @@
+ocs:
+  default-index-config:
+    field-configuration:
+      fields:
+        id:
+          name: id
+          type: id
+          usage:
+            - Result
+          field-level: both
+        title:
+          name: title
+          type: string
+          usage:
+            - Search
+            - Result
+            - Sort
+        brand:
+          name: brand
+          type: string
+          value-delimiter: "|"
+          usage:
+            - Search
+            - Facet
+            - Result
+        price:
+          name: price
+          type: number
+          usage:
+            - Sort
+            - Result
+            - Facet
+          field-level: master
+        category:
+          name: category
+          type: category
+          usage:
+            - Result
+            - Facet
+        category_leaf:
+          name: category_leaf
+          type: string
+          usage:
+            - Search
+        search_combi:
+          name: search_combi
+          source-names:
+            - title
+            - brand
+          usage:
+            - Search
+        description:
+          name: description
+          usage:
+            - Search
+            - Result
+        productUrl:
+          name: productUrl
+          usage:
+            - Result
+          field-level: both
+        stock:
+          name: stock
+          usage:
+            - Score
+            - Result
+      dynamic-fields:
+        - name: attribute
+          type: number
+          source-names:
+            - .*
+          usage:
+            - Facet
+        - name: attribute
+          type: string
+          source-names:
+            - .*
+          usage:
+            - Facet
+        - name: others
+          source-names:
+            - .*
+          usage:
+            - Result

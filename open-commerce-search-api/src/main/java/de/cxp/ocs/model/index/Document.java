@@ -1,6 +1,7 @@
 package de.cxp.ocs.model.index;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,7 @@ public class Document {
 	public Map<String, Object> data = new HashMap<>();
 
 	@Schema(description = "multiple attributes can be delivered separately from standard data fields")
-	public Attribute[] attributes;
+	public List<Attribute> attributes;
 
 	@ArraySchema(
 			schema = @Schema(
@@ -83,7 +84,19 @@ public class Document {
 	}
 
 	public Document setAttributes(Attribute... values) {
-		attributes = values;
+		attributes = Arrays.asList(values);
+		return this;
+	}
+
+	public Document addAttribute(Attribute attr) {
+		if (attributes == null) {
+			attributes = new ArrayList<>();
+		}
+		else if (!(attributes instanceof ArrayList)) {
+			// make mutable
+			attributes = new ArrayList<>(attributes);
+		}
+		attributes.add(attr);
 		return this;
 	}
 

@@ -4,11 +4,13 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang3.LocaleUtils;
 
 import de.cxp.ocs.api.indexer.FullIndexationService;
 import de.cxp.ocs.api.indexer.ImportSession;
+import de.cxp.ocs.api.indexer.UpdateIndexService;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.indexer.model.IndexableItem;
@@ -23,11 +25,11 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public abstract class AbstractIndexer implements FullIndexationService {
+public abstract class AbstractIndexer implements FullIndexationService, UpdateIndexService {
 
 	@NonNull
 	private final List<DocumentPreProcessor> dataPreProcessors;
-	
+
 	@Getter(value = AccessLevel.PROTECTED)
 	@NonNull
 	final FieldConfigIndex fieldConfIndex;
@@ -120,5 +122,35 @@ public abstract class AbstractIndexer implements FullIndexationService {
 	}
 
 	protected abstract void deleteIndex(String indexName);
+
+	protected abstract Document _get(@NonNull String indexName, @NonNull String docId);
+
+	public Result patchDocument(String index, Document doc) {
+		Set<String> fetchFields = DocumentPatcher.getRequiredFieldsForMerge(doc, fieldConfIndex);
+
+		Document patchedDoc = doc;
+		if (!fetchFields.isEmpty()) {
+			// fetch the document from ES and patch it
+			Document indexedDoc = _get(index, doc.getId());
+			patchedDoc = DocumentPatcher.patchDocument(doc, indexedDoc, fieldConfIndex);
+
+		}
+		// XXX for some Preprocessor this might lead to unwanted results,
+		// because we also have data from the index, which were already
+		// preprocessed => Preprocessor should be idempotent!
+		preProcess(patchedDoc);
+		IndexableItem indexableDoc = indexItemConverter.toIndexableItem(patchedDoc);
+		return _patch(index, indexableDoc);
+	}
+
+	protected abstract Result _patch(String index, IndexableItem indexableItem);
+
+	public Result putDocument(String indexName, Boolean replaceExisting, Document doc) {
+		boolean isIndexable = preProcess(doc);
+		if (isIndexable) return _put(indexName, replaceExisting, indexItemConverter.toIndexableItem(doc));
+		else return Result.NOOP;
+	}
+
+	protected abstract Result _put(String indexName, Boolean replaceExisting, IndexableItem indexableItem);
 
 }

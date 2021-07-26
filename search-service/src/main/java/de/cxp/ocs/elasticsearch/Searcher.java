@@ -61,6 +61,7 @@ import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.SearchQueryBuilder;
+import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -153,7 +154,7 @@ public class Searcher {
 
 	// @Timed(value = "find", percentiles = { 0.5, 0.8, 0.95, 0.98 })
 	public SearchResult find(InternalSearchParams parameters) throws IOException {
-		Sample findTimerSample = Timer.start(registry);
+		Sample findTimerSample = Timer.start(Clock.SYSTEM);
 		Iterator<ESQueryFactory> stagedQueryBuilders;
 		List<QueryStringTerm> searchWords;
 		if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
@@ -174,6 +175,11 @@ public class Searcher {
 				.from(parameters.offset);
 
 		List<SortBuilder<?>> variantSortings = sortingHandler.applySorting(parameters.sortings, searchSourceBuilder);
+
+		if (searchSourceBuilder.sorts() == null || searchSourceBuilder.sorts().isEmpty()) {
+			addRescorersFailsafe(parameters, searchSourceBuilder);
+		}
+
 		setFetchSources(searchSourceBuilder, variantSortings, parameters.withResultData);
 
 		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters);
@@ -231,9 +237,6 @@ public class Searcher {
 			}
 
 			searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
-			if (searchSourceBuilder.sorts() == null || searchSourceBuilder.sorts().isEmpty()) {
-				addRescorersFailsafe(parameters, searchSourceBuilder);
-			}
 
 			if (log.isTraceEnabled()) {
 				log.trace(QUERY_MARKER, "{ \"user_query\": \"{}\", \"query\": {} }", parameters.userQuery, searchSourceBuilder.toString().replaceAll("[\n\\s]+", " "));

@@ -12,6 +12,16 @@ endpoints:
   prometheus:
     sensitive: true
 
+management:  
+  endpoints:
+    web:
+      exposure:
+        include: "health,metrics,prometheus"
+  metrics:
+    enabled: true
+    tags:
+      application: "${spring.application.name}"
+
 spring:
   jackson:
     deserialization:

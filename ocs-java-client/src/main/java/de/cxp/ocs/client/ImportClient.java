@@ -45,17 +45,17 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 	}
 
 	@Override
-	public boolean patchDocument(String indexName, Document doc) {
+	public Result patchDocument(String indexName, Document doc) {
 		return target.patchDocument(indexName, doc);
 	}
 
 	@Override
-	public boolean putDocument(String indexName, Boolean replaceExisting, Document doc) {
+	public Result putDocument(String indexName, Boolean replaceExisting, Document doc) {
 		return target.putDocument(indexName, replaceExisting == null ? true : replaceExisting, doc);
 	}
 
 	@Override
-	public boolean deleteDocument(String indexName, String id) {
+	public Result deleteDocument(String indexName, String id) {
 		return target.deleteDocument(indexName, id);
 	}
 

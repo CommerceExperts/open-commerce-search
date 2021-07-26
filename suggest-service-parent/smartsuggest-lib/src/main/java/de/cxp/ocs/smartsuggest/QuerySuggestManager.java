@@ -108,6 +108,8 @@ public class QuerySuggestManager implements AutoCloseable {
 
 		private Limiter limiter;
 
+		private Map<String, Map<String, Object>> dataProviderConfigs = new HashMap<>(1);
+
 		/**
 		 * Sets the root path where the indices for the different tenants
 		 * will be stored. Required for LUCENE engine.
@@ -151,6 +153,19 @@ public class QuerySuggestManager implements AutoCloseable {
 			return this;
 		}
 
+		/**
+		 * Add configuration for a specific data provider that will be loaded by
+		 * your environment. It is only applied, if the according data provider
+		 * is loaded.
+		 * 
+		 * @param canonicalClassName
+		 * @param config
+		 * @return
+		 */
+		public QuerySuggestManagerBuilder addDataProviderConfig(String canonicalClassName, Map<String, Object> config) {
+			dataProviderConfigs.put(canonicalClassName, config);
+			return this;
+		}
 
 		/**
 		 * With this method you can specify a limiter for suggestions from
@@ -234,7 +249,7 @@ public class QuerySuggestManager implements AutoCloseable {
 			if (SuggesterEngine.LUCENE.equals(engine) && suggestIndexFolder == null) {
 				throw new IllegalArgumentException("required 'indexFolder' not specified");
 			}
-			QuerySuggestManager querySuggestManager = new QuerySuggestManager(Optional.ofNullable(metricsRegistry));
+			QuerySuggestManager querySuggestManager = new QuerySuggestManager(Optional.ofNullable(metricsRegistry), dataProviderConfigs);
 			querySuggestManager.suggestIndexFolder = suggestIndexFolder;
 			querySuggestManager.updateRate = updateRate;
 			querySuggestManager.engine = engine;
@@ -260,7 +275,7 @@ public class QuerySuggestManager implements AutoCloseable {
 	 * To customize behavioral settings, use the builder instead.
 	 * @param meterRegistryAdapter 
 	 */
-	private QuerySuggestManager(Optional<MeterRegistryAdapter> meterRegistryAdapter) {
+	private QuerySuggestManager(Optional<MeterRegistryAdapter> meterRegistryAdapter, Map<String, Map<String, Object>> dataProviderConfig) {
 		ServiceLoader<SuggestDataProvider> serviceLoader = ServiceLoader.load(SuggestDataProvider.class);
 		Iterator<SuggestDataProvider> loadedSDPs = serviceLoader.iterator();
 		List<SuggestDataProvider> dataProviders = new ArrayList<>();
@@ -269,9 +284,18 @@ public class QuerySuggestManager implements AutoCloseable {
 					+ " Please provide a SuggestDataProvider implementation accessible via ServiceLoader.");
 		}
 		while (loadedSDPs.hasNext()) {
-			SuggestDataProvider sdp = loadedSDPs.next();
-			dataProviders.add(sdp);
-			log.info("initialized SmartSuggest with {}", sdp.getClass().getCanonicalName());
+			try {
+				SuggestDataProvider sdp = loadedSDPs.next();
+				Map<String, Object> sdpConfig = dataProviderConfig.get(sdp.getClass().getCanonicalName());
+				if (sdpConfig != null) {
+					sdp.configure(sdpConfig);
+				}
+				dataProviders.add(sdp);
+				log.info("initialized SmartSuggest with {}", sdp.getClass().getCanonicalName());
+			}
+			catch (Exception e) {
+				log.info("failed to load a SuggestDataProvider", e);
+			}
 		}
 		
 		if (meterRegistryAdapter.isPresent()) {

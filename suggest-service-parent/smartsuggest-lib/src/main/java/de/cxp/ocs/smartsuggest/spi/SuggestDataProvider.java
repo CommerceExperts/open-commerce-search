@@ -1,8 +1,18 @@
 package de.cxp.ocs.smartsuggest.spi;
 
 import java.io.IOException;
+import java.util.Map;
 
 public interface SuggestDataProvider {
+
+	/**
+	 * Optional method that may be called to configure the data provider. If a
+	 * configuration is provided, it will be called once directly after
+	 * instantiation.
+	 * 
+	 * @param config
+	 */
+	default void configure(Map<String, Object> config) {}
 
 	/**
 	 * <p>
