@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import org.jboss.logging.MDC;
+import org.slf4j.MDC;
 
 import de.cxp.ocs.plugin.ExtensionSupplierRegistry;
 import de.cxp.ocs.plugin.PluginManager;

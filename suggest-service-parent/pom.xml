@@ -17,6 +17,7 @@
 
 	<properties>
 		<lucene.version>8.8.0</lucene.version>
+		<micrometer.version>1.5.14</micrometer.version>
 	</properties>
 	
 	<dependencyManagement>
@@ -46,6 +47,22 @@
 				<groupId>org.apache.lucene</groupId>
 				<artifactId>lucene-suggest</artifactId>
 				<version>${lucene.version}</version>
+			</dependency>
+			
+			<dependency>
+				<groupId>io.micrometer</groupId>
+				<artifactId>micrometer-core</artifactId>
+				<version>${micrometer.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.micrometer</groupId>
+				<artifactId>micrometer-registry-prometheus</artifactId>
+				<version>${micrometer.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.micrometer</groupId>
+				<artifactId>micrometer-registry-jmx</artifactId>
+				<version>${micrometer.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
