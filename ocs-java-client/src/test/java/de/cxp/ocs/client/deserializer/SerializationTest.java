@@ -14,6 +14,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.cxp.ocs.api.indexer.ImportSession;
+import de.cxp.ocs.api.indexer.UpdateIndexService.Result;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.model.index.Document;
@@ -166,6 +167,8 @@ public class SerializationTest {
 										.addEntry(new HierarchialFacetEntry("Shoes", null, 124, "cat=shoes", false)
 												.addChild(new FacetEntry("Sneakers", null, 12, "cat=shoes,sneakers", false))))),
 
+				Result.DISMISSED,
+
 				new SearchResult(),
 
 				new SearchResult()
@@ -187,7 +190,7 @@ public class SerializationTest {
 	private void assertEqualDocuments(Document expected, Document actual, final String msgPrefix) {
 		assertEquals(expected.getId(), actual.getId(), msgPrefix + "IDs not equal");
 
-		assertArrayEquals(expected.getAttributes(), actual.getAttributes(), msgPrefix + "Attributes not equal");
+		assertEquals(expected.getAttributes(), actual.getAttributes(), msgPrefix + "Attributes not equal");
 
 		if (expected.getCategories() == null) {
 			assertNull(actual.getCategories());
