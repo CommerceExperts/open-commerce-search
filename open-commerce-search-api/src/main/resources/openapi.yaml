@@ -10,7 +10,7 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: "0.2"
 paths:
-  /suggest-api/v1/suggest/{indexname}:
+  /suggest-api/v1/{indexname}/suggest:
     get:
       tags:
       - search
@@ -30,14 +30,17 @@ paths:
         required: true
         schema:
           type: string
-      - name: filters
+      - name: limit
         in: query
-        description: Any other parameter is used as filter.
-        style: form
+        description: A optional limit for the suggestions
         schema:
-          type: object
-          additionalProperties:
-            type: string
+          type: integer
+          format: int32
+      - name: filter
+        in: query
+        description: Optional comma-separated list of filter values.
+        schema:
+          type: string
       responses:
         "200":
           description: successful found results
@@ -55,6 +58,42 @@ paths:
       - basic-auth: []
       servers:
       - url: http://suggest-service
+        variables: {}
+  /indexer-api/v1/full/done:
+    post:
+      tags:
+      - indexer
+      description: Finishes the import, flushing the new index and (in case there
+        is already an index with the initialized name) replacing the old one.
+      operationId: done
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/ImportSession'
+        required: true
+      responses:
+        "200":
+          description: successfully done
+        "400":
+          description: indexation was already confirmed or import session is invalid
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://indexer-service
+        description: Service to run a full import into a new index. To do so, start
+          a indexation session with a request to 'start' and use the returned ImportSession
+          object to 'add' products bulkwise. If all documents where added, use the
+          'done' request to deploy that index. In case there were failures (or more
+          failures then tollerated), the 'cancel' request can be used to stop the
+          process and cleanup the incomplete index. Depending on the document size,
+          an amount of 500-2000 documents per bulk is sufficient. If product and content
+          data should be indexed, its recommended to use different indexes. Otherwise
+          make sure to use the same fields for the same content type, e.g. both kind
+          of documents can have a textual 'title' field, but both kind of documents
+          shouldn't have for example an 'author' field, which could be used for product
+          facets (e.g. book authors) but not for faceting the content documents (e.g.
+          blog post authors).
         variables: {}
   /indexer-api/v1/full/cancel:
     post:
@@ -90,24 +129,30 @@ paths:
           facets (e.g. book authors) but not for faceting the content documents (e.g.
           blog post authors).
         variables: {}
-  /indexer-api/v1/full/done:
+  /indexer-api/v1/full/add:
     post:
       tags:
       - indexer
-      description: Finishes the import, flushing the new index and (in case there
-        is already an index with the initialized name) replacing the old one.
-      operationId: done
+      description: Add one or more documents to a running import session.
+      operationId: add
       requestBody:
+        description: Data that contains the import session reference and one or more
+          documents that should be added to that session.
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/ImportSession'
+              $ref: '#/components/schemas/BulkImportData'
         required: true
       responses:
         "200":
-          description: successfully done
+          description: documents successfully added
+          content:
+            '*/*':
+              schema:
+                type: string
+                description: Amount of documents successfuly added
         "400":
-          description: indexation was already confirmed or import session is invalid
+          description: import session is invalid
       security:
       - basic-auth: []
       servers:
@@ -173,48 +218,6 @@ paths:
           facets (e.g. book authors) but not for faceting the content documents (e.g.
           blog post authors).
         variables: {}
-  /indexer-api/v1/full/add:
-    post:
-      tags:
-      - indexer
-      description: Add one or more documents to a running import session.
-      operationId: add
-      requestBody:
-        description: Data that contains the import session reference and one or more
-          documents that should be added to that session.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/BulkImportData'
-        required: true
-      responses:
-        "200":
-          description: documents successfully added
-          content:
-            '*/*':
-              schema:
-                type: string
-                description: Amount of documents successfuly added
-        "400":
-          description: import session is invalid
-      security:
-      - basic-auth: []
-      servers:
-      - url: http://indexer-service
-        description: Service to run a full import into a new index. To do so, start
-          a indexation session with a request to 'start' and use the returned ImportSession
-          object to 'add' products bulkwise. If all documents where added, use the
-          'done' request to deploy that index. In case there were failures (or more
-          failures then tollerated), the 'cancel' request can be used to stop the
-          process and cleanup the incomplete index. Depending on the document size,
-          an amount of 500-2000 documents per bulk is sufficient. If product and content
-          data should be indexed, its recommended to use different indexes. Otherwise
-          make sure to use the same fields for the same content type, e.g. both kind
-          of documents can have a textual 'title' field, but both kind of documents
-          shouldn't have for example an 'author' field, which could be used for product
-          facets (e.g. book authors) but not for faceting the content documents (e.g.
-          blog post authors).
-        variables: {}
   /indexer-api/v1/update/{indexName}:
     put:
       tags:
@@ -237,12 +240,10 @@ paths:
         schema:
           type: boolean
       responses:
-        "201":
-          description: Document created
+        "200":
+          description: OK. Check returned result
         "404":
           description: index does not exist
-        "409":
-          description: Document already exists but replaceExisting is set to false
       security:
       - basic-auth: []
       servers:
@@ -266,9 +267,7 @@ paths:
           type: string
       responses:
         "200":
-          description: document deleted
-        "304":
-          description: document not found
+          description: OK. Check returned result
         "404":
           description: index does not exist
       security:
@@ -295,26 +294,13 @@ paths:
           type: string
       responses:
         "200":
-          description: document successfuly patched
+          description: OK. Check returned result
         "404":
-          description: index does not exist or document not found
+          description: index does not exist
       security:
       - basic-auth: []
       servers:
       - url: http://indexer-service
-        variables: {}
-  /search-api/v1/tenants:
-    get:
-      tags:
-      - search
-      operationId: getTenants
-      responses:
-        "200":
-          description: a list of available tenants
-      security:
-      - basic-auth: []
-      servers:
-      - url: http://search-service
         variables: {}
   /search-api/v1/search/{tenant}:
     get:
@@ -403,6 +389,73 @@ paths:
       servers:
       - url: http://search-service
         variables: {}
+  /search-api/v1/search/arranged/{tenant}:
+    post:
+      tags:
+      - search
+      operationId: arrangedSearch
+      parameters:
+      - name: tenant
+        in: path
+        description: tenant name
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: A list of all search requests that should be part of a single
+          response
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/ArrangedSearchQuery'
+        required: true
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://search-service
+        variables: {}
+  /search-api/v1/doc/{tenant}/{id}:
+    get:
+      tags:
+      - search
+      operationId: getDocument
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              type: string
+      responses:
+        default:
+          description: default response
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Document'
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://search-service
+        variables: {}
+  /search-api/v1/tenants:
+    get:
+      tags:
+      - search
+      operationId: getTenants
+      responses:
+        "200":
+          description: a list of available tenants
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://search-service
+        variables: {}
 components:
   schemas:
     Suggestion:
@@ -419,7 +472,7 @@ components:
         payload:
           type: object
           additionalProperties:
-            type: object
+            type: string
             description: 'arbitrary payload attached to that suggestion. Default:
               null'
           description: 'arbitrary payload attached to that suggestion. Default: null'
@@ -436,39 +489,34 @@ components:
       readOnly: true
     Attribute:
       required:
-      - label
+      - name
       - value
       type: object
       properties:
-        id:
+        name:
           pattern: '[A-Za-z0-9\-_.]'
           type: string
-          description: 'Optional: Static ID of that attribute. The id SHOULD be URL
-            friendly, since it could be used to build according filter parameters.
-            If not set, the label could be used for parameter building.'
-        label:
-          type: string
-          description: Human readable name of the attribute, e.g. 'Color' or 'Max.
-            Speed in km/h'
+          description: The name SHOULD be URL friendly identifier for the attribute,
+            since it could be used to build according filter parameters.
         code:
           pattern: '[A-Za-z0-9\-_.]'
           type: string
-          description: 'Optional: code that represents that attribute value, e.g.
-            "FF0000" for color'
+          description: 'Optional: code is considered as ID of the attribute value,
+            e.g. "FF0000" for color'
         value:
           type: string
           description: Human readable representation of that attribute, e.g. 'Red'
             for the attribute 'Color'
-      description: Rich model that can be used to represent a document or product
-        attribute. If 'id' and/or 'code' are provieded, these can be used for consistent
-        filtering, even if the label and values are changing. The label and the values
-        will be used used to produce nice facets or if used for search, they will
-        be added to the searchable content.
+      description: Rich model that can be used to represent a document's or product's
+        attribute. The attribute 'name' should be a URL friendly identifier for that
+        attribute (rather maxSpeed than 'Max Speed'). It will be used as filter parameter
+        laster. If the attribute 'code' is provieded, it can be used for consistent
+        filtering, even if the value name should change. The values are used to produce
+        nice facets or if used for search, they will be added to the searchable content.
       example:
-        id: a.maxSpeed
-        label: Max Speed
-        value: 230 km/h
-        code: 230
+        name: color
+        value: red
+        code: ff0000
     BulkImportData:
       required:
       - documents
@@ -813,6 +861,8 @@ components:
     Sorting:
       type: object
       properties:
+        label:
+          type: string
         field:
           type: string
         sortOrder:
@@ -846,6 +896,90 @@ components:
           type: boolean
         userQuery:
           $ref: '#/components/schemas/SearchQuery'
+    ArrangedSearchQuery:
+      type: object
+      properties:
+        q:
+          type: string
+        sort:
+          type: string
+        limit:
+          minimum: 1
+          type: integer
+          format: int32
+        offset:
+          minimum: 0
+          type: integer
+          format: int32
+        withFacets:
+          type: boolean
+        filters:
+          type: object
+          additionalProperties:
+            type: string
+        arrangedProductSets:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductSet'
+        userQuery:
+          $ref: '#/components/schemas/SearchQuery'
+    DynamicProductSet:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/ProductSet'
+      - type: object
+        properties:
+          type:
+            type: string
+          name:
+            type: string
+          query:
+            type: string
+          sort:
+            type: string
+          filters:
+            type: object
+            additionalProperties:
+              type: string
+          limit:
+            minimum: 1
+            type: integer
+            format: int32
+          size:
+            type: integer
+            format: int32
+    ProductSet:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        size:
+          type: integer
+          format: int32
+      discriminator:
+        propertyName: type
+        mapping:
+          static: '#/components/schemas/StaticProductSet'
+          dynamic: '#/components/schemas/DynamicProductSet'
+    StaticProductSet:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/ProductSet'
+      - type: object
+        properties:
+          type:
+            type: string
+          ids:
+            type: array
+            items:
+              type: string
+          name:
+            type: string
+          size:
+            type: integer
+            format: int32
   securitySchemes:
     basic-auth:
       type: http

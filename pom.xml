@@ -7,7 +7,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.21.0</version>
+	<version>0.21.1</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -40,7 +40,7 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>open-commerce-search-api</artifactId>
-				<version>0.13.0</version>
+				<version>0.13.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
