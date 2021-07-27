@@ -1,7 +1,6 @@
 package de.cxp.ocs;
 
 import org.elasticsearch.client.RestClientBuilder;
-import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -17,6 +16,7 @@ import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
 import de.cxp.ocs.conf.ApplicationProperties;
 import de.cxp.ocs.conf.DefaultIndexerConfigurationProvider;
+import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.RestClientBuilderFactory;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Product;
@@ -35,9 +35,13 @@ public class Application {
 	}
 
 	@Bean
-	public RestHighLevelClient getElasticsearchClient(ApplicationProperties properties) throws Exception {
-		RestClientBuilder restClientBuilder = RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
-		return new RestHighLevelClient(restClientBuilder);
+	public ElasticSearchBuilder getESBuilder(RestClientBuilder restClientBuilder) {
+		return new ElasticSearchBuilder(restClientBuilder);
+	}
+
+	@Bean
+	public RestClientBuilder getRestClientBuilder(ApplicationProperties properties) {
+		return RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
 	}
 
 	@Bean
