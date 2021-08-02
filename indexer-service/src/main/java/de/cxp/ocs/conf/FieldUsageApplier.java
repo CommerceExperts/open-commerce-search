@@ -142,7 +142,7 @@ public class FieldUsageApplier {
 
 		value = ensureCorrectValueType(field, value);
 
-		Object previousValue = record.getSortData().putIfAbsent(fieldName, new MinMaxSet<>(value));
+		Object previousValue = record.getSortData().putIfAbsent(fieldName, value instanceof Number[] ? new MinMaxSet<>((Number[]) value) : new MinMaxSet<>(value));
 		if (previousValue != null) {
 			record.getSortData().compute(fieldName, joinDataValueFunction(value));
 		}
@@ -169,6 +169,9 @@ public class FieldUsageApplier {
 		if (FieldType.NUMBER.equals(field.getType()) && !(value instanceof Number)) {
 			if (value instanceof Collection || value.getClass().isArray()) {
 				parsedValue = toNumberCollection(value);
+				if (!parsedValue.getClass().isArray()) {
+					parsedValue = ((Collection<Number>) parsedValue).toArray(new Number[0]);
+				}
 			}
 			else {
 				parsedValue = tryToParseAsNumber(value.toString()).orElseThrow(
@@ -177,8 +180,11 @@ public class FieldUsageApplier {
 								+ (value.toString().length() > 12 ? "..." : "")));
 			}
 		}
-		if (FieldType.CATEGORY.equals(field.getType())) {
+		else if (FieldType.CATEGORY.equals(field.getType())) {
 			parsedValue = convertCategoryDataToString(value, FieldUsageApplier::toCategoryPathString);
+		}
+		else if (value instanceof Collection) {
+
 		}
 		return parsedValue;
 	}

@@ -297,7 +297,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	protected Document _get(String indexName, @NonNull String id) {
 		try {
 			GetResponse esDoc = restClient.get(new GetRequest(indexName, id), RequestOptions.DEFAULT);
-			return DocumentMapper.mapToOriginalDocument(id, esDoc.getSource(), getFieldConfIndex());
+			return esDoc.getVersion() == -1 ? null : DocumentMapper.mapToOriginalDocument(id, esDoc.getSource(), getFieldConfIndex());
 		}
 		catch (IOException ioe) {
 			throw new UncheckedIOException(ioe);

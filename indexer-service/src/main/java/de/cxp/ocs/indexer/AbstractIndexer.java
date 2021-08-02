@@ -132,6 +132,8 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 		if (!fetchFields.isEmpty()) {
 			// fetch the document from ES and patch it
 			Document indexedDoc = _get(index, doc.getId());
+			if (indexedDoc == null) return Result.NOT_FOUND;
+
 			patchedDoc = DocumentPatcher.patchDocument(doc, indexedDoc, fieldConfIndex);
 
 		}
