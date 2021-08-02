@@ -15,7 +15,6 @@ import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldUsage;
-import de.cxp.ocs.indexer.model.FacetEntry;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.model.index.Document;
@@ -83,12 +82,12 @@ public class DocumentMapper {
 		return mapped;
 	}
 
-	private static void extractValueFromPathFacetEntries(Document mapped, Field field, List<FacetEntry<?>> facetEntries) {
+	private static void extractValueFromPathFacetEntries(Document mapped, Field field, List<Map<String, String>> facetEntries) {
 		String lastCatPath = "";
 		List<Category> path = new ArrayList<>(facetEntries.size());
-		for (FacetEntry<?> facetEntry : facetEntries) {
-			if (facetEntry.getName().equals(field.getName())) {
-				String catPath = facetEntry.getValue().toString();
+		for (Map<String, String> facetEntry : facetEntries) {
+			if (facetEntry.get("name").equals(field.getName())) {
+				String catPath = facetEntry.get("value").toString();
 
 				if (lastCatPath.length() > 0 && !catPath.startsWith(lastCatPath)) {
 					// start a new path
@@ -97,7 +96,7 @@ public class DocumentMapper {
 				}
 
 				String[] catPathStrings = StringUtils.split(catPath, '/');
-				Category category = new Category(facetEntry.getId(), catPathStrings[catPathStrings.length - 1]);
+				Category category = new Category(facetEntry.get("id"), catPathStrings[catPathStrings.length - 1]);
 				path.add(category);
 
 				lastCatPath = catPath;
@@ -108,24 +107,24 @@ public class DocumentMapper {
 		}
 	}
 
-	private static void extractValueFromSingleFacetEntry(Document mapped, Field field, List<FacetEntry<?>> facetEntries) {
-		for (FacetEntry<?> facetEntry : facetEntries) {
-			if (facetEntry.getName().equals(field.getName())) {
-				if (facetEntry.getId() != null) {
-					mapped.addAttribute(new Attribute(field.getName(), facetEntry.getId(), facetEntry.getValue().toString()));
+	private static void extractValueFromSingleFacetEntry(Document mapped, Field field, List<Map<String, String>> facetEntries) {
+		for (Map<String, String> facetEntry : facetEntries) {
+			if (facetEntry.get("name").equals(field.getName())) {
+				if (facetEntry.get("id") != null) {
+					mapped.addAttribute(new Attribute(field.getName(), facetEntry.get("id"), facetEntry.get("value").toString()));
 				}
 				else {
-					mapped.data.put(field.getName(), facetEntry.getValue());
+					mapped.data.put(field.getName(), facetEntry.get("value"));
 				}
 				break;
 			}
 		}
 	}
 
-	private static Optional<List<FacetEntry<?>>> asFacetList(Map<String, Object> source, String sourceDataField) {
+	private static Optional<List<Map<String, String>>> asFacetList(Map<String, Object> source, String sourceDataField) {
 		Object sourceData = source.get(sourceDataField);
 		if (sourceData != null && sourceData instanceof List && ((List) sourceData).size() > 0) {
-			return Optional.of((List<FacetEntry<?>>) sourceData);
+			return Optional.of((List<Map<String, String>>) sourceData);
 		}
 		else {
 			return Optional.empty();

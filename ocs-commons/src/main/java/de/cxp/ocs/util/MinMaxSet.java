@@ -16,8 +16,11 @@ public class MinMaxSet<E> implements Set<E> {
 
 	private final TreeSet<E> values = new TreeSet<>();
 
-	@SafeVarargs
-	public MinMaxSet(E... values) {
+	public MinMaxSet(E value) {
+		add(value);
+	}
+
+	public MinMaxSet(E[] values) {
 		for (E val : values) {
 			add(val);
 		}
