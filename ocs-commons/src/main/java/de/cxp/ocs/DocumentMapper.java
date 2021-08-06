@@ -41,6 +41,7 @@ public class DocumentMapper {
 			mapped = new Document(id);
 		}
 
+		// FIXME: also restore dynamic fields
 		for (Field f : fieldConfig.getFields().values()) {
 			if (f.getUsage().isEmpty()) continue;
 

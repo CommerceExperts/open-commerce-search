@@ -12,6 +12,7 @@ import de.cxp.ocs.model.result.SearchResult;
 import feign.Feign;
 import feign.Feign.Builder;
 import feign.codec.Decoder;
+import feign.httpclient.ApacheHttpClient;
 
 public class SearchClient implements SearchService {
 
@@ -26,6 +27,7 @@ public class SearchClient implements SearchService {
 	public SearchClient(String endpointUrl, Consumer<Feign.Builder> feignConfigurer) {
 		Builder fb = Feign.builder();
 		feignConfigurer.accept(fb);
+		fb.client(new ApacheHttpClient());
 		target = fb.target(SearchApi.class, endpointUrl);
 	}
 

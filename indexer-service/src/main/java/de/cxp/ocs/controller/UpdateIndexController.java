@@ -1,5 +1,8 @@
 package de.cxp.ocs.controller;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,10 +29,14 @@ public class UpdateIndexController implements UpdateIndexService {
 
 	@PatchMapping
 	@Override
-	public Result patchDocument(@PathVariable("indexName") String indexName, @RequestBody Document doc) {
+	public Map<String, Result> patchDocuments(@PathVariable("indexName") String indexName, @RequestBody List<Document> documents) {
 		try {
-			return indexerManager.getIndexer(indexName)
-					.patchDocument(indexName, doc);
+			Map<String, Result> response = new HashMap<>(documents.size());
+			for (Document doc : documents) {
+				response.put(doc.id, indexerManager.getIndexer(indexName)
+						.patchDocument(indexName, doc));
+			}
+			return response;
 		}
 		catch (ExecutionException e) {
 			log.error("failed to get indexer", e);
@@ -39,13 +46,13 @@ public class UpdateIndexController implements UpdateIndexService {
 
 	@PutMapping
 	@Override
-	public Result putDocument(
+	public Map<String, Result> putDocuments(
 			@PathVariable("indexName") String indexName,
 			@RequestParam(name = "replaceExisting", defaultValue = "true") Boolean replaceExisting,
-			@RequestBody Document doc) {
+			@RequestBody List<Document> documents) {
 		try {
 			return indexerManager.getIndexer(indexName)
-					.putDocument(indexName, replaceExisting, doc);
+					.putDocuments(indexName, replaceExisting, documents);
 		}
 		catch (ExecutionException e) {
 			log.error("failed to get indexer", e);
@@ -55,10 +62,10 @@ public class UpdateIndexController implements UpdateIndexService {
 
 	@DeleteMapping
 	@Override
-	public Result deleteDocument(@PathVariable("indexName") String indexName, @RequestParam("id") String id) {
+	public Map<String, Result> deleteDocuments(@PathVariable("indexName") String indexName, @RequestParam("id[]") List<String> ids) {
 		try {
 			return indexerManager.getIndexer(indexName)
-					.deleteDocument(indexName, id);
+					.deleteDocuments(indexName, ids);
 		}
 		catch (ExecutionException e) {
 			log.error("failed to get indexer", e);

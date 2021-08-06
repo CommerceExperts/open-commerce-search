@@ -1,5 +1,7 @@
 package de.cxp.ocs.client;
 
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import de.cxp.ocs.api.indexer.FullIndexationService;
@@ -11,6 +13,7 @@ import de.cxp.ocs.model.index.Document;
 import feign.Feign;
 import feign.Feign.Builder;
 import feign.codec.Decoder;
+import feign.httpclient.ApacheHttpClient;
 
 public class ImportClient implements FullIndexationService, UpdateIndexService {
 
@@ -25,6 +28,7 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 	public ImportClient(String endpointUrl, Consumer<Feign.Builder> feignConfigurer) {
 		Builder fb = Feign.builder();
 		feignConfigurer.accept(fb);
+		fb.client(new ApacheHttpClient());
 		target = fb.target(ImportApi.class, endpointUrl);
 	}
 
@@ -45,18 +49,18 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 	}
 
 	@Override
-	public Result patchDocument(String indexName, Document doc) {
-		return target.patchDocument(indexName, doc);
+	public Map<String, Result> patchDocuments(String indexName, List<Document> docs) {
+		return target.patchDocuments(indexName, docs);
 	}
 
 	@Override
-	public Result putDocument(String indexName, Boolean replaceExisting, Document doc) {
-		return target.putDocument(indexName, replaceExisting == null ? true : replaceExisting, doc);
+	public Map<String, Result> putDocuments(String indexName, Boolean replaceExisting, List<Document> docs) {
+		return target.putDocuments(indexName, replaceExisting == null ? true : replaceExisting, docs);
 	}
 
 	@Override
-	public Result deleteDocument(String indexName, String id) {
-		return target.deleteDocument(indexName, id);
+	public Map<String, Result> deleteDocuments(String indexName, List<String> ids) {
+		return target.deleteDocuments(indexName, ids);
 	}
 
 	@Override

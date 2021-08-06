@@ -1,5 +1,8 @@
 package de.cxp.ocs.api.indexer;
 
+import java.util.List;
+import java.util.Map;
+
 import javax.ws.rs.DELETE;
 import javax.ws.rs.PATCH;
 import javax.ws.rs.PUT;
@@ -56,16 +59,19 @@ public interface UpdateIndexService {
 	 */
 	@PATCH
 	@Operation(
-			description = "Partial update of an existing document."
-					+ " If the document does not exist, no update will be performed and status code 404 is returned."
-					+ " In case the document is a master product with variants, the provided master product may only contain the changed values."
-					+ " However if some data at the product variants are updated, all data from all variant products are required,"
-					+ " otherwise missing variants won't be there after the update! This is how single variants can be deleted.",
+			description = "Partial update of existing documents."
+					+ " If a document does not exist, no update will be performed and it gets the result status 'NOT_FOUND'."
+					+ " In case a document is a master product with variants, the provided master product may only contain the changed values."
+					+ " However if some of the variants should be updated, all data from all variant products are required,"
+					+ " unless you have an ID data-field inside variant - then you can update single variants."
+					+ " Without variant ID field, the missing variants won't be there after the update!"
+					+ " This is how single variants can be deleted.",
 			responses = {
-					@ApiResponse(responseCode = "200", description = "OK. Check returned result"),
+					@ApiResponse(responseCode = "200", description = "OK. The response contains a map of ids and according result."),
 					@ApiResponse(responseCode = "404", description = "index does not exist")
 			})
-	Result patchDocument(@PathParam("indexName") String indexName, @RequestBody Document doc);
+	Map<String, Result> patchDocuments(@PathParam("indexName") String indexName, @RequestBody List<Document> doc);
+
 
 	/**
 	 * <p>
@@ -96,10 +102,10 @@ public interface UpdateIndexService {
 					+ " An existing product will be overwritten unless the parameter 'replaceExisting\" is set to \"false\"."
 					+ " Provided document should be a complete object, partial updates should be  done using the updateDocument method.",
 			responses = {
-					@ApiResponse(responseCode = "200", description = "OK. Check returned result"),
+					@ApiResponse(responseCode = "200", description = "OK. The response contains a map of ids and according result."),
 					@ApiResponse(responseCode = "404", description = "index does not exist"),
 			})
-	Result putDocument(
+	Map<String, Result> putDocuments(
 			@Parameter(
 					in = ParameterIn.PATH,
 					name = "indexName",
@@ -109,7 +115,7 @@ public interface UpdateIndexService {
 					name = "replaceExisting",
 					description = "set to false to avoid overriding a document with that ID. Defaults to 'true'",
 					required = false) Boolean replaceExisting,
-			@RequestBody Document doc);
+			@RequestBody List<Document> doc);
 
 	/**
 	 * Delete existing document. If document does not exist, it returns code
@@ -125,9 +131,9 @@ public interface UpdateIndexService {
 	@Operation(
 			description = "Delete existing document. If document does not exist, it returns code 304.",
 			responses = {
-					@ApiResponse(responseCode = "200", description = "OK. Check returned result"),
+					@ApiResponse(responseCode = "200", description = "OK. The response contains a map of ids and according result."),
 					@ApiResponse(responseCode = "404", description = "index does not exist")
 			})
-	Result deleteDocument(@PathParam("indexName") String indexName, @QueryParam("id") String id);
+	Map<String, Result> deleteDocuments(@PathParam("indexName") String indexName, @QueryParam("id[]") List<String> ids);
 
 }

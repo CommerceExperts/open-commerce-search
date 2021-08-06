@@ -21,6 +21,7 @@ import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
+import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
@@ -324,5 +325,19 @@ class ElasticsearchIndexClient {
 	public DeleteResponse deleteDocument(String index, String id) throws IOException {
 		DeleteRequest deleteRequest = new DeleteRequest(index, id);
 		return highLevelClient.delete(deleteRequest, RequestOptions.DEFAULT);
+	}
+
+	public List<DeleteResponse> deleteDocuments(String index, List<String> ids) throws IOException {
+		BulkRequest bulkRequest = new BulkRequest(index);
+		for (String id : ids) {
+			bulkRequest.add(new DeleteRequest().id(id));
+		}
+		BulkResponse bulkResponse = highLevelClient.bulk(bulkRequest, RequestOptions.DEFAULT);
+
+		List<DeleteResponse> responses = new ArrayList<>();
+		for (BulkItemResponse item : bulkResponse.getItems()) {
+			responses.add((DeleteResponse) item.getResponse());
+		}
+		return responses;
 	}
 }

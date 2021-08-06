@@ -2,6 +2,7 @@ package de.cxp.ocs.elasticsearch;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -17,6 +18,7 @@ import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -281,13 +283,17 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	@Override
-	public UpdateIndexService.Result deleteDocument(String indexName, String id) {
+	public Map<String, UpdateIndexService.Result> deleteDocuments(String indexName, List<String> ids) {
 		try {
-			DocWriteResponse.Result result = indexClient.deleteDocument(indexName, id).getResult();
-			return translateResult(result);
+			List<DeleteResponse> deleteResponses = indexClient.deleteDocuments(indexName, ids);
+			Map<String, UpdateIndexService.Result> deleteResults = new HashMap<>(deleteResponses.size());
+			for (DeleteResponse delResp : deleteResponses) {
+				deleteResults.put(delResp.getId(), translateResult(delResp.getResult()));
+			}
+			return deleteResults;
 		}
 		catch (IOException e) {
-			log.error("deleting document with id {} failed", id, e);
+			log.error("deleting documents with ids {} failed", ids, e);
 			throw new UncheckedIOException(e);
 		}
 	}
