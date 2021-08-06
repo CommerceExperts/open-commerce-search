@@ -1,5 +1,6 @@
 package de.cxp.ocs.elasticsearch.facets;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,8 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		super(facetConfigs);
 	}
 
+	public static final String CATEGORY_KEY = "category";
+
 	@Override
 	protected String getNestedPath() {
 		return FieldConstants.PATH_FACET_DATA;
@@ -63,7 +66,8 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 
 	@Override
 	protected boolean isMatchingFilterType(InternalResultFilter internalResultFilter) {
-		return FieldType.CATEGORY.equals(internalResultFilter.getField().getType());
+		return internalResultFilter != null && internalResultFilter.getField() != null 
+				&& FieldType.CATEGORY.equals(internalResultFilter.getField().getType());
 	}
 
 	@Override
@@ -79,13 +83,21 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 
 		Map<String, HierarchialFacetEntry> entries = new LinkedHashMap<>(catBuckets.size());
 		long absDocCount = 0;
+		boolean isFiltered = isMatchingFilterType(intFacetFilter);
 
 		for (Bucket categoryBucket : catBuckets) {
 			String categoryPath = categoryBucket.getKeyAsString();
 
 			String[] categories = StringUtils.split(categoryPath, '/');
-			// TODO: in case a category is filtered, it might be a good idea to
-			// only show the according path
+			
+			if(isFiltered) {
+				Map<String, InternalResultFilter> filters = linkBuilder.getFilters();
+				String[] categoryValues = filters.get(CATEGORY_KEY).getValues();
+				if(Arrays.stream(categoryValues).noneMatch(categoryPath::contains)) {
+					continue;
+				}
+			}
+			
 			HierarchialFacetEntry lastLevelEntry = entries.computeIfAbsent(categories[0], c -> toFacetEntry(c, categoryPath, facetConfig, linkBuilder));
 			for (int i = 1; i < categories.length; i++) {
 				FacetEntry child = getChildByKey(lastLevelEntry, categories[i]);
