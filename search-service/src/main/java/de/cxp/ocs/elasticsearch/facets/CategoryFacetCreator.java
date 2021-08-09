@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -36,9 +37,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 	public CategoryFacetCreator(Map<String, FacetConfig> facetConfigs) {
 		super(facetConfigs);
 	}
-
-	public static final String CATEGORY_KEY = "category";
-
+	
 	@Override
 	protected String getNestedPath() {
 		return FieldConstants.PATH_FACET_DATA;
@@ -91,9 +90,9 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 			String[] categories = StringUtils.split(categoryPath, '/');
 			
 			if(isFiltered) {
-				Map<String, InternalResultFilter> filters = linkBuilder.getFilters();
-				String[] categoryValues = filters.get(CATEGORY_KEY).getValues();
-				if(Arrays.stream(categoryValues).noneMatch(categoryPath::contains)) {
+				String[] filterValues = intFacetFilter.getValues();
+				if(ArrayUtils.isNotEmpty(filterValues) && categoryPath != null && 
+						Arrays.stream(filterValues).noneMatch(categoryPath::contains)) {
 					continue;
 				}
 			}

@@ -252,7 +252,4 @@ public class SearchQueryBuilder {
 		return searchQueryLink.getRawQuery();
 	}
 
-	public Map<String, InternalResultFilter> getFilters() {
-		return filters;
-	}
 }
