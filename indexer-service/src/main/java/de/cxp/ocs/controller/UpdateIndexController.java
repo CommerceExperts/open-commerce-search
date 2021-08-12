@@ -62,7 +62,7 @@ public class UpdateIndexController implements UpdateIndexService {
 
 	@DeleteMapping
 	@Override
-	public Map<String, Result> deleteDocuments(@PathVariable("indexName") String indexName, @RequestParam("id[]") List<String> ids) {
+	public Map<String, Result> deleteDocuments(@PathVariable("indexName") String indexName, @RequestParam("id") List<String> ids) {
 		try {
 			return indexerManager.getIndexer(indexName)
 					.deleteDocuments(indexName, ids);
