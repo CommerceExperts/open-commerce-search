@@ -12,7 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import de.cxp.ocs.model.index.Document;
 
 @ExtendWith({ OCSStack.class })
-public class TestPartialUpdates {
+public class ITPartialUpdates {
 
 	private final static String indexName = "partial_update_test";
 

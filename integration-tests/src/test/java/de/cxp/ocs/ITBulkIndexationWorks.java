@@ -19,7 +19,7 @@ import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.model.suggest.Suggestion;
 
 @ExtendWith({ OCSStack.class })
-public class TestBulkIndexationWorks {
+public class ITBulkIndexationWorks {
 
 	private final String indexName = "indexation_test";
 
