@@ -1,5 +1,6 @@
 package de.cxp.ocs.client;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -54,7 +55,9 @@ public class SearchClient implements SearchService {
 
 	@Override
 	public SearchResult search(String tenant, SearchQuery searchParams, Map<String, String> filters) throws Exception {
-		return target.search(tenant, searchParams.q, searchParams.sort, searchParams.offset, searchParams.limit, searchParams.withFacets, filters);
+		return target.search(tenant,
+				searchParams.q, searchParams.sort, searchParams.offset, searchParams.limit, searchParams.withFacets,
+				filters == null ? Collections.emptyMap() : filters);
 	}
 
 	@Override
