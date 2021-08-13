@@ -142,26 +142,20 @@ public class FieldUsageApplier {
 
 		value = ensureCorrectValueType(field, value);
 
-		Object previousValue = record.getSortData().putIfAbsent(fieldName, value instanceof Number[] ? new MinMaxSet<>((Number[]) value) : new MinMaxSet<>(value));
+		Object previousValue = record.getSortData().putIfAbsent(fieldName, MinMaxSet.of(ensureNumberIsFloat(value)));
 		if (previousValue != null) {
-			record.getSortData().compute(fieldName, joinDataValueFunction(value));
+			Number existingValue = ((MinMaxSet<Number>) previousValue).iterator().next();
+			record.getSortData().compute(fieldName, joinDataValueFunction(ensureSameType(existingValue, value)));
 		}
 
 		if (record instanceof VariantItem) {
 			previousValue = ((VariantItem) record).getMaster().getSortData()
-					.putIfAbsent(fieldName, new MinMaxSet<>(value));
+					.putIfAbsent(fieldName, MinMaxSet.of(ensureNumberIsFloat(value)));
 			if (previousValue != null) {
-				((VariantItem) record).getMaster().getSortData().compute(fieldName, joinDataValueFunction(
-						value));
+				Number existingValue = ((MinMaxSet<Number>) previousValue).iterator().next();
+				((VariantItem) record).getMaster().getSortData().compute(fieldName, joinDataValueFunction(ensureSameType(existingValue, value)));
 			}
 		}
-	}
-
-	private static boolean isEmpty(Object value) {
-		return value == null
-				|| value instanceof String && ((String) value).isEmpty()
-				|| value instanceof Collection && ((Collection<?>) value).isEmpty()
-				|| value.getClass().isArray() && ((Object[]) value).length == 0;
 	}
 
 	private static Object ensureCorrectValueType(final Field field, final Object value) {

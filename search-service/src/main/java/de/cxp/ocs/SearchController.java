@@ -42,7 +42,6 @@ import com.google.common.cache.CacheBuilder;
 import de.cxp.ocs.api.searcher.SearchService;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConfiguration;
-import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.FieldConfigFetcher;
@@ -213,12 +212,6 @@ public class SearchController implements SearchService {
 			GetResponse getResponse = esBuilder.getRestHLClient().get(getRequest, RequestOptions.DEFAULT);
 			if (getResponse.isExists()) {
 				foundDoc = ResultMapper.mapToOriginalDocument(getResponse.getId(), getResponse.getSource(), searchContext.fieldConfigIndex);
-
-				Object resultData = getResponse.getSource().get(FieldConstants.RESULT_DATA);
-				if (resultData != null && resultData instanceof Map) {
-					foundDoc = new Document(getResponse.getId());
-					foundDoc.setData((Map<String, Object>) resultData);
-				}
 			}
 		}
 		finally {

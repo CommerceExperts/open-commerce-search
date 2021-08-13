@@ -16,8 +16,17 @@ public class MinMaxSet<E> implements Set<E> {
 
 	private final TreeSet<E> values = new TreeSet<>();
 
-	public MinMaxSet(E value) {
-		add(value);
+	public static MinMaxSet<?> of(Object value) {
+		if (value.getClass().isArray()) {
+			return new MinMaxSet<Object>((Object[]) value);
+		}
+		else {
+			return new MinMaxSet<Object>(value);
+		}
+	}
+
+	public MinMaxSet(E val) {
+		add(val);
 	}
 
 	public MinMaxSet(E[] values) {

@@ -1,5 +1,6 @@
 package de.cxp.ocs;
 
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -9,9 +10,11 @@ import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
+import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
 import de.cxp.ocs.client.ImportClient;
@@ -20,14 +23,15 @@ import de.cxp.ocs.client.SuggestClient;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class OCSStack implements BeforeAllCallback {
+public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandler {
 
 	private final static int	ES_DEFAULT_PORT			= 9200;
 	private final static int	INDEXER_DEFAULT_PORT	= 8535;
 	private final static int	SEARCH_DEFAULT_PORT		= 8534;
 	private final static int	SUGGEST_DEFAULT_PORT	= 8081;
 
-	public static AtomicBoolean started = new AtomicBoolean(false);
+	public static AtomicBoolean	isStarted	= new AtomicBoolean(false);
+	public static AtomicBoolean	isLogging	= new AtomicBoolean(false);
 
 	private static ImportClient		importClient;
 	private static SearchClient		searchClient;
@@ -41,7 +45,7 @@ public class OCSStack implements BeforeAllCallback {
 
 	@Override
 	public void beforeAll(ExtensionContext context) throws Exception {
-		if (started.compareAndSet(false, true)) {
+		if (isStarted.compareAndSet(false, true)) {
 			log.info("starting OCS-Stack for testing");
 
 			CompletableFuture<HttpHost> esHost;
@@ -108,6 +112,7 @@ public class OCSStack implements BeforeAllCallback {
 
 			indexerHost = CompletableFuture.supplyAsync(() -> {
 				indexerService.start();
+				indexerService.followOutput(new Slf4jLogConsumer(log).withPrefix("ocs_indexer"));
 				return "http://localhost:" + indexerService.getMappedPort(INDEXER_DEFAULT_PORT);
 			});
 		}
@@ -136,6 +141,7 @@ public class OCSStack implements BeforeAllCallback {
 
 			searchServiceHost = CompletableFuture.supplyAsync(() -> {
 				searchService.start();
+				searchService.followOutput(new Slf4jLogConsumer(log).withPrefix("ocs_search"));
 				return "http://localhost:" + searchService.getMappedPort(SEARCH_DEFAULT_PORT);
 			});
 		}
@@ -168,6 +174,7 @@ public class OCSStack implements BeforeAllCallback {
 
 			suggestServiceHost = CompletableFuture.supplyAsync(() -> {
 				suggestService.start();
+				suggestService.followOutput(new Slf4jLogConsumer(log).withPrefix("ocs_suggest"));
 				return "http://localhost:" + suggestService.getMappedPort(SUGGEST_DEFAULT_PORT);
 			});
 		}
@@ -175,23 +182,46 @@ public class OCSStack implements BeforeAllCallback {
 	}
 
 	public static RestClient getElasticsearchClient() {
-		assert started.get() : "Stack not started yet!";
+		assert isStarted.get() : "Stack not started yet!";
 		return esRestClient;
 	}
 
 	public static ImportClient getImportClient() {
-		assert started.get() : "Stack not started yet!";
+		assert isStarted.get() : "Stack not started yet!";
 		return importClient;
 	}
 
 	public static SearchClient getSearchClient() {
-		assert started.get() : "Stack not started yet!";
+		assert isStarted.get() : "Stack not started yet!";
 		return searchClient;
 	}
 
 	public static SuggestClient getSuggestClient() {
-		assert started.get() : "Stack not started yet!";
+		assert isStarted.get() : "Stack not started yet!";
 		return suggestClient;
+	}
+
+	@Override
+	public void handleTestExecutionException(ExtensionContext context, Throwable throwable) throws Throwable {
+		if (isLogging.compareAndSet(false, true)) {
+			log.info("Test {} failed with {}:{}. Will print OCS container logs to StdOut",
+					context.getTestMethod().map(Method::getName).orElse("<unidentified>"),
+					throwable.getClass(), throwable.getMessage());
+
+			if (indexerService != null) {
+				log.info("OCS Indexer Service Logs:");
+				System.out.println(indexerService.getLogs());
+			}
+			if (searchService != null) {
+				log.info("OCS Search Service Logs:");
+				System.out.println(searchService.getLogs());
+			}
+			if (suggestService != null) {
+				log.info("OCS Suggest Service Logs:");
+				System.out.println(suggestService.getLogs());
+			}
+		}
+		throw throwable;
 	}
 
 	// all containers will be shutdown automatically by 'testcontainers'

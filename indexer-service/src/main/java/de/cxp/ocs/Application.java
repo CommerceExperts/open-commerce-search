@@ -14,11 +14,14 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
+import de.cxp.ocs.client.deserializer.DocumentDeserializer;
+import de.cxp.ocs.client.deserializer.ProductDeserializer;
 import de.cxp.ocs.conf.ApplicationProperties;
 import de.cxp.ocs.conf.DefaultIndexerConfigurationProvider;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.RestClientBuilderFactory;
 import de.cxp.ocs.model.index.Attribute;
+import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
@@ -87,6 +90,9 @@ public class Application {
 		module.setMixInAnnotation(FacetEntry.class, WithTypeInfo.class);
 
 		module.registerSubtypes(HierarchialFacetEntry.class, Product.class);
+
+		module.addDeserializer(Document.class, new DocumentDeserializer());
+		module.addDeserializer(Product.class, new ProductDeserializer());
 
 		return module;
 	}

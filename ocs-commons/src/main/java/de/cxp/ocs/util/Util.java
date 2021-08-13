@@ -188,4 +188,61 @@ public final class Util {
 		}
 		return output;
 	}
+
+	public static Object ensureSameType(Object referenceObj, Object adjustableObj) {
+		if (referenceObj.getClass().equals(adjustableObj.getClass()) || referenceObj.getClass().isAssignableFrom(adjustableObj.getClass())) {
+			return adjustableObj;
+		}
+		else if (referenceObj instanceof Number && adjustableObj instanceof Number) {
+			// ordered by likeliness
+			if (referenceObj instanceof Float) {
+				return ((Number) adjustableObj).floatValue();
+			}
+			if (referenceObj instanceof Double) {
+				return ((Number) adjustableObj).doubleValue();
+			}
+			if (referenceObj instanceof Long) {
+				return ((Number) adjustableObj).longValue();
+			}
+			if (referenceObj instanceof Integer) {
+				return ((Number) adjustableObj).intValue();
+			}
+			if (referenceObj instanceof Byte) {
+				return ((Number) adjustableObj).byteValue();
+			}
+			if (referenceObj instanceof Short) {
+				return ((Number) adjustableObj).shortValue();
+			}
+		}
+		if (referenceObj instanceof String) {
+			return adjustableObj.toString();
+		}
+		throw new IllegalArgumentException("Can't convert object of type '" + adjustableObj.getClass() + "' to type '" + referenceObj.getClass() + "'");
+	}
+
+	/**
+	 * Make sure, that if we have a number here, it will be represented by
+	 * float.
+	 * If it's not a number, the object will be returned as is.
+	 * 
+	 * @return
+	 */
+	public static Object ensureNumberIsFloat(Object x) {
+		if (x instanceof Number) return ((Number) x).floatValue();
+		if (x instanceof Number[]) {
+			float[] copy = new float[((Number[]) x).length];
+			for (int i = 0; i < copy.length; i++) {
+				copy[i] = ((Number[]) x)[i].floatValue();
+			}
+			return copy;
+		}
+		else return x;
+	}
+
+	public static boolean isEmpty(Object value) {
+		return value == null
+				|| value instanceof String && ((String) value).isEmpty()
+				|| value instanceof Collection && ((Collection<?>) value).isEmpty()
+				|| value.getClass().isArray() && ((Object[]) value).length == 0;
+	}
 }
