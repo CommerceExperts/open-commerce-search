@@ -53,7 +53,7 @@ public interface UpdateIndexService {
 	 * 
 	 * @param indexName
 	 *        name of the index that should receive that update
-	 * @param doc
+	 * @param docs
 	 *        Full or partial document that carries the data for the update
 	 * @return Result code, one of UPDATED, NOT_FOUND, NOOP, DISMISSED
 	 */
@@ -70,7 +70,7 @@ public interface UpdateIndexService {
 					@ApiResponse(responseCode = "200", description = "OK. The response contains a map of ids and according result."),
 					@ApiResponse(responseCode = "404", description = "index does not exist")
 			})
-	Map<String, Result> patchDocuments(@PathParam("indexName") String indexName, @RequestBody List<Document> doc);
+	Map<String, Result> patchDocuments(@PathParam("indexName") String indexName, @RequestBody List<Document> docs);
 
 
 	/**
@@ -89,8 +89,8 @@ public interface UpdateIndexService {
 	 * 
 	 * @param indexName
 	 *        name of the index that should receive that update
-	 * @param doc
-	 *        The document that should be added or updated at the index.
+	 * @param docs
+	 *        The documents that should be added or updated at the index.
 	 * @param replaceExisting
 	 *        set to false to avoid overriding a document with that ID. Defaults
 	 *        to 'true'
@@ -115,7 +115,7 @@ public interface UpdateIndexService {
 					name = "replaceExisting",
 					description = "set to false to avoid overriding a document with that ID. Defaults to 'true'",
 					required = false) Boolean replaceExisting,
-			@RequestBody List<Document> doc);
+			@RequestBody List<Document> docs);
 
 	/**
 	 * Delete existing document. If document does not exist, it returns code
@@ -123,8 +123,8 @@ public interface UpdateIndexService {
 	 * 
 	 * @param indexName
 	 *        name of the index that should receive that update
-	 * @param id
-	 *        ID of the document that should be deleted
+	 * @param ids
+	 *        Array of IDs of the documents that should be deleted
 	 * @return Result code, one of DELETED, NOT_FOUND
 	 */
 	@DELETE
