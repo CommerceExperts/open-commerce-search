@@ -1,19 +1,22 @@
 package de.cxp.ocs;
 
+import static de.cxp.ocs.config.FieldConstants.*;
+
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import org.apache.commons.lang3.StringUtils;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
-import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Category;
@@ -26,7 +29,7 @@ public class DocumentMapper {
 	public static Document mapToOriginalDocument(String id, Map<String, Object> source, FieldConfigIndex fieldConfig) {
 		Document mapped;
 
-		Object variantsData = source.get(FieldConstants.VARIANTS);
+		Object variantsData = source.get(VARIANTS);
 		if (variantsData != null && variantsData instanceof List && ((List) variantsData).size() > 0) {
 			mapped = new Product(id);
 			List<?> variantSources = (List<?>) variantsData;
@@ -41,57 +44,56 @@ public class DocumentMapper {
 			mapped = new Document(id);
 		}
 
-		for (Field f : fieldConfig.getFields().values()) {
-			if (f.getUsage().isEmpty()) continue;
+		asFacetList(source, PATH_FACET_DATA)
+				.ifPresent(facetEntries -> extractValuesFromPathFacetEntries(mapped, fieldConfig, facetEntries));
+		asFacetList(source, NUMBER_FACET_DATA)
+				.ifPresent(facetEntries -> extractValuesFromSingleFacetEntry(mapped, fieldConfig, facetEntries));
+		asFacetList(source, TERM_FACET_DATA)
+				.ifPresent(facetEntries -> extractValuesFromSingleFacetEntry(mapped, fieldConfig, facetEntries));
 
-			EnumSet<FieldUsage> usages = EnumSet.copyOf(f.getUsage());
-			if (usages.contains(FieldUsage.RESULT)) {
-				Optional.ofNullable(asMap(source, FieldConstants.RESULT_DATA).get(f.getName()))
-						.ifPresent(value -> mapped.data.compute(f.getName(), (k, v) -> v == null ? value : v + " " + value));
-			}
-			else if (usages.contains(FieldUsage.SORT)) {
-				Optional.ofNullable(asMap(source, FieldConstants.SORT_DATA).get(f.getName()))
-						.ifPresent(value -> mapped.data.compute(f.getName(), (k, v) -> v == null ? value : v + " " + value));
-			}
-			else if (usages.contains(FieldUsage.SCORE)) {
-				Optional.ofNullable(asMap(source, FieldConstants.SCORES).get(f.getName()))
-						.ifPresent(value -> mapped.data.compute(f.getName(), (k, v) -> v == null ? value : v + " " + value));
-			}
-			else if (usages.contains(FieldUsage.FACET)) {
-				switch (f.getType()) {
-					case CATEGORY:
-						asFacetList(source, FieldConstants.PATH_FACET_DATA)
-								.ifPresent(facetEntries -> extractValueFromPathFacetEntries(mapped, f, facetEntries));
-						break;
-					case NUMBER:
-						asFacetList(source, FieldConstants.NUMBER_FACET_DATA)
-								.ifPresent(facetEntries -> extractValueFromSingleFacetEntry(mapped, f, facetEntries));
-						break;
-					default:
-						asFacetList(source, FieldConstants.TERM_FACET_DATA)
-								.ifPresent(facetEntries -> extractValueFromSingleFacetEntry(mapped, f, facetEntries));
-				}
-
-			}
-			else if (usages.contains(FieldUsage.SEARCH)) {
-				Optional.ofNullable(asMap(source, FieldConstants.SEARCH_DATA).get(f.getName()))
-						.ifPresent(value -> mapped.data.put(f.getName(), value));
-			}
+		Set<String> knownDataFields = new HashSet<>(mapped.data.keySet());
+		if (mapped.attributes != null) {
+			mapped.attributes.forEach(a -> knownDataFields.add(a.name));
 		}
 
+		// check all fields of the source document as well, since there might be
+		// some dynamic fields
+		for (String subField : new String[] { RESULT_DATA, SEARCH_DATA, SORT_DATA, SCORES }) {
+			for (Entry<String, Object> resultValue : asMap(source, subField).entrySet()) {
+				if (!knownDataFields.contains(resultValue.getKey())) {
+					knownDataFields.add(resultValue.getKey());
+					mapped.data.put(resultValue.getKey(), resultValue.getValue());
+				}
+			}
+		}
+			
 		return mapped;
 	}
 
-	private static void extractValueFromPathFacetEntries(Document mapped, Field field, List<Map<String, String>> facetEntries) {
+	private static void extractValuesFromPathFacetEntries(Document mapped, FieldConfigIndex fieldConfig, List<Map<String, String>> facetEntries) {
 		String lastCatPath = "";
-		List<Category> path = new ArrayList<>(facetEntries.size());
+
+		// used to collect the paths grouped by their name
+		Map<String, List<Category>> paths = new HashMap<>();
+		Optional<Field> primaryCategoryField = fieldConfig.getPrimaryCategoryField();
+
 		for (Map<String, String> facetEntry : facetEntries) {
-			if (facetEntry.get("name").equals(field.getName())) {
+			Optional<Field> facetField = fieldConfig.getMatchingField(facetEntry.get("name"), FieldUsage.FACET);
+
+			if (facetField.isPresent()) {
+				String fieldName = facetField.get().getName();
 				String catPath = facetEntry.get("value").toString();
+				List<Category> path = paths.computeIfAbsent(fieldName, n -> new ArrayList<>());
 
 				if (lastCatPath.length() > 0 && !catPath.startsWith(lastCatPath)) {
+					if (primaryCategoryField.map(catField -> catField.getName().equals(fieldName)).orElse(false)) {
+						mapped.addCategory(path.toArray(new Category[path.size()]));
+					}
+					else {
+						joinPathDataField(mapped, fieldName, path);
+					}
+
 					// start a new path
-					mapped.categories.add(path.toArray(new Category[path.size()]));
 					path.clear();
 				}
 
@@ -102,19 +104,48 @@ public class DocumentMapper {
 				lastCatPath = catPath;
 			}
 		}
-		if (path.size() > 0) {
-			mapped.categories.add(path.toArray(new Category[path.size()]));
+		for (Entry<String, List<Category>> pathEntry : paths.entrySet()) {
+			String fieldName = pathEntry.getKey();
+			List<Category> path = pathEntry.getValue();
+			if (path.size() > 0) {
+				if (primaryCategoryField.map(catField -> catField.getName().equals(fieldName)).orElse(false)) {
+					mapped.addCategory(path.toArray(new Category[path.size()]));
+				}
+				else {
+					joinPathDataField(mapped, fieldName, path);
+				}
+			}
 		}
 	}
 
-	private static void extractValueFromSingleFacetEntry(Document mapped, Field field, List<Map<String, String>> facetEntries) {
+	private static void joinPathDataField(Document mapped, String fieldName, List<Category> path) {
+		Category[] assembledPath = path.toArray(new Category[path.size()]);
+		Object previousPathVal = mapped.data.get(fieldName);
+
+		if (previousPathVal != null && previousPathVal instanceof Category[]) {
+			ArrayList<Object> collectedPaths = new ArrayList<>();
+			collectedPaths.add(mapped.data.get(fieldName));
+			collectedPaths.add(assembledPath);
+			mapped.data.put(fieldName, collectedPaths);
+		}
+		else if (previousPathVal != null && previousPathVal instanceof List) {
+			((List<Object>) previousPathVal).add(assembledPath);
+		}
+		else {
+			mapped.data.put(fieldName, assembledPath);
+		}
+	}
+
+	private static void extractValuesFromSingleFacetEntry(Document mapped, FieldConfigIndex fieldConfig, List<Map<String, String>> facetEntries) {
 		for (Map<String, String> facetEntry : facetEntries) {
-			if (facetEntry.get("name").equals(field.getName())) {
+			String name = facetEntry.get("name");
+			Optional<Field> facetField = fieldConfig.getMatchingField(name, FieldUsage.FACET);
+			if (facetField.isPresent()) {
 				if (facetEntry.get("id") != null) {
-					mapped.addAttribute(new Attribute(field.getName(), facetEntry.get("id"), facetEntry.get("value").toString()));
+					mapped.addAttribute(new Attribute(name, facetEntry.get("id"), facetEntry.get("value").toString()));
 				}
 				else {
-					mapped.data.put(field.getName(), facetEntry.get("value"));
+					mapped.data.putIfAbsent(name, facetEntry.get("value"));
 				}
 				break;
 			}

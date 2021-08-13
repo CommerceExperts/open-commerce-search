@@ -23,7 +23,7 @@ public class WeightedWord implements QueryStringTerm {
 	// TODO: remove because unused?
 	private int		termFrequency	= -1;
 	private boolean	isFuzzy			= false;
-	private Occur	occur			= Occur.MUST;
+	private Occur	occur			= Occur.SHOULD;
 
 	public WeightedWord(String word, float weight) {
 		this.word = word;

@@ -82,8 +82,16 @@ ocs:
           "[title.standard]": 2.5
           "[brand]": 2
           "[brand.standard]": 1.5
-          "[category]": 2
-          "[category.standard]": 1.7
+          "[category_leaf]": 2
+          "[category_leaf.standard]": 1.7
+          "[category_lvl_0]": 1
+          "[category_lvl_0.standard]": 0.7
+          "[category_lvl_1]": 1.1
+          "[category_lvl_1.standard]": 0.8
+          "[category_lvl_2]": 1.2
+          "[category_lvl_2.standard]": 0.9
+          "[category_lvl_3]": 1.3
+          "[category_lvl_3.standard]": 1
       # pre fetch query
       standard-pre-fetch:
         strategy: "PredictionQuery"
@@ -98,8 +106,16 @@ ocs:
           "[title.standard]": 2.5
           "[brand]": 2
           "[brand.standard]": 1.5
-          "[category]": 2
-          "[category.standard]": 1.7
+          "[category_leaf]": 1.8
+          "[category_leaf.standard]": 1.7
+          "[category_lvl_0]": 1
+          "[category_lvl_0.standard]": 0.7
+          "[category_lvl_1]": 1.1
+          "[category_lvl_1.standard]": 0.8
+          "[category_lvl_2]": 1.2
+          "[category_lvl_2.standard]": 0.9
+          "[category_lvl_3]": 1.3
+          "[category_lvl_3.standard]": 1
       # "real" fuzzy search for one-term search
       one-term-fuzzy-search:
         strategy: "ConfigurableQuery"
@@ -114,10 +130,14 @@ ocs:
           "[title]": 3
           "[title.standard]": 2.5
           "[brand]": 2
-          "[category]": 2
+          "[category_leaf]": 1.8
+          "[category_lvl_0]": 1
+          "[category_lvl_1]": 1.1
+          "[category_lvl_2]": 1.2
+          "[category_lvl_3]": 1.3
       # similar to a fuzzy query including decomposition
       relaxed-ngram-query:
-        strategy: "NgramQueryBuilder"
+        strategy: "NgramQuery"
         condition:
           maxTermCount: 10
         settings:
@@ -127,7 +147,11 @@ ocs:
           "[title]": 3
           "[title.standard]": 2.5
           "[brand]": 2
-          "[category]": 2
+          "[category_leaf]": 2
+          "[category_lvl_0]": 1
+          "[category_lvl_1]": 1.1
+          "[category_lvl_2]": 1.2
+          "[category_lvl_3]": 1.3
       # for all queries with more then 10 words
       fallback-search:
         strategy: "ConfigurableQuery"
@@ -141,5 +165,13 @@ ocs:
           "[title.standard]": 2.5
           "[brand]": 2
           "[brand.standard]": 1.5
-          "[category]": 2
-          "[category.standard]": 1.7
+          "[category_leaf]": 2
+          "[category_leaf.standard]": 1.7
+          "[category_lvl_0]": 1
+          "[category_lvl_0.standard]": 0.7
+          "[category_lvl_1]": 1.1
+          "[category_lvl_1.standard]": 0.8
+          "[category_lvl_2]": 1.2
+          "[category_lvl_2.standard]": 0.9
+          "[category_lvl_3]": 1.3
+          "[category_lvl_3.standard]": 1

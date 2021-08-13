@@ -6,6 +6,7 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * {@link DataItem} that can be used to be indexed directly. This is not
@@ -13,6 +14,7 @@ import lombok.EqualsAndHashCode;
  */
 @AllArgsConstructor
 @Data
+@ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public class IndexableItem extends DataItem {
 
