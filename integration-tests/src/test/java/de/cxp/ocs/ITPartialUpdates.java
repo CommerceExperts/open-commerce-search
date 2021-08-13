@@ -40,8 +40,8 @@ public class ITPartialUpdates {
 	@Test
 	public void testPatchVariantPrice() throws Exception {
 		getImportClient()
-				.patchDocuments(indexName, Collections.singletonList(
-						new Product("005").setVariants(new Document[] { new Document().setId("005_2").set("price", 21.5) })));
+				.patchProducts(indexName, Collections.singletonList(
+						new Product("005").setVariants(new Document[] { new Document().setId("005_0").set("price", 21.5) })));
 		flushIndex();
 
 		Document patchedDocument = getSearchClient().getDocument(indexName, "005");

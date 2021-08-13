@@ -14,8 +14,6 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
-import de.cxp.ocs.client.deserializer.DocumentDeserializer;
-import de.cxp.ocs.client.deserializer.ProductDeserializer;
 import de.cxp.ocs.conf.ApplicationProperties;
 import de.cxp.ocs.conf.DefaultIndexerConfigurationProvider;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
@@ -28,6 +26,8 @@ import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
 import de.cxp.ocs.plugin.PluginManager;
 import de.cxp.ocs.spi.indexer.IndexerConfigurationProvider;
+import de.cxp.ocs.util.DocumentDeserializer;
+import de.cxp.ocs.util.ProductDeserializer;
 
 @SpringBootApplication
 @RefreshScope
