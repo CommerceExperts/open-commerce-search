@@ -3,14 +3,17 @@ package de.cxp.ocs.elasticsearch;
 import static com.google.common.base.Predicates.instanceOf;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortOrder;
 
+import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.model.index.Document;
@@ -103,12 +106,18 @@ public class ResultMapper {
 		Document mapped;
 
 		Object variantsData = source.get(FieldConstants.VARIANTS);
-		if (variantsData != null && isMapArray(variantsData, instanceOf(String.class), instanceOf(Object.class))) {
+		if (variantsData != null && isMapList(variantsData, instanceOf(String.class), instanceOf(Object.class))) {
 			mapped = new Product(id);
-			Map<String, Object>[] variantSources = (Map<String, Object>[]) variantsData;
-			Document[] variants = new Document[variantSources.length];
-			for (int i = 0; i < variantSources.length; i++) {
-				variants[i] = mapToOriginalDocument(id + "_" + i, variantSources[i], fieldConfig);
+			List<Map<String, Object>> variantSources = (List<Map<String, Object>>) variantsData;
+			Document[] variants = new Document[variantSources.size()];
+			// TODO: care about proper handling of variant ID
+			Optional<Field> variantIdField = fieldConfig.getField("id");
+			for (int i = 0; i < variantSources.size(); i++) {
+				Document mappedVariant = mapToOriginalDocument(id + "_" + i, variantSources.get(i), fieldConfig);
+				variantIdField
+						.map(idField -> mappedVariant.data.get(idField.getName()))
+						.ifPresent(varId -> mappedVariant.setId(varId.toString()));
+				variants[i] = mappedVariant;
 			}
 			((Product) mapped).setVariants(variants);
 		}
@@ -121,13 +130,13 @@ public class ResultMapper {
 		return mapped;
 	}
 
-	private static boolean isMapArray(Object data, Predicate<Object> keyPredicate, Predicate<Object> valuePredicate) {
-		boolean isWantedMap = data.getClass().isArray()
-				&& ((Object[]) data).length > 0
-				&& ((Object[]) data)[0] instanceof Map
-				&& ((Map<?, ?>[]) data)[0].size() > 0;
+	private static boolean isMapList(Object data, Predicate<Object> keyPredicate, Predicate<Object> valuePredicate) {
+		boolean isWantedMap = data instanceof List
+				&& ((List<Object>) data).size() > 0
+				&& ((List<Object>) data).get(0) instanceof Map
+				&& ((List<Map<?, ?>>) data).get(0).size() > 0;
 		if (isWantedMap && keyPredicate != null && valuePredicate != null) {
-			Entry<?, ?> mapContent = ((Map<?, ?>[]) data)[0].entrySet().iterator().next();
+			Entry<?, ?> mapContent = ((List<Map<?, ?>>) data).get(0).entrySet().iterator().next();
 			isWantedMap &= keyPredicate.test(mapContent.getKey()) && valuePredicate.test(mapContent.getValue());
 		}
 		return isWantedMap;

@@ -19,12 +19,15 @@ import de.cxp.ocs.conf.DefaultIndexerConfigurationProvider;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.RestClientBuilderFactory;
 import de.cxp.ocs.model.index.Attribute;
+import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
 import de.cxp.ocs.plugin.PluginManager;
 import de.cxp.ocs.spi.indexer.IndexerConfigurationProvider;
+import de.cxp.ocs.util.DocumentDeserializer;
+import de.cxp.ocs.util.ProductDeserializer;
 
 @SpringBootApplication
 @RefreshScope
@@ -87,6 +90,9 @@ public class Application {
 		module.setMixInAnnotation(FacetEntry.class, WithTypeInfo.class);
 
 		module.registerSubtypes(HierarchialFacetEntry.class, Product.class);
+
+		module.addDeserializer(Document.class, new DocumentDeserializer());
+		module.addDeserializer(Product.class, new ProductDeserializer());
 
 		return module;
 	}

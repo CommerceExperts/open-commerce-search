@@ -3,7 +3,9 @@ package de.cxp.ocs.indexer;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.LocaleUtils;
@@ -125,6 +127,15 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 
 	protected abstract Document _get(@NonNull String indexName, @NonNull String docId);
 
+	@Override
+	public Map<String, Result> patchDocuments(String indexName, List<Document> documents) {
+		Map<String, Result> response = new HashMap<>(documents.size());
+		for (Document doc : documents) {
+			response.put(doc.id, patchDocument(indexName, doc));
+		}
+		return response;
+	}
+
 	public Result patchDocument(String index, Document doc) {
 		Set<String> fetchFields = DocumentPatcher.getRequiredFieldsForMerge(doc, fieldConfIndex);
 
@@ -146,6 +157,15 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 	}
 
 	protected abstract Result _patch(String index, IndexableItem indexableItem);
+
+	@Override
+	public Map<String, Result> putDocuments(String indexName, Boolean replaceExisting, List<Document> documents) {
+		Map<String, Result> response = new HashMap<>(documents.size());
+		for (Document doc : documents) {
+			response.put(doc.id, putDocument(indexName, replaceExisting, doc));
+		}
+		return response;
+	}
 
 	public Result putDocument(String indexName, Boolean replaceExisting, Document doc) {
 		boolean isIndexable = preProcess(doc);

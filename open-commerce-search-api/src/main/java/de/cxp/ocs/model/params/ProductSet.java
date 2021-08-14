@@ -14,8 +14,8 @@ public abstract class ProductSet {
 	public abstract String getType();
 
 	/**
-	 * Name of the product set, so the results can will be identified in the
-	 * returned slices.
+	 * @return Name of the product set, at which the results can be identified
+	 *         in the returned slices.
 	 */
 	public abstract String getName();
 

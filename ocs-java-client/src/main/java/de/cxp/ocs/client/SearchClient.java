@@ -1,5 +1,6 @@
 package de.cxp.ocs.client;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -12,6 +13,7 @@ import de.cxp.ocs.model.result.SearchResult;
 import feign.Feign;
 import feign.Feign.Builder;
 import feign.codec.Decoder;
+import feign.httpclient.ApacheHttpClient;
 
 public class SearchClient implements SearchService {
 
@@ -26,6 +28,7 @@ public class SearchClient implements SearchService {
 	public SearchClient(String endpointUrl, Consumer<Feign.Builder> feignConfigurer) {
 		Builder fb = Feign.builder();
 		feignConfigurer.accept(fb);
+		fb.client(new ApacheHttpClient());
 		target = fb.target(SearchApi.class, endpointUrl);
 	}
 
@@ -52,7 +55,9 @@ public class SearchClient implements SearchService {
 
 	@Override
 	public SearchResult search(String tenant, SearchQuery searchParams, Map<String, String> filters) throws Exception {
-		return target.search(tenant, searchParams.q, searchParams.sort, searchParams.offset, searchParams.limit, searchParams.withFacets, filters);
+		return target.search(tenant,
+				searchParams.q, searchParams.sort, searchParams.offset, searchParams.limit, searchParams.withFacets,
+				filters == null ? Collections.emptyMap() : filters);
 	}
 
 	@Override

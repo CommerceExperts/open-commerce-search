@@ -1,9 +1,13 @@
 package de.cxp.ocs.client;
 
+import java.util.List;
+import java.util.Map;
+
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.api.indexer.UpdateIndexService.Result;
 import de.cxp.ocs.model.index.BulkImportData;
 import de.cxp.ocs.model.index.Document;
+import de.cxp.ocs.model.index.Product;
 import feign.Headers;
 import feign.Param;
 import feign.RequestLine;
@@ -27,12 +31,20 @@ interface ImportApi {
 
 	@RequestLine("PATCH /indexer-api/v1/update/{indexName}")
 	@Headers("Content-Type: application/json")
-	Result patchDocument(@Param("indexName") String indexName, Document doc);
+	Map<String, Result> patchDocuments(@Param("indexName") String indexName, List<Document> doc);
+
+	@RequestLine("PATCH /indexer-api/v1/update/{indexName}")
+	@Headers("Content-Type: application/json")
+	Map<String, Result> patchProducts(@Param("indexName") String indexName, List<Product> doc);
 
 	@RequestLine("PUT /indexer-api/v1/update/{indexName}?replaceExisting={replaceExisting}")
 	@Headers("Content-Type: application/json")
-	Result putDocument(@Param("indexName") String indexName, @Param("replaceExisting") Boolean replaceExisting, Document doc);
+	Map<String, Result> putDocuments(@Param("indexName") String indexName, @Param("replaceExisting") Boolean replaceExisting, List<Document> docs);
 
-	@RequestLine("DELETE /indexer-api/v1/update/{indexName}?id={id}")
-	Result deleteDocument(@Param("indexName") String indexName, @Param("id") String id);
+	@RequestLine("PUT /indexer-api/v1/update/{indexName}?replaceExisting={replaceExisting}")
+	@Headers("Content-Type: application/json")
+	Map<String, Result> putProducts(@Param("indexName") String indexName, @Param("replaceExisting") Boolean replaceExisting, List<Product> prod);
+
+	@RequestLine("DELETE /indexer-api/v1/update/{indexName}")
+	Map<String, Result> deleteDocuments(@Param("indexName") String indexName, @Param("id") List<String> id);
 }

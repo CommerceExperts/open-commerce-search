@@ -1,5 +1,7 @@
 package de.cxp.ocs.client;
 
+import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import de.cxp.ocs.api.indexer.FullIndexationService;
@@ -8,9 +10,11 @@ import de.cxp.ocs.api.indexer.UpdateIndexService;
 import de.cxp.ocs.client.deserializer.ObjectMapperFactory;
 import de.cxp.ocs.model.index.BulkImportData;
 import de.cxp.ocs.model.index.Document;
+import de.cxp.ocs.model.index.Product;
 import feign.Feign;
 import feign.Feign.Builder;
 import feign.codec.Decoder;
+import feign.httpclient.ApacheHttpClient;
 
 public class ImportClient implements FullIndexationService, UpdateIndexService {
 
@@ -25,6 +29,7 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 	public ImportClient(String endpointUrl, Consumer<Feign.Builder> feignConfigurer) {
 		Builder fb = Feign.builder();
 		feignConfigurer.accept(fb);
+		fb.client(new ApacheHttpClient());
 		target = fb.target(ImportApi.class, endpointUrl);
 	}
 
@@ -44,19 +49,61 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 		});
 	}
 
+	/**
+	 * Patch one or more documents. The passed documents only need partial data
+	 * that needs to be patched and the ID of the documents to patch.
+	 * 
+	 * Attention: in order to patch Products with variants, use the
+	 * "patchProducts" method, which is necessary to have them serialized
+	 * properly.
+	 */
 	@Override
-	public Result patchDocument(String indexName, Document doc) {
-		return target.patchDocument(indexName, doc);
+	public Map<String, Result> patchDocuments(String indexName, List<Document> docs) {
+		return target.patchDocuments(indexName, docs);
+	}
+
+	/**
+	 * Similar to patchDocuments, but for the extended sub type {@link Product}
+	 * that supports variants. For some reason this is necessary.
+	 * 
+	 * TODO: may be solved with customer serializer.
+	 * 
+	 * @param indexName
+	 * @param products
+	 * @return
+	 */
+	public Map<String, Result> patchProducts(String indexName, List<Product> products) {
+		return target.patchProducts(indexName, products);
+	}
+
+	/**
+	 * Add or overwrite existing documents.
+	 * 
+	 * Attention: in order to put Products with variants, use the
+	 * "putProducts" method, which is necessary to have them serialized
+	 * properly.
+	 */
+	@Override
+	public Map<String, Result> putDocuments(String indexName, Boolean replaceExisting, List<Document> docs) {
+		return target.putDocuments(indexName, replaceExisting == null ? true : replaceExisting, docs);
+	}
+
+	
+	/**
+	 * Similar to putDocuments, but for the extended sub type {@link Product}
+	 * that supports variants.
+	 * @param indexName
+	 * @param replaceExisting
+	 * @param products
+	 * @return
+	 */
+	public Map<String, Result> putProducts(String indexName, Boolean replaceExisting, List<Product> products) {
+		return target.putProducts(indexName, replaceExisting == null ? true : replaceExisting, products);
 	}
 
 	@Override
-	public Result putDocument(String indexName, Boolean replaceExisting, Document doc) {
-		return target.putDocument(indexName, replaceExisting == null ? true : replaceExisting, doc);
-	}
-
-	@Override
-	public Result deleteDocument(String indexName, String id) {
-		return target.deleteDocument(indexName, id);
+	public Map<String, Result> deleteDocuments(String indexName, List<String> ids) {
+		return target.deleteDocuments(indexName, ids);
 	}
 
 	@Override
