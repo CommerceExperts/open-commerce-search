@@ -16,7 +16,7 @@
 	<description>intermediate parent project that splits the Suggest Service into several modules</description>
 
 	<properties>
-		<lucene.version>8.8.0</lucene.version>
+		<lucene.version>8.8.2</lucene.version>
 		<micrometer.version>1.5.14</micrometer.version>
 	</properties>
 	
@@ -25,12 +25,12 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>smartsuggest-lib</artifactId>
-				<version>0.5.0</version>
+				<version>0.6.0-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-suggest-data-provider</artifactId>
-				<version>0.4.0</version>
+				<version>0.5.0-SNAPSHOT</version>
 			</dependency>
 			
 			<dependency>
