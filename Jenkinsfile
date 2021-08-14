@@ -22,7 +22,7 @@ pipeline {
     stage('build packages') {
       steps {
         withMaven(mavenSettingsConfig: '67c40a88-505a-4f78-94a3-d879cc1a29f6') {
-          sh "mvn $MAVEN_CLI_OPTS install -DskipTests=true -P !sync-openapi-spec -pl !integration-tests"
+          sh "mvn $MAVEN_CLI_OPTS install -DskipTests=true -P !sync-openapi-spec,dockerize -pl !integration-tests"
         }
       }
     } // end build packages
