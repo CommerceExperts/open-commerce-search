@@ -83,10 +83,6 @@ class QueryPredictor {
 		boolean hasFoundQueryWithAllTermsMatching = false;
 		for (final Bucket scoreBucket : ((Histogram) searchResponse.getAggregations().get("_score_histogram"))
 				.getBuckets()) {
-			if (scoreBucket.getDocCount() == 0) {
-				continue;
-			}
-
 			final PredictedQuery predictedQuery = new PredictedQuery();
 			final LinkedHashMap<String, QueryStringTerm> matchingTerms = getMatchingTerms(predictionWords, scoreBucket);
 			if (matchingTerms.size() == 1) {
@@ -232,7 +228,7 @@ class QueryPredictor {
 		final AggregationBuilder scriptAgg = AggregationBuilders
 				.histogram("_score_histogram")
 				.interval(1)
-				.minDocCount(0)
+				.minDocCount(1)
 				.script(new Script("_score"));
 
 		final SearchResponse searchResponse = restClient

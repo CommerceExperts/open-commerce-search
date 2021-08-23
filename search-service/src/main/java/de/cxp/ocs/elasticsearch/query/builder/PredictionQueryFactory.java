@@ -36,7 +36,9 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RequiredArgsConstructor
 public class PredictionQueryFactory implements ESQueryFactory {
 
@@ -202,7 +204,7 @@ public class PredictionQueryFactory implements ESQueryFactory {
 			queryMetaData = metaFetcher.getQueryMetaData(searchWords, fieldWeights);
 		}
 		catch (final IOException ioe) {
-			throw new RuntimeException("can't build search query, because meta fetch phase failed", ioe);
+			log.error("can't build search query, because meta fetch phase failed", ioe);
 		}
 
 		if (queryMetaData == null || queryMetaData.isEmpty()) {
