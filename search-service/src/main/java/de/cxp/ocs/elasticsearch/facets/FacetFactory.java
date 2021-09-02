@@ -11,7 +11,7 @@ public class FacetFactory {
 	}
 
 	public static String getLabel(Facet facet) {
-		return facet.meta.get(MetaDataValues.label.name()).toString();
+		return facet.meta.getOrDefault(MetaDataValues.label.name(), facet.getFieldName()).toString();
 	}
 
 	public static byte getOrder(Facet facet) {
@@ -23,7 +23,7 @@ public class FacetFactory {
 		facet.getMeta().putAll(facetConfig.getMetaData());
 
 		facet.setType(type.name().toLowerCase());
-		facet.meta.put(MetaDataValues.label.name(), facetConfig.getLabel());
+		facet.meta.put(MetaDataValues.label.name(), facetConfig.getLabel() == null ? facetConfig.getSourceField() : facetConfig.getLabel());
 		facet.meta.put(MetaDataValues.multiSelect.name(), facetConfig.isMultiSelect());
 		facet.meta.put(MetaDataValues.order.name(), facetConfig.getOrder());
 		return facet;
