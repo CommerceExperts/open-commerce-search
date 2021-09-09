@@ -89,6 +89,7 @@ public class IndexerFactory {
 				processor.initialize(fieldConfigIndex, dataProcessorsConfig.getOrDefault(processor.getClass().getCanonicalName(), Collections.emptyMap()));
 				preProcessors.add(processor);
 				processorFound = true;
+				log.info("initialized pre-processor {}", processorName);
 			}
 
 			Supplier<? extends DocumentPostProcessor> postProcessorSupplier = indexableItemProcessorSuppliers.get(processorName);
@@ -97,6 +98,7 @@ public class IndexerFactory {
 				postProcessor.initialize(fieldConfigIndex, dataProcessorsConfig.getOrDefault(postProcessor.getClass().getCanonicalName(), Collections.emptyMap()));
 				postProcessors.add(postProcessor);
 				processorFound = true;
+				log.info("initialized post-processor {}", processorName);
 			}
 
 			if (!processorFound) {

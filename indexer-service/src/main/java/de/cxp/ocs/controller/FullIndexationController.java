@@ -2,6 +2,7 @@ package de.cxp.ocs.controller;
 
 import java.util.concurrent.ExecutionException;
 
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,6 +37,7 @@ public class FullIndexationController {
 	public ResponseEntity startImport(@PathVariable("indexName") String indexName, @RequestParam("locale") String locale) {
 		if (indexName == null || indexName.isEmpty()) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		if (locale == null || locale.isEmpty()) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+		MDC.put("index", indexName);
 		try {
 			return ResponseEntity.ok(indexerManager.getIndexer(indexName).startImport(indexName, locale));
 		}
@@ -47,6 +49,9 @@ public class FullIndexationController {
 		}
 		catch (ExecutionException e) {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+		finally {
+			MDC.remove("index");
 		}
 	}
 
@@ -66,13 +71,19 @@ public class FullIndexationController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(0);
 		}
 
-		AbstractIndexer indexer = indexerManager.getIndexer(data.getSession().getFinalIndexName());
-		if (!indexer.isImportRunning(data.session.temporaryIndexName)) {
-			log.warn("Tried to add documents int an index that is not expecting bulk imports: {}", data.session.temporaryIndexName);
-			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(0);
+		MDC.put("index", data.session.finalIndexName);
+		try {
+			AbstractIndexer indexer = indexerManager.getIndexer(data.getSession().getFinalIndexName());
+			if (!indexer.isImportRunning(data.session.temporaryIndexName)) {
+				log.warn("Tried to add documents int an index that is not expecting bulk imports: {}", data.session.temporaryIndexName);
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(0);
+			}
+			int successCount = indexer.add(data);
+			return ResponseEntity.ok().body(successCount);
 		}
-		int successCount = indexer.add(data);
-		return ResponseEntity.ok().body(successCount);
+		finally {
+			MDC.remove("index");
+		}
 	}
 
 	@PostMapping("/done")
@@ -82,17 +93,22 @@ public class FullIndexationController {
 			log.warn("Called 'done' for an index that is not expecting bulk imports: {}", session.temporaryIndexName);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		}
+		MDC.put("index", session.finalIndexName);
 		try {
-		boolean ok = indexer.done(session);
+			boolean ok = indexer.done(session);
 			return ok ? ResponseEntity.ok(true) : ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
 		}
 		catch (IllegalArgumentException iae) {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(false);
 		}
+		finally {
+			MDC.remove("index");
+		}
 	}
 
 	@PostMapping("/cancel")
 	public ResponseEntity<Void> cancel(@RequestBody ImportSession session) {
+		MDC.put("index", session.finalIndexName);
 		try {
 			AbstractIndexer indexer = indexerManager.getIndexer(session.getFinalIndexName());
 			if (!indexer.isImportRunning(session.temporaryIndexName)) {
@@ -105,6 +121,9 @@ public class FullIndexationController {
 		catch (ExecutionException e) {
 			log.error("exception while canceling import: ", e);
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		}
+		finally {
+			MDC.remove("index");
 		}
 	}
 

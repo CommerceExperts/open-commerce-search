@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -30,6 +31,7 @@ public class UpdateIndexController implements UpdateIndexService {
 	@PatchMapping
 	@Override
 	public Map<String, Result> patchDocuments(@PathVariable("indexName") String indexName, @RequestBody List<Document> documents) {
+		MDC.put("index", indexName);
 		try {
 			Map<String, Result> response = new HashMap<>(documents.size());
 			for (Document doc : documents) {
@@ -42,6 +44,9 @@ public class UpdateIndexController implements UpdateIndexService {
 			log.error("failed to get indexer", e);
 			throw new RuntimeException(e);
 		}
+		finally {
+			MDC.remove("index");
+		}
 	}
 
 	@PutMapping
@@ -50,6 +55,7 @@ public class UpdateIndexController implements UpdateIndexService {
 			@PathVariable("indexName") String indexName,
 			@RequestParam(name = "replaceExisting", defaultValue = "true") Boolean replaceExisting,
 			@RequestBody List<Document> documents) {
+		MDC.put("index", indexName);
 		try {
 			return indexerManager.getIndexer(indexName)
 					.putDocuments(indexName, replaceExisting, documents);
@@ -58,11 +64,15 @@ public class UpdateIndexController implements UpdateIndexService {
 			log.error("failed to get indexer", e);
 			throw new RuntimeException(e);
 		}
+		finally {
+			MDC.remove("index");
+		}
 	}
 
 	@DeleteMapping
 	@Override
 	public Map<String, Result> deleteDocuments(@PathVariable("indexName") String indexName, @RequestParam("id") List<String> ids) {
+		MDC.put("index", indexName);
 		try {
 			return indexerManager.getIndexer(indexName)
 					.deleteDocuments(indexName, ids);
@@ -70,6 +80,9 @@ public class UpdateIndexController implements UpdateIndexService {
 		catch (ExecutionException e) {
 			log.error("failed to get indexer", e);
 			throw new RuntimeException(e);
+		}
+		finally {
+			MDC.remove("index");
 		}
 	}
 
