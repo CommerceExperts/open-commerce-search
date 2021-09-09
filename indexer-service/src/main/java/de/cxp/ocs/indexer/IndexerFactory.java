@@ -66,10 +66,21 @@ public class IndexerFactory {
 	public AbstractIndexer create(IndexConfiguration indexConfiguration) {
 		List<DocumentPreProcessor> preProcessors = new ArrayList<>();
 		List<DocumentPostProcessor> postProcessors = new ArrayList<>();
+		initializeDataProcessors(indexConfiguration, preProcessors, postProcessors);
 
-		Map<String, Map<String, String>> dataProcessorsConfig = indexConfiguration.getDataProcessorConfiguration().getConfiguration();
+		initializeTemplates();
+
+		return new ElasticsearchIndexer(
+				indexConfiguration.getIndexSettings(),
+				new FieldConfigIndex(indexConfiguration.getFieldConfiguration()),
+				elasticsearchClient,
+				preProcessors,
+				postProcessors);
+	}
+
+	private void initializeDataProcessors(IndexConfiguration indexConfiguration, List<DocumentPreProcessor> preProcessors, List<DocumentPostProcessor> postProcessors) {
 		FieldConfigIndex fieldConfigIndex = new FieldConfigIndex(indexConfiguration.getFieldConfiguration());
-
+		Map<String, Map<String, String>> dataProcessorsConfig = indexConfiguration.getDataProcessorConfiguration().getConfiguration();
 		for (String processorName : indexConfiguration.getDataProcessorConfiguration().getProcessors()) {
 			Supplier<? extends DocumentPreProcessor> preProcessorSupplier = docPreProcessorSuppliers.get(processorName);
 			boolean processorFound = false;
@@ -84,6 +95,7 @@ public class IndexerFactory {
 			if (postProcessorSupplier != null) {
 				DocumentPostProcessor postProcessor = postProcessorSupplier.get();
 				postProcessor.initialize(fieldConfigIndex, dataProcessorsConfig.getOrDefault(postProcessor.getClass().getCanonicalName(), Collections.emptyMap()));
+				postProcessors.add(postProcessor);
 				processorFound = true;
 			}
 
@@ -91,10 +103,6 @@ public class IndexerFactory {
 				log.error("Processor '{}' not found!", processorName);
 			}
 		}
-
-		initializeTemplates();
-
-		return new ElasticsearchIndexer(indexConfiguration.getIndexSettings(), fieldConfigIndex, elasticsearchClient, preProcessors, postProcessors);
 	}
 
 	private void initializeTemplates() {
