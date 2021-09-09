@@ -76,6 +76,22 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 		}
 	}
 
+	/**
+	 * <p>
+	 * Checks if an active import session exists for that index.
+	 * </p>
+	 * <p>
+	 * This could either be the full or minimal/final index name.
+	 * </p>
+	 * <p>
+	 * The locale is not necessary, because you should never use the same
+	 * index-name with different locales and expect two indexes to work in
+	 * parallel.
+	 * </p>
+	 * 
+	 * @param indexName
+	 * @return
+	 */
 	public abstract boolean isImportRunning(String indexName);
 
 	protected abstract String initNewIndex(String indexName, String locale) throws IOException;
