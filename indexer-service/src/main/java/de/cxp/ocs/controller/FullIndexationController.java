@@ -68,6 +68,7 @@ public class FullIndexationController {
 
 		AbstractIndexer indexer = indexerManager.getIndexer(data.getSession().getFinalIndexName());
 		if (!indexer.isImportRunning(data.session.temporaryIndexName)) {
+			log.warn("Tried to add documents int an index that is not expecting bulk imports: {}", data.session.temporaryIndexName);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(0);
 		}
 		int successCount = indexer.add(data);
@@ -78,6 +79,7 @@ public class FullIndexationController {
 	public ResponseEntity<Boolean> done(@RequestBody ImportSession session) throws Exception {
 		AbstractIndexer indexer = indexerManager.getIndexer(session.getFinalIndexName());
 		if (!indexer.isImportRunning(session.temporaryIndexName)) {
+			log.warn("Called 'done' for an index that is not expecting bulk imports: {}", session.temporaryIndexName);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		}
 		try {
@@ -94,6 +96,7 @@ public class FullIndexationController {
 		try {
 			AbstractIndexer indexer = indexerManager.getIndexer(session.getFinalIndexName());
 			if (!indexer.isImportRunning(session.temporaryIndexName)) {
+				log.warn("Called 'cancel' for an index that is not expecting bulk imports: {}", session.temporaryIndexName);
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 			}
 			indexer.cancel(session);
