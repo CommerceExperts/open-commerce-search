@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import org.elasticsearch.client.RestHighLevelClient;
@@ -25,6 +26,8 @@ import de.cxp.ocs.preprocessor.impl.SplitValueDataProcessor;
 import de.cxp.ocs.preprocessor.impl.WordSplitterDataProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
+import fr.pilato.elasticsearch.tools.ElasticsearchBeyonder;
+import fr.pilato.elasticsearch.tools.SettingsFinder.Defaults;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -32,6 +35,8 @@ import lombok.extern.slf4j.Slf4j;
 public class IndexerFactory {
 
 	private final RestHighLevelClient elasticsearchClient;
+
+	private AtomicBoolean templatesInitialized = new AtomicBoolean(false);
 
 	private final Map<String, Supplier<? extends DocumentPreProcessor>> docPreProcessorSuppliers;
 
@@ -87,7 +92,21 @@ public class IndexerFactory {
 			}
 		}
 
+		initializeTemplates();
+
 		return new ElasticsearchIndexer(indexConfiguration.getIndexSettings(), fieldConfigIndex, elasticsearchClient, preProcessors, postProcessors);
+	}
+
+	private void initializeTemplates() {
+		if (!templatesInitialized.get()) {
+			try {
+				ElasticsearchBeyonder.start(elasticsearchClient.getLowLevelClient(), Defaults.ConfigDir, Defaults.MergeMappings, true);
+				templatesInitialized.set(true);
+			}
+			catch (Exception e) {
+				log.error("failed to initialize templates!", e);
+			}
+		}
 	}
 
 }

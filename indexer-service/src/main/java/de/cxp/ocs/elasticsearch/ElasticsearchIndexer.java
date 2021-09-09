@@ -38,8 +38,6 @@ import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
-import fr.pilato.elasticsearch.tools.ElasticsearchBeyonder;
-import fr.pilato.elasticsearch.tools.SettingsFinder.Defaults;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -115,12 +113,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		String finalIndexName = getNextIndexName(indexName, localizedIndexName);
 
 		try {
-			// only during testing we don't have a real connection to ES
-			if (restClient != null) {
-				ElasticsearchBeyonder.start(restClient.getLowLevelClient(), Defaults.ConfigDir, Defaults.MergeMappings, true);
-			}
-
-			log.info("trying to create index {}", finalIndexName);
+			log.info("creating index {}", finalIndexName);
 			indexClient.createFreshIndex(finalIndexName);
 		}
 		catch (Exception e) {
