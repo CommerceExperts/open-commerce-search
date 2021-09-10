@@ -2,6 +2,8 @@ package de.cxp.ocs.util;
 
 import static de.cxp.ocs.util.SearchQueryBuilder.SORT_DESC_PREFIX;
 import static de.cxp.ocs.util.SearchQueryBuilder.VALUE_DELIMITER;
+import static de.cxp.ocs.util.SearchQueryBuilder.VALUE_DELIMITER_ENCODED;
+import static org.apache.commons.lang3.StringUtils.replace;
 import static org.apache.commons.lang3.StringUtils.split;
 import static org.apache.commons.lang3.StringUtils.splitPreserveAllTokens;
 
@@ -87,14 +89,15 @@ public class SearchParamsParser {
 
 				if (matchingField.isPresent()) {
 					Field field = matchingField.get();
+					String[] paramValues = decodeValueDelimiter(split(paramValue, VALUE_DELIMITER));
 					switch (field.getType()) {
 						case CATEGORY:
-							filters.add(new TermResultFilter(field, split(paramValue, VALUE_DELIMITER))
+							filters.add(new TermResultFilter(field, paramValues)
 									.setFieldPrefix(FieldConstants.PATH_FACET_DATA)
 									.setFilterOnId(isIdFilter));
 							break;
 						case NUMBER:
-							String[] paramValues = splitPreserveAllTokens(paramValue, VALUE_DELIMITER);
+							paramValues = splitPreserveAllTokens(paramValue, VALUE_DELIMITER);
 							if (paramValues.length != 2) {
 								// Fallback logic to allow numeric filter values
 								// separated by dash, e.g. "50 - 100"
@@ -113,7 +116,7 @@ public class SearchParamsParser {
 									Util.tryToParseAsNumber(paramValues[1]).orElse(null)));
 							break;
 						default:
-							filters.add(new TermResultFilter(field, split(paramValue, VALUE_DELIMITER))
+							filters.add(new TermResultFilter(field, paramValues)
 									.setFilterOnId(isIdFilter));
 					}
 				}
@@ -121,6 +124,13 @@ public class SearchParamsParser {
 		}
 
 		return filters;
+	}
+
+	private static String[] decodeValueDelimiter(String[] split) {
+		for (int i = 0; i < split.length; i++) {
+			split[i] = replace(split[i], VALUE_DELIMITER_ENCODED, VALUE_DELIMITER);
+		}
+		return split;
 	}
 
 	/**
