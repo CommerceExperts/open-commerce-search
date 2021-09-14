@@ -2,13 +2,18 @@ package de.cxp.ocs.indexer;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import org.apache.commons.lang3.LocaleUtils;
+import org.apache.commons.lang3.time.DurationFormatUtils;
 
 import de.cxp.ocs.api.indexer.FullIndexationService;
 import de.cxp.ocs.api.indexer.ImportSession;
@@ -52,16 +57,16 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 
 	@Override
 	public ImportSession startImport(String indexName, String locale) throws IllegalStateException {
-		if (isImportRunning(indexName)) {
-			throw new IllegalStateException("Import for index " + indexName + " already running");
-		}
 		if (!indexName.equals(indexName.toLowerCase(LocaleUtils.toLocale(locale)))) {
 			throw new IllegalArgumentException(String.format("Invalid index name [%s], must be lowercase", indexName));
 		}
-
-		log.info("starting import session for index {} with locale {}", indexName, locale);
+		if (isImportRunning(indexName)) {
+			log.warn("Another import for index {} is already running! Will start a new one never the less...", indexName);
+			CompletableFuture.runAsync(() -> this.cleanupAbandonedImports(indexName, locale));
+		}
 
 		try {
+			log.info("starting import session for index {} with locale {}", indexName, locale);
 			return new ImportSession(
 					indexName,
 					initNewIndex(indexName, locale));
@@ -71,9 +76,48 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 		}
 	}
 
+	/**
+	 * <p>
+	 * Checks if an active import session exists for that index.
+	 * </p>
+	 * <p>
+	 * This could either be the full or minimal/final index name.
+	 * </p>
+	 * <p>
+	 * The locale is not necessary, because you should never use the same
+	 * index-name with different locales and expect two indexes to work in
+	 * parallel.
+	 * </p>
+	 * 
+	 * @param indexName
+	 * @return
+	 */
 	public abstract boolean isImportRunning(String indexName);
 
 	protected abstract String initNewIndex(String indexName, String locale) throws IOException;
+
+	/**
+	 * Get a map of all matching indexes that are not deployed yet (which means
+	 * they are still considered as running.
+	 * Each one with the according index creation time.
+	 * 
+	 * @param indexName
+	 * @return
+	 */
+	public abstract Map<String, Instant> getRunningImportStartTimes(String indexName, String locale);
+
+	private void cleanupAbandonedImports(String indexName, String locale) {
+		Map<String, Instant> activeImportStartTime = getRunningImportStartTimes(indexName, locale);
+		for (Entry<String, Instant> indexStartTimes : activeImportStartTime.entrySet()) {
+			Duration activeImportAge = Duration.between(indexStartTimes.getValue(), Instant.now());
+			if (activeImportAge.toHours() > 0) {
+				log.info("Deleting index {} which was created {} ago",
+						indexStartTimes.getKey(),
+						DurationFormatUtils.formatDurationWords(activeImportAge.toMillis(), true, true));
+				deleteIndex(indexStartTimes.getKey());
+			}
+		}
+	}
 
 	@Override
 	public int add(BulkImportData data) throws Exception {

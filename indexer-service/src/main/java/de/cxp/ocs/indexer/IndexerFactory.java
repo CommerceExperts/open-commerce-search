@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import org.elasticsearch.client.RestHighLevelClient;
@@ -25,6 +26,8 @@ import de.cxp.ocs.preprocessor.impl.SplitValueDataProcessor;
 import de.cxp.ocs.preprocessor.impl.WordSplitterDataProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
+import fr.pilato.elasticsearch.tools.ElasticsearchBeyonder;
+import fr.pilato.elasticsearch.tools.SettingsFinder.Defaults;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -32,6 +35,8 @@ import lombok.extern.slf4j.Slf4j;
 public class IndexerFactory {
 
 	private final RestHighLevelClient elasticsearchClient;
+
+	private AtomicBoolean templatesInitialized = new AtomicBoolean(false);
 
 	private final Map<String, Supplier<? extends DocumentPreProcessor>> docPreProcessorSuppliers;
 
@@ -61,10 +66,21 @@ public class IndexerFactory {
 	public AbstractIndexer create(IndexConfiguration indexConfiguration) {
 		List<DocumentPreProcessor> preProcessors = new ArrayList<>();
 		List<DocumentPostProcessor> postProcessors = new ArrayList<>();
+		initializeDataProcessors(indexConfiguration, preProcessors, postProcessors);
 
-		Map<String, Map<String, String>> dataProcessorsConfig = indexConfiguration.getDataProcessorConfiguration().getConfiguration();
+		initializeTemplates();
+
+		return new ElasticsearchIndexer(
+				indexConfiguration.getIndexSettings(),
+				new FieldConfigIndex(indexConfiguration.getFieldConfiguration()),
+				elasticsearchClient,
+				preProcessors,
+				postProcessors);
+	}
+
+	private void initializeDataProcessors(IndexConfiguration indexConfiguration, List<DocumentPreProcessor> preProcessors, List<DocumentPostProcessor> postProcessors) {
 		FieldConfigIndex fieldConfigIndex = new FieldConfigIndex(indexConfiguration.getFieldConfiguration());
-
+		Map<String, Map<String, String>> dataProcessorsConfig = indexConfiguration.getDataProcessorConfiguration().getConfiguration();
 		for (String processorName : indexConfiguration.getDataProcessorConfiguration().getProcessors()) {
 			Supplier<? extends DocumentPreProcessor> preProcessorSupplier = docPreProcessorSuppliers.get(processorName);
 			boolean processorFound = false;
@@ -73,21 +89,34 @@ public class IndexerFactory {
 				processor.initialize(fieldConfigIndex, dataProcessorsConfig.getOrDefault(processor.getClass().getCanonicalName(), Collections.emptyMap()));
 				preProcessors.add(processor);
 				processorFound = true;
+				log.info("initialized pre-processor {}", processorName);
 			}
 
 			Supplier<? extends DocumentPostProcessor> postProcessorSupplier = indexableItemProcessorSuppliers.get(processorName);
 			if (postProcessorSupplier != null) {
 				DocumentPostProcessor postProcessor = postProcessorSupplier.get();
 				postProcessor.initialize(fieldConfigIndex, dataProcessorsConfig.getOrDefault(postProcessor.getClass().getCanonicalName(), Collections.emptyMap()));
+				postProcessors.add(postProcessor);
 				processorFound = true;
+				log.info("initialized post-processor {}", processorName);
 			}
 
 			if (!processorFound) {
 				log.error("Processor '{}' not found!", processorName);
 			}
 		}
+	}
 
-		return new ElasticsearchIndexer(indexConfiguration.getIndexSettings(), fieldConfigIndex, elasticsearchClient, preProcessors, postProcessors);
+	private void initializeTemplates() {
+		if (!templatesInitialized.get()) {
+			try {
+				ElasticsearchBeyonder.start(elasticsearchClient.getLowLevelClient(), Defaults.ConfigDir, Defaults.MergeMappings, true);
+				templatesInitialized.set(true);
+			}
+			catch (Exception e) {
+				log.error("failed to initialize templates!", e);
+			}
+		}
 	}
 
 }

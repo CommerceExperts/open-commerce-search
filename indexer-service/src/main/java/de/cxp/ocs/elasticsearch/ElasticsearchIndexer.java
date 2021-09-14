@@ -2,10 +2,12 @@ package de.cxp.ocs.elasticsearch;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -36,8 +38,6 @@ import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
-import fr.pilato.elasticsearch.tools.ElasticsearchBeyonder;
-import fr.pilato.elasticsearch.tools.SettingsFinder.Defaults;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -87,6 +87,22 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		}
 	}
 
+	@Override
+	public Map<String, Instant> getRunningImportStartTimes(String indexName, String locale) {
+		String lang = LocaleUtils.toLocale(locale).getLanguage().toLowerCase();
+		Map<String, Set<AliasMetadata>> aliases = indexClient.getAliases(INDEX_PREFIX + "*" + INDEX_DELIMITER + indexName + INDEX_DELIMITER + lang);
+
+		Map<String, Instant> indexCreationTimes = new HashMap<>(aliases.size() - 1);
+		for (Entry<String, Set<AliasMetadata>> alias : aliases.entrySet()) {
+			if (alias.getValue().isEmpty()) {
+				indexClient.getSettings(alias.getKey())
+						.map(s -> Instant.ofEpochMilli(s.getAsLong("index.creation_date", 0L)))
+						.ifPresent(i -> indexCreationTimes.put(alias.getKey(), i));
+			}
+		}
+		return indexCreationTimes;
+	}
+
 	/**
 	 * checks to which actual index this "nice indexName (alias)" points to.
 	 * Expects a indexName ending with a number and will return a new index name
@@ -97,16 +113,11 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		String finalIndexName = getNextIndexName(indexName, localizedIndexName);
 
 		try {
-			// only during testing we don't have a real connection to ES
-			if (restClient != null) {
-				ElasticsearchBeyonder.start(restClient.getLowLevelClient(), Defaults.ConfigDir, Defaults.MergeMappings, true);
-			}
-
-			log.info("trying to create index {}", finalIndexName);
+			log.info("creating index {}", finalIndexName);
 			indexClient.createFreshIndex(finalIndexName);
 		}
 		catch (Exception e) {
-			throw new IOException("failed to initialize template new index", e);
+			throw new IOException("failed to initialize index " + finalIndexName, e);
 		}
 
 		return finalIndexName;
@@ -143,22 +154,27 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	private String getNextIndexName(String indexName, String localizedIndexName) {
-		Map<String, Set<AliasMetadata>> aliases = indexClient.getAliases(indexName);
+		Map<String, Set<AliasMetadata>> aliases = indexClient.getAliases(INDEX_PREFIX + "*" + INDEX_DELIMITER + localizedIndexName);
 		if (aliases.size() == 0) return getNumberedIndexName(localizedIndexName, 1);
 
-		String oldIndexName = aliases.keySet().iterator().next();
-		Matcher indexNameMatcher = INDEX_NAME_PATTERN.matcher(oldIndexName);
-		String numberedIndexName;
-		if (indexNameMatcher.find()) {
-			int oldIndexNumber = Integer.parseInt(indexNameMatcher.group(1));
-			numberedIndexName = getNumberedIndexName(localizedIndexName, oldIndexNumber + 1);
-		}
-		else {
-			numberedIndexName = getNumberedIndexName(localizedIndexName, 1);
-			log.warn("initilized first numbered index {}, although final index already exists! {}", numberedIndexName, oldIndexName);
+		int oldIndexNumber = aliases.keySet().stream().mapToInt(this::extractIndexNumber).max().orElse(1);
+		String numberedIndexName = getNumberedIndexName(localizedIndexName, oldIndexNumber + 1);
+		if (oldIndexNumber == 0) {
+			log.warn("initilized first numbered index {}, although similar indexes already exists! {}", numberedIndexName, aliases);
 		}
 
 		return numberedIndexName;
+	}
+
+	private int extractIndexNumber(String fullIndexName) {
+		Matcher indexNameMatcher = INDEX_NAME_PATTERN.matcher(fullIndexName);
+		String numberedIndexName;
+		if (indexNameMatcher.find()) {
+			return Integer.parseInt(indexNameMatcher.group(1));
+		}
+		else {
+			return 0;
+		}
 	}
 
 	private String getNumberedIndexName(String localizedIndexName, int number) {
