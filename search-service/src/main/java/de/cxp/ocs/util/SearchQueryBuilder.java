@@ -226,7 +226,18 @@ public class SearchQueryBuilder {
 		}
 	}
 
-	public boolean isFilterSelected(String paramName, String filterValue) {
+	/**
+	 * Checks if that parameter value is set for that parameter key.
+	 * The name and value MUST NOT be url-encoded.
+	 * However if the value contains a comma value that is not meant as a
+	 * multi-value-delimiter, it has to be URL-encoded so that it will be double
+	 * URL encoded.
+	 * 
+	 * @param paramName
+	 * @param filterValue
+	 * @return
+	 */
+	private boolean isFilterSelected(String paramName, String filterValue) {
 		return searchQueryLink.getQuery() != null && searchQueryLink.getRawQuery().matches("(^|.*?&)"
 				+ Pattern.quote(urlEncodeValue(paramName)) + "=[^&]*?"
 				+ Pattern.quote(urlEncodeValue(filterValue)) + "($|&|%2C).*");

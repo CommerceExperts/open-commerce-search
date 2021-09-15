@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -89,22 +88,30 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 
 			String[] categories = StringUtils.split(categoryPath, '/');
 			
-			if(isFiltered) {
+			final boolean isSelectedPath;
+			if (isFiltered && intFacetFilter != null && intFacetFilter.getValues().length > 0 && categoryPath != null) {
 				String[] filterValues = intFacetFilter.getValues();
-				if(ArrayUtils.isNotEmpty(filterValues) && categoryPath != null && 
-						Arrays.stream(filterValues).noneMatch(categoryPath::contains)) {
+				// skip this path, if it is not a child of the selected path
+				if (filterValues.length == 1 ? !categoryPath.contains(filterValues[0]) : Arrays.stream(filterValues).noneMatch(categoryPath::contains)) {
 					continue;
 				}
+				else {
+					// only set true, if this is a complete matching path
+					isSelectedPath = filterValues.length == 1 ? filterValues[0].equals(categoryPath) : Arrays.stream(filterValues).anyMatch(categoryPath::equals);
+				}
+			}
+			else {
+				isSelectedPath = false;
 			}
 			
-			HierarchialFacetEntry lastLevelEntry = entries.computeIfAbsent(categories[0], c -> toFacetEntry(c, categoryPath, facetConfig, linkBuilder));
+			HierarchialFacetEntry lastLevelEntry = entries.computeIfAbsent(categories[0], c -> toFacetEntry(c, categoryPath, facetConfig, linkBuilder, isSelectedPath));
 			for (int i = 1; i < categories.length; i++) {
 				FacetEntry child = getChildByKey(lastLevelEntry, categories[i]);
 				if (child != null) {
 					lastLevelEntry = (HierarchialFacetEntry) child;
 				}
 				else {
-					HierarchialFacetEntry newChild = toFacetEntry(categories[i], categoryPath, facetConfig, linkBuilder);
+					HierarchialFacetEntry newChild = toFacetEntry(categories[i], categoryPath, facetConfig, linkBuilder, isSelectedPath);
 					lastLevelEntry.addChild(newChild);
 					lastLevelEntry = newChild;
 				}
@@ -151,8 +158,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		return null;
 	}
 
-	private HierarchialFacetEntry toFacetEntry(String value, String categoryPath, FacetConfig facetConfig, SearchQueryBuilder linkBuilder) {
-		boolean isSelected = linkBuilder.isFilterSelected(facetConfig.getSourceField(), categoryPath);
+	private HierarchialFacetEntry toFacetEntry(String value, String categoryPath, FacetConfig facetConfig, SearchQueryBuilder linkBuilder, boolean isSelected) {
 		String link;
 		if (isSelected) {
 			int parentPathEndIndex = categoryPath.lastIndexOf('/');
