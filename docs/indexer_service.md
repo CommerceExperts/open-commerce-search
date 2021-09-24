@@ -15,20 +15,28 @@
   + [numberFacetData](#numberfacetdata)
   + [pathFacetData](#pathfacetdata)
   + [variants](#variants)
-* [Modifying data](#modifying-data)
+* [Customizing](#customizing)
+  + [Adding or changing Elasticsearch settings](#adding-or-changing-elasticsearch-setttings)
+  + [Modifying data](#modifying-data)
 <!-- TOC end -->
 
 ## Overview
 
 The Indexer is split into 2 main APIs: The full-indexation-API and the update-API.
-It is implemented with Java ontop of Spring Boot. At the moment it expects an Elasticsearch Cluster as backend. 
+It is implemented with Java ontop of Spring Boot.
+At the moment it expects an Elasticsearch Cluster as backend. 
 
 The goal of that service is to receive simple data structure - in the simplest form it could be key-value documents, similar to CSV records - and transform them into a generic data structure, that automatically is analyzed and indexed by Elasticsearch for the according usages: searching, sorting, ranking and building facets. 
 
 ## Produced data structure
-The separation by usage is achieved by putting the different data fields into according object-fields for the particular purpose. For each usage type, there is such a special "super field".
-For example search relevant data like the "title" is put into `{"searchData": {"title":"..."}}`. This way we can instruct Elasticsearch using a template to analyze and index everything with the path `searchData.*` as searchable content.
+
+The separation by usage is achieved by putting the different data fields into according object-fields for the particular purpose.
+For each usage type, there is such a special "super field".
+For example search relevant data like the "title" is put into `{"searchData": {"title":"..."}}`.
+This way we can instruct Elasticsearch using a template to analyze and index everything with the path `searchData.*` as searchable content.
 If a data field is used for different things, e.g. "searching" and "sorting", that data field is indexed twice. Once as a searchable field at `searchData.<field>` and once as a sortable field at `sortData.<field>`.
+
+The analyzers and mappings for Elasticsearch are put in place using [Index Templates](https://www.elastic.co/guide/en/elasticsearch/reference/master/index-templates.html). There is a [generic template](../indexer-service/src/main/resources/elasticsearch/_template/structured_search.json) for all 'ocs-\*' indexes and language specific templates that only overwrite the necessary analyzers to add language dependant stemmers etc. - have a look at the [german template](indexer-service/src/main/resources/elasticsearch/_template/german_structured_search.json) as a possible reference.
 
 Before going into detail about each single "super field", have a look at this simple example document with all those super fields.
 The mapping for that data structure can be found at the [structured search template](../indexer-service/src/main/resources/elasticsearch/_template/structured_search.json).
@@ -220,12 +228,26 @@ Example: the path 'A/B/C' is split into 3 values: 'A', 'A/B', 'A/B/C'
 Variants are nested documents that support the full structure of normal documents, including termFacetData and numberFacetData. The only difference is that they don't have IDs (nested documents in Elasticsearch can't have IDs) and pathFacetData are also not supported (YAGNI).
 
 
-## Modifying data
+## Customizing
 
-In the best case, the incoming data should alread be cleansed as much as possible. However if there is no control of the source, it's also possible to modify the data as part of the ingester process.
+### Adding or changing Elasticsearch settings
+
+In case you want to change an existing mapping, it is the safest way to create a new [Elasticsearch template](https://www.elastic.co/guide/en/elasticsearch/reference/master/index-templates.html), that overwrites the according analyzer or mappings.
+Also if you want to support a new languange that was not supported before, create a new template. 
+Use the [existing languange specific templates](indexer-service/src/main/resources/elasticsearch/_template/) as an example on how it may look like. 
+
+Place that new template into the classpath of your indexer setup at `elasticsearch/_template/my_custom_template.json`. 
+If you are using our indexer docker image, a suitable directory is `/app/resources/elasticsearch/_template/my_custom_template.json`
+
+
+### Modifying data
+
+In the best case, the incoming data should alread be cleansed as much as possible.
+However if there is no control of the source, it's also possible to modify the data as part of the ingester process.
 Therefor you can implement a `DataPreProcessor` that fixes the data, befor it is converted into the internal format.
 
-Sometimes it also makes sense, to change some data fields only for a specific usage type. For example to normalize brands only for their facet appearance or strip irrelevant words off product titles in the searchData subfield.
+Sometimes it also makes sense, to change some data fields only for a specific usage type.
+For example to normalize brands only for their facet appearance or strip irrelevant words off product titles in the searchData subfield.
 In such cases you can use a `DataPostProcessor` that has access to all the super fields listed above.
 
 These processors can be included into the Ingester using the [plugin mechanics](plugin_guide.md)
