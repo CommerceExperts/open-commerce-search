@@ -2,6 +2,9 @@ package de.cxp.ocs.config;
 
 public enum QueryBuildingSetting {
 
+	/**
+	 * Analyzer to be used to analyze the input query.
+	 */
 	analyzer,
 
 	/**

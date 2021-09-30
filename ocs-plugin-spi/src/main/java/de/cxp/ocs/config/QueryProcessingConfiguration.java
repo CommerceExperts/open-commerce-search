@@ -3,10 +3,14 @@ package de.cxp.ocs.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import lombok.Data;
+import lombok.Getter;
 
-@Data
+@Getter // write setters with java-doc!
 public class QueryProcessingConfiguration {
+
+	private List<String> userQueryPreprocessors = new ArrayList<>(0);
+
+	private String userQueryAnalyzer = null;
 
 	/**
 	 * <p>
@@ -17,8 +21,14 @@ public class QueryProcessingConfiguration {
 	 * Processors that can't be found, will be ignored (with some warning log
 	 * message).
 	 * </p>
+	 * 
+	 * @param userQueryPreprocessors
+	 * @return config again for fluent access
 	 */
-	private List<String> userQueryPreprocessors = new ArrayList<>(0);
+	public QueryProcessingConfiguration setUserQueryPreprocessors(List<String> userQueryPreprocessors) {
+		this.userQueryPreprocessors = userQueryPreprocessors;
+		return this;
+	}
 
 	/**
 	 * <p>
@@ -32,7 +42,13 @@ public class QueryProcessingConfiguration {
 	 * If nothing is defined here or the specified one is not found, then the
 	 * default analyzer (WhitespaceAnalyzer) is used.
 	 * </p>
+	 * 
+	 * @param userQueryAnalyzer
+	 * @return config again for fluent access
 	 */
-	private String userQueryAnalyzer = null;
+	public QueryProcessingConfiguration setUserQueryAnalyzer(String userQueryAnalyzer) {
+		this.userQueryAnalyzer = userQueryAnalyzer;
+		return this;
+	}
 
 }

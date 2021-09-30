@@ -19,8 +19,18 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
- * a broad query that tries to get good results without loosing too much
- * precision.
+ * <p>
+ * A predefined broad query that tries to get good results without loosing too
+ * much precision.
+ * </p>
+ * <p>
+ * No {@link QueryBuildingSetting}s are supported. Everything is predefined with
+ * this query.
+ * </p>
+ * <p>
+ * It should only be used with the main fields and their '.standard' subfield,
+ * because it uses the standard analyzer.
+ * </p>
  */
 @RequiredArgsConstructor
 public class DefaultQueryFactory implements ESQueryFactory {

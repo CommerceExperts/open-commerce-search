@@ -1,6 +1,9 @@
 package de.cxp.ocs.elasticsearch.query.builder;
 
-import static de.cxp.ocs.config.QueryBuildingSetting.*;
+import static de.cxp.ocs.config.QueryBuildingSetting.acceptNoResult;
+import static de.cxp.ocs.config.QueryBuildingSetting.minShouldMatch;
+import static de.cxp.ocs.config.QueryBuildingSetting.multimatch_type;
+import static de.cxp.ocs.config.QueryBuildingSetting.tieBreaker;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,8 +29,23 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * builds a query that uses the ngram fields to handle decomposition and
- * fuzziness
+ * <p>
+ * Builds a <a
+ * href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html>multi-match-query</a>
+ * that uses the ngram sub-fields to handle decomposition and fuzziness.
+ * </p>
+ * 
+ * Supported {@link QueryBuildingSetting}s:
+ * <ul>
+ * <li>tieBreaker</li>
+ * <li>multimatch_type</li>
+ * <li>minShouldMatch</li>
+ * <li>acceptNoResult: if set to true, no results will be accepted and no
+ * further search is done</li>
+ * <li>allowParallelSpellcheck: run parallel spell-check with this query. If
+ * terms could be corrected and 0 results are found, this query is built again
+ * with the corrected terms.</li>
+ * </ul>
  */
 public class NgramQueryFactory implements ESQueryFactory {
 
