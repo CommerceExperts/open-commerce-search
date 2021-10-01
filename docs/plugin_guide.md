@@ -1,3 +1,5 @@
+[Home](./) > [Plugin Guide](./plugin_guide.md)
+
 # Extending OCS - the Plugin Guide
 
 As plugin machanism the "Service Loader" mechanism of Java is used. It is available since JDK6 and requires nothing but according interface implementations on the classpath.

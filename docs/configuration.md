@@ -5,19 +5,19 @@ Per default the standard Spring mechanics are used to provide the configuration 
 
 If that's not suitable for your usecase (because for example you want to integrate OCSS configuration into your own backend), it is also possible to customize the configuration retrieval by adding implementations for `IndexerConfigurationProvider` and `SearchConfigurationProvider`. They are requested whenever the according configuration is necessary.
 
-At the according [javadoc](apidoc/index.html) you will find all information about the exiting configuration possiblities.
+At the [Javadocs](javadoc.html#apidoc/index.html) you will find all information about the exiting configuration possiblities.
 
 ## Indexer
 
-The [Index configuration](apidocs/de/cxp/ocs/spi/indexer/IndexerConfigurationProvider.html) contains the following parts:
+The [Index configuration](javadoc.html#apidocs/de/cxp/ocs/spi/indexer/IndexerConfigurationProvider.html) contains the following parts:
 
-- [IndexSettings](apidocs/de/cxp/ocs/config/IndexSettings.html)
-- [FieldConfiguration](apidocs/de/cxp/ocs/config/FieldConfiguration.html)
-- Optional [DataProcessorConfiguration](apidocs/de/cxp/ocs/config/DataProcessorConfiguration.html)
+- [IndexSettings](javadoc.html#apidocs/de/cxp/ocs/config/IndexSettings.html)
+- [FieldConfiguration](javadoc.html#apidocs/de/cxp/ocs/config/FieldConfiguration.html)
+- Optional [DataProcessorConfiguration](javadoc.html#apidocs/de/cxp/ocs/config/DataProcessorConfiguration.html)
 
 ## Search Service
 
-The [Search Configuration](apidocs/de/cxp/ocs/config/SearchConfiguration.html) contains the following parts:
+The [Search Configuration](javadoc.html#apidocs/de/cxp/ocs/config/SearchConfiguration.html) contains the following parts:
 
 - TBD...
 

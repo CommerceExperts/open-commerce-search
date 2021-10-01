@@ -1,4 +1,5 @@
 theme: jekyll-theme-slate
 title: Open Commerce Search Stack
-description: The Documentation
+description: <a href="./">The Documentation</a>
 show_downloads: false
+repository: CommerceExperts/open-commerce-search

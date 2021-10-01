@@ -18,17 +18,47 @@ public class FieldConfiguration {
 	@NonNull
 	private final Map<String, Field> fields = new LinkedHashMap<>();
 
-	/**
-	 * for dynamic field names, the sourceNames are used as regular expressions.
-	 */
 	@NonNull
 	private final List<Field> dynamicFields = new ArrayList<>();
 
+	/**
+	 * Add explicit field configuration. Defines how data fields are indexed.
+	 * 
+	 * @param field
+	 * @return
+	 */
 	public FieldConfiguration addField(Field field) {
 		fields.put(field.getName(), field);
 		return this;
 	}
 
+	/**
+	 * <p>
+	 * Add field definition, that is used as template for unknown fields.
+	 * </p>
+	 * <p>
+	 * For dynamic fields the properties 'name', 'sourceNames' and 'type' have a
+	 * special meaning:
+	 * <ul>
+	 * <li>name: is actually ignored, but if it is set to 'attribute', that
+	 * dynamic field is only applied to attributes (hack)</li>
+	 * <li>*sourceNames*: Each source name is used as a regular expressions for
+	 * the unknown fields. If it's not specified, the field name is irrelevant
+	 * and only the other criterion must match.</li>
+	 * <li>type: can be 'string' or 'number' and that dynamic field will only be
+	 * used, if the data field is of that particular type.</li>
+	 * </ul>
+	 * </p>
+	 * <p>
+	 * The order of dynamic fields matter. Unknown fields are checked against
+	 * them in the defined order. Once a field configuration is derived from a
+	 * dynamic field, the dynamic fields are not considered anymore for the same
+	 * data field.
+	 * </p>
+	 * 
+	 * @param dynamicField
+	 * @return
+	 */
 	public FieldConfiguration addDynamicField(Field dynamicField) {
 		if (dynamicField != null) dynamicFields.add(dynamicField);
 		return this;
