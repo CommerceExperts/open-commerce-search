@@ -75,31 +75,48 @@ The Elasticsearch Query is a mighty domain specific query, that describes how th
 I contains the following building blocks:
 - [the actual search query](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl.html) that includes the filters as well
 - [pagination parameters](https://www.elastic.co/guide/en/elasticsearch/reference/current/paginate-search-results.html)
-- [sorting parameters](https://www.elastic.co/guide/en/elasticsearch/reference/current/sort-search-results.html), 
-- [the aggregation instructions](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations.html), that produce the data necessary to build the proper filter facets, 
-- [scoring instructions](), the includes and excludes for the result hits, and it may also contain custom rescorer definitions and other custom query parts.
+- [sorting parameters](https://www.elastic.co/guide/en/elasticsearch/reference/current/sort-search-results.html)
+- [the aggregation instructions](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations.html), that produce the data necessary to build the proper filter facets
+- [scoring instructions](https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html)
+- [includes and excludes](https://www.elastic.co/guide/en/elasticsearch/reference/current/search-fields.html#source-filtering) of data fields for the result hits
+- optional [custom rescorer definitions](https://www.elastic.co/guide/en/elasticsearch/reference/master/filter-search-results.html#rescore)
 
-The searcher splitted
+At the `Searcher` the build of that query is split into according subroutines. 
+These subroutines care about their query part and the according extraction of the desired data from the result.
+For example there is a `FacetConfigurationApplier` that generates the "aggregation" query part of the Elasticsearch query and then extracts the facets from the "aggregations" at the Elasticsearch result.
 
-As you might have seen in the search configuration, it is possible to define one or more `ESQueryFactory` instances per tenant.
-Each one of them supports different settings and has different purposes. More details about the specific behaviour and the supported configuration options can be found at the according JavaDocs:
+
+### Query Relaxation
+
+The most important reason for that partial Query-Building approach is the reuse of the search-query. 
+This comes handy when we try several search-query approaches, called "Query Relaxation".
+"Query Relaxation" means that for a single API request several query strategies can be used to get the final result.
+
+The idea is to use more accurate query strategies at the beginning. 
+If such an accurate query does not match a single document, another more sloppy query strategy can be used to increase the likeliness of results.
+As a simple example you could use an `AND` search in the first step and an `OR` search afterwards.
+
+Of course this technique is optional and even if you have several query strategies defined, you can also define a query strategy to accept no results and thus be the last one in that chain.
+This mostly makes sense in case you have a special query for number search, which should be very precise. If no document matches the requested number, you can stop searching.
+
+All this is configurable at the tenant specific search configuration using `QueryConfiguration` definitions.
+At each query configuration a strategy is defined, which basically is the name of a [ESQueryFactory](javadoc.html#apidocs/de/cxp/ocs/spi/search/ESQueryFactory.html) implementation.
+Each implementations supports different settings and has different approaches. 
+
+More details about the specific behaviour and the supported configuration options can be found at the according JavaDocs:
 
 - [DefaultQueryFactory](javadoc.html#apidocs/de/cxp/ocs/elasticsearch/query/builder/DefaultQueryFactory.html)
 - [ConfigurableQueryFactory](javadoc.html#apidocs/de/cxp/ocs/elasticsearch/query/builder/ConfigurableQueryFactory.html)
 - [PredictionQueryFactory](javadoc.html#apidocs/de/cxp/ocs/elasticsearch/query/builder/PredictionQueryFactory.html)
 - [NgramQueryFactory](javadoc.html#apidocs/de/cxp/ocs/elasticsearch/query/builder/NgramQueryFactory.html)
 
-Every query is configured with certain conditions about when it should be used. 
+To have a better control when a strategy and when not, every query is configured with certain conditions. 
 This is useful to react differently for numeric queries or have different approaches for single-term and multi-term queries.
-
-During query processing the query is checked against those conditions and only the matching ones are actualy used to build an Elasticsearch query.
-
-
-### Query Relaxation
-
-TODO: query caching
+During query processing the user-query is checked against those conditions and only the matching query strategies are used to build an Elasticsearch query.
 
 
 ### Facets
+
+
 
 ## 
