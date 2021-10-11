@@ -23,35 +23,35 @@ The API first approach aims for simplicity and broad adaption.
 The OCS-Stack is devided into 3 services: Indexer, Search- and Suggest-Service.
 
 ```
- Your Side            │  OCS Stack              │  Elasticsearch
-                      │                         │
-                      │                         │  either selfhosted
-┌───────────────────┐ │                         │  or some SaaS/Cloud offering
-│ your data source, │ │                         │
-│ e.g. db, csv, etc.│ │                         │
-└───────▲───────────┘ │                         │
-        │             │                         │
-┌───────┴───────────┐    ┌─────────────────────┐                   ┌───────────────┐
+ Your Side            .  OCS Stack              .  Elasticsearch
+                      .                         .
+                      .                         .  either selfhosted
+┌───────────────────┐ .                         .  or some SaaS/Cloud offering
+│ your data source, │ .                         .
+│ e.g. db, csv, etc.│ .                         .
+└───────▲───────────┘ .                         .
+        │             .                         .
+┌───────┴───────────┐ .  ┌─────────────────────┐.                  ┌───────────────┐
 │ data-index-client ├───►│ OCS Indexer         ├───────────────────┤               │
-└───────────────────┘    ├─────────────────────┤ batch indexation  │ Elasticsearch │
-                         │ prepares data based │ into new index    │    Cluster    │
-                         │ on the field config │ or updates into   │               │
-                         └─────────────────────┘ existing index    └───────────────┘
-                                                                     ▲    ▲
-┌───────────────────┐    ┌─────────────────────┐                     │    │
+└───────────────────┘ .  ├─────────────────────┤ batch indexation  │ Elasticsearch │
+                      .  │ prepares data based │ into new index    │    Cluster    │
+                      .  │ on the field config │ or updates into   │               │
+                      .  └─────────────────────┘ existing index    └───────────────┘
+                      .                         .                    ▲    ▲
+┌───────────────────┐ .  ┌─────────────────────┐.                    │    │
 │ search-client     ├─┬─►│ OCS Search Service  ├─────────────────────┘    │
 └───────────────────┘ │  ├─────────────────────┤ real time requests       │
-                      │  │  relies on the      │                          │
-                      │  │  prepared format    │                          │
-                      │  └─────────────────────┘                          │
-                      │                                                   │
-                      │  ┌─────────────────────┐                          │
+                      │  │  relies on the      │.                         │
+                      │  │  prepared format    │.                         │
+                      │  └─────────────────────┘.                         │
+                      │                         .                         │
+                      │  ┌─────────────────────┐.                         │
                       └─►│ OCS Suggest Service ├──────────────────────────┘
-                         ├─────────────────────┤ batched read requests
-                         │fetches data from es.│
-                         │indexing into local  │
-                         │Lucene index         │
-                         └─────────────────────┘
+                      .  ├─────────────────────┤ batched read requests
+                      .  │fetches data from es.│.
+                      .  │indexing into local  │.
+                      .  │Lucene index         │.
+                      .  └─────────────────────┘.
 ```
 
 
