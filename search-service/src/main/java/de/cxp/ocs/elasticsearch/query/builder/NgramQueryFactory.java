@@ -30,8 +30,8 @@ import lombok.Setter;
 
 /**
  * <p>
- * Builds a <a
- * href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html>multi-match-query</a>
+ * Builds a <a href=
+ * "https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html">multi-match-query</a>
  * that uses the ngram sub-fields to handle decomposition and fuzziness.
  * </p>
  * 

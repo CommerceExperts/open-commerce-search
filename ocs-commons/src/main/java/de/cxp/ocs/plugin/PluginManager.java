@@ -71,7 +71,7 @@ public class PluginManager {
 			while (serviceImpls.hasNext()) {
 				T next = serviceImpls.next();
 				if (disabledServies.contains(next.getClass().getCanonicalName())) {
-					log.info("Service {} for interface {} is disabled", next.getClass(), serviceInterface.getClass());
+					log.info("Service {} for interface {} is disabled", next.getClass(), serviceInterface.getCanonicalName());
 				}
 				// take first if non is prefered
 				if (preferedService == null) preferedService = next;
@@ -86,10 +86,10 @@ public class PluginManager {
 			}
 		}
 		if (preferedService != null) {
-			log.info("Prefered Service {} for interface {} loaded", preferedService.getClass(), serviceInterface.getClass());
+			log.info("Prefered Service {} for interface {} loaded", preferedService.getClass(), serviceInterface.getCanonicalName());
 		}
 		else {
-			log.info("No Prefered Service found for interface {}", serviceInterface.getClass());
+			log.info("No Prefered Service found for interface {}", serviceInterface.getCanonicalName());
 		}
 
 		return Optional.ofNullable(preferedService);

@@ -34,6 +34,40 @@ public class QueryConfiguration {
 		private int		minTermCount	= 1;
 		private int		maxTermCount	= Integer.MAX_VALUE;
 		private String	matchingRegex	= null;
+
+		/**
+		 * Set minimum of terms for a query factory to be used.
+		 * 
+		 * @param minTermCount
+		 * @return
+		 */
+		public QueryCondition setMinTermCount(int minTermCount) {
+			this.minTermCount = minTermCount;
+			return this;
+		}
+
+		/**
+		 * Set inclusive maximum of terms for a query factory to be used.
+		 * 
+		 * @param maxTermCount
+		 * @return
+		 */
+		public QueryCondition setMaxTermCount(int maxTermCount) {
+			this.maxTermCount = maxTermCount;
+			return this;
+		}
+
+		/**
+		 * Set a regular expression that should match for the whole search
+		 * query.
+		 * 
+		 * @param matchingRegex
+		 * @return
+		 */
+		public QueryCondition setMatchingRegex(String matchingRegex) {
+			this.matchingRegex = matchingRegex;
+			return this;
+		}
 	}
 
 	/**
