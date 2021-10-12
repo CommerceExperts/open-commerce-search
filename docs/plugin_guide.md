@@ -1,5 +1,19 @@
 [Home](./) > [Plugin Guide](./plugin_guide.md)
 
+## Table of Contents
+
+- [Extending OCS - the Plugin Guide](#extending-ocs-the-plugin-guide)
+  - [Indexer SPI](#indexer-spi)
+    - [de.cxp.ocs.spi.indexer.IndexerConfigurationProvider](#decxpocsspiindexerindexerconfigurationprovider)
+    - [de.cxp.ocs.spi.indexer.DocumentPreProcessor](#decxpocsspiindexerdocumentpreprocessor)
+    - [de.cxp.ocs.spi.indexer.DocumentPostProcessor](#decxpocsspiindexerdocumentpostprocessor)
+  - [Search-Service SPI](#search-service-spi)
+    - [de.cxp.ocs.spi.search.SearchConfigurationProvider](#decxpocsspisearchsearchconfigurationprovider)
+    - [de.cxp.ocs.spi.search.ESQueryFactory](#decxpocsspisearchesqueryfactory)
+    - [de.cxp.ocs.spi.search.RescorerProvider](#decxpocsspisearchrescorerprovider)
+    - [de.cxp.ocs.spi.search.UserQueryAnalyzer](#decxpocsspisearchuserqueryanalyzer)
+    - [de.cxp.ocs.spi.search.UserQueryPreprocessor](#decxpocsspisearchuserquerypreprocessor)
+
 # Extending OCS - the Plugin Guide
 
 As plugin machanism the "Service Loader" mechanism of Java is used. It is available since JDK6 and requires nothing but according interface implementations on the classpath.

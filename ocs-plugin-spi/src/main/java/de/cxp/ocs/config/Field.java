@@ -36,7 +36,7 @@ public class Field {
 	private FieldLevel fieldLevel = FieldLevel.MASTER;
 
 	/**
-	 * Checks weather the field is on variant level.
+	 * Checks if the field is indexed on variant level.
 	 *
 	 * @return <code>true</code> if the field is on variant level,
 	 *         <code>false</code> otherwise.
@@ -46,7 +46,7 @@ public class Field {
 	}
 
 	/**
-	 * Checks weather the field is on master level.
+	 * Checks if the field is indexed on master level.
 	 *
 	 * @return <code>true</code> if the field is on master level,
 	 *         <code>false</code> otherwise.
@@ -56,7 +56,7 @@ public class Field {
 	}
 	
 	/**
-	 * Checks weather the field should be indexed on both - master and variant - level.
+	 * Checks if the field is be indexed on both - master and variant - level.
 	 *
 	 * @return <code>true</code> if the field is on both level,
 	 *         <code>false</code> otherwise.
