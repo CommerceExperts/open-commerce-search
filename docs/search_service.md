@@ -1,4 +1,18 @@
+[Home](./) > [Search Service](./search_service.md)
+
 # Search Service
+
+- [API Overview](#api-overview)
+  - [Tenant vs Index](#tenant-vs-index)
+  - [Result Slices](#result-slices)
+- [Internal Architecture](#internal-architecture)
+  - [Configuration](#configuration)
+  - [Query Preprocessor and Analyzer](#query-preprocessor-and-analyzer)
+  - [Elasticsearch-Query Building](#elasticsearch-query-building)
+  - [Query Relaxation](#query-relaxation)
+  - [Facets](#facets)
+  - [Variants](#variants)
+
 
 ## API Overview
 
@@ -22,6 +36,8 @@ Additionaly the search service allows several different configurations for the s
 So for example your index `my_products` can be referenced by the tenant `my_shop`, `my_mobile_shop` and `my_app`. Each of those tenants can have different settings for query-processing and search, facets and even other customizations. As the example indicates, you can use that to limit facets or results in a different way. 
 You can also use that to run A/B tests for different query-processing configuration.
 
+[back to top](#)
+
 ### Result Slices
 
 Normally you will always get one single result, but there are usecases, where multiple slices come in handy. So it might be possible, that several slices are returned.
@@ -35,6 +51,8 @@ Here are some more ideas for some usecases that may be implemented with custom c
 
 - A multi term search phrase that leads to no results could be split into different term combination, each resulting into a different slice. In such a case it also would make sense to have facets with every slice.
 - A relaxed query could add some related products to the result as a secondary slice.
+
+[back to top](#)
 
 
 ## Internal Architecture
@@ -57,6 +75,8 @@ Normally the internal configuration is fetched once and cached "for ever". Only 
 
 In case a tenant is requested, where the index does not exist, the failure is cached for 5 minutes, to avoid unnecessary query processing. (This might be removed again)
 
+[back to top](#)
+
 
 ### Query Preprocessor and Analyzer
 
@@ -67,6 +87,8 @@ That resulting "search query" (the text that is put into the search engine) is a
 The idea is to get some basic knowledge about the query, so decisions can be made about which and how the Elasticsearch query is built. This gets relevant in the next section.
 
 Also spell correction and query expansion is easier, because a single word can get a "sibling" word that is searched as potential replacement. For example the user query "red shrt" can become "red (shrt OR shirt OR short)" to handle several potential corrections.
+
+[back to top](#)
 
 
 ### Elasticsearch-Query Building
@@ -84,6 +106,8 @@ I contains the following building blocks:
 At the `Searcher` the build of that query is split into according subroutines. 
 These subroutines care about their query part and the according extraction of the desired data from the result.
 For example there is a `FacetConfigurationApplier` that generates the "aggregation" query part of the Elasticsearch query and then extracts the facets from the "aggregations" at the Elasticsearch result.
+
+[back to top](#)
 
 
 ### Query Relaxation
@@ -114,9 +138,37 @@ To have a better control when a strategy and when not, every query is configured
 This is useful to react differently for numeric queries or have different approaches for single-term and multi-term queries.
 During query processing the user-query is checked against those conditions and only the matching query strategies are used to build an Elasticsearch query.
 
+[back to top](#)
+
 
 ### Facets
 
+As already written at the [Indexer docs](indexer_service.md), facet data is indexed differently depending on it's type. 
+So there are 'termFacetData', 'numberFacetData' and 'pathFacetData' fields. They are all indexed as nested documents having a 'name' and 'value' property.
+Additionately each one of them exists at 'variant' level, so basically nested documents in nested documents.
+
+To retrieve facets from those fields, it is necessary to build a nested aggregation with a terms sub-aggregation of the 'name' field, with a terms sub-aggregation of the 'value' field and finally with a terms sub-aggregation of the optional 'id' field (for termFacetData and pathFacetData). This is the simple default case if no filters for multi-select facets are applied. :) 
+For those complicated cases you might want to read the explanation at the [FacetConfigurationApplyer::buildAggregators JavaDoc](javadoc.html#apidocs/de/cxp/ocs/elasticsearch/facets/FacetConfigurationApplyer.html).
+
+Architecturaly the aggregation-query creation and the aggregation-result extraction is put together into different `FacetCreator` implementations.
+All facet creators are initialized by the FacetConfigurationApplier` according to the field and facet configuration. 
+At runtime each facet creator is requested for its aggregation-query depending on the active filters. 
+As soon as there is a Elasticsearch result, again each facet creator is asked to build the final Facets from the aggregation-result.
+
+> TODO: the plan is to allow custom FacetCreator implementations. These could be enabled for certain facets and replace the default behaviour.
+
+[back to top](#)
 
 
-## 
+### Variants
+
+Variants are indexed as nested documents attached to the according master document.
+At search time, the result-data of the "best matching" variant is merged with the master document, so always a single document is returned. 
+
+> (!) This behaviour is subject to change and might even become customizable.
+
+The "best matching" variant is the one that either has some matches with one of the search-keywords or matches a provided filter for an attribute that was indexed on variant level.
+
+[back to top](#)
+
+

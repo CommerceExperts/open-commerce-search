@@ -2,26 +2,25 @@
 
 # Indexer Service
 
-<!-- TOC start -->
-* [Overview](#overview)
-* [Index data](#index-data)
-* [Produced data structure](#produced-data-structure)
-  + [searchData](#searchdata)
+- [Overview](#overview)
+- [Index data](#index-data)
+- [Produced data structure](#produced-data-structure)
+  - [searchData](#searchdata)
     - [minimal analyzer](#minimal-analyzer)
     - [standard analyzer](#standard-analyzer)
     - [shingles analyzer](#shingles-analyzer)
     - [ngram analyzer](#ngram-analyzer)
-  + [resultData](#resultdata)
-  + [sortData](#sortdata)
-  + [scores](#scores)
-  + [termFacetData](#termfacetdata)
-  + [numberFacetData](#numberfacetdata)
-  + [pathFacetData](#pathfacetdata)
-  + [variants](#variants)
-* [Customizing](#customizing)
-  + [Adding or changing Elasticsearch settings](#adding-or-changing-elasticsearch-setttings)
-  + [Modifying data](#modifying-data)
-<!-- TOC end -->
+  - [resultData](#resultdata)
+  - [sortData](#sortdata)
+  - [scores](#scores)
+  - [termFacetData](#termfacetdata)
+  - [numberFacetData](#numberfacetdata)
+  - [pathFacetData](#pathfacetdata)
+  - [variants](#variants)
+- [Customizing](#customizing)
+  - [Adding or changing Elasticsearch settings](#adding-or-changing-elasticsearch-settings)
+  - [Modifying data](#modifying-data)
+
 
 ## Overview
 
@@ -31,7 +30,6 @@ At the moment it expects an Elasticsearch Cluster as backend.
 
 The goal of that service is to receive simple data structure - in the simplest form it could be key-value documents, similar to CSV records - and transform them into a generic data structure, that automatically is analyzed and indexed by Elasticsearch for the according usages: searching, sorting, ranking and building facets. 
 
-[back to top](#)
 
 ## Index data 
 
@@ -44,7 +42,7 @@ The full indexation process is designed to work in a "session":
 To understand the transformation that the indexer does, we start with a minimal "add" request that inserts a single document with two variants.
 The session object you see as part of this request was retrieved by calling `${indexerhost}/indexer-api/v1/full/start/my_index`.
 
-```
+```json
 {
   "session": {
     "finalIndexName": "my_index",
@@ -126,7 +124,7 @@ The analyzers and mappings for Elasticsearch are put in place using [Index Templ
 Before going into detail about each single "super field", have a look at the document structure that is produced from the indexed document from the prior example, now restructured with all those super fields.
 The mapping for that data structure can be found at the [structured search template](../indexer-service/src/main/resources/elasticsearch/_template/structured_search.json).
 
-```
+```json
 {
   "id" : "100014881",
   "searchData" : {
