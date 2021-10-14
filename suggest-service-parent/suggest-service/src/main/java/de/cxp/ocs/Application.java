@@ -1,5 +1,6 @@
 package de.cxp.ocs;
 
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Optional;
@@ -28,7 +29,7 @@ public class Application {
 
 	public static void main(String[] args) {
 		log.info("starting suggest-service");
-		SuggestProperties properties = new SuggestProperties();
+		SuggestProperties properties = loadProperties();
 		final PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
 		final QuerySuggestManager querySuggestManager = getQuerySuggestManager(properties, meterRegistry);
 		final SuggestService suggestService = new SuggestServiceImpl(querySuggestManager, properties);
@@ -71,6 +72,11 @@ public class Application {
 		On.get(mgmPathPrefix + "/metrics").plain(() -> meterRegistry.scrape().getBytes());
 		On.get(mgmPathPrefix + "/prometheus").plain(() -> meterRegistry.scrape().getBytes());
 		On.get(mgmPathPrefix + "/health").plain("up");
+	}
+
+	private static SuggestProperties loadProperties() {
+		InputStream suggestPropertiesStream = Application.class.getClassLoader().getResourceAsStream("suggest.properties");
+		return new SuggestProperties(Optional.ofNullable(suggestPropertiesStream));
 	}
 
 	public static QuerySuggestManager getQuerySuggestManager(SuggestProperties props, MeterRegistry meterRegistry) {
