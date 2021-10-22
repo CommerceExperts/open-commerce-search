@@ -58,6 +58,7 @@ import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.SuggestException;
 import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
+import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.Util;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -68,7 +69,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accountable, Instrumentable {
 
+	/**
+	 * Use {@link CommonPayloadFields#PAYLOAD_LABEL_KEY} instead.
+	 */
+	@Deprecated
 	public static final String	PAYLOAD_LABEL_KEY		= "meta.label";
+	/**
+	 * Use {@link CommonPayloadFields#PAYLOAD_GROUPMATCH_KEY} instead.
+	 */
+	@Deprecated
 	public static final String	PAYLOAD_GROUPMATCH_KEY	= "meta.matchGroupName";
 
 	public static final String	BEST_MATCHES_GROUP_NAME				= "best matches";
