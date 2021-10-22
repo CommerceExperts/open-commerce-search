@@ -52,7 +52,6 @@ ocs:
           type: string
           source-names:
             - Brand
-          value-delimiter: "|"
           usage:
             - Search
             - Facet

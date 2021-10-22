@@ -105,6 +105,7 @@ public class Field {
 		return this;
 	}
 
+	@Deprecated
 	private String valueDelimiter = null;
 
 	private String searchContentPrefix = null;
