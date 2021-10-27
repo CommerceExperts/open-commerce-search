@@ -1,3 +1,29 @@
+[Home](./) > [Configuration](configuration.md)
+
+# Table of Contents
+
+- [Configuration](#configuration)
+  - [Indexer](#indexer)
+    - [Connection Configuration](#connection-configuration)
+    - [Plugin Configuration](#plugin-configuration)
+    - [Default and Specific Index Configuration](#default-and-specific-index-configuration)
+      - [Data Processor Configuration](#data-processor-configuration)
+      - [Index Settings](#index-settings)
+      - [Field Configuration](#field-configuration)
+  - [Search Service](#search-service)
+    - [Connection and Plugin Configuration](#connection-and-plugin-configuration)
+    - [Default and Specific Tenant Configuration](#default-and-specific-tenant-configuration)
+      - [Plugin Configuration](#plugin-configuration)
+      - [Query Processing](#query-processing)
+      - [Query Configuration](#query-configuration)
+      - [Scoring Configuration](#scoring-configuration)
+      - [Rescorers](#rescorers)
+      - [Facet Configuration](#facet-configuration)
+      - [Sort Configuration](#sort-configuration)
+  - [Suggest Service](#suggest-service)
+
+
+
 # Configuration
 
 Configuration is essential at OCSS, because it controls the translation of the simple OCS-API to the complex Elasticsearch API.
@@ -9,6 +35,7 @@ At the [Java-docs](javadoc.html#apidoc/index.html) you will find all information
 
 For this documentation the Spring yaml configuration is used, to explain the different settings.
 
+[back to top](#)
 
 ## Indexer
 
@@ -24,6 +51,9 @@ ocs:
     # optional if auth is necessary
     auth: "username:password"
 ```
+
+[back to top](#)
+
 ---
 
 ### Plugin Configuration
@@ -37,6 +67,9 @@ All classes have to be specified with their full canonical names.
   prefered-plugins:
     "[de.cxp.ocs.spi.indexer.IndexerConfigurationProvider]": "my.fancy.IndexConfigurationProviderV2"
 ```
+
+[back to top](#)
+
 ---
 
 ### Default and Specific Index Configuration
@@ -53,9 +86,12 @@ The default configuration will only be used, if there is no index specific confi
     my-other-index:
       ...
 ```
+
+[back to top](#)
+
 ---
 
-### Data Processor Configuration
+#### Data Processor Configuration
 
 With the `data-processor-configuration` you can list the data-processors that should be used to transform data.
 These can be standard processors shipped with OCSS or custom data-processors.
@@ -79,9 +115,12 @@ Check the [java-doc of the data-processors](javadoc.html#de/cxp/ocs/preprocessor
           group_1_noMatch: 0
           group_1_destination: "myBrand"
 ```
+
+[back to top](#)
+
 ---
 
-### Index Settings
+#### Index Settings
 
 These settings are applied to the according Elasticsearch index after the indexation process. 
 They configure how the index data should be scaled (replicated) and how fast data updates should be visible.
@@ -92,9 +131,12 @@ They configure how the index data should be scaled (replicated) and how fast dat
       replica-count: 2
       refresh-interval: 10s
 ```
+
+[back to top](#)
+
 ---
 
-### Field Configuration
+#### Field Configuration
 
 It's required for the indexer to know which data fields should be indexed in which way. [Learn more about it at the Indexer docs](/indexer_service.html).
 
@@ -124,7 +166,6 @@ Dynamic fields are checked in the order they are defined and only in case no spe
           type: ...
           ...
 ```
----
 
 Each single field has the following properites:
 
@@ -168,6 +209,9 @@ Each single field has the following properites:
 
 Have a look on the "[preset configuration](https://github.com/CommerceExperts/open-commerce-search/blob/master/indexer-service/src/main/resources/application-preset.yml)" for a full example of the index configuration.
 
+[back to top](#)
+
+
 ## Search Service
 
 To understand the search service configuration (and not duplicate that information), it is recommended to read the [Configuration Paragraph of the Search Service](/search_service.html#configuration) first.
@@ -184,29 +228,43 @@ These settings are identical to the one for the [Indexer service](#connection-co
 ### Default and Specific Tenant Configuration
 
 It is possible to have a default configuration, that is used for all tenants where no specific configuration exists. 
-Additionately the tenant's search configuration has the feature to reference parts of the default configuration. This way you can reuse certain configuration blocks.
+
+Additionally the tenant's search configuration has the feature to reference parts of the default configuration! This way you can reuse certain configuration blocks.
 
 ```yaml
 ocs:
   default-tenant-config:
-    ...
+    plugin-configuration:
+      ...
+    query-processing:
+      ...
+    query-configuration:
+      ...
+    scoring-configuration:
+      ...
+    rescorers:
+      ...
+    facet-configuration:
+      ...
+    sort-configuration:
+      ...
   tenant-config:
     my-tenant:
-      # there can be different tenant configuration for the same index
+      # Similar to the structure of 'default-tenant-config'
+      # Additionaly the following options are possible:
+      # These boolean properties can be used to use the according
+      # default configuration instead defining the same config again
+      use-default-query-config: [true|false]
+      use-default-scoring-config: [true|false]
+      use-default-facet-config: [true|false]
+      use-default-sort-config: [true|false]
+      # There can be different tenant configuration for the same index
       index-name: "my-index"
-      plugin-configuration:
-        ...
-      query-processing:
-        ...
-      query-configs:
-        ...
-      rescorers:
-        ...
-      facet-configuration:
-        ...
-      sort-configs:
-        ...
+      ...
 ```
+
+[back to top](#)
+
 ---
 
 #### Plugin Configuration
@@ -225,6 +283,9 @@ As a key the full canonical class-name of the plugin must be used. The expected 
         "[de.cxp.ocs.elasticsearch.query.analyzer.QuerqyQueryExpander]":
           "common_rules_url": "rules/querqy_rules.my_index.txt"
 ```
+
+[back to top](#)
+
 ---
 
 #### Query Processing
@@ -233,12 +294,12 @@ At this section the details are configured, about how a user-query is processed 
 
 - `user-query-preprocessors`: A list of classes that may replace the 
 - `user-query-analyzer`: Specify the class that should do the analyzing part. It must be an implementation of the `de.cxp.ocs.spi.search.UserQueryAnalyzer` interface. 
+  Custom Implementations and `QuerqyQueryExpander` must be configured via the `plugin-configuration` section.
 
   Per Default the following options are available:
   - `de.cxp.ocs.elasticsearch.query.analyzer.WhitespaceAnalyzer` (default) It splits the user query by white space into terms
   - `de.cxp.ocs.elasticsearch.query.analyzer.WhitespaceWithShingles` Similar to the default analyzer but it additionally adds shingle-terms of the adjoining terms
   - `de.cxp.ocs.elasticsearch.query.analyzer.QuerqyQueryExpander` Sophisticated analyzer that uses a [Querqy Common Rewriter](https://docs.querqy.org/querqy/rewriters/common-rules.html#querqy-rewriters-common-rules) rule definition file to add filters and synonyms to the query
-  
 
 ```yaml
       query-processing:
@@ -246,58 +307,46 @@ At this section the details are configured, about how a user-query is processed 
           - "my.example.FancyCustomization"
         user-query-analyzer: "de.cxp.ocs.elasticsearch.query.analyzer.QuerqyQueryExpander"
 ```
+
+[back to top](#)
+
 ---
 
 
 #### Query Configuration
 
-```yaml
+This configuration part is an ordered map of one or more named query configuration objects. They configure the [Query Relaxation logic](search_service.html#query-relaxation)
 
+Each query configuration consists of a `name`, a `strategy`, a `condition`, the `weighted-fields` that are searched, and some strategy specific `settings`:
+
+```yaml
+    query-configuration:
+      <name>:
+        strategy: "<strategy-name>"
+        condition: 
+          matchingRegex: "<regex>"
+          maxTermCount: <int>
+        weightedFields:
+          "<field-name>": <float>
+          ...
+        settings:
+          ...
 ```
+
+[back to top](#)
+
 ---
 
-#### Facet Configuration
+- `strategy`: Per default the following strategies are provided: "DefaultQuery", "ConfigurableQuery", "PredictionQuery", and "NgramQuery".
+  Details about their behavior and the supported settings can be found at the java-docs which are linked at the [Query Relaxation docs](search_service.html#query-relaxation)
+- `condition`: Defines under which conditions that query strategy is used. Should contain at least one of the following properties:
+  - `minTermCount`: `<int>` minimum amount of terms inside the analyzed query.
+  - `maxTermCount`: `<int>` maximum amount of terms inside the analyzed query.
+  - `matchingRegex`: `<regular-expression-string>` Regular Expression that has to match on the whole query
+- `weightedFields`: A map of field names and their weight for that query. The field names must not be prefixed with "searchData", but they *can* be suffixed with one of the analyzed subfields ".standard", ".shingles", or ".ngram". Also they may contain the wildcard `*` for matching multiple fields (including the analyzed subfields).
+- `settings`: A map of strategy specific settings that are documented at the java-docs which are linked at the [Query Relaxation docs](search_service.html#query-relaxation)
 
-With the facet configuration you can add additional behaviour about how facets are generated. 
-It contains two properties:
-- `max-facets`: (default = 5). With this facet you can limit the amount of facets that should be generated. 
-
-  A low number improves performance (and maybe even usability) because less facets are generated. 
-  Each individual facet can set the value `excludeFromFacetLimit: true` to make it being generated all the time, ignoring that limit (useful for standard facets). 
-  In general the most common facets for a particular result are generated, but if facets are equally common, it's up to Elasticsearch's logic which facets are returned.
-
-- `facets`: A list of individual facet configs. Without an individual facet config, facets are generated with default behaviour.
-
-```yaml
-    facet-configuration:
-      max-facets: <int>
-      facets:
-      - source-field: "<field-name>"
-        label: "<label>"
-        type: [term|hierarchical|interval|range|<custom>]
-        order: <int>
-        optimal-value-count: <int>
-        exclude-from-facet-limit: <boolean>
-        show-unselected-options: <boolean>
-        is-multi-select: <boolean>
-        meta-data:
-          "<key>": "<value>"
-      - ...
-```
-
-Each individual facet config may contain the following properties:
-
-- `source-field`: (required) Specifies for which facet this configuration applies to. Only one facet config is allowed per field.
-- `label`: (default = source-field) Defines the 'label' for that facet. Will be part of the returned `meta-data`
-- `type`: Per default the type depends on the field type. This is "term" for string fields, "interval" for number fields, and "hierarchical" for category fields. 
-  So basically this is only useful to set to "range" for numeric fields or in case a custom facet creator is used.
-- `order`: (default = 127) Accepted are values between 0 and 127. This order value will be used to sort the facets according to it (low order values are put higher).
-  If the order of two facets is the same, the one that's filtered will be preferd. If both have the same filter-status, the one with the higher result-coverage will be prefered.
-- `optimal-value-count`: (default = 5) Only used for "interval" facets to specify how many interval-filter-options should be generated at the maximum (if there enough results).
-- `explude-from-facet-limit`: (default = false) See `max-facets` description above
-- `show-unselected-options`: (default = false) If set to "true" all possible facet values will be returned, even if one of them is used as filter. Choosing another filter-option will then toggle the selected filter.
-- `is-multi-select`: (default = false) If set to "true" the behaviour is similar to `show-unselected-options` and additionally choosing another filter-option will filter the result for both of them inclusively (e.g. "blue" or "red").
-- `meta-data`: (default = null) Can be used to add arbitrary data to a facet. The value is a simple string map. This is useful to add configuration values that can be considered at the implementation side. Some internal data is also exposed at that meta-data map (e.g. label and count)
+[back to top](#)
 
 ---
 
@@ -357,7 +406,177 @@ Each function must have at least a `type` property and depending on that one or 
     > The decay parameter defines how documents are scored at the distance given at scale.
     > If no decay is defined, documents at the distance scale will be scored 0.5.
 
+[back to top](#)
+
+---
+
+#### Rescorers
+
+A list of canonical class names of custom implementations of the `de.cxp.ocs.spi.search.RescorerProvider` interface.
+
+These customization allows the usage of the [Query Rescorer API](https://www.elastic.co/guide/en/elasticsearch/reference/7.15/filter-search-results.html#rescore).
+
+```yaml
+      rescorers:
+        - "my.custom.LearningToRankRescorerProvider"
+        - "my.custom.FancyRescorer"
+```
+
+[back to top](#)
+
 ---
 
 
+#### Facet Configuration
+
+With the facet configuration you can add additional behaviour about how facets are generated. 
+It contains two properties:
+- `max-facets`: (default = 5). With this facet you can limit the amount of facets that should be generated. 
+
+  A low number improves performance (and maybe even usability) because less facets are generated. 
+  Each individual facet can set the value `excludeFromFacetLimit: true` to make it being generated all the time, ignoring that limit (useful for standard facets). 
+  In general the most common facets for a particular result are generated, but if facets are equally common, it's up to Elasticsearch's logic which facets are returned.
+
+- `facets`: A list of individual facet configs. Without an individual facet config, facets are generated with default behaviour.
+
+```yaml
+    facet-configuration:
+      max-facets: <int>
+      facets:
+      - source-field: "<field-name>"
+        label: "<label>"
+        type: [term|hierarchical|interval|range|<custom>]
+        order: <int>
+        optimal-value-count: <int>
+        exclude-from-facet-limit: <boolean>
+        show-unselected-options: <boolean>
+        is-multi-select: <boolean>
+        meta-data:
+          "<key>": "<value>"
+      - ...
+```
+
+Each individual facet config may contain the following properties:
+
+- `source-field`: (required) Specifies for which facet this configuration applies to. Only one facet config is allowed per field.
+- `label`: (default = source-field) Defines the 'label' for that facet. Will be part of the returned `meta-data`
+- `type`: Per default the type depends on the field type. This is "term" for string fields, "interval" for number fields, and "hierarchical" for category fields. 
+  So basically this is only useful to set to "range" for numeric fields or in case a custom facet creator is used.
+- `order`: (default = 127) Accepted are values between 0 and 127. This order value will be used to sort the facets according to it (low order values are put higher).
+  If the order of two facets is the same, the one that's filtered will be preferd. If both have the same filter-status, the one with the higher result-coverage will be prefered.
+- `optimal-value-count`: (default = 5) Only used for "interval" facets to specify how many interval-filter-options should be generated at the maximum (if there enough results).
+- `explude-from-facet-limit`: (default = false) See `max-facets` description above
+- `show-unselected-options`: (default = false) If set to "true" all possible facet values will be returned, even if one of them is used as filter. Choosing another filter-option will then toggle the selected filter.
+- `is-multi-select`: (default = false) If set to "true" the behaviour is similar to `show-unselected-options` and additionally choosing another filter-option will filter the result for both of them inclusively (e.g. "blue" or "red").
+- `meta-data`: (default = null) Can be used to add arbitrary data to a facet. The value is a simple string map. This is useful to add configuration values that can be considered at the implementation side. Some internal data is also exposed at that meta-data map (e.g. label and count)
+
+
+[back to top](#)
+
+---
+
+#### Sort Configuration
+
+This section allows the control of the sorting options inside the response and also their sorting behavior. If this configuration part is missing, the sorting options will be generated from all fields that are indexed for sorting with the label being `fieldName.order`.
+
+Each sorting option configuration supports the following properties:
+
+- `label`: The display label
+- `field`: (required) The field that should be used for this sorting option
+- `order`: (required: "ASC" or "DESC") specifies the sort order for this sorting option
+- `missing`: (default = 0) Defines how documents without data at that field should be treated in that sorting
+
+Example:
+```yaml
+      sort-configuration:
+        - label: "Cheapest first"
+          field: price
+          order: ASC
+          # consider documents without price to be sorted to the end
+          missing: 1000
+```
+
+[back to top](#)
+
+
 ## Suggest Service
+
+The options of the "SmartSuggest Library" are used by the Suggest Service, configurable trough Java's system properties. 
+Optionaly you can put a file `suggest.properties` somewhere at classpath, the Suggest Service will load them into the system properties.
+
+For missing system properties the Suggest Service tries to lookup an environment variable where each dot `.` is replaced by underscore `_` and all letters are uppercase.
+
+Due to simplicity and having a proper blueprint, the properties are presented as a properties file including all explanation as comments and all default values already set.
+
+```properties
+# server listening settings
+suggest.server.port=8080
+suggest.server.adress=0.0.0.0
+
+# how often (in seconds) are the data providers asked if the have new data
+suggest.update.rate=60
+
+# Normally the data for an index is loaded when the first request comes in.
+# With this setting, you can name the indexes that should be loaded directly at the start.
+# Values should be comma-separated - index names MUST NOT contain commas.
+# Example: suggest.preload.indexes=myindex1,myindex2
+# 
+#suggest.preload.indexes=
+
+# Specify where lucene puts the indexes. If not specified, the temporary 
+# directory will be used.
+#
+#suggest.index.folder=
+
+# If this property is set, it will be used to extract the payload value with
+# this key and group the suggestions accordingly.
+# It's recommended to specify 'suggest.group.share.conf' or
+# 'suggest.group.cutoff.conf' as well, otherwise the default limiter will
+# be used after grouping.
+#
+#suggest.group.key=
+
+# Depends on a configured `suggest.group.key` property
+# The property changes the way, how the result list is truncated (limited).
+# Expects the property in the format 'group1=0.x,group2=0.x' to be used as 
+# group-share configuration for the 'ConfigurableShareLimiter'
+# See the [java doc](javadoc.html#apidocs/de/cxp/ocs/smartsuggest/limiter/ConfigurableShareLimiter.html)
+# for more details.
+# Basically these values configure, which group of suggestions should get which
+# share in the result (e.g. keywords=0.5 (50%), brand=0.3 (30%), category=0.2 (20%)).
+#
+# This ConfigurableShareLimiter also reads env variables, however they can
+# also be configured here directly, but all in upper case, like that:
+# SUGGEST_GROUP_SHARE_BRAND=
+#
+#suggest.group.share.conf=
+
+# Depends on a configured `suggest.group.key` property
+# Expects the property to be specified in the format 'group1=N,group2=M'
+# with the group names that exist in your suggestion data and integer values.
+# The values are considered as absolute limites.
+#
+#suggest.group.cutoff.conf=
+
+# If this property is set, the returned values will be deduplicated. As a value
+# a comma separated list of the group-values can be specified. It's used as
+# a priority order: suggestions of the groups defined first will be
+# preferred over suggestions from other groups. Example: a value
+# "brand,keyword" will be used to remove a keyword suggestions if there is
+# a similar brand suggestions. Comparison is done on normalized values
+# (lowercase+trim). Defining the property without a value will enable
+# deduplication, but will do that without any priorization.
+#
+#suggest.group.deduplication.order=
+
+# Optional path prefix for the '/health' and '/metrics' endpoint.
+#suggest.mgmt.path.prefix=
+
+# If a suggest index is not requested for that time, it will be unloaded.
+# A new request to that index will return an empty list, but restart the loading
+# of that index.
+suggester.max.idle.minutes=30
+
+```
+
+[back to top](#)

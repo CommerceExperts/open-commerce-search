@@ -4,12 +4,12 @@
 - At this [Overview](#overview) you may grasp an overall understanding about the whole stack.
 - At the [quick start demo](quick_start_demo.md) you learn how to get the OCSS up and running locally with some sample data.
 - The [Open-API Docs](generated_api_doc.md) describes the complete [OCSS Client API](https://github.com/CommerceExperts/open-commerce-search/tree/master/open-commerce-search-api/src/main/resources/openapi.yaml).
-- The [Operations](https://github.com/CommerceExperts/open-commerce-search/tree/master/operations) directory contains a [docker-compose setup](https://github.com/CommerceExperts/open-commerce-search/operations/docker-compose), a [Kubernetes tutorial](https://github.com/CommerceExperts/open-commerce-search/operations/k8s/README.md) and other tools.
-- The 3 services are described here:
+- The [operations directory](https://github.com/CommerceExperts/open-commerce-search/tree/master/operations) contains a basic [docker-compose setup](https://github.com/CommerceExperts/open-commerce-search/tree/master/operations/docker-compose), a [Kubernetes tutorial](https://github.com/CommerceExperts/open-commerce-search/tree/master/operations/k8s) and other tools.
+- Learn how to configure the OCS Services at the [Configuration section](configuration.md)
+- The details of the services are described here:
   - [Indexer Service](indexer_service.md)
   - [Search Service](search_service.md)
   - [Suggest Service](suggest_service.md)
-- Learn more about the OCSS [Configuration](configuration.md)
 - Learn how to customize OCSS with the [Plugin Guide](plugin_guide.md)
 - Finally you might be interested in the projects [complete JavaDoc](apidocs/).
 
