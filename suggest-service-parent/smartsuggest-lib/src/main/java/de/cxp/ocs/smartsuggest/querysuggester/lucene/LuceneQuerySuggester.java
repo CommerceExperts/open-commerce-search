@@ -16,7 +16,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -355,7 +354,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, itemsToFetch);
 
 		final List<Suggestion> suggestions = getUniqueSuggestions(lookupResults, uniqueQueries, maxResults);
-		suggestions.forEach(s -> withPayloadEntry(s, PAYLOAD_GROUPMATCH_KEY, groupName));
+		suggestions.forEach(s -> withPayloadEntry(s, CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName));
 
 		if (!suggestions.isEmpty()) {
 			sortSuggestions(suggestions, term, groupName);
@@ -376,7 +375,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 					// TODO: figure out, which are better matching before
 					// truncating
 					.limit(maxResults)
-					.map(l -> withPayloadEntry(new Suggestion(l), PAYLOAD_GROUPMATCH_KEY, groupName))
+					.map(l -> withPayloadEntry(new Suggestion(l), CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName))
 					.peek(results::add)
 					.count();
 
@@ -387,19 +386,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	}
 
 	private void reorderPrimaryAndSecondaryMatches(final List<Suggestion> results) {
-		Collections.sort(results, new Comparator<Suggestion>() {
-
-			@Override
-			public int compare(Suggestion o1, Suggestion o2) {
-				String matchGroup1 = o1.getPayload().get(PAYLOAD_GROUPMATCH_KEY);
-				String matchGroup2 = o2.getPayload().get(PAYLOAD_GROUPMATCH_KEY);
-				if (SHARPENED_GROUP_NAME.equals(matchGroup1) || SHARPENED_GROUP_NAME.equals(matchGroup2)) {
-					return matchGroup1.equals(matchGroup1) ? 0 : (SHARPENED_GROUP_NAME.equals(matchGroup1) ? -1 : 1);
-				}
-				// prefer higher weight => reverse order
-				return Long.compare(o2.getWeight(), o1.getWeight());
-			}
-		});
+		Collections.sort(results, Util.getSharpenedGroupComparator());
 	}
 
 	private Suggestion withPayloadEntry(Suggestion s, String key, String value) {
@@ -424,12 +411,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	}
 
 	private void sortFuzzySuggestions(List<Suggestion> suggestions, String term) {
-		sort(suggestions, (s1, s2) -> {
-			final double s1CommonChars = Util.commonChars(locale, s1.getLabel(), term);
-			final double s2CommonChars = Util.commonChars(locale, s2.getLabel(), term);
-			// prefer more common chars => desc order
-			return Double.compare(s2CommonChars, s1CommonChars);
-		});
+		sort(suggestions, Util.getFuzzySuggestionComparator(locale, term));
 	}
 
 	private List<Suggestion> getUniqueSuggestions(List<Lookup.LookupResult> results, Set<String> uniqueQueries, int maxResults) {
@@ -467,7 +449,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 
 	private long getRecordCount(Iterable<SuggestRecord> suggestions) {
 		if (suggestions instanceof Collection<?>) {
-			return ((Collection) suggestions).size();
+			return ((Collection<?>) suggestions).size();
 		}
 		else {
 			try {
@@ -502,7 +484,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 */
 	private Suggestion getBestMatch(Lookup.LookupResult result) {
 		Map<String, String> payload = SerializationUtils.deserialize(result.payload.bytes);
-		String label = payload.get(PAYLOAD_LABEL_KEY);
+		String label = payload.get(CommonPayloadFields.PAYLOAD_LABEL_KEY);
 		if (label == null) label = result.key.toString();
 		return new Suggestion(label)
 				.setPayload(payload)

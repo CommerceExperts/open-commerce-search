@@ -1,8 +1,14 @@
 package de.cxp.ocs.smartsuggest.util;
 
+import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.SHARPENED_GROUP_NAME;
+import static de.cxp.ocs.smartsuggest.spi.CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY;
+
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
 
+import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
+import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester;
 import lombok.NonNull;
 
 public class Util {
@@ -39,7 +45,7 @@ public class Util {
 		HashMap<Character, Integer> inputChars = new HashMap<>(input.length());
 		for (int i = 0; i < input.length(); i++) {
 			char c = input.charAt(i);
-			
+
 			if (!Character.isAlphabetic(c)) {
 				inputNonAlphaCharCount++;
 				continue;
@@ -61,6 +67,52 @@ public class Util {
 				commonChars += 1;
 			}
 		}
-		return commonChars / Math.max(input.length()-inputNonAlphaCharCount, target.length()-targetNonAlphaCharCount);
+		return commonChars / Math.max(input.length() - inputNonAlphaCharCount, target.length() - targetNonAlphaCharCount);
+	}
+
+	/**
+	 * Returns the {@code Comparator} used to sort fuzzy suggestions within the
+	 * {@value LuceneQuerySuggester#FUZZY_MATCHES_ONE_EDIT_GROUP_NAME}
+	 * and
+	 * {@value LuceneQuerySuggester#FUZZY_MATCHES_TWO_EDITS_GROUP_NAME}.
+	 * Those suggestions are sorted on their common chars to the search term at
+	 * first and on their weight at second.
+	 * 
+	 * @param locale
+	 *        the locale of the client. Used to load the proper stopwords
+	 * @param term
+	 *        the term for which to get suggestions
+	 * @return the {@code Comparator} for fuzzy suggestions.
+	 */
+	public static Comparator<Suggestion> getFuzzySuggestionComparator(Locale locale, String term) {
+		return (s1, s2) -> {
+			final double s1CommonChars = Util.commonChars(locale, s1.getLabel(), term);
+			final double s2CommonChars = Util.commonChars(locale, s2.getLabel(), term);
+			// prefer more common chars => desc order
+			int commonCharsCompare = Double.compare(s2CommonChars, s1CommonChars);
+			return commonCharsCompare != 0
+					? commonCharsCompare
+					: Long.compare(s2.getWeight(), s1.getWeight());
+		};
+	}
+
+	/**
+	 * Returns the {@code Comparator} used to sort suggestions within the
+	 * {@value LuceneQuerySuggester#SHARPENED_GROUP_NAME}.
+	 * 
+	 * @return the {@code Comparator} for sharpened suggestions.
+	 */
+	public static Comparator<Suggestion> getSharpenedGroupComparator() {
+		return (s1, s2) -> {
+			String matchGroup1 = s1.getPayload().get(PAYLOAD_GROUPMATCH_KEY);
+			String matchGroup2 = s2.getPayload().get(PAYLOAD_GROUPMATCH_KEY);
+			if (SHARPENED_GROUP_NAME.equals(matchGroup1) || SHARPENED_GROUP_NAME.equals(matchGroup2)) {
+				return matchGroup1.equals(matchGroup2)
+						? 0
+						: (SHARPENED_GROUP_NAME.equals(matchGroup1) ? -1 : 1);
+			}
+			// prefer higher weight => reverse order
+			return Long.compare(s2.getWeight(), s1.getWeight());
+		};
 	}
 }
