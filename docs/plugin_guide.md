@@ -67,7 +67,7 @@ Add the according dependencies to your "custom plugin" project:
 
 By default the Indexer fetches the configuration from the Spring-managed application properties. To use your own configuration backend you can implement this interface to build the required indexer configuration.
 
-(See details at the Java-docs](javadoc.html#apidocs/de/cxp/ocs/spi/indexer/IndexerConfigurationProvider.html)
+[See details at the Java-docs](javadoc.html#apidocs/de/cxp/ocs/spi/indexer/IndexerConfigurationProvider.html)
 
 ### de.cxp.ocs.spi.indexer.DocumentPreProcessor
 
