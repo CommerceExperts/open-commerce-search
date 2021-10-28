@@ -16,7 +16,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -387,19 +386,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	}
 
 	private void reorderPrimaryAndSecondaryMatches(final List<Suggestion> results) {
-		Collections.sort(results, new Comparator<Suggestion>() {
-
-			@Override
-			public int compare(Suggestion o1, Suggestion o2) {
-				String matchGroup1 = o1.getPayload().get(CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY);
-				String matchGroup2 = o2.getPayload().get(CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY);
-				if (SHARPENED_GROUP_NAME.equals(matchGroup1) || SHARPENED_GROUP_NAME.equals(matchGroup2)) {
-					return matchGroup1.equals(matchGroup2) ? 0 : (SHARPENED_GROUP_NAME.equals(matchGroup1) ? -1 : 1);
-				}
-				// prefer higher weight => reverse order
-				return Long.compare(o2.getWeight(), o1.getWeight());
-			}
-		});
+		Collections.sort(results, Util.getSharpenedGroupComparator());
 	}
 
 	private Suggestion withPayloadEntry(Suggestion s, String key, String value) {
@@ -424,15 +411,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	}
 
 	private void sortFuzzySuggestions(List<Suggestion> suggestions, String term) {
-		sort(suggestions, (s1, s2) -> {
-			final double s1CommonChars = Util.commonChars(locale, s1.getLabel(), term);
-			final double s2CommonChars = Util.commonChars(locale, s2.getLabel(), term);
-			// prefer more common chars => desc order
-			int commonCharsCompare = Double.compare(s2CommonChars, s1CommonChars);
-			return commonCharsCompare != 0
-					? commonCharsCompare
-					: Long.compare(s2.getWeight(), s1.getWeight());
-		});
+		sort(suggestions, Util.getFuzzySuggestionComparator(locale, term));
 	}
 
 	private List<Suggestion> getUniqueSuggestions(List<Lookup.LookupResult> results, Set<String> uniqueQueries, int maxResults) {
