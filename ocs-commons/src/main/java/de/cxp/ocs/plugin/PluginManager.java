@@ -36,10 +36,10 @@ public class PluginManager {
 		while (serviceImpls.hasNext()) {
 			T next = serviceImpls.next();
 			if (disabledServies.contains(next.getClass().getCanonicalName())) {
-				log.info("Service {} for {} is disabled", next.getClass(), serviceInterface);
+				log.info("Service {} for {} is disabled", next.getClass().getCanonicalName(), serviceInterface.getCanonicalName());
 			}
 			else {
-				log.info("Service {} for {} loaded", next.getClass(), serviceInterface);
+				log.info("Service {} for {} loaded", next.getClass().getCanonicalName(), serviceInterface.getCanonicalName());
 				loadedServices.add(next);
 			}
 		}
