@@ -428,7 +428,10 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			final double s1CommonChars = Util.commonChars(locale, s1.getLabel(), term);
 			final double s2CommonChars = Util.commonChars(locale, s2.getLabel(), term);
 			// prefer more common chars => desc order
-			return Double.compare(s2CommonChars, s1CommonChars);
+			int commonCharsCompare = Double.compare(s2CommonChars, s1CommonChars);
+			return commonCharsCompare != 0
+					? commonCharsCompare
+					: Long.compare(s2.getWeight(), s1.getWeight());
 		});
 	}
 
