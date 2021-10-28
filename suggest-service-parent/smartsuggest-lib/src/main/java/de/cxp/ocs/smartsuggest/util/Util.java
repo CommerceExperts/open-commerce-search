@@ -72,10 +72,11 @@ public class Util {
 
 	/**
 	 * Returns the {@code Comparator} used to sort fuzzy suggestions within the
-	 * {@link LuceneQuerySuggester#FUZZY_MATCHES_ONE_EDIT_GROUP_NAME} and
-	 * {@link LuceneQuerySuggester#FUZZY_MATCHES_TWO_EDIT_GROUP_NAME}. Those
-	 * suggestions are sorted on their common chars to the search term at first
-	 * and on their weight at second.
+	 * {@value LuceneQuerySuggester#FUZZY_MATCHES_ONE_EDIT_GROUP_NAME}
+	 * and
+	 * {@value LuceneQuerySuggester#FUZZY_MATCHES_TWO_EDITS_GROUP_NAME}.
+	 * Those suggestions are sorted on their common chars to the search term at
+	 * first and on their weight at second.
 	 * 
 	 * @param locale
 	 *        the locale of the client. Used to load the proper stopwords
@@ -97,10 +98,9 @@ public class Util {
 
 	/**
 	 * Returns the {@code Comparator} used to sort suggestions within the
-	 * {@link LuceneQuerySuggester#SHARPENED_GROUP_NAME}.
+	 * {@value LuceneQuerySuggester#SHARPENED_GROUP_NAME}.
 	 * 
-	 * @return the {@link LuceneQuerySuggester#SHARPENED_GROUP_NAME}
-	 *         suggestions.
+	 * @return the {@code Comparator} for sharpened suggestions.
 	 */
 	public static Comparator<Suggestion> getSharpenedGroupComparator() {
 		return (s1, s2) -> {
