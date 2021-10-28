@@ -107,7 +107,7 @@ public class ScoringConfiguration {
 		 * Set the weight that is multiplied with the scoring function result.
 		 * 
 		 * @param weight
-		 *        value > 0
+		 *        value &gt; 0
 		 * @return self
 		 */
 		public ScoringFunction setWeight(float weight) {

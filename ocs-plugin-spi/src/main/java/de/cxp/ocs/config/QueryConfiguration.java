@@ -39,6 +39,7 @@ public class QueryConfiguration {
 		 * Set minimum of terms for a query factory to be used.
 		 * 
 		 * @param minTermCount
+		 *        min term count (value &gt; 0)
 		 * @return the changed query condition
 		 */
 		public QueryCondition setMinTermCount(int minTermCount) {
@@ -50,6 +51,7 @@ public class QueryConfiguration {
 		 * Set inclusive maximum of terms for a query factory to be used.
 		 * 
 		 * @param maxTermCount
+		 *        max term count (value &gt; 0)
 		 * @return the changed query condition
 		 */
 		public QueryCondition setMaxTermCount(int maxTermCount) {
@@ -62,6 +64,7 @@ public class QueryConfiguration {
 		 * query.
 		 * 
 		 * @param matchingRegex
+		 *        regular expression
 		 * @return the changed query condition
 		 */
 		public QueryCondition setMatchingRegex(String matchingRegex) {
@@ -133,7 +136,7 @@ public class QueryConfiguration {
 	 * </p>
 	 * 
 	 * @param weightedFields
-	 *        field names with weight > 0
+	 *        field names with weight &gt; 0
 	 * @return self
 	 */
 	public QueryConfiguration setWeightedFields(Map<String, Float> weightedFields) {

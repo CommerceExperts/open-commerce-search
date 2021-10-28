@@ -3,6 +3,8 @@ package de.cxp.ocs.config;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.cxp.ocs.spi.search.UserQueryAnalyzer;
+import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import lombok.Getter;
 
 @Getter // write setters with java-doc!
@@ -23,7 +25,9 @@ public class QueryProcessingConfiguration {
 	 * </p>
 	 * 
 	 * @param userQueryPreprocessors
-	 * @return config again for fluent access
+	 *        list of full canonical {@link UserQueryPreprocessor}
+	 *        implementation class names
+	 * @return self
 	 */
 	public QueryProcessingConfiguration setUserQueryPreprocessors(List<String> userQueryPreprocessors) {
 		this.userQueryPreprocessors = userQueryPreprocessors;
@@ -44,7 +48,8 @@ public class QueryProcessingConfiguration {
 	 * </p>
 	 * 
 	 * @param userQueryAnalyzer
-	 * @return config again for fluent access
+	 *        full canonical {@link UserQueryAnalyzer} implementation class name
+	 * @return self
 	 */
 	public QueryProcessingConfiguration setUserQueryAnalyzer(String userQueryAnalyzer) {
 		this.userQueryAnalyzer = userQueryAnalyzer;
