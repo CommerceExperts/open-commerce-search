@@ -391,10 +391,10 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 
 			@Override
 			public int compare(Suggestion o1, Suggestion o2) {
-				String matchGroup1 = o1.getPayload().get(PAYLOAD_GROUPMATCH_KEY);
-				String matchGroup2 = o2.getPayload().get(PAYLOAD_GROUPMATCH_KEY);
+				String matchGroup1 = o1.getPayload().get(CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY);
+				String matchGroup2 = o2.getPayload().get(CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY);
 				if (SHARPENED_GROUP_NAME.equals(matchGroup1) || SHARPENED_GROUP_NAME.equals(matchGroup2)) {
-					return matchGroup1.equals(matchGroup1) ? 0 : (SHARPENED_GROUP_NAME.equals(matchGroup1) ? -1 : 1);
+					return matchGroup1.equals(matchGroup2) ? 0 : (SHARPENED_GROUP_NAME.equals(matchGroup1) ? -1 : 1);
 				}
 				// prefer higher weight => reverse order
 				return Long.compare(o2.getWeight(), o1.getWeight());
