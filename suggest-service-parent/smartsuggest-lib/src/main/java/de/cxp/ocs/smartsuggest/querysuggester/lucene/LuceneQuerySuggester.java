@@ -355,7 +355,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, itemsToFetch);
 
 		final List<Suggestion> suggestions = getUniqueSuggestions(lookupResults, uniqueQueries, maxResults);
-		suggestions.forEach(s -> withPayloadEntry(s, PAYLOAD_GROUPMATCH_KEY, groupName));
+		suggestions.forEach(s -> withPayloadEntry(s, CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName));
 
 		if (!suggestions.isEmpty()) {
 			sortSuggestions(suggestions, term, groupName);
@@ -376,7 +376,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 					// TODO: figure out, which are better matching before
 					// truncating
 					.limit(maxResults)
-					.map(l -> withPayloadEntry(new Suggestion(l), PAYLOAD_GROUPMATCH_KEY, groupName))
+					.map(l -> withPayloadEntry(new Suggestion(l), CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName))
 					.peek(results::add)
 					.count();
 
@@ -505,7 +505,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 */
 	private Suggestion getBestMatch(Lookup.LookupResult result) {
 		Map<String, String> payload = SerializationUtils.deserialize(result.payload.bytes);
-		String label = payload.get(PAYLOAD_LABEL_KEY);
+		String label = payload.get(CommonPayloadFields.PAYLOAD_LABEL_KEY);
 		if (label == null) label = result.key.toString();
 		return new Suggestion(label)
 				.setPayload(payload)
