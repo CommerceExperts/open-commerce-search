@@ -1,0 +1,93 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../../base/
+
+# add customizations jar as config-map
+# (jar file must exist)
+configMapGenerator:
+- name: my-ocs-customization
+  files:
+  - my-ocs-plugins.jar
+
+# add custom configuration
+# (files must exist)
+- name: my-ocs-config
+  files:
+  - indexer-application-custom.yaml
+  - searcher-application-custom.yaml
+
+patches:
+- target:
+    kind: Elasticsearch
+  patch: |-
+    # custom node
+    - op: replace
+      path: /spec/nodeSets/0/count
+      value: 2
+    # how to specify custom ES version
+    - op: replace
+      path: /spec/version
+      value: 7.9.3
+    # install plugin
+    - op: add
+      path: /spec/nodeSets/0/podTemplate
+      value:
+        spec:
+          initContainers:
+          - name: install-plugins
+            command:
+            - sh
+            - -c
+            - |
+              /usr/share/elasticsearch/bin/elasticsearch-plugin install --batch analysis-kuromoji
+# Example how Indexer Deployment can be customized
+# For other Deployments it should be similar
+- target:
+    kind: Deployment
+    name: indexer-service
+  patch: |-
+    # mount configmap with config files
+    - op: add
+      path: /spec/template/spec/volumes
+      value:
+        - name: config-volume
+          configMap:
+            name: my-ocs-config
+            defaultMode: 420
+            items:
+             - key: indexer-application-custom.yml
+               path: application-custom.yml
+    # mount configmap with customization jar
+    - op: add
+      path: /spec/template/spec/volumes/1
+      value:
+        name: customization-volume
+        configMap:
+          name: my-ocs-customization
+          defaultMode: 420
+          items:
+           - key: my-ocs-plugins.jar
+             path: my-ocs-plugins.jar
+    # add custom config files
+    - op: add
+      path: /spec/template/spec/containers/0/volumeMounts
+      value:
+        - mountPath: /app/resources/application-custom.yml
+          subPath: application-custom.yml
+          name: config-volume
+    # put plugins.jar on classpath
+    - op: add
+      path: /spec/template/spec/containers/0/volumeMounts/1
+      value:
+        name: customization-volume
+        mountPath: /app/libs/my-ocs-plugins.jar
+        subPath: my-ocs-plugins.jar
+    # activate custom profile to load custom application.yaml files
+    - op: add
+      path: /spec/template/spec/containers/0/env/0
+      value:
+        name: spring_profiles_active
+        value: custom,docker
+
+

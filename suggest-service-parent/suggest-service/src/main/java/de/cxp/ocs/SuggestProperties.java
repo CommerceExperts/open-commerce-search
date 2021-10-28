@@ -1,6 +1,7 @@
 package de.cxp.ocs;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,8 +36,16 @@ public class SuggestProperties {
 	/**
 	 * using system properties as backing properties
 	 */
-	public SuggestProperties() {
+	public SuggestProperties(Optional<InputStream> customProperties) {
 		properties = System.getProperties();
+		customProperties.ifPresent(stream -> {
+			try {
+				properties.load(stream);
+			}
+			catch (IOException e) {
+				throw new UncheckedIOException("Failed to load custom suggest properties", e);
+			}
+		});
 	}
 
 	/**
@@ -122,7 +131,7 @@ public class SuggestProperties {
 	/**
 	 * <p>
 	 * Expects the env var 'SUGGESTER_MAX_IDLE_MINUTES' or the system property
-	 * 'suggester_max_idle_minutes' to be set to an integer value.
+	 * 'suggester.max.idle.minutes' to be set to an integer value.
 	 * Defaults to 30.
 	 * </p>
 	 * <p>

@@ -17,6 +17,7 @@ public interface DocumentPostProcessor {
 	 * be used to configure it afterwards.
 	 * 
 	 * @param fieldConfigIndex
+	 *        field config index
 	 * @param settings
 	 *        a custom string-to-string map that can be configured per
 	 *        DocumentPostProcessor.
@@ -29,8 +30,11 @@ public interface DocumentPostProcessor {
 	 * to the {@link IndexableItem} are relevant.
 	 * 
 	 * @param originalDocument
+	 *        source document
 	 * @param record
+	 *        record that will be indexed
 	 * @param fieldConfig
+	 *        field config access
 	 */
 	void process(Document originalDocument, IndexableItem record, FieldConfigAccess fieldConfig);
 

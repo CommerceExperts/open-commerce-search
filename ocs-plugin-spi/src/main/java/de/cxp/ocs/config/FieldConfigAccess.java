@@ -14,7 +14,8 @@ public interface FieldConfigAccess {
 	 * Get field by unique field name.
 	 * 
 	 * @param fieldName
-	 * @return
+	 *        unique field name
+	 * @return optional matching field
 	 */
 	Optional<Field> getField(String fieldName);
 
@@ -22,7 +23,7 @@ public interface FieldConfigAccess {
 	 * Get field configuration that should be used for the "Categories" property
 	 * of the documents.
 	 * 
-	 * @return
+	 * @return optional matching field
 	 */
 	Optional<Field> getPrimaryCategoryField();
 
@@ -30,7 +31,8 @@ public interface FieldConfigAccess {
 	 * Get all fields that have the specified usage configured.
 	 * 
 	 * @param usage
-	 * @return
+	 *        filter criterion
+	 * @return matching fields
 	 */
 	Map<String, Field> getFieldsByUsage(FieldUsage usage);
 
@@ -38,7 +40,8 @@ public interface FieldConfigAccess {
 	 * get all fields that have the specified field type configured.
 	 * 
 	 * @param type
-	 * @return
+	 *        filter criterion
+	 * @return matching fields
 	 */
 	Map<String, Field> getFieldsByType(FieldType type);
 
@@ -47,8 +50,10 @@ public interface FieldConfigAccess {
 	 * a empty result will be returned.
 	 * 
 	 * @param fieldName
+	 *        could match any source-field name
 	 * @param usage
-	 * @return
+	 *        filter criterion
+	 * @return optional matching field
 	 */
 	Optional<Field> getMatchingField(String fieldName, FieldUsage usage);
 
@@ -59,7 +64,8 @@ public interface FieldConfigAccess {
 	 * {@code getField(String)}
 	 * 
 	 * @param name
-	 * @return
+	 *        could match any source-field name
+	 * @return matching fields
 	 */
 	Set<Field> getMatchingFields(String name);
 
@@ -70,8 +76,10 @@ public interface FieldConfigAccess {
 	 * are generated.
 	 * 
 	 * @param fieldName
+	 *        could match any source-field
 	 * @param value
-	 * @return
+	 *        filter criterion
+	 * @return matching fields
 	 */
 	Set<Field> getMatchingFields(String fieldName, Object value);
 

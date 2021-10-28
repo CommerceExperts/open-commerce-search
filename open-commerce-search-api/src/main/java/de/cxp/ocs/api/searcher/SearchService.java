@@ -179,7 +179,18 @@ public interface SearchService {
 
 	@GET
 	@Path("doc/{tenant}/{id}")
-	public Document getDocument(String tenant, String docId) throws Exception;
+	public Document getDocument(
+			@Parameter(
+					in = ParameterIn.PATH,
+					name = "tenant",
+					description = "tenant name",
+					required = true) String tenant,
+			@Parameter(
+					in = ParameterIn.PATH,
+					name = "id",
+					description = "document id",
+					required = true) String docId)
+			throws Exception;
 
 	@GET
 	@Path("tenants")

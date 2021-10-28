@@ -8,8 +8,10 @@ import java.util.Map;
  */
 public final class CommonPayloadFields {
 
-	public static final String	PAYLOAD_TYPE_KEY	= "type";
-	public static final String	PAYLOAD_COUNT_KEY	= "count";
+	public static final String	PAYLOAD_TYPE_KEY		= "type";
+	public static final String	PAYLOAD_COUNT_KEY		= "count";
+	public static final String	PAYLOAD_LABEL_KEY		= "meta.label";
+	public static final String	PAYLOAD_GROUPMATCH_KEY	= "meta.matchGroupName";
 
 	private CommonPayloadFields() {}
 

@@ -38,6 +38,19 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * <p>
+ * Query factory that analyzes the search keywords and already checks
+ * Elasticsearch about which terms hit documents together (including spell
+ * correction and term shingles).
+ * Based on that analysis a query is built that tries to match most of the
+ * terms (magic algorithm ;)).
+ * </p>
+ * Supported {@link QueryBuildingSetting}s:
+ * <ul>
+ * <li>'analyzer' that is used to match the configured fields.</li>
+ * </ul>
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class PredictionQueryFactory implements ESQueryFactory {

@@ -229,11 +229,10 @@ public class SearchController implements SearchService {
 		Set<String> tenants = new HashSet<>();
 		try {
 			esBuilder.getRestHLClient().indices()
-					.getAlias(new GetAliasesRequest(), RequestOptions.DEFAULT)
+					.getAlias(new GetAliasesRequest().aliases("ocs-"), RequestOptions.DEFAULT)
 					.getAliases()
 					.entrySet()
 					.stream()
-					.filter(aliasEntry -> !aliasEntry.getKey().startsWith(".") && !aliasEntry.getValue().isEmpty())
 					.map(aliasEntry -> aliasEntry.getValue().iterator().next().alias())
 					.forEach(tenants::add);
 		}

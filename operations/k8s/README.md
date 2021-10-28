@@ -36,6 +36,6 @@ kustomize build base | kubectl apply -f -
 If you want to create an customized deployment, just create an kustomize overlay (https://kubectl.docs.kubernetes.io/references/kustomize/glossary/#overlay) with your adjusted settings under the folder 
 [overlays](overlays). Then you can deploy it like the following example:
 ```
-kustomize build base/overlays/example | kubectl apply -f -
+kustomize build overlays/example | kubectl apply -f -
 ```
 The files under [overlays](overlays) would not be commited into git.

@@ -1,70 +1,95 @@
 openapi: 3.0.1
 info:
-  title: Open Commerce Search API
-  description: A common product search API that separates its usage from required
-    search expertise
   contact:
     email: info@commerce-experts.com
+  description: A common product search API that separates its usage from required
+    search expertise
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Open Commerce Search API
   version: "0.2"
 paths:
-  /suggest-api/v1/{indexname}/suggest:
-    get:
-      tags:
-      - search
-      summary: Autocomplete the user input
-      description: Runs a suggestion request on the data of a certain index.
-      operationId: suggest
-      parameters:
-      - name: index
-        in: path
-        description: index name that should be searched for autocompletions
+  /indexer-api/v1/full/add:
+    post:
+      description: Add one or more documents to a running import session.
+      operationId: add
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/BulkImportData'
+        description: Data that contains the import session reference and one or more
+          documents that should be added to that session.
         required: true
-        schema:
-          type: string
-      - name: userQuery
-        in: query
-        description: the simple raw query typed by the user
-        required: true
-        schema:
-          type: string
-      - name: limit
-        in: query
-        description: A optional limit for the suggestions
-        schema:
-          type: integer
-          format: int32
-      - name: filter
-        in: query
-        description: Optional comma-separated list of filter values.
-        schema:
-          type: string
       responses:
         "200":
-          description: successful found results
           content:
             '*/*':
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Suggestion'
-        "404":
-          description: tenant is unknown or index does not exist
-          content:
-            text/plain: {}
+                type: string
+                description: Amount of documents successfuly added
+          description: documents successfully added
+        "400":
+          description: import session is invalid
       security:
       - basic-auth: []
       servers:
-      - url: http://suggest-service
+      - description: "Service to run a full import into a new index. To do so, start\
+          \ a indexation session with a request to 'start' and use the returned ImportSession\
+          \ object to 'add' products bulkwise. If all documents where added, use the\
+          \ 'done' request to deploy that index. In case there were failures (or more\
+          \ failures then tollerated), the 'cancel' request can be used to stop the\
+          \ process and cleanup the incomplete index. Depending on the document size,\
+          \ an amount of 500-2000 documents per bulk is sufficient. If product and\
+          \ content data should be indexed, its recommended to use different indexes.\
+          \ Otherwise make sure to use the same fields for the same content type,\
+          \ e.g. both kind of documents can have a textual 'title' field, but both\
+          \ kind of documents shouldn't have for example an 'author' field, which\
+          \ could be used for product facets (e.g. book authors) but not for faceting\
+          \ the content documents (e.g. blog post authors)."
+        url: http://indexer-service
         variables: {}
-  /indexer-api/v1/full/done:
-    post:
       tags:
       - indexer
-      description: Finishes the import, flushing the new index and (in case there
-        is already an index with the initialized name) replacing the old one.
+  /indexer-api/v1/full/cancel:
+    post:
+      description: "Cancels the import and in case there was an index created, it\
+        \ will be deleted."
+      operationId: cancel
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/ImportSession'
+        required: true
+      responses:
+        "400":
+          description: indexation was already confirmed or import session is invalid
+      security:
+      - basic-auth: []
+      servers:
+      - description: "Service to run a full import into a new index. To do so, start\
+          \ a indexation session with a request to 'start' and use the returned ImportSession\
+          \ object to 'add' products bulkwise. If all documents where added, use the\
+          \ 'done' request to deploy that index. In case there were failures (or more\
+          \ failures then tollerated), the 'cancel' request can be used to stop the\
+          \ process and cleanup the incomplete index. Depending on the document size,\
+          \ an amount of 500-2000 documents per bulk is sufficient. If product and\
+          \ content data should be indexed, its recommended to use different indexes.\
+          \ Otherwise make sure to use the same fields for the same content type,\
+          \ e.g. both kind of documents can have a textual 'title' field, but both\
+          \ kind of documents shouldn't have for example an 'author' field, which\
+          \ could be used for product facets (e.g. book authors) but not for faceting\
+          \ the content documents (e.g. blog post authors)."
+        url: http://indexer-service
+        variables: {}
+      tags:
+      - indexer
+  /indexer-api/v1/full/done:
+    post:
+      description: "Finishes the import, flushing the new index and (in case there\
+        \ is already an index with the initialized name) replacing the old one."
       operationId: done
       requestBody:
         content:
@@ -80,168 +105,148 @@ paths:
       security:
       - basic-auth: []
       servers:
-      - url: http://indexer-service
-        description: Service to run a full import into a new index. To do so, start
-          a indexation session with a request to 'start' and use the returned ImportSession
-          object to 'add' products bulkwise. If all documents where added, use the
-          'done' request to deploy that index. In case there were failures (or more
-          failures then tollerated), the 'cancel' request can be used to stop the
-          process and cleanup the incomplete index. Depending on the document size,
-          an amount of 500-2000 documents per bulk is sufficient. If product and content
-          data should be indexed, its recommended to use different indexes. Otherwise
-          make sure to use the same fields for the same content type, e.g. both kind
-          of documents can have a textual 'title' field, but both kind of documents
-          shouldn't have for example an 'author' field, which could be used for product
-          facets (e.g. book authors) but not for faceting the content documents (e.g.
-          blog post authors).
+      - description: "Service to run a full import into a new index. To do so, start\
+          \ a indexation session with a request to 'start' and use the returned ImportSession\
+          \ object to 'add' products bulkwise. If all documents where added, use the\
+          \ 'done' request to deploy that index. In case there were failures (or more\
+          \ failures then tollerated), the 'cancel' request can be used to stop the\
+          \ process and cleanup the incomplete index. Depending on the document size,\
+          \ an amount of 500-2000 documents per bulk is sufficient. If product and\
+          \ content data should be indexed, its recommended to use different indexes.\
+          \ Otherwise make sure to use the same fields for the same content type,\
+          \ e.g. both kind of documents can have a textual 'title' field, but both\
+          \ kind of documents shouldn't have for example an 'author' field, which\
+          \ could be used for product facets (e.g. book authors) but not for faceting\
+          \ the content documents (e.g. blog post authors)."
+        url: http://indexer-service
         variables: {}
-  /indexer-api/v1/full/cancel:
-    post:
       tags:
       - indexer
-      description: Cancels the import and in case there was an index created, it will
-        be deleted.
-      operationId: cancel
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/ImportSession'
-        required: true
-      responses:
-        "400":
-          description: indexation was already confirmed or import session is invalid
-      security:
-      - basic-auth: []
-      servers:
-      - url: http://indexer-service
-        description: Service to run a full import into a new index. To do so, start
-          a indexation session with a request to 'start' and use the returned ImportSession
-          object to 'add' products bulkwise. If all documents where added, use the
-          'done' request to deploy that index. In case there were failures (or more
-          failures then tollerated), the 'cancel' request can be used to stop the
-          process and cleanup the incomplete index. Depending on the document size,
-          an amount of 500-2000 documents per bulk is sufficient. If product and content
-          data should be indexed, its recommended to use different indexes. Otherwise
-          make sure to use the same fields for the same content type, e.g. both kind
-          of documents can have a textual 'title' field, but both kind of documents
-          shouldn't have for example an 'author' field, which could be used for product
-          facets (e.g. book authors) but not for faceting the content documents (e.g.
-          blog post authors).
-        variables: {}
-  /indexer-api/v1/full/add:
-    post:
-      tags:
-      - indexer
-      description: Add one or more documents to a running import session.
-      operationId: add
-      requestBody:
-        description: Data that contains the import session reference and one or more
-          documents that should be added to that session.
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/BulkImportData'
-        required: true
-      responses:
-        "200":
-          description: documents successfully added
-          content:
-            '*/*':
-              schema:
-                type: string
-                description: Amount of documents successfuly added
-        "400":
-          description: import session is invalid
-      security:
-      - basic-auth: []
-      servers:
-      - url: http://indexer-service
-        description: Service to run a full import into a new index. To do so, start
-          a indexation session with a request to 'start' and use the returned ImportSession
-          object to 'add' products bulkwise. If all documents where added, use the
-          'done' request to deploy that index. In case there were failures (or more
-          failures then tollerated), the 'cancel' request can be used to stop the
-          process and cleanup the incomplete index. Depending on the document size,
-          an amount of 500-2000 documents per bulk is sufficient. If product and content
-          data should be indexed, its recommended to use different indexes. Otherwise
-          make sure to use the same fields for the same content type, e.g. both kind
-          of documents can have a textual 'title' field, but both kind of documents
-          shouldn't have for example an 'author' field, which could be used for product
-          facets (e.g. book authors) but not for faceting the content documents (e.g.
-          blog post authors).
-        variables: {}
   /indexer-api/v1/full/start/{indexName}:
     get:
-      tags:
-      - indexer
-      description: Starts a new full import. Returns a handle containing meta data,
-        that has to be passed to all following calls.
+      description: "Starts a new full import. Returns a handle containing meta data,\
+        \ that has to be passed to all following calls."
       operationId: startImport
       parameters:
-      - name: indexName
+      - description: "index name, that should match the regular expression '[a-z0-9_-]+'"
         in: path
-        description: index name, that should match the regular expression '[a-z0-9_-]+'
+        name: indexName
         required: true
         schema:
           type: string
-      - name: locale
+      - description: used for language dependent settings
         in: query
-        description: used for language dependent settings
+        name: locale
         required: true
         schema:
           type: string
       responses:
         "200":
-          description: import session started
           content:
             '*/*':
               schema:
                 $ref: '#/components/schemas/ImportSession'
+          description: import session started
         "409":
           description: there is already an import running for that index
       security:
       - basic-auth: []
       servers:
-      - url: http://indexer-service
-        description: Service to run a full import into a new index. To do so, start
-          a indexation session with a request to 'start' and use the returned ImportSession
-          object to 'add' products bulkwise. If all documents where added, use the
-          'done' request to deploy that index. In case there were failures (or more
-          failures then tollerated), the 'cancel' request can be used to stop the
-          process and cleanup the incomplete index. Depending on the document size,
-          an amount of 500-2000 documents per bulk is sufficient. If product and content
-          data should be indexed, its recommended to use different indexes. Otherwise
-          make sure to use the same fields for the same content type, e.g. both kind
-          of documents can have a textual 'title' field, but both kind of documents
-          shouldn't have for example an 'author' field, which could be used for product
-          facets (e.g. book authors) but not for faceting the content documents (e.g.
-          blog post authors).
+      - description: "Service to run a full import into a new index. To do so, start\
+          \ a indexation session with a request to 'start' and use the returned ImportSession\
+          \ object to 'add' products bulkwise. If all documents where added, use the\
+          \ 'done' request to deploy that index. In case there were failures (or more\
+          \ failures then tollerated), the 'cancel' request can be used to stop the\
+          \ process and cleanup the incomplete index. Depending on the document size,\
+          \ an amount of 500-2000 documents per bulk is sufficient. If product and\
+          \ content data should be indexed, its recommended to use different indexes.\
+          \ Otherwise make sure to use the same fields for the same content type,\
+          \ e.g. both kind of documents can have a textual 'title' field, but both\
+          \ kind of documents shouldn't have for example an 'author' field, which\
+          \ could be used for product facets (e.g. book authors) but not for faceting\
+          \ the content documents (e.g. blog post authors)."
+        url: http://indexer-service
         variables: {}
-  /indexer-api/v1/update/{indexName}:
-    put:
       tags:
-      - update
-      description: Puts a document to the index. If document does not exist, it will
-        be added. An existing product will be overwritten unless the parameter 'replaceExisting"
-        is set to "false". Provided document should be a complete object, partial
-        updates should be  done using the updateDocument method.
-      operationId: putDocument
+      - indexer
+  /indexer-api/v1/update/{indexName}:
+    delete:
+      description: "Delete existing document. If document does not exist, it returns\
+        \ code 304."
+      operationId: deleteDocuments
       parameters:
-      - name: indexName
-        in: path
+      - in: path
+        name: indexName
         required: true
         schema:
           type: string
-      - name: replaceExisting
-        in: query
-        description: set to false to avoid overriding a document with that ID. Defaults
+      - in: query
+        name: "id[]"
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK. The response contains a map of ids and according result.
+        "404":
+          description: index does not exist
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://indexer-service
+        variables: {}
+      tags:
+      - update
+    patch:
+      description: "Partial update of existing documents. If a document does not exist,\
+        \ no update will be performed and it gets the result status 'NOT_FOUND'. In\
+        \ case a document is a master product with variants, the provided master product\
+        \ may only contain the changed values. However if some of the variants should\
+        \ be updated, all data from all variant products are required, unless you\
+        \ have an ID data-field inside variant - then you can update single variants.\
+        \ Without variant ID field, the missing variants won't be there after the\
+        \ update! This is how single variants can be deleted."
+      operationId: patchDocuments
+      parameters:
+      - in: path
+        name: indexName
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK. The response contains a map of ids and according result.
+        "404":
+          description: index does not exist
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://indexer-service
+        variables: {}
+      tags:
+      - update
+    put:
+      description: "Puts a document to the index. If document does not exist, it will\
+        \ be added. An existing product will be overwritten unless the parameter 'replaceExisting\"\
+        \ is set to \"false\". Provided document should be a complete object, partial\
+        \ updates should be  done using the updateDocument method."
+      operationId: putDocuments
+      parameters:
+      - in: path
+        name: indexName
+        required: true
+        schema:
+          type: string
+      - description: set to false to avoid overriding a document with that ID. Defaults
           to 'true'
+        in: query
+        name: replaceExisting
         schema:
           type: boolean
       responses:
         "200":
-          description: OK. Check returned result
+          description: OK. The response contains a map of ids and according result.
         "404":
           description: index does not exist
       security:
@@ -249,204 +254,159 @@ paths:
       servers:
       - url: http://indexer-service
         variables: {}
-    delete:
       tags:
       - update
-      description: Delete existing document. If document does not exist, it returns
-        code 304.
-      operationId: deleteDocument
-      parameters:
-      - name: indexName
-        in: path
-        required: true
-        schema:
-          type: string
-      - name: id
-        in: query
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK. Check returned result
-        "404":
-          description: index does not exist
-      security:
-      - basic-auth: []
-      servers:
-      - url: http://indexer-service
-        variables: {}
-    patch:
-      tags:
-      - update
-      description: Partial update of an existing document. If the document does not
-        exist, no update will be performed and status code 404 is returned. In case
-        the document is a master product with variants, the provided master product
-        may only contain the changed values. However if some data at the product variants
-        are updated, all data from all variant products are required, otherwise missing
-        variants won't be there after the update! This is how single variants can
-        be deleted.
-      operationId: patchDocument
-      parameters:
-      - name: indexName
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK. Check returned result
-        "404":
-          description: index does not exist
-      security:
-      - basic-auth: []
-      servers:
-      - url: http://indexer-service
-        variables: {}
-  /search-api/v1/search/{tenant}:
+  /search-api/v1/doc/{tenant}/{id}:
     get:
+      operationId: getDocument
+      parameters:
+      - description: tenant name
+        in: path
+        name: tenant
+        required: true
+        schema:
+          type: string
+      - description: document id
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+      responses:
+        default:
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/Document'
+          description: default response
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://search-service
+        variables: {}
       tags:
       - search
-      summary: Search for documents
+  /search-api/v1/search/arranged/{tenant}:
+    post:
+      operationId: arrangedSearch
+      parameters:
+      - description: tenant name
+        in: path
+        name: tenant
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/ArrangedSearchQuery'
+        description: A list of all search requests that should be part of a single
+          response
+        required: true
+      responses:
+        default:
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+          description: default response
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://search-service
+        variables: {}
+      tags:
+      - search
+  /search-api/v1/search/{tenant}:
+    get:
       description: Runs a search request for a certain tenant. The tenant should exist
         at the service and linked to a certain index in the backend. Different tenants
         may use the same index.
       operationId: search
       parameters:
-      - name: tenant
+      - description: tenant name
         in: path
-        description: tenant name
+        name: tenant
         required: true
         schema:
           type: string
-      - name: searchQuery
+      - description: the query that describes the wished result
         in: query
-        description: the query that describes the wished result
+        name: searchQuery
         required: true
-        style: form
         schema:
           $ref: '#/components/schemas/SearchQuery'
-      - name: filters
-        in: query
-        description: Any other parameters are used as filters. They are validated
-          according to the actual data and configuration. Each filter can have multiple
-          values, separated by comma. Commas inside the values have to be double-URL
-          encoded. Depending on the configured backend type these values are used
-          differently.
         style: form
+      - description: "Any other parameters are used as filters. They are validated\
+          \ according to the actual data and configuration. Each filter can have multiple\
+          \ values, separated by comma. Commas inside the values have to be double-URL\
+          \ encoded. Depending on the configured backend type these values are used\
+          \ differently."
+        examples:
+          hierarchical_filter:
+            description: "if category would be configured as path, these values are\
+              \ used for hierarchical filtering"
+            summary: hierarchical filter
+            value: "category=men,shoes,sneaker"
+          joined_exclusive_filter:
+            description: The way filters are interpreted depends on the backend configuration.
+              If that field is configured to be used for "exclusive filtering" only
+              products would be shown that are available in red AND black
+            summary: joined exclusive filter
+            value: "color=red,black"
+          joined_filter:
+            description: products from adidas OR nike are shown
+            summary: joined filter
+            value: "brand=adidas,nike"
+          numeric_range_filter:
+            description: "if price is configured as numeric field, these values are\
+              \ used as range filters"
+            summary: numeric range filter
+            value: "price=10,99.90"
+          simple_filter:
+            description: Filters are simple parameters with the field-names as parameter
+              and the filter values as comma separated parameter values.
+            summary: simple filter
+            value: brand=adidas
+        in: query
+        name: filters
         schema:
           type: object
           additionalProperties:
             type: string
-        examples:
-          hierarchical_filter:
-            summary: hierarchical filter
-            description: if category would be configured as path, these values are
-              used for hierarchical filtering
-            value: category=men,shoes,sneaker
-          numeric_range_filter:
-            summary: numeric range filter
-            description: if price is configured as numeric field, these values are
-              used as range filters
-            value: price=10,99.90
-          joined_exclusive_filter:
-            summary: joined exclusive filter
-            description: The way filters are interpreted depends on the backend configuration.
-              If that field is configured to be used for "exclusive filtering" only
-              products would be shown that are available in red AND black
-            value: color=red,black
-          simple_filter:
-            summary: simple filter
-            description: Filters are simple parameters with the field-names as parameter
-              and the filter values as comma separated parameter values.
-            value: brand=adidas
-          joined_filter:
-            summary: joined filter
-            description: products from adidas OR nike are shown
-            value: brand=adidas,nike
+        style: form
       responses:
         "200":
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SearchResult'
           description: successful found results
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/SearchResult'
         "204":
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/SearchResult'
           description: Optional response code that represents 'no result'
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/SearchResult'
         "403":
+          content:
+            text/plain: {}
           description: tenant can't be accessed or does not exist
-          content:
-            text/plain: {}
         "404":
-          description: response code if tenant is unknown or index does not exist
           content:
             text/plain: {}
+          description: response code if tenant is unknown or index does not exist
       security:
       - basic-auth: []
       servers:
       - url: http://search-service
         variables: {}
-  /search-api/v1/search/arranged/{tenant}:
-    post:
+      summary: Search for documents
       tags:
       - search
-      operationId: arrangedSearch
-      parameters:
-      - name: tenant
-        in: path
-        description: tenant name
-        required: true
-        schema:
-          type: string
-      requestBody:
-        description: A list of all search requests that should be part of a single
-          response
-        content:
-          '*/*':
-            schema:
-              $ref: '#/components/schemas/ArrangedSearchQuery'
-        required: true
-      responses:
-        default:
-          description: default response
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/SearchResult'
-      security:
-      - basic-auth: []
-      servers:
-      - url: http://search-service
-        variables: {}
-  /search-api/v1/doc/{tenant}/{id}:
-    get:
-      tags:
-      - search
-      operationId: getDocument
-      requestBody:
-        content:
-          '*/*':
-            schema:
-              type: string
-      responses:
-        default:
-          description: default response
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/Document'
-      security:
-      - basic-auth: []
-      servers:
-      - url: http://search-service
-        variables: {}
   /search-api/v1/tenants:
     get:
-      tags:
-      - search
       operationId: getTenants
       responses:
         "200":
@@ -456,114 +416,148 @@ paths:
       servers:
       - url: http://search-service
         variables: {}
+      tags:
+      - search
+  /suggest-api/v1/{indexname}/suggest:
+    get:
+      description: Runs a suggestion request on the data of a certain index.
+      operationId: suggest
+      parameters:
+      - description: index name that should be searched for autocompletions
+        in: path
+        name: indexname
+        required: true
+        schema:
+          type: string
+      - description: the simple raw query typed by the user
+        in: query
+        name: userQuery
+        required: true
+        schema:
+          type: string
+      - description: A optional limit for the suggestions
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+      - description: Optional comma-separated list of filter values.
+        in: query
+        name: filter
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Suggestion'
+          description: successful found results
+        "404":
+          content:
+            text/plain: {}
+          description: tenant is unknown or index does not exist
+      security:
+      - basic-auth: []
+      servers:
+      - url: http://suggest-service
+        variables: {}
+      summary: Autocomplete the user input
+      tags:
+      - Suggest
 components:
   schemas:
-    Suggestion:
+    ArrangedSearchQuery:
       type: object
       properties:
-        phrase:
-          type: string
-          description: The phrase that is suggested and/or used as suggestion label.
-        type:
-          type: string
-          description: 'Optional type of that suggestion. Should be different for
-            the different kind of suggested data. Default: ''keyword'''
-          example: keyword, brand, category, product
-        payload:
+        arrangedProductSets:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductSet'
+        filters:
           type: object
           additionalProperties:
             type: string
-            description: 'arbitrary payload attached to that suggestion. Default:
-              null'
-          description: 'arbitrary payload attached to that suggestion. Default: null'
-    ImportSession:
-      required:
-      - finalIndexName
-      - temporaryIndexName
-      type: object
-      properties:
-        finalIndexName:
+        limit:
+          type: integer
+          format: int32
+          minimum: 1
+        offset:
+          type: integer
+          format: int32
+          minimum: 0
+        q:
           type: string
-        temporaryIndexName:
+        sort:
           type: string
-      readOnly: true
+        userQuery:
+          $ref: '#/components/schemas/SearchQuery'
+        withFacets:
+          type: boolean
     Attribute:
-      required:
-      - name
-      - value
       type: object
-      properties:
-        name:
-          pattern: '[A-Za-z0-9\-_.]'
-          type: string
-          description: The name SHOULD be URL friendly identifier for the attribute,
-            since it could be used to build according filter parameters.
-        code:
-          pattern: '[A-Za-z0-9\-_.]'
-          type: string
-          description: 'Optional: code is considered as ID of the attribute value,
-            e.g. "FF0000" for color'
-        value:
-          type: string
-          description: Human readable representation of that attribute, e.g. 'Red'
-            for the attribute 'Color'
-      description: Rich model that can be used to represent a document's or product's
-        attribute. The attribute 'name' should be a URL friendly identifier for that
-        attribute (rather maxSpeed than 'Max Speed'). It will be used as filter parameter
-        laster. If the attribute 'code' is provieded, it can be used for consistent
-        filtering, even if the value name should change. The values are used to produce
-        nice facets or if used for search, they will be added to the searchable content.
+      description: "Rich model that can be used to represent a document's or product's\
+        \ attribute. The attribute 'name' should be a URL friendly identifier for\
+        \ that attribute (rather maxSpeed than 'Max Speed'). It will be used as filter\
+        \ parameter laster. If the attribute 'code' is provieded, it can be used for\
+        \ consistent filtering, even if the value name should change. The values are\
+        \ used to produce nice facets or if used for search, they will be added to\
+        \ the searchable content."
       example:
         name: color
         value: red
         code: ff0000
-    BulkImportData:
-      required:
-      - documents
-      type: object
       properties:
-        session:
-          $ref: '#/components/schemas/ImportSession'
+        code:
+          type: string
+          description: "Optional: code is considered as ID of the attribute value,\
+            \ e.g. \"FF0000\" for color"
+          pattern: "[A-Za-z0-9\\-_.]"
+        name:
+          type: string
+          description: "The name SHOULD be URL friendly identifier for the attribute,\
+            \ since it could be used to build according filter parameters."
+          pattern: "[A-Za-z0-9\\-_.]"
+        value:
+          type: string
+          description: "Human readable representation of that attribute, e.g. 'Red'\
+            \ for the attribute 'Color'"
+      required:
+      - name
+      - value
+    BulkImportData:
+      type: object
+      description: composite object that is used to add documents to the index.
+      properties:
         documents:
           type: array
           items:
             $ref: '#/components/schemas/Document'
-      description: composite object that is used to add documents to the index.
-    Category:
+        session:
+          $ref: '#/components/schemas/ImportSession'
       required:
-      - name
+      - documents
+      - session
+    Category:
       type: object
+      description: "categories are treated in a parent-child relationship, so a product\
+        \ can be placed into a path within a category tree. Multiple category paths\
+        \ can be defined per document."
       properties:
         id:
           type: string
           description: Optional ID for a consistent filtering
         name:
           type: string
-      description: categories are treated in a parent-child relationship, so a product
-        can be placed into a path within a category tree. Multiple category paths
-        can be defined per document.
-    Document:
       required:
-      - data
-      - id
+      - name
+    Document:
       type: object
+      description: A data record that contains any data relevant for search. The single
+        field types and conversions are part of the according service configuration.
       properties:
-        id:
-          type: string
-        data:
-          type: object
-          additionalProperties:
-            type: object
-            description: 'The data property should be used for standard fields, such
-              as title, description, price. Only values of the following types are
-              accepted (others will be dropped silently): Standard primitive types
-              (Boolean, String, Integer, Double) and arrays of these types. Attributes
-              (key-value objects with ID) should be passed to the attributes property.'
-          description: 'The data property should be used for standard fields, such
-            as title, description, price. Only values of the following types are accepted
-            (others will be dropped silently): Standard primitive types (Boolean,
-            String, Integer, Double) and arrays of these types. Attributes (key-value
-            objects with ID) should be passed to the attributes property.'
         attributes:
           type: array
           description: multiple attributes can be delivered separately from standard
@@ -574,403 +568,403 @@ components:
           type: array
           items:
             type: array
-            description: categories are treated in a parent-child relationship, so
-              a product can be placed into a path within a category tree. Multiple
-              category paths can be defined per document.
+            description: "categories are treated in a parent-child relationship, so\
+              \ a product can be placed into a path within a category tree. Multiple\
+              \ category paths can be defined per document."
             items:
               $ref: '#/components/schemas/Category'
-      description: A data record that contains any data relevant for search. The single
-        field types and conversions are part of the according service configuration.
-    Product:
-      type: object
-      description: Main product containing the data that is common for all variants.
-        A product may represent a master-variant relation ship. A variant should be
-        associated to a single Product and cannot have variants again - those will
-        be ignored. It should only contain data special to that variant. Data that
-        is common to all variants should be set at master level.
-      allOf:
-      - $ref: '#/components/schemas/Document'
-      - type: object
-        properties:
-          variants:
-            type: array
-            description: for products without variants, it can be null or rather us
-              a document directly.
-            items:
-              $ref: '#/components/schemas/Document'
-    Facet:
-      type: object
-      properties:
-        fieldName:
-          type: string
-          description: This is the name coming from the data. Separate label information
-            should be available in the meta data.
-        absoluteFacetCoverage:
-          type: integer
-          description: This is the amount of matched documents that are covered by
-            that facet.
-          format: int64
-        isFiltered:
-          type: boolean
-          description: Is set to true if there an active filter from that facet.
-        entries:
-          type: array
-          description: The entries of that facet.
-          items:
-            $ref: '#/components/schemas/FacetEntry'
-        type:
-          type: string
-          description: The type of the facet, so the kind of FacetEntries it contains.
-            See the according FacetEntry variants for more details.
-          enum:
-          - term
-          - hierarchical
-          - interval
-          - range
-        meta:
+        data:
           type: object
           additionalProperties:
             type: object
-            description: Optional meta data for that facet, e.g. display hints like
-              a label or a facet-type.
-          description: Optional meta data for that facet, e.g. display hints like
-            a label or a facet-type.
-        filtered:
-          type: boolean
-      description: If facets are part of this slice, they are placed here. By default
-        only one slice SHOULD contain facets.
-    FacetEntry:
-      type: object
-      properties:
-        type:
-          type: string
-        key:
-          type: string
+            description: "The data property should be used for standard fields, such\
+              \ as title, description, price. Only values of the following types are\
+              \ accepted (others will be dropped silently): Standard primitive types\
+              \ (Boolean, String, Integer, Double) and arrays of these types. Attributes\
+              \ (key-value objects with ID) should be passed to the attributes property."
+          description: "The data property should be used for standard fields, such\
+            \ as title, description, price. Only values of the following types are\
+            \ accepted (others will be dropped silently): Standard primitive types\
+            \ (Boolean, String, Integer, Double) and arrays of these types. Attributes\
+            \ (key-value objects with ID) should be passed to the attributes property."
         id:
           type: string
-        docCount:
-          type: integer
-          description: Estimated amount of documents that will be returned, if this
-            facet entry is picked as filter.
-          format: int64
-        link:
-          type: string
-          format: URI
-        selected:
-          type: boolean
-          description: Should be set to true in the response, if that filter is actually
-            selected.
-      description: The entries of that facet.
-      discriminator:
-        propertyName: type
-        mapping:
-          hierarchical: '#/components/schemas/HierarchialFacetEntry'
-          interval: '#/components/schemas/IntervalFacetEntry'
-          range: '#/components/schemas/RangeFacetEntry'
-          term: '#/components/schemas/FacetEntry'
-    HierarchialFacetEntry:
-      type: object
-      allOf:
-      - $ref: '#/components/schemas/FacetEntry'
-      - type: object
-        properties:
-          type:
-            type: string
-          key:
-            type: string
-          id:
-            type: string
-          docCount:
-            type: integer
-            description: Estimated amount of documents that will be returned, if this
-              facet entry is picked as filter.
-            format: int64
-          link:
-            type: string
-            format: URI
-          selected:
-            type: boolean
-            description: Should be set to true in the response, if that filter is
-              actually selected.
-          children:
-            type: array
-            description: Child facet entries to that particular facet. The child facets
-              again could be HierarchialFacetEntries.
-            items:
-              $ref: '#/components/schemas/FacetEntry'
-          path:
-            type: string
-    IntervalFacetEntry:
-      type: object
-      description: Facet entry that describes a numerical interval. If only the lower
-        value or only the upper value is set, this means it's an open ended interval,
-        e.g. '< 100' for upper bound only.
-      allOf:
-      - $ref: '#/components/schemas/FacetEntry'
-      - type: object
-        properties:
-          type:
-            type: string
-          key:
-            type: string
-          id:
-            type: string
-          docCount:
-            type: integer
-            description: Estimated amount of documents that will be returned, if this
-              facet entry is picked as filter.
-            format: int64
-          link:
-            type: string
-            format: URI
-          selected:
-            type: boolean
-            description: Should be set to true in the response, if that filter is
-              actually selected.
-          lowerBound:
-            type: number
-          upperBound:
-            type: number
-    RangeFacetEntry:
-      type: object
-      description: Facet entry that describes the complete range of the facet. If
-        a filter is picked, the selectedMin and selectedMax value are set, otherwise
-        null.
-      allOf:
-      - $ref: '#/components/schemas/FacetEntry'
-      - type: object
-        properties:
-          type:
-            type: string
-          key:
-            type: string
-          id:
-            type: string
-          docCount:
-            type: integer
-            description: Estimated amount of documents that will be returned, if this
-              facet entry is picked as filter.
-            format: int64
-          link:
-            type: string
-            format: URI
-          selected:
-            type: boolean
-            description: Should be set to true in the response, if that filter is
-              actually selected.
-          lowerBound:
-            type: number
-          upperBound:
-            type: number
-          selectedMin:
-            type: number
-          selectedMax:
-            type: number
-    ResultHit:
-      type: object
-      properties:
-        index:
-          type: string
-        document:
-          $ref: '#/components/schemas/Document'
-        matchedQueries:
-          type: array
-          items:
-            type: string
-      description: the list of actual hits for that result view.
-    SearchResult:
-      type: object
-      properties:
-        tookInMillis:
-          type: integer
-          description: amount of time the internal search needed to compute that result
-          format: int64
-        inputURI:
-          type: string
-          description: The URI that was used to get that result view. May be used
-            to generate breadcrumbs.
-          format: URI
-        slices:
-          type: array
-          description: The result may consist of several slices, for example if a
-            search request couldn't be answered matching all words (e.g. "striped
-            nike shirt") then one slice could be the result for one part of the query
-            (e.g. "striped shirt") and the other could be for another part of the
-            query (e.g. "nike shirt"). This can also be used to deliver some special
-            advertised products or to split the result in different ranked slices
-            (e.g. the first 3 results are ranked by popularity, the next 3 are sorted
-            by price and the rest is ranked by 'default' relevance). Each slice contains
-            the {@link SearchQuery} that represent that exact slice. At least 1 slice
-            should be expected. If there is no slice, no results were found.
-          items:
-            $ref: '#/components/schemas/SearchResultSlice'
-        sortOptions:
-          type: array
-          items:
-            $ref: '#/components/schemas/Sorting'
-        meta:
-          type: object
-          additionalProperties:
-            type: object
-    SearchResultSlice:
-      type: object
-      properties:
-        label:
-          type: string
-          description: An identifier for that result slice. Can be used to differentiate
-            different slices. Values depend on the implementation.
-        matchCount:
-          type: integer
-          description: the absolute number of matches in this result.
-          format: int64
-        nextOffset:
-          type: integer
-          description: the offset value to use to get the next result batch
-          format: int64
-        nextLink:
-          type: string
-          description: URL conform query parameters, that has to be used to get the
-            next bunch of results. Is null if there are no more results.
-          format: URI
-        resultLink:
-          type: string
-          description: The query that represents exact that passed slice. If send
-            to the engine again, that slice should be returned as main result.
-          format: URI
-        hits:
-          type: array
-          description: the list of actual hits for that result view.
-          items:
-            $ref: '#/components/schemas/ResultHit'
-        facets:
-          type: array
-          description: If facets are part of this slice, they are placed here. By
-            default only one slice SHOULD contain facets.
-          items:
-            $ref: '#/components/schemas/Facet'
-      description: The result may consist of several slices, for example if a search
-        request couldn't be answered matching all words (e.g. "striped nike shirt")
-        then one slice could be the result for one part of the query (e.g. "striped
-        shirt") and the other could be for another part of the query (e.g. "nike shirt").
-        This can also be used to deliver some special advertised products or to split
-        the result in different ranked slices (e.g. the first 3 results are ranked
-        by popularity, the next 3 are sorted by price and the rest is ranked by 'default'
-        relevance). Each slice contains the {@link SearchQuery} that represent that
-        exact slice. At least 1 slice should be expected. If there is no slice, no
-        results were found.
-    Sorting:
-      type: object
-      properties:
-        label:
-          type: string
-        field:
-          type: string
-        sortOrder:
-          type: string
-          enum:
-          - asc
-          - desc
-        isActive:
-          type: boolean
-        link:
-          type: string
-          format: URI
-        active:
-          type: boolean
-    SearchQuery:
-      type: object
-      properties:
-        q:
-          type: string
-        sort:
-          type: string
-        limit:
-          minimum: 1
-          type: integer
-          format: int32
-        offset:
-          minimum: 0
-          type: integer
-          format: int32
-        withFacets:
-          type: boolean
-        userQuery:
-          $ref: '#/components/schemas/SearchQuery'
-    ArrangedSearchQuery:
-      type: object
-      properties:
-        q:
-          type: string
-        sort:
-          type: string
-        limit:
-          minimum: 1
-          type: integer
-          format: int32
-        offset:
-          minimum: 0
-          type: integer
-          format: int32
-        withFacets:
-          type: boolean
-        filters:
-          type: object
-          additionalProperties:
-            type: string
-        arrangedProductSets:
-          type: array
-          items:
-            $ref: '#/components/schemas/ProductSet'
-        userQuery:
-          $ref: '#/components/schemas/SearchQuery'
+      required:
+      - data
+      - id
     DynamicProductSet:
       type: object
       allOf:
       - $ref: '#/components/schemas/ProductSet'
       - type: object
         properties:
-          type:
-            type: string
-          name:
-            type: string
-          query:
-            type: string
-          sort:
-            type: string
           filters:
             type: object
             additionalProperties:
               type: string
           limit:
-            minimum: 1
             type: integer
             format: int32
+            minimum: 1
+          name:
+            type: string
+          query:
+            type: string
           size:
             type: integer
             format: int32
-    ProductSet:
+          sort:
+            type: string
+          type:
+            type: string
+    Facet:
+      type: object
+      description: "If facets are part of this slice, they are placed here. By default\
+        \ only one slice SHOULD contain facets."
+      properties:
+        absoluteFacetCoverage:
+          type: integer
+          format: int64
+          description: This is the amount of matched documents that are covered by
+            that facet.
+        entries:
+          type: array
+          description: The entries of that facet.
+          items:
+            $ref: '#/components/schemas/FacetEntry'
+        fieldName:
+          type: string
+          description: This is the name coming from the data. Separate label information
+            should be available in the meta data.
+        filtered:
+          type: boolean
+        isFiltered:
+          type: boolean
+          description: Is set to true if there an active filter from that facet.
+        meta:
+          type: object
+          additionalProperties:
+            type: object
+            description: "Optional meta data for that facet, e.g. display hints like\
+              \ a label or a facet-type."
+          description: "Optional meta data for that facet, e.g. display hints like\
+            \ a label or a facet-type."
+        type:
+          type: string
+          description: "The type of the facet, so the kind of FacetEntries it contains.\
+            \ See the according FacetEntry variants for more details."
+          enum:
+          - term
+          - hierarchical
+          - interval
+          - range
+    FacetEntry:
+      type: object
+      description: The entries of that facet.
+      discriminator:
+        mapping:
+          hierarchical: '#/components/schemas/HierarchialFacetEntry'
+          interval: '#/components/schemas/IntervalFacetEntry'
+          range: '#/components/schemas/RangeFacetEntry'
+          term: '#/components/schemas/FacetEntry'
+        propertyName: type
+      properties:
+        docCount:
+          type: integer
+          format: int64
+          description: "Estimated amount of documents that will be returned, if this\
+            \ facet entry is picked as filter."
+        id:
+          type: string
+        key:
+          type: string
+        link:
+          type: string
+          format: URI
+        selected:
+          type: boolean
+          description: "Should be set to true in the response, if that filter is actually\
+            \ selected."
+        type:
+          type: string
+    HierarchialFacetEntry:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/FacetEntry'
+      - type: object
+        properties:
+          children:
+            type: array
+            description: Child facet entries to that particular facet. The child facets
+              again could be HierarchialFacetEntries.
+            items:
+              $ref: '#/components/schemas/FacetEntry'
+          docCount:
+            type: integer
+            format: int64
+            description: "Estimated amount of documents that will be returned, if\
+              \ this facet entry is picked as filter."
+          id:
+            type: string
+          key:
+            type: string
+          link:
+            type: string
+            format: URI
+          path:
+            type: string
+          selected:
+            type: boolean
+            description: "Should be set to true in the response, if that filter is\
+              \ actually selected."
+          type:
+            type: string
+    ImportSession:
       type: object
       properties:
-        name:
+        finalIndexName:
           type: string
-        type:
+        temporaryIndexName:
+          type: string
+      readOnly: true
+      required:
+      - finalIndexName
+      - temporaryIndexName
+    IntervalFacetEntry:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/FacetEntry'
+      - type: object
+        properties:
+          docCount:
+            type: integer
+            format: int64
+            description: "Estimated amount of documents that will be returned, if\
+              \ this facet entry is picked as filter."
+          id:
+            type: string
+          key:
+            type: string
+          link:
+            type: string
+            format: URI
+          lowerBound:
+            type: number
+          selected:
+            type: boolean
+            description: "Should be set to true in the response, if that filter is\
+              \ actually selected."
+          type:
+            type: string
+          upperBound:
+            type: number
+      description: "Facet entry that describes a numerical interval. If only the lower\
+        \ value or only the upper value is set, this means it's an open ended interval,\
+        \ e.g. '< 100' for upper bound only."
+    Product:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/Document'
+      - type: object
+        properties:
+          variants:
+            type: array
+            description: "for products without variants, it can be null or rather\
+              \ us a document directly."
+            items:
+              $ref: '#/components/schemas/Document'
+      description: Main product containing the data that is common for all variants.
+        A product may represent a master-variant relation ship. A variant should be
+        associated to a single Product and cannot have variants again - those will
+        be ignored. It should only contain data special to that variant. Data that
+        is common to all variants should be set at master level.
+    ProductSet:
+      type: object
+      discriminator:
+        mapping:
+          dynamic: '#/components/schemas/DynamicProductSet'
+          static: '#/components/schemas/StaticProductSet'
+        propertyName: type
+      properties:
+        name:
           type: string
         size:
           type: integer
           format: int32
-      discriminator:
-        propertyName: type
-        mapping:
-          static: '#/components/schemas/StaticProductSet'
-          dynamic: '#/components/schemas/DynamicProductSet'
+        type:
+          type: string
+    RangeFacetEntry:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/FacetEntry'
+      - type: object
+        properties:
+          docCount:
+            type: integer
+            format: int64
+            description: "Estimated amount of documents that will be returned, if\
+              \ this facet entry is picked as filter."
+          id:
+            type: string
+          key:
+            type: string
+          link:
+            type: string
+            format: URI
+          lowerBound:
+            type: number
+          selected:
+            type: boolean
+            description: "Should be set to true in the response, if that filter is\
+              \ actually selected."
+          selectedMax:
+            type: number
+          selectedMin:
+            type: number
+          type:
+            type: string
+          upperBound:
+            type: number
+      description: "Facet entry that describes the complete range of the facet. If\
+        \ a filter is picked, the selectedMin and selectedMax value are set, otherwise\
+        \ null."
+    ResultHit:
+      type: object
+      description: the list of actual hits for that result view.
+      properties:
+        document:
+          $ref: '#/components/schemas/Document'
+        index:
+          type: string
+        matchedQueries:
+          type: array
+          items:
+            type: string
+    SearchQuery:
+      type: object
+      properties:
+        limit:
+          type: integer
+          format: int32
+          minimum: 1
+        offset:
+          type: integer
+          format: int32
+          minimum: 0
+        q:
+          type: string
+        sort:
+          type: string
+        userQuery:
+          $ref: '#/components/schemas/SearchQuery'
+        withFacets:
+          type: boolean
+    SearchResult:
+      type: object
+      properties:
+        inputURI:
+          type: string
+          format: URI
+          description: The URI that was used to get that result view. May be used
+            to generate breadcrumbs.
+        meta:
+          type: object
+          additionalProperties:
+            type: object
+        slices:
+          type: array
+          description: "The result may consist of several slices, for example if a\
+            \ search request couldn't be answered matching all words (e.g. \"striped\
+            \ nike shirt\") then one slice could be the result for one part of the\
+            \ query (e.g. \"striped shirt\") and the other could be for another part\
+            \ of the query (e.g. \"nike shirt\"). This can also be used to deliver\
+            \ some special advertised products or to split the result in different\
+            \ ranked slices (e.g. the first 3 results are ranked by popularity, the\
+            \ next 3 are sorted by price and the rest is ranked by 'default' relevance).\
+            \ Each slice contains the {@link SearchQuery} that represent that exact\
+            \ slice. At least 1 slice should be expected. If there is no slice, no\
+            \ results were found."
+          items:
+            $ref: '#/components/schemas/SearchResultSlice'
+        sortOptions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sorting'
+        tookInMillis:
+          type: integer
+          format: int64
+          description: amount of time the internal search needed to compute that result
+    SearchResultSlice:
+      type: object
+      description: "The result may consist of several slices, for example if a search\
+        \ request couldn't be answered matching all words (e.g. \"striped nike shirt\"\
+        ) then one slice could be the result for one part of the query (e.g. \"striped\
+        \ shirt\") and the other could be for another part of the query (e.g. \"nike\
+        \ shirt\"). This can also be used to deliver some special advertised products\
+        \ or to split the result in different ranked slices (e.g. the first 3 results\
+        \ are ranked by popularity, the next 3 are sorted by price and the rest is\
+        \ ranked by 'default' relevance). Each slice contains the {@link SearchQuery}\
+        \ that represent that exact slice. At least 1 slice should be expected. If\
+        \ there is no slice, no results were found."
+      properties:
+        facets:
+          type: array
+          description: "If facets are part of this slice, they are placed here. By\
+            \ default only one slice SHOULD contain facets."
+          items:
+            $ref: '#/components/schemas/Facet'
+        hits:
+          type: array
+          description: the list of actual hits for that result view.
+          items:
+            $ref: '#/components/schemas/ResultHit'
+        label:
+          type: string
+          description: An identifier for that result slice. Can be used to differentiate
+            different slices. Values depend on the implementation.
+        matchCount:
+          type: integer
+          format: int64
+          description: the absolute number of matches in this result.
+        nextLink:
+          type: string
+          format: URI
+          description: "URL conform query parameters, that has to be used to get the\
+            \ next bunch of results. Is null if there are no more results."
+        nextOffset:
+          type: integer
+          format: int64
+          description: the offset value to use to get the next result batch
+        resultLink:
+          type: string
+          format: URI
+          description: "The query that represents exact that passed slice. If send\
+            \ to the engine again, that slice should be returned as main result."
+    Sorting:
+      type: object
+      properties:
+        active:
+          type: boolean
+        field:
+          type: string
+        isActive:
+          type: boolean
+        label:
+          type: string
+        link:
+          type: string
+          format: URI
+        sortOrder:
+          type: string
+          enum:
+          - asc
+          - desc
     StaticProductSet:
       type: object
       allOf:
       - $ref: '#/components/schemas/ProductSet'
       - type: object
         properties:
-          type:
-            type: string
           ids:
             type: array
             items:
@@ -980,7 +974,27 @@ components:
           size:
             type: integer
             format: int32
+          type:
+            type: string
+    Suggestion:
+      type: object
+      properties:
+        payload:
+          type: object
+          additionalProperties:
+            type: string
+            description: "arbitrary payload attached to that suggestion. Default:\
+              \ null"
+          description: "arbitrary payload attached to that suggestion. Default: null"
+        phrase:
+          type: string
+          description: The phrase that is suggested and/or used as suggestion label.
+        type:
+          type: string
+          description: "Optional type of that suggestion. Should be different for\
+            \ the different kind of suggested data. Default: 'keyword'"
+          example: "keyword, brand, category, product"
   securitySchemes:
     basic-auth:
-      type: http
       scheme: basic
+      type: http

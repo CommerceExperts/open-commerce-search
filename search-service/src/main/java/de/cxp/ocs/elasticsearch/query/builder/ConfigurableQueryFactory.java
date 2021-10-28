@@ -1,6 +1,14 @@
 package de.cxp.ocs.elasticsearch.query.builder;
 
-import static de.cxp.ocs.config.QueryBuildingSetting.*;
+import static de.cxp.ocs.config.QueryBuildingSetting.acceptNoResult;
+import static de.cxp.ocs.config.QueryBuildingSetting.allowParallelSpellcheck;
+import static de.cxp.ocs.config.QueryBuildingSetting.analyzer;
+import static de.cxp.ocs.config.QueryBuildingSetting.fuzziness;
+import static de.cxp.ocs.config.QueryBuildingSetting.isQueryWithShingles;
+import static de.cxp.ocs.config.QueryBuildingSetting.minShouldMatch;
+import static de.cxp.ocs.config.QueryBuildingSetting.multimatch_type;
+import static de.cxp.ocs.config.QueryBuildingSetting.operator;
+import static de.cxp.ocs.config.QueryBuildingSetting.tieBreaker;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +38,27 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
- * creates a configurable query-string query
+ * <p>
+ * Factory that exposes the flexibility of Elasticsearch query-string-query to
+ * OCS using a configuration. <a href=
+ * "https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html">See
+ * the query-string-query documentation for details.</a>
+ * </p>
+ * Supported {@link QueryBuildingSetting}s:
+ * <ul>
+ * <li>fuzziness</li>
+ * <li>operator</li>
+ * <li>analyzer</li>
+ * <li>minShouldMatch</li>
+ * <li>tieBreaker</li>
+ * <li>multimatch_type</li>
+ * <li>acceptNoResult: if set to true, no results will be accepted and no
+ * further search is done</li>
+ * <li>isQueryWithShingles: build term shingles for multi-term queries</li>
+ * <li>allowParallelSpellcheck: run parallel spell-check with this query. If
+ * terms could be corrected and 0 results are found, this query is built again
+ * with the corrected terms.</li>
+ * </ul>
  */
 @RequiredArgsConstructor
 public class ConfigurableQueryFactory implements ESQueryFactory {
