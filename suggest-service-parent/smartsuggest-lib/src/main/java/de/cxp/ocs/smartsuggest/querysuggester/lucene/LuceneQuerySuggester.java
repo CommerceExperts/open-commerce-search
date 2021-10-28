@@ -470,7 +470,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 
 	private long getRecordCount(Iterable<SuggestRecord> suggestions) {
 		if (suggestions instanceof Collection<?>) {
-			return ((Collection) suggestions).size();
+			return ((Collection<?>) suggestions).size();
 		}
 		else {
 			try {
