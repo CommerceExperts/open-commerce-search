@@ -24,6 +24,7 @@ public class FacetConfiguration {
 	 * Facets without configuration will be configured by default values.
 	 * 
 	 * @param facets
+	 *        set full facets list
 	 * @return self
 	 */
 	public FacetConfiguration setFacets(@NonNull List<FacetConfig> facets) {
@@ -37,6 +38,7 @@ public class FacetConfiguration {
 	 * that limit.
 	 * 
 	 * @param maxFacets
+	 *        set facet limit
 	 * @return self
 	 */
 	public FacetConfiguration setMaxFacets(int maxFacets) {
@@ -73,6 +75,7 @@ public class FacetConfiguration {
 		 * Label of that facet
 		 * 
 		 * @param label
+		 *        label to set
 		 * @return self
 		 */
 		public FacetConfig setLabel(String label) {
@@ -85,6 +88,7 @@ public class FacetConfiguration {
 		 * config.
 		 * 
 		 * @param sourceField
+		 *        set field name this facet relates to
 		 * @return self
 		 */
 		public FacetConfig setSourceField(String sourceField) {
@@ -104,6 +108,7 @@ public class FacetConfiguration {
 		 * </ul>
 		 * 
 		 * @param type
+		 *        type of facet
 		 * @return self
 		 */
 		public FacetConfig setType(String type) {
@@ -116,6 +121,7 @@ public class FacetConfiguration {
 		 * additional data you need with the facet for visualizing.
 		 * 
 		 * @param metaData
+		 *        arbitrary data map
 		 * @return self
 		 */
 		public FacetConfig setMetaData(Map<String, Object> metaData) {
@@ -129,6 +135,7 @@ public class FacetConfiguration {
 		 * Can also be used for advanced displaying term facets.
 		 * 
 		 * @param optimalValueCount
+		 *        this is a number
 		 * @return self
 		 */
 		public FacetConfig setOptimalValueCount(int optimalValueCount) {
@@ -141,6 +148,7 @@ public class FacetConfiguration {
 		 * the options of the same facet.
 		 * 
 		 * @param showUnselectedOptions
+		 *        set true to activate
 		 * @return self
 		 */
 		public FacetConfig setShowUnselectedOptions(boolean showUnselectedOptions) {
@@ -153,6 +161,7 @@ public class FacetConfiguration {
 		 * values of the same facet.
 		 * 
 		 * @param isMultiSelect
+		 *        set true to activate
 		 * @return self
 		 */
 		public FacetConfig setMultiSelect(boolean isMultiSelect) {
@@ -164,6 +173,7 @@ public class FacetConfiguration {
 		 * Optional index, to put the facets in a consistent order.
 		 * 
 		 * @param order
+		 *        numeric value between 0 and 127
 		 * @return self
 		 */
 		public FacetConfig setOrder(byte order) {
@@ -176,6 +186,7 @@ public class FacetConfiguration {
 		 * because of facet limit.
 		 * 
 		 * @param excludeFromFacetLimit
+		 *        set true to activate
 		 * @return self
 		 */
 		public FacetConfig setExcludeFromFacetLimit(boolean excludeFromFacetLimit) {

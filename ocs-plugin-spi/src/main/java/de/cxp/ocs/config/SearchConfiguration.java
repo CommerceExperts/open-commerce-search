@@ -37,8 +37,9 @@ public class SearchConfiguration {
 	 * Optional index-name that should be addressed by the tenant. If null, the
 	 * index name will be set to the tenant name.
 	 * 
-	 * @param tenant
-	 * @return config again for fluent access
+	 * @param indexName
+	 *        index name
+	 * @return self
 	 */
 	public SearchConfiguration setIndexName(String indexName) {
 		this.indexName = indexName;
@@ -50,7 +51,8 @@ public class SearchConfiguration {
 	 * the standard behavior will be used.
 	 * 
 	 * @param queryProcessing
-	 * @return config again for fluent access
+	 *        query processing configuration
+	 * @return self
 	 */
 	public SearchConfiguration setQueryProcessing(@NonNull QueryProcessingConfiguration queryProcessing) {
 		this.queryProcessing = queryProcessing;
@@ -66,8 +68,9 @@ public class SearchConfiguration {
 	 * If default/empty, facets will be generated according to default settings.
 	 * </p>
 	 * 
-	 * @param tenant
-	 * @return config again for fluent access
+	 * @param facetConfiguration
+	 *        facet configuration
+	 * @return self
 	 */
 	public SearchConfiguration setFacetConfiguration(@NonNull FacetConfiguration facetConfiguration) {
 		this.facetConfiguration = facetConfiguration;
@@ -82,8 +85,9 @@ public class SearchConfiguration {
 	 * If set to default (empty), no scoring rules will be applied at all.
 	 * </p>
 	 * 
-	 * @param tenant
-	 * @return config again for fluent access
+	 * @param scoring
+	 *        scoring configuration
+	 * @return self
 	 */
 	public SearchConfiguration setScoring(@NonNull ScoringConfiguration scoring) {
 		this.scoring = scoring;
@@ -104,7 +108,8 @@ public class SearchConfiguration {
 	 * </p>
 	 * 
 	 * @param rescorers
-	 * @return config again for fluent access
+	 *        list of canonical rescorer-provider class names
+	 * @return self
 	 */
 	public SearchConfiguration setRescorers(@NonNull List<String> rescorers) {
 		this.rescorers = rescorers;
@@ -116,7 +121,8 @@ public class SearchConfiguration {
 	 * be used.
 	 * 
 	 * @param queryConfigs
-	 * @return config again for fluent access
+	 *        list of query configuration
+	 * @return self
 	 */
 	public SearchConfiguration setQueryConfigs(@NonNull List<QueryConfiguration> queryConfigs) {
 		this.queryConfigs = queryConfigs;
@@ -133,7 +139,8 @@ public class SearchConfiguration {
 	 * </p>
 	 * 
 	 * @param sortConfigs
-	 * @return config again for fluent access
+	 *        list of sort configuration
+	 * @return self
 	 */
 	public SearchConfiguration setSortConfigs(@NonNull List<SortOptionConfiguration> sortConfigs) {
 		this.sortConfigs = sortConfigs;
@@ -159,8 +166,10 @@ public class SearchConfiguration {
 	 * </p>
 	 * 
 	 * @param pluginClassName
+	 *        full class names
 	 * @param pluginConfig
-	 * @return config again for fluent access
+	 *        config data for that plugin class
+	 * @return self
 	 */
 	public SearchConfiguration addPluginConfiguration(@NonNull String pluginClassName, @NonNull Map<String, String> pluginConfig) {
 		pluginConfiguration.put(pluginClassName, pluginConfig);

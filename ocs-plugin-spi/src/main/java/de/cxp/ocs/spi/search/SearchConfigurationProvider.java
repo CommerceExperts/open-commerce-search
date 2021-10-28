@@ -10,17 +10,16 @@ import de.cxp.ocs.config.SearchConfiguration;
 public interface SearchConfigurationProvider {
 
 	/**
-	 * Returns the list of all configured tenants.
-	 * 
 	 * @return
+	 *         the list of all configured tenants
 	 */
 	Set<String> getConfiguredTenants();
 
 	/**
-	 * Returns the search configuration for the specified tenant.
-	 * 
 	 * @param tenant
+	 *        tenant name
 	 * @return
+	 *         the search configuration for the specified tenant
 	 */
 	SearchConfiguration getTenantSearchConfiguration(String tenant);
 

@@ -38,7 +38,7 @@ public enum ScoreOption {
 	 * <p>
 	 * see
 	 * https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-field-value-factor
-	 * <p>
+	 * </p>
 	 */
 	MODIFIER,
 

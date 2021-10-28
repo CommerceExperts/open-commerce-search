@@ -30,6 +30,7 @@ public class ScoringConfiguration {
 	 * Default: AVG
 	 * 
 	 * @param scoreMode
+	 *        score mode
 	 * @return self
 	 */
 	public ScoringConfiguration setScoreMode(ScoreMode scoreMode) {
@@ -43,6 +44,7 @@ public class ScoringConfiguration {
 	 * Default: AVG
 	 * 
 	 * @param boostMode
+	 *        boost mode
 	 * @return self
 	 */
 	public ScoringConfiguration setBoostMode(BoostMode boostMode) {
@@ -54,6 +56,7 @@ public class ScoringConfiguration {
 	 * Set the list of scoring rules.
 	 * 
 	 * @param scoreFunctions
+	 *        score functions
 	 * @return self
 	 */
 	public ScoringConfiguration setScoreFunctions(List<ScoringFunction> scoreFunctions) {
@@ -80,6 +83,7 @@ public class ScoringConfiguration {
 		 * Data field that should be used for that scoring rule.
 		 * 
 		 * @param field
+		 *        field name
 		 * @return self
 		 */
 		public ScoringFunction setField(String field) {
@@ -91,6 +95,7 @@ public class ScoringConfiguration {
 		 * Set how scoring works for that field.
 		 * 
 		 * @param type
+		 *        type
 		 * @return self
 		 */
 		public ScoringFunction setType(ScoreType type) {
@@ -102,6 +107,7 @@ public class ScoringConfiguration {
 		 * Set the weight that is multiplied with the scoring function result.
 		 * 
 		 * @param weight
+		 *        value > 0
 		 * @return self
 		 */
 		public ScoringFunction setWeight(float weight) {
@@ -113,6 +119,7 @@ public class ScoringConfiguration {
 		 * Set additional options required for the according scoring type.
 		 * 
 		 * @param options
+		 *        score options
 		 * @return self
 		 */
 		public ScoringFunction setOptions(Map<ScoreOption, String> options) {

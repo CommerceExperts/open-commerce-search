@@ -64,15 +64,13 @@ public class SortOptionConfiguration {
 
 	/**
 	 * From <a href=
-	 * "https://www.elastic.co/guide/en/elasticsearch/reference/master/sort-search-results.html#_missing_values">Elasticsearch
-	 * documentation</a>:
-	 * <p>
+	 * "https://www.elastic.co/guide/en/elasticsearch/reference/master/sort-search-results.html#_missing_values">
+	 * Elasticsearch documentation</a>:
 	 * <blockquote>
 	 * The missing parameter specifies how docs which are missing the sort field
 	 * should be treated: The missing value can be set to _last, _first, or a
 	 * custom value (that will be used for missing docs as the sort value).
 	 * </blockquote>
-	 * </p>
 	 * <p>
 	 * <strong>
 	 * Other then the Elasticsearch default, the default in OCS is "0".

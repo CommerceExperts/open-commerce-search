@@ -21,6 +21,7 @@ public interface DocumentPreProcessor {
 	 * afterwards, this method will be used.
 	 * 
 	 * @param fieldConfig
+	 *        field config access
 	 * @param preProcessorConfig
 	 *        custom string-to-string map that can be configured per
 	 *        DocumentPreProcessor.
@@ -31,6 +32,7 @@ public interface DocumentPreProcessor {
 	 * Called for each source document.
 	 * 
 	 * @param sourceDocument
+	 *        source document
 	 * @param visible
 	 *        weather or not the record is currently marked for indexing.
 	 * @return <code>true</code> if the record should be indexed,

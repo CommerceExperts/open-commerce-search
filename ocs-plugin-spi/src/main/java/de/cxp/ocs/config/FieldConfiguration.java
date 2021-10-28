@@ -25,7 +25,8 @@ public class FieldConfiguration {
 	 * Add explicit field configuration. Defines how data fields are indexed.
 	 * 
 	 * @param field
-	 * @return
+	 *        field to add
+	 * @return changed configuration
 	 */
 	public FieldConfiguration addField(Field field) {
 		fields.put(field.getName(), field);
@@ -39,6 +40,7 @@ public class FieldConfiguration {
 	 * <p>
 	 * For dynamic fields the properties 'name', 'sourceNames' and 'type' have a
 	 * special meaning:
+	 * </p>
 	 * <ul>
 	 * <li>name: is actually ignored, but if it is set to 'attribute', that
 	 * dynamic field is only applied to attributes (hack)</li>
@@ -48,7 +50,6 @@ public class FieldConfiguration {
 	 * <li>type: can be 'string' or 'number' and that dynamic field will only be
 	 * used, if the data field is of that particular type.</li>
 	 * </ul>
-	 * </p>
 	 * <p>
 	 * The order of dynamic fields matter. Unknown fields are checked against
 	 * them in the defined order. Once a field configuration is derived from a
@@ -57,7 +58,8 @@ public class FieldConfiguration {
 	 * </p>
 	 * 
 	 * @param dynamicField
-	 * @return
+	 *        field config as template
+	 * @return changed configuration
 	 */
 	public FieldConfiguration addDynamicField(Field dynamicField) {
 		if (dynamicField != null) dynamicFields.add(dynamicField);

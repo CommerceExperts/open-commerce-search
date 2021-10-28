@@ -39,7 +39,7 @@ public class QueryConfiguration {
 		 * Set minimum of terms for a query factory to be used.
 		 * 
 		 * @param minTermCount
-		 * @return
+		 * @return the changed query condition
 		 */
 		public QueryCondition setMinTermCount(int minTermCount) {
 			this.minTermCount = minTermCount;
@@ -50,7 +50,7 @@ public class QueryConfiguration {
 		 * Set inclusive maximum of terms for a query factory to be used.
 		 * 
 		 * @param maxTermCount
-		 * @return
+		 * @return the changed query condition
 		 */
 		public QueryCondition setMaxTermCount(int maxTermCount) {
 			this.maxTermCount = maxTermCount;
@@ -62,7 +62,7 @@ public class QueryConfiguration {
 		 * query.
 		 * 
 		 * @param matchingRegex
-		 * @return
+		 * @return the changed query condition
 		 */
 		public QueryCondition setMatchingRegex(String matchingRegex) {
 			this.matchingRegex = matchingRegex;
@@ -77,6 +77,7 @@ public class QueryConfiguration {
 	 * other queries as "fallback query" for some query builders.
 	 * 
 	 * @param name
+	 *        unique config name
 	 * @return self
 	 */
 	public QueryConfiguration setName(String name) {
@@ -89,6 +90,7 @@ public class QueryConfiguration {
 	 * on this configuration.
 	 * 
 	 * @param condition
+	 *        set condition for that query config
 	 * @return self
 	 */
 	public QueryConfiguration setCondition(QueryCondition condition) {
@@ -112,6 +114,7 @@ public class QueryConfiguration {
 	 * </ul>
 	 * 
 	 * @param strategy
+	 *        strategy name
 	 * @return self
 	 */
 	public QueryConfiguration setStrategy(String strategy) {
@@ -130,6 +133,7 @@ public class QueryConfiguration {
 	 * </p>
 	 * 
 	 * @param weightedFields
+	 *        field names with weight > 0
 	 * @return self
 	 */
 	public QueryConfiguration setWeightedFields(Map<String, Float> weightedFields) {
@@ -142,6 +146,7 @@ public class QueryConfiguration {
 	 * Check the according QueryFactory to see which settings it supports.
 	 * 
 	 * @param settings
+	 *        strategy specific settings
 	 * @return self
 	 */
 	public QueryConfiguration setSettings(Map<QueryBuildingSetting, String> settings) {
