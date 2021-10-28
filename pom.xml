@@ -30,7 +30,7 @@
 		<docker.tag>latest</docker.tag>
 		<dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
 
-		<elasticsearch.version>7.13.3</elasticsearch.version>
+		<elasticsearch.version>7.14.0</elasticsearch.version>
 		<spring-boot.version>2.3.12.RELEASE</spring-boot.version>
 		<spring-cloud.version>Hoxton.SR12</spring-cloud.version>
 		<jackson.version>2.11.3</jackson.version>
