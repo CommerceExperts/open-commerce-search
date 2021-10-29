@@ -16,7 +16,7 @@
 	<description>intermediate parent project that splits the Suggest Service into several modules</description>
 
 	<properties>
-		<lucene.version>8.8.2</lucene.version>
+		<lucene.version>8.10.1</lucene.version>
 		<micrometer.version>1.5.14</micrometer.version>
 	</properties>
 	
