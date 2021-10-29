@@ -1,1 +1,5 @@
-# Place your custom kustomize overlays here, this folders will not be commited
+# Example Kustomize Config
+
+This directory contains an example kustomize overlay. 
+Create a similar one to adjust your deployment.
+

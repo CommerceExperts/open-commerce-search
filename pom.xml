@@ -7,7 +7,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.23.1</version>
+	<version>0.24.0</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -30,7 +30,7 @@
 		<docker.tag>latest</docker.tag>
 		<dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
 
-		<elasticsearch.version>7.13.3</elasticsearch.version>
+		<elasticsearch.version>7.14.0</elasticsearch.version>
 		<spring-boot.version>2.3.12.RELEASE</spring-boot.version>
 		<spring-cloud.version>Hoxton.SR12</spring-cloud.version>
 		<jackson.version>2.11.3</jackson.version>
@@ -42,39 +42,39 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>open-commerce-search-api</artifactId>
-				<version>0.14.0</version>
+				<version>0.15.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-plugin-spi</artifactId>
-				<version>0.9.0</version>
-			</dependency>
-			<dependency>
-				<groupId>de.cxp.ocs</groupId>
-				<artifactId>ocs-commons</artifactId>
 				<version>0.10.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
+				<artifactId>ocs-commons</artifactId>
+				<version>0.11.0</version>
+			</dependency>
+			<dependency>
+				<groupId>de.cxp.ocs</groupId>
 				<artifactId>indexer-service</artifactId>
-				<version>0.13.0</version>
+				<version>0.14.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>search-service</artifactId>
-				<version>0.20.1</version>
+				<version>0.21.0</version>
 			</dependency>
 			<!-- only including the suggest-service directly, because it depends on 
 				the other suggest modules -->
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>suggest-service</artifactId>
-				<version>0.8.0</version>
+				<version>0.9.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-java-client</artifactId>
-				<version>0.10.0</version>
+				<version>0.11.0</version>
 			</dependency>
 
 			<dependency>
@@ -313,6 +313,9 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>3.2.0</version>
+				<configuration>
+					<dependencySourceIncludes>de.cxp.ocs:*</dependencySourceIncludes>
+				</configuration>
 				<executions>
 					<execution>
 						<id>attach-javadoc</id>

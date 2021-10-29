@@ -4,7 +4,7 @@
     "openAPI": {
         "info": {
             "version": "0.2",
-            "title": "Open Commerce Search API",
+            "title": "Open Commerce Search Stack API",
             "description": "A common product search API that separates its usage from required search expertise",
             "contact": {
                 "email": "info@commerce-experts.com"

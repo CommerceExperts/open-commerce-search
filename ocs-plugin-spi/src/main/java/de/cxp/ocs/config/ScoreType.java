@@ -1,7 +1,19 @@
 package de.cxp.ocs.config;
 
 public enum ScoreType {
-	WEIGHT, RANDOM_SCORE,
+
+	/**
+	 * Simple static weight score that is added to all documents. Useful to
+	 * achieve a basic score for the other functions.
+	 */
+	WEIGHT,
+
+	/**
+	 * Random score for each document.
+	 * The document id is used as a random see, so the same document gets the
+	 * same reproducible score.
+	 */
+	RANDOM_SCORE,
 
 	/**
 	 * field value factor scoring can only be applied on numeric score data.
@@ -15,8 +27,36 @@ public enum ScoreType {
 	SCRIPT_SCORE,
 
 	/**
-	 * decay methods can be applied on numeric, date or geo-point fields
+	 * <strong>Gaussian</strong> decay that is calculated on numeric, date or
+	 * geo-point data values.
+	 * Required parameters are 'ORIGIN', 'SCALE', 'OFFSET', and 'DECAY'.
+	 * 
+	 * see <a href=
+	 * "https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-decay">ES
+	 * Function Decay documentation</a>
 	 */
-	DECAY_GAUSS, DECAY_LINEAR, DECAY_EXP
+	DECAY_GAUSS,
+
+	/**
+	 * <strong>Linear</strong> decay that is calculated on numeric, date or
+	 * geo-point data values.
+	 * Required parameters are 'ORIGIN', 'SCALE', 'OFFSET', and 'DECAY'.
+	 * 
+	 * see <a href=
+	 * "https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-decay">ES
+	 * Function Decay documentation</a>
+	 */
+	DECAY_LINEAR,
+
+	/**
+	 * <strong>Exponential</strong> decay that is calculated on numeric, date or
+	 * geo-point data values.
+	 * Required parameters are 'ORIGIN', 'SCALE', 'OFFSET', and 'DECAY'.
+	 * 
+	 * see <a href=
+	 * "https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-decay">ES
+	 * Function Decay documentation</a>
+	 */
+	DECAY_EXP
 
 }

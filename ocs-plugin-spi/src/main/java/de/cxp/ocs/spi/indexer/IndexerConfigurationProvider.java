@@ -6,8 +6,18 @@ import de.cxp.ocs.config.DataProcessorConfiguration;
 import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.config.IndexSettings;
 
+/**
+ * Provider for index specific settings. They will be requested for every index
+ * job.
+ */
 public interface IndexerConfigurationProvider {
 
+	/**
+	 * @param indexName
+	 *        index name
+	 * @return
+	 *         the settings for the requested index
+	 */
 	IndexSettings getIndexSettings(String indexName);
 
 	/**
@@ -15,7 +25,9 @@ public interface IndexerConfigurationProvider {
 	 * way.
 	 * 
 	 * @param indexName
+	 *        index name
 	 * @return
+	 *         the field configuration for the requested index
 	 */
 	FieldConfiguration getFieldConfiguration(String indexName);
 
@@ -24,7 +36,9 @@ public interface IndexerConfigurationProvider {
 	 * before indexation.
 	 * 
 	 * @param indexName
+	 *        index name
 	 * @return
+	 *         optional data processor configuration
 	 */
 	Optional<DataProcessorConfiguration> getDataProcessorConfiguration(String indexName);
 

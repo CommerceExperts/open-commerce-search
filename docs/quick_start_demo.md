@@ -1,3 +1,17 @@
+[Home](./) > [Quick Start Demo](./quick_start_demo.md)
+
+## Table of Contents
+
+- [Quick Start Demo](#quick-start-demo)
+  - [Prerequisites](#prerequisites)
+  - [Start the stack](#start-the-stack)
+    - [indexer](#indexer)
+    - [searcher](#searcher)
+    - [elasticsearch](#elasticsearch)
+  - [Index data](#index-data)
+  - [Use search-api](#use-search-api)
+
+
 # Quick Start Demo
 This guide gives you an short overview, how to start OCSS locally and index sample data from [kaggle](https://www.kaggle.com/). This could be usefull for example for frontend developers who want to develop their frontend against the search api. This guide is NOT for how to configure OCSS the best way etc.
 
@@ -44,10 +58,12 @@ ebaa75aa2a20        commerceexperts/ocs-search-service:latest             "java 
 433e52146c9c        docker.elastic.co/elasticsearch/elasticsearch:7.9.2   "/tini -- /usr/local…"   4 minutes ago       Up 41 seconds       0.0.0.0:9200->9200/tcp, 9300/tcp   ocs_elasticsearch
 ```
 As you can see there are now 3 sockets opened:
- - http://localhost:8535/ (Index-API endpoint)
- - http://localhost:8534/ (Search-API endpoint)
- - http://localhost:9200/ (Elasticsearch endpoint)
+ - `http://localhost:8535/` (Index-API endpoint)
+ - `http://localhost:8534/` (Search-API endpoint)
+ - `http://localhost:9200/` (Elasticsearch endpoint)
 
+
+[back to top](#)
 
 ## Index data
 For indexing data from a CSV file there is a helper script [ocs-index-data.sh](../operations/ocs-index-data.sh). After we downloaded the sample dataset from kaggle, we have to unpack the `.zip` file to get the `reddit_vm.csv`. Now let us inspect the CSV file to get an overview of the data. In the first step the `field delimiter`, the `field sperator`, the `count of header rows` and the `id field number` (starting from 0) are intressting for us. To get this information just print the first two lines of the CSV file:
@@ -56,7 +72,8 @@ For indexing data from a CSV file there is a helper script [ocs-index-data.sh](.
 title,score,id,url,comms_num,created,body,timestamp
 Health Canada approves AstraZeneca COVID-19 vaccine,7,lt74vw,https://www.canadaforums.ca/2021/02/health-canada-approves-astrazeneca.html,0,1614400425.0,,2021-02-27 06:33:45
 ```
-`The sample dataset contains a collection of vaccine myths posted on` [the subreddit r/VaccineMyths](https://www.reddit.com/r/VaccineMyths/).
+
+*The sample dataset contains a collection of vaccine myths posted on [the subreddit r/VaccineMyths](https://www.reddit.com/r/VaccineMyths/).*
 
 Here we can get our wanted informations:
 - field delimiter => `","`
@@ -77,6 +94,7 @@ ERROR: no mapping defined. These are the columns of the given file:
      6	body
      7	timestamp
 ```
+
 The script tells us now that we have to describe how the single colmuns of the CSV file should be mapped to search configuration. This should be done the [jq](https://stedolan.github.io/jq/tutorial/) way, to make this easier for us the script is telling us the column numbers of the headers. As we don't have a field configuration yet, we have to create one. As described above this can be done in the [application.indexer-service.yml](../operations/docker-compose/application.indexer-service.yml). The following search field configuration (complete application.indexer-service.yml) would fit to our datafeed:
 ```
 spring:
@@ -141,28 +159,36 @@ ocs:
               - Result
 ```
 
-`Please notice that if you change the search configuration you have to restart the indexer service. This could be done with the following command next to the docker-compose.yml:`
+Please notice that if you change the search configuration you have to restart the indexer service. This could be done with the following command next to the docker-compose.yml:
 ```
 # docker-compose restart indexer
 Restarting ocs_indexer ... done
 ```
+
 Once we have the field configuration the mapping for the [ocs-index-data.sh](../operations/ocs-index-data.sh) is clear and the parameter value in our case would be:
 ```
 '{title:.[0],score:.[1],url:.[3],comms_num:.[4],created:.[5],body:.[6],timestamp:.[7]}'
 ```
+
 Okay, so let's run the script again and index the data (the indexing process can take a while):
 ```
 # ./ocs-index-data.sh -f /tmp/reddit_vm.csv -s "," -q "" -k 1 -i 2 -m '{title:.[0],score:.[1],url:.[3],comms_num:.[4],created:.[5],body:.[6],timestamp:.[7]}' -n quick-start -l en -v
 ```
+
 After the indexing process is done, check elasticsearch if the index is there:
 ```
 # curl http://localhost:9200/_cat/indices                       
 green open ocs-2-quick-start-en mH0OHNsVS5K4L3yvp_gqaA 1 0 3937 2256 1.9mb 1.9mb
 ```
+
 As we can see, the index creation and indexing was successful.
 
+[back to top](#)
+
 ## Use search-api
+
 After we created an index, it's time to try a search against the search api.
+
 ```
 # curl "http://localhost:8534/search-api/v1/search/quick-start?q=beer" | jq .
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
@@ -200,3 +226,6 @@ After we created an index, it's time to try a search against the search api.
           ]
           ...
 ```
+
+
+[back to top](#)

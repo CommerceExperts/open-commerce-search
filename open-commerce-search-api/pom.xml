@@ -7,12 +7,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.22.0</version>
+		<version>0.24.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>open-commerce-search-api</artifactId>
-	<version>0.14.0</version>
+	<version>0.15.0</version>
 	<packaging>jar</packaging>
 
 	<description>An open and abstract search API that covers minimal search functionality</description>
@@ -87,13 +87,14 @@
 					<plugin>
 						<groupId>io.swagger.core.v3</groupId>
 						<artifactId>swagger-maven-plugin</artifactId>
-						<version>2.1.1</version>
+						<version>2.1.6</version>
 						<configuration>
 							<configurationFilePath>${project.basedir}/src/main/resources/openapi-configuration.json</configurationFilePath>
 							<outputFileName>openapi</outputFileName>
 							<outputPath>${project.basedir}/src/main/resources</outputPath>
 							<outputFormat>YAML</outputFormat>
 							<prettyPrint>TRUE</prettyPrint>
+							<sortOutput>TRUE</sortOutput>
 						</configuration>
 						<executions>
 							<execution>

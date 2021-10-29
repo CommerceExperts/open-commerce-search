@@ -5,7 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
@@ -13,25 +13,51 @@ import lombok.NonNull;
  * Final search-configuration that contains all the fetched configuration
  * objects.
  */
-@Data
+@Getter // write setters with java-doc!
 @NoArgsConstructor
 public class SearchConfiguration {
+
+	private String indexName;
+
+	private QueryProcessingConfiguration queryProcessing = new QueryProcessingConfiguration();
+
+	private FacetConfiguration facetConfiguration = new FacetConfiguration();
+
+	private ScoringConfiguration scoring = new ScoringConfiguration();
+
+	private List<String> rescorers = new ArrayList<>();
+
+	private List<QueryConfiguration> queryConfigs = new ArrayList<>();
+
+	private final Map<String, Map<String, String>> pluginConfiguration = new LinkedHashMap<>();
+
+	private List<SortOptionConfiguration> sortConfigs = new ArrayList<>();
 
 	/**
 	 * Optional index-name that should be addressed by the tenant. If null, the
 	 * index name will be set to the tenant name.
 	 * 
-	 * @param tenant
-	 * @return
+	 * @param indexName
+	 *        index name
+	 * @return self
 	 */
-	private String indexName;
+	public SearchConfiguration setIndexName(String indexName) {
+		this.indexName = indexName;
+		return this;
+	}
 
 	/**
 	 * Optional query processing configuration. If nothing special is defined,
 	 * the standard behavior will be used.
+	 * 
+	 * @param queryProcessing
+	 *        query processing configuration
+	 * @return self
 	 */
-	@NonNull
-	private QueryProcessingConfiguration queryProcessing = new QueryProcessingConfiguration();
+	public SearchConfiguration setQueryProcessing(@NonNull QueryProcessingConfiguration queryProcessing) {
+		this.queryProcessing = queryProcessing;
+		return this;
+	}
 
 	/**
 	 * <p>
@@ -42,11 +68,14 @@ public class SearchConfiguration {
 	 * If default/empty, facets will be generated according to default settings.
 	 * </p>
 	 * 
-	 * @param tenant
-	 * @return
+	 * @param facetConfiguration
+	 *        facet configuration
+	 * @return self
 	 */
-	@NonNull
-	private FacetConfiguration facetConfiguration = new FacetConfiguration();
+	public SearchConfiguration setFacetConfiguration(@NonNull FacetConfiguration facetConfiguration) {
+		this.facetConfiguration = facetConfiguration;
+		return this;
+	}
 
 	/**
 	 * <p>
@@ -56,11 +85,14 @@ public class SearchConfiguration {
 	 * If set to default (empty), no scoring rules will be applied at all.
 	 * </p>
 	 * 
-	 * @param tenant
-	 * @return
+	 * @param scoring
+	 *        scoring configuration
+	 * @return self
 	 */
-	@NonNull
-	private ScoringConfiguration scoring = new ScoringConfiguration();
+	public SearchConfiguration setScoring(@NonNull ScoringConfiguration scoring) {
+		this.scoring = scoring;
+		return this;
+	}
 
 	/**
 	 * <p>
@@ -74,18 +106,28 @@ public class SearchConfiguration {
 	 * <p>
 	 * Per defaults it's empty, so no rescorers are used.
 	 * </p>
+	 * 
+	 * @param rescorers
+	 *        list of canonical rescorer-provider class names
+	 * @return self
 	 */
-	private List<String> rescorers = new ArrayList<>();
+	public SearchConfiguration setRescorers(@NonNull List<String> rescorers) {
+		this.rescorers = rescorers;
+		return this;
+	}
 
 	/**
 	 * Get query relaxation chain. If empty, only the DefaultQueryBuilder will
 	 * be used.
 	 * 
-	 * @param tenant
-	 * @return
+	 * @param queryConfigs
+	 *        list of query configuration
+	 * @return self
 	 */
-	@NonNull
-	private final List<QueryConfiguration> queryConfigs = new ArrayList<>();
+	public SearchConfiguration setQueryConfigs(@NonNull List<QueryConfiguration> queryConfigs) {
+		this.queryConfigs = queryConfigs;
+		return this;
+	}
 
 	/**
 	 * <p>
@@ -96,11 +138,14 @@ public class SearchConfiguration {
 	 * default style according to indexed sorting fields.
 	 * </p>
 	 * 
-	 * @param tenant
-	 * @return
+	 * @param sortConfigs
+	 *        list of sort configuration
+	 * @return self
 	 */
-	@NonNull
-	private final List<SortOptionConfiguration> sortConfigs = new ArrayList<>();
+	public SearchConfiguration setSortConfigs(@NonNull List<SortOptionConfiguration> sortConfigs) {
+		this.sortConfigs = sortConfigs;
+		return this;
+	}
 
 	/**
 	 * <p>
@@ -119,6 +164,15 @@ public class SearchConfiguration {
 	 * <p>
 	 * Check the java-doc of the according classes for more details.
 	 * </p>
+	 * 
+	 * @param pluginClassName
+	 *        full class names
+	 * @param pluginConfig
+	 *        config data for that plugin class
+	 * @return self
 	 */
-	private final Map<String, Map<String, String>> pluginConfiguration = new LinkedHashMap<>();
+	public SearchConfiguration addPluginConfiguration(@NonNull String pluginClassName, @NonNull Map<String, String> pluginConfig) {
+		pluginConfiguration.put(pluginClassName, pluginConfig);
+		return this;
+	}
 }
