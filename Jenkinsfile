@@ -69,7 +69,7 @@ pipeline {
           withCredentials([usernamePassword(credentialsId: 'github-cxp-bot-credentials', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
             sh 'git config credential.helper store'
             sh 'echo "https://$USERNAME:$PASSWORD@github.com" > ~/.git-credentials'
-            sh 'git commit docs/* -m "Update docs" && git push || echo "docs unchanged"'
+            sh 'git add docs/*; git commit -m "Update docs" && git push --force origin HEAD:docs || echo "docs unchanged"'
             sh 'rm ~/.git-credentials'
           }
         }
