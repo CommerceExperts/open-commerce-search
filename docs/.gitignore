@@ -2,3 +2,5 @@ Gemfile
 Gemfile.lock
 _site/
 .jekyll-metadata
+.openapi-generator-ignore
+.openapi-generator/

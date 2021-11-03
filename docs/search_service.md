@@ -16,16 +16,16 @@
 
 ## API Overview
 
-The basic search API is so simple, that it's more complicated to get the right stuff from the according [Open API Spec](generated_api_doc).
+The basic search API is so simple, that it's more complicated to get the right stuff from the according [Open API Spec](./openapi/).
 The search-endpoint expects the tenant name (which normally is the the index name - more about that later) as part of the path, for example `/search-api/v1/search/my_tenant`.
 Sending a GET request without any parameters will already return a result that matches all hits, from which the first 12 are returned. The result also contains the most important facets with its filters. 
 Each filter item has the relevant parameters to filter accordingly. These parameters depend on your data, because they use the data field name as parameter name and the filter value as parameter value.
 
-For a search query the well known parameter `q=` is used. Any text can go here. Depending on the configurable query-processing logic, there might be one or more result slices. (See below for details)
+For a search query the well known parameter `q` is used. Any text can go here. Depending on the configurable query-processing logic, there might be one or more result slices. (See below for details)
 
 For page controlling the parameter `limit` and `offset` are used.
 
-In case some specific products should be placed into the result, the arranged search endpoint has to be used. It adds the ability to built curated search results. For more details about that, have a look at the [Open API Spec](generated_api_doc.md).
+In case some specific products should be placed into the result, the arranged search endpoint has to be used. It adds the ability to built curated search results. For more details about that, have a look at the [Open API Spec](./openapi/).
 
 ### Tenant vs Index
 

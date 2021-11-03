@@ -119,10 +119,10 @@ For example search relevant data like the "title" is put into `{"searchData": {"
 This way we can instruct Elasticsearch using a template to analyze and index everything with the path `searchData.*` as searchable content.
 If a data field is used for different things, e.g. "searching" and "sorting", that data field is indexed twice. Once as a searchable field at `searchData.<field>` and once as a sortable field at `sortData.<field>`.
 
-The analyzers and mappings for Elasticsearch are put in place using [Index Templates](https://www.elastic.co/guide/en/elasticsearch/reference/master/index-templates.html). There is a [generic template](../indexer-service/src/main/resources/elasticsearch/_template/structured_search.json) for all 'ocs-\*' indexes and language specific templates that only overwrite the necessary analyzers to add language dependant stemmers etc. - have a look at the [german template](indexer-service/src/main/resources/elasticsearch/_template/german_structured_search.json) as a possible reference.
+The analyzers and mappings for Elasticsearch are put in place using [Index Templates](https://www.elastic.co/guide/en/elasticsearch/reference/master/index-templates.html). There is a [generic template](https://github.com/CommerceExperts/open-commerce-search/blob/master/indexer-service/src/main/resources/elasticsearch/_template/structured_search.json) for all 'ocs-\*' indexes and language specific templates that only overwrite the necessary analyzers to add language dependant stemmers etc. - have a look at the [german template](https://github.com/CommerceExperts/open-commerce-search/blob/master/indexer-service/src/main/resources/elasticsearch/_template/german_structured_search.json) as a possible reference.
 
 Before going into detail about each single "super field", have a look at the document structure that is produced from the indexed document from the prior example, now restructured with all those super fields.
-The mapping for that data structure can be found at the [structured search template](../indexer-service/src/main/resources/elasticsearch/_template/structured_search.json).
+The mapping for that data structure is also defined at the [structured search template](https://github.com/CommerceExperts/open-commerce-search/blob/master/indexer-service/src/main/resources/elasticsearch/_template/structured_search.json).
 
 ```json
 {

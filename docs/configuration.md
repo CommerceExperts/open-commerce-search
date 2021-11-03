@@ -138,7 +138,7 @@ They configure how the index data should be scaled (replicated) and how fast dat
 
 #### Field Configuration
 
-It's required for the indexer to know which data fields should be indexed in which way. [Learn more about it at the Indexer docs](/indexer_service.html).
+It's required for the indexer to know which data fields should be indexed in which way. [Learn more about it at the Indexer docs](indexer_service.html).
 
 This config is split into two part: the specific fields and the dynamic fields.
 The specific fields map on an explicit list of data source fields where instead the dynamic fields can use wildcard matching or type matching to map a certain data field. 
@@ -214,7 +214,7 @@ Have a look on the "[preset configuration](https://github.com/CommerceExperts/op
 
 ## Search Service
 
-To understand the search service configuration (and not duplicate that information), it is recommended to read the [Configuration Paragraph of the Search Service](/search_service.html#configuration) first.
+To understand the search service configuration (and not duplicate that information), it is recommended to read the [Configuration Paragraph of the Search Service](search_service.html#configuration) first.
 
 Here only the configuration "language" is documented, not all details of the resulting behaviour.
 

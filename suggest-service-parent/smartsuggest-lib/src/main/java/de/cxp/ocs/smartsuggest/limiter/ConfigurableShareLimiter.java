@@ -12,9 +12,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.annotation.Nonnull;
-
 import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -90,7 +89,7 @@ public class ConfigurableShareLimiter implements Limiter {
 	 *        the groups defined first will be preferred over suggestions from
 	 *        other groups.
 	 */
-	public ConfigurableShareLimiter(@Nonnull String groupingKey, LinkedHashMap<String, Double> shareConfiguration, Optional<String[]> groupDeduplicationOrder) {
+	public ConfigurableShareLimiter(@NonNull String groupingKey, LinkedHashMap<String, Double> shareConfiguration, Optional<String[]> groupDeduplicationOrder) {
 		this.groupingKey = groupingKey;
 		this.groupDeduplicationOrder = groupDeduplicationOrder;
 

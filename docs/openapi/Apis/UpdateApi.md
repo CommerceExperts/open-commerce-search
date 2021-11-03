@@ -30,7 +30,7 @@ null (empty response body)
 
 ### Authorization
 
-[basic-auth](../README.md#basic-auth)
+[basic-auth](../index.md#basic-auth)
 
 ### HTTP request headers
 
@@ -57,7 +57,7 @@ null (empty response body)
 
 ### Authorization
 
-[basic-auth](../README.md#basic-auth)
+[basic-auth](../index.md#basic-auth)
 
 ### HTTP request headers
 
@@ -85,7 +85,7 @@ null (empty response body)
 
 ### Authorization
 
-[basic-auth](../README.md#basic-auth)
+[basic-auth](../index.md#basic-auth)
 
 ### HTTP request headers
 

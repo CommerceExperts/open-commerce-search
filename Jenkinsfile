@@ -64,6 +64,7 @@ pipeline {
           sh 'docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate -i /local/open-commerce-search-api/src/main/resources/openapi.yaml -g markdown -o /local/docs/openapi/'
           sh 'sed -i "1,2d" docs/openapi/README.md' // remove first two lines with unnecessary header
           sh 'mv docs/openapi/README.md docs/openapi/index.md'
+          sh "grep -RFl 'README.md' docs/openapi/* | xargs -L1 sed -i 's/README.md/index.md/g'"
 
           // commit + push changes
           withCredentials([usernamePassword(credentialsId: 'github-cxp-bot-credentials', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
