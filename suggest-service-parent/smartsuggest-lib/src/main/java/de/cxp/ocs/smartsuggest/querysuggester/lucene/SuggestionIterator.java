@@ -2,18 +2,22 @@ package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.lucene.search.suggest.InputIterator;
 import org.apache.lucene.search.suggest.Lookup;
 import org.apache.lucene.util.BytesRef;
 
+import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 
 abstract class SuggestionIterator implements InputIterator {
-
-	private final static BytesRef EMPTY_PAYLOAD = new BytesRef(SerializationUtils.serialize((Serializable) Collections.emptyMap()));
 
 	private final Iterator<SuggestRecord> innerIterator;
 
@@ -71,11 +75,10 @@ abstract class SuggestionIterator implements InputIterator {
 	public BytesRef payload() {
 		Map<String, String> payload = currentSuggestion.getPayload();
 		if (payload == null) {
-			payload = Collections.singletonMap(LuceneQuerySuggester.PAYLOAD_LABEL_KEY, currentSuggestion.getPrimaryText());
+			payload = Collections.singletonMap(CommonPayloadFields.PAYLOAD_LABEL_KEY, currentSuggestion.getPrimaryText());
 		}
-		else {
-			payload = new HashMap<>(payload);
-			payload.put(LuceneQuerySuggester.PAYLOAD_LABEL_KEY, currentSuggestion.getPrimaryText());
+		else if (!payload.containsKey(CommonPayloadFields.PAYLOAD_LABEL_KEY)) {
+			payload.put(CommonPayloadFields.PAYLOAD_LABEL_KEY, currentSuggestion.getPrimaryText());
 		}
 		if (!(payload instanceof Serializable)) {
 			payload = new HashMap<>(payload);
