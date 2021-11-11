@@ -6,11 +6,13 @@ import static de.cxp.ocs.config.FieldConstants.VARIANTS;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.search.SearchRequest;
@@ -143,7 +145,9 @@ public class Searcher {
 
 
 	private Timer getTimer(final String name, final String indexName) {
-		return Timer.builder(name).tag("indexName", indexName).publishPercentiles(0.5, 0.8, 0.9, 0.95)
+		return Timer.builder(name)
+				.tag("indexName", indexName)
+				.publishPercentiles(0.5, 0.8, 0.9, 0.95)
 				.register(registry);
 	}
 
@@ -152,20 +156,19 @@ public class Searcher {
 		return new SpellCorrector(spellCorrectionFields.toArray(new String[spellCorrectionFields.size()]));
 	}
 
-	// @Timed(value = "find", percentiles = { 0.5, 0.8, 0.95, 0.98 })
 	public SearchResult find(InternalSearchParams parameters) throws IOException {
 		Sample findTimerSample = Timer.start(Clock.SYSTEM);
 		Iterator<ESQueryFactory> stagedQueryBuilders;
 		List<QueryStringTerm> searchWords;
+		String preprocessedQuery = null;
 		if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
-			String searchQuery = parameters.userQuery;
+			preprocessedQuery = parameters.userQuery;
 			for (UserQueryPreprocessor preprocessor : userQueryPreprocessors) {
-				searchQuery = preprocessor.preProcess(searchQuery);
+				preprocessedQuery = preprocessor.preProcess(preprocessedQuery);
 			}
 
-			searchWords = userQueryAnalyzer.analyze(searchQuery);
+			searchWords = userQueryAnalyzer.analyze(preprocessedQuery);
 			stagedQueryBuilders = queryBuilder.getMatchingFactories(searchWords);
-
 		} else {
 			stagedQueryBuilders = Collections.<ESQueryFactory>singletonList(new MatchAllQueryFactory()).iterator();
 			searchWords = Collections.emptyList();
@@ -284,6 +287,11 @@ public class Searcher {
 
 		SearchResult searchResult = buildResult(parameters, filterContext, searchResponse);
 
+		if (preprocessedQuery != null) {
+			searchResult.meta.put("preprocessedQuery", preprocessedQuery);
+			searchResult.meta.put("analyzedQuery", StringUtils.join(searchWords));
+		}
+
 		summary.record(i);
 		findTimerSample.stop(findTimer);
 
@@ -340,6 +348,7 @@ public class Searcher {
 			}
 		});
 		searchResult.sortOptions = sortingHandler.buildSortOptions(linkBuilder);
+		searchResult.meta = new HashMap<>();
 
 		return searchResult;
 	}

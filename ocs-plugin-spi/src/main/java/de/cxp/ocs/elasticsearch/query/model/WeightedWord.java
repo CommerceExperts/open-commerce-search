@@ -46,6 +46,6 @@ public class WeightedWord implements QueryStringTerm {
 
 	@Override
 	public String toString() {
-		return word;
+		return toQueryString();
 	}
 }
