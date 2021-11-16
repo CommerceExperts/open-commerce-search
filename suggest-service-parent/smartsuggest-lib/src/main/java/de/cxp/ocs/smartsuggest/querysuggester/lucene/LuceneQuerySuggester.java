@@ -19,7 +19,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -58,6 +57,7 @@ import de.cxp.ocs.smartsuggest.querysuggester.SuggestException;
 import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
 import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.Util;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -108,13 +108,8 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 */
 	private final FuzzySuggester		fuzzySuggesterTwoEdits;
 	private final List<Closeable>		closeables	= new ArrayList<>();
-	private final Locale				locale;
+	private final SuggestConfig			suggestConfig;
 	private final ModifiedTermsService	modifiedTermsService;
-
-	// TODO move suggester configuration outside and make it configurable per
-	// index
-	private boolean	alwaysDoFuzzy				= Boolean.getBoolean("alwaysDoFuzzy");
-	private boolean	doReorderSecondaryMatches	= Boolean.getBoolean("doReorderSecondaryMatches");
 
 	private Instant lastIndexTime;
 	private long	recordCount		= 0;
@@ -134,9 +129,9 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 * @param stopWords
 	 *        optional set of stopwords. may be null
 	 */
-	public LuceneQuerySuggester(@NonNull Path indexFolder, @NonNull Locale locale, @NonNull ModifiedTermsService modifiedTermsService, CharArraySet stopWords) {
+	public LuceneQuerySuggester(@NonNull Path indexFolder, @NonNull SuggestConfig suggestConfig, @NonNull ModifiedTermsService modifiedTermsService, CharArraySet stopWords) {
 		this.modifiedTermsService = modifiedTermsService;
-		this.locale = locale;
+		this.suggestConfig = suggestConfig;
 
 		try {
 			// TODO: extract a AnalyzerProviderInterface to make this
@@ -294,14 +289,15 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			if (uniqueQueries.size() < maxResults) {
 				final int itemsToFetchTypos = maxResults - uniqueQueries.size();
 				int resultCount = collectSuggestions(term, contexts, typoSuggester, itemsToFetchTypos, uniqueQueries, itemsToFetchTypos, TYPO_MATCHES_GROUP_NAME, results);
-				if (doReorderSecondaryMatches) {
+				if (suggestConfig.isDoReorderSecondaryMatches()) {
 					reorderPrimaryAndSecondaryMatches(results);
 				}
 				perfResult.addStep("variantMatches", resultCount);
 			}
 
 			// fuzzy lookup with one edit
-			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (alwaysDoFuzzy || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults && contexts == null) {
+			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults
+					&& contexts == null) {
 				final int itemsToFetchOneEdit = maxResults - uniqueQueries.size();
 				int resultCount = collectSuggestions(term, contexts, fuzzySuggesterOneEdit, itemsToFetchOneEdit, uniqueQueries, itemsToFetchOneEdit,
 						FUZZY_MATCHES_ONE_EDIT_GROUP_NAME, results);
@@ -309,7 +305,8 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			}
 
 			// fuzzy lookup with two edits
-			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (alwaysDoFuzzy || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults && contexts == null) {
+			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults
+					&& contexts == null) {
 				final int itemsToFetchTwoEdits = maxResults - uniqueQueries.size();
 				int resultCount = collectSuggestions(term, contexts, fuzzySuggesterTwoEdits, itemsToFetchTwoEdits, uniqueQueries, itemsToFetchTwoEdits,
 						FUZZY_MATCHES_TWO_EDITS_GROUP_NAME, results);
@@ -317,7 +314,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			}
 
 			// lookup with shingles
-			if ((alwaysDoFuzzy || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults && contexts == null) {
+			if ((suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults && contexts == null) {
 				final int itemsToFetchShingles = maxResults - uniqueQueries.size();
 				int resultCount = collectSuggestions(term, contexts, shingleSuggester, itemsToFetchShingles, uniqueQueries, itemsToFetchShingles, SHINGLE_MATCHES_GROUP_NAME,
 						results);
@@ -411,7 +408,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	}
 
 	private void sortFuzzySuggestions(List<Suggestion> suggestions, String term) {
-		sort(suggestions, Util.getFuzzySuggestionComparator(locale, term));
+		sort(suggestions, Util.getFuzzySuggestionComparator(suggestConfig.getLocale(), term));
 	}
 
 	private List<Suggestion> getUniqueSuggestions(List<Lookup.LookupResult> results, Set<String> uniqueQueries, int maxResults) {

@@ -36,7 +36,10 @@ import de.cxp.ocs.smartsuggest.querysuggester.SuggesterEngine;
 import de.cxp.ocs.smartsuggest.querysuggester.SuggesterFactory;
 import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneSuggesterFactory;
 import de.cxp.ocs.smartsuggest.spi.MergingSuggestDataProvider;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
+import de.cxp.ocs.smartsuggest.spi.standard.CompoundSuggestConfigProvider;
+import de.cxp.ocs.smartsuggest.spi.standard.DefaultSuggestConfigProvider;
 import de.cxp.ocs.smartsuggest.updater.SuggestionsUpdater;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
@@ -62,6 +65,8 @@ public class QuerySuggestManager implements AutoCloseable {
 	public static final String DEBUG_PROPERTY = "ocs.smartsuggest.debug";
 
 	private final List<SuggestDataProvider> suggestDataProviders;
+
+	private final SuggestConfigProvider suggestConfigProvider;
 
 	private final Map<String, QuerySuggester> activeQuerySuggesters = new ConcurrentHashMap<>();
 
@@ -276,6 +281,12 @@ public class QuerySuggestManager implements AutoCloseable {
 	 * @param meterRegistryAdapter 
 	 */
 	private QuerySuggestManager(Optional<MeterRegistryAdapter> meterRegistryAdapter, Map<String, Map<String, Object>> dataProviderConfig) {
+		List<SuggestDataProvider> dataProviders = loadDataProviders(meterRegistryAdapter, dataProviderConfig);
+		suggestDataProviders = prepareSuggestDataProviders(dataProviders);
+		suggestConfigProvider = loadConfigProviders();
+	}
+
+	private List<SuggestDataProvider> loadDataProviders(Optional<MeterRegistryAdapter> meterRegistryAdapter, Map<String, Map<String, Object>> dataProviderConfig) {
 		ServiceLoader<SuggestDataProvider> serviceLoader = ServiceLoader.load(SuggestDataProvider.class);
 		Iterator<SuggestDataProvider> loadedSDPs = serviceLoader.iterator();
 		List<SuggestDataProvider> dataProviders = new ArrayList<>();
@@ -306,8 +317,7 @@ public class QuerySuggestManager implements AutoCloseable {
 				}
 			}
 		}
-
-		suggestDataProviders = prepareSuggestDataProviders(dataProviders);
+		return dataProviders;
 	}
 
 	private List<SuggestDataProvider> prepareSuggestDataProviders(List<SuggestDataProvider> dataProviders) {
@@ -318,13 +328,29 @@ public class QuerySuggestManager implements AutoCloseable {
 		}
 	}
 
+	private SuggestConfigProvider loadConfigProviders() {
+		ServiceLoader<SuggestConfigProvider> serviceLoader = ServiceLoader.load(SuggestConfigProvider.class);
+		Iterator<SuggestConfigProvider> loadedConfigProviders = serviceLoader.iterator();
+		if (!loadedConfigProviders.hasNext()) {
+			log.info("No SuggestConfigProvider found. Using default.");
+			return new DefaultSuggestConfigProvider();
+		}
+		else {
+			List<SuggestConfigProvider> configProviders = new ArrayList<>();
+			loadedConfigProviders.forEachRemaining(configProviders::add);
+			return new CompoundSuggestConfigProvider(configProviders);
+		}
+	}
+
 	/**
 	 * internal constructor for testing
 	 * 
 	 * @param dataProvider
 	 */
-	QuerySuggestManager(SuggestDataProvider... dataProvider) {
+	QuerySuggestManager(SuggestConfigProvider configProvider, SuggestDataProvider... dataProvider) {
 		suggestDataProviders = prepareSuggestDataProviders(Arrays.asList(dataProvider));
+		suggestConfigProvider = configProvider;
+		limiter = new CutOffLimiter();
 		try {
 			suggestIndexFolder = Files.createTempDirectory(QuerySuggestManager.class.getSimpleName() + "-for-testing-");
 		}
@@ -434,7 +460,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		SuggesterFactory factory = new LuceneSuggesterFactory(tenantFolder);
 		factory.instrument(metricsRegistry, tags);
 
-		SuggestionsUpdater updateTask = new SuggestionsUpdater(suggestDataProvider, indexName, updateableQuerySuggester, factory);
+		SuggestionsUpdater updateTask = new SuggestionsUpdater(suggestDataProvider, suggestConfigProvider, indexName, updateableQuerySuggester, factory);
 		updateTask.instrument(metricsRegistry, tags);
 
 		long initialDelay = 0;

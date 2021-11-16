@@ -12,9 +12,10 @@ import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggesterProxy;
 import de.cxp.ocs.smartsuggest.querysuggester.SuggesterFactory;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
-import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.Util;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
@@ -28,6 +29,9 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 
 	@NonNull
 	private final SuggestDataProvider dataProvider;
+
+	@NonNull
+	private final SuggestConfigProvider configProvider;
 
 	@NonNull
 	private final String indexName;
@@ -103,8 +107,8 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 				}
 			}
 
-			Iterable<SuggestRecord> suggestRecords = suggestData.getSuggestRecords();
-			QuerySuggester querySuggester = factory.getSuggester(suggestData);
+			SuggestConfig suggestConfig = configProvider.get(indexName);
+			QuerySuggester querySuggester = factory.getSuggester(suggestData, suggestConfig);
 			final long count = querySuggester.recordCount();
 			try {
 				querySuggesterProxy.updateQueryMapper(querySuggester);

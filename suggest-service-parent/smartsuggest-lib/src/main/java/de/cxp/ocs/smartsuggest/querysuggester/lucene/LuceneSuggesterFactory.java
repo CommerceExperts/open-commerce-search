@@ -4,7 +4,6 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 import org.apache.lucene.analysis.CharArraySet;
@@ -13,6 +12,7 @@ import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.SuggesterFactory;
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import io.micrometer.core.instrument.Tag;
@@ -31,10 +31,10 @@ public class LuceneSuggesterFactory implements SuggesterFactory {
 	private Iterable<Tag>					tags;
 
 	@Override
-	public QuerySuggester getSuggester(SuggestData suggestData) {
+	public QuerySuggester getSuggester(SuggestData suggestData, SuggestConfig suggestConfig) {
 		LuceneQuerySuggester luceneQuerySuggester = new LuceneQuerySuggester(
 				indexFolder,
-				Optional.ofNullable(suggestData.getLocale()).orElse(Locale.ROOT),
+				suggestConfig,
 				new ModifiedTermsService(
 						Collections.emptyMap(),
 						Collections.emptyMap()),

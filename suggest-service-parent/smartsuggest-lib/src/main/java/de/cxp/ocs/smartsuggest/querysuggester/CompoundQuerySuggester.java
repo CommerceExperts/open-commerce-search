@@ -11,6 +11,7 @@ import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.RamUsageEstimator;
 
 import de.cxp.ocs.smartsuggest.limiter.Limiter;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -31,11 +32,12 @@ public class CompoundQuerySuggester implements QuerySuggester, Accountable {
 	}
 
 	// for testing purposes
-	CompoundQuerySuggester(String indexName, List<SuggestDataProvider> dataProviders, SuggesterFactory factory, Limiter limiter) throws IOException {
+	CompoundQuerySuggester(String indexName, List<SuggestDataProvider> dataProviders, SuggestConfigProvider configProvider, SuggesterFactory factory, Limiter limiter)
+			throws IOException {
 		suggesterList = new ArrayList<>();
 		for (SuggestDataProvider dataProvider : dataProviders) {
 			if (dataProvider.hasData(indexName)) {
-				QuerySuggester suggester = factory.getSuggester(dataProvider.loadData(indexName));
+				QuerySuggester suggester = factory.getSuggester(dataProvider.loadData(indexName), configProvider.get(indexName));
 				suggesterList.add(suggester);
 			}
 		}

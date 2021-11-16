@@ -7,6 +7,7 @@ import java.util.stream.StreamSupport;
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.SuggesterFactory;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import io.micrometer.core.instrument.Tag;
@@ -14,7 +15,7 @@ import io.micrometer.core.instrument.Tag;
 public class FakeSuggesterFactory implements SuggesterFactory {
 
 	@Override
-	public QuerySuggester getSuggester(SuggestData suggestData) {
+	public QuerySuggester getSuggester(SuggestData suggestData, SuggestConfig config) {
 		SuggestRecord[] suggestRecords;
 		if (suggestData instanceof List) {
 			suggestRecords = ((List<SuggestRecord>) suggestData.getSuggestRecords()).toArray(new SuggestRecord[0]);

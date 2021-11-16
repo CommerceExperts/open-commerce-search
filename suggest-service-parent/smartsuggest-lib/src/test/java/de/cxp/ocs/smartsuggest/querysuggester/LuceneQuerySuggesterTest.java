@@ -1,8 +1,17 @@
 package de.cxp.ocs.smartsuggest.querysuggester;
 
-import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.*;
+import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.BEST_MATCHES_GROUP_NAME;
+import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.FUZZY_MATCHES_ONE_EDIT_GROUP_NAME;
+import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.FUZZY_MATCHES_TWO_EDITS_GROUP_NAME;
+import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.PAYLOAD_GROUPMATCH_KEY;
+import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.RELAXED_GROUP_NAME;
+import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.SHINGLE_MATCHES_GROUP_NAME;
+import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.TYPO_MATCHES_GROUP_NAME;
 import static java.util.Arrays.asList;
-import static java.util.Collections.*;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -30,6 +39,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,11 +49,14 @@ class LuceneQuerySuggesterTest {
 
 	private LuceneQuerySuggester	underTest;
 	private ModifiedTermsService	modifiedTermsService	= mock(ModifiedTermsService.class);
+	private SuggestConfig			suggestConfig;
 
 	@BeforeEach
 	void beforeEach(@TempDir Path indexFolder) throws IOException {
-		System.setProperty("alwaysDoFuzzy", "true");
-		underTest = new LuceneQuerySuggester(indexFolder, Locale.ROOT, modifiedTermsService, getWordSet(Locale.ROOT));
+		suggestConfig = new SuggestConfig();
+		suggestConfig.setAlwaysDoFuzzy(true);
+		suggestConfig.setLocale(Locale.GERMAN);
+		underTest = new LuceneQuerySuggester(indexFolder, suggestConfig, modifiedTermsService, getWordSet(Locale.ROOT));
 	}
 
 	@AfterEach
@@ -459,7 +472,7 @@ class LuceneQuerySuggesterTest {
 	@DisplayName("Ignore stopwords (like `früher`) for German locale")
 	@Test
 	void germanLocale(@TempDir Path indexFolder) throws IOException {
-		underTest = new LuceneQuerySuggester(indexFolder, Locale.GERMAN, modifiedTermsService, getWordSet(Locale.GERMAN));
+		underTest = new LuceneQuerySuggester(indexFolder, suggestConfig, modifiedTermsService, getWordSet(Locale.GERMAN));
 
 		final String sportSchuheMaster = "sport schuhe";
 		final String schuheForKinderMaster = "schuhe für kinder";
@@ -491,7 +504,7 @@ class LuceneQuerySuggesterTest {
 	@DisplayName("Search for `hmd` should return fuzzy results scored by the suggestions' weight. The variants are ignored for fuzzy suggester")
 	@Test
 	void suggest_fuzzy_2(@TempDir Path indexFolder) throws IOException {
-		underTest = new LuceneQuerySuggester(indexFolder, Locale.GERMAN, modifiedTermsService, getWordSet(Locale.GERMAN));
+		underTest = new LuceneQuerySuggester(indexFolder, suggestConfig, modifiedTermsService, getWordSet(Locale.GERMAN));
 
 		final String hemdMaster = "hemd";
 		final String hoseMaster = "hose";
@@ -514,13 +527,14 @@ class LuceneQuerySuggesterTest {
 		assertThat(results).hasSize(3);
 		assertSuggestion(results.get(0), hemdMaster, FUZZY_MATCHES_ONE_EDIT_GROUP_NAME);
 
+		// `hose` is found with fuzziness=2 and preferred because of higher
+		// weight
+		assertSuggestion(results.get(1), hoseMaster, FUZZY_MATCHES_TWO_EDITS_GROUP_NAME);
+
 		// `dress` is found with fuzziness=2 because of DFA:
 		// http://julesjacobs.github.io/2015/06/17/disqus-levenshtein-simple-and-fast.html
 		// i.e. it removes `hm` and then `d` matches as a prefix of `dress`
-		assertSuggestion(results.get(1), dressMaster, FUZZY_MATCHES_TWO_EDITS_GROUP_NAME);
-
-		// `hose` is found with fuzziness=2
-		assertSuggestion(results.get(2), hoseMaster, FUZZY_MATCHES_TWO_EDITS_GROUP_NAME);
+		assertSuggestion(results.get(2), dressMaster, FUZZY_MATCHES_TWO_EDITS_GROUP_NAME);
 	}
 
 	@DisplayName("Search for `fleece` should return sharpened results")
@@ -529,7 +543,7 @@ class LuceneQuerySuggesterTest {
 		List<String> sharpenedQueries = java.util.Arrays.asList(
 				"fleecejacke", "fleece jacke", "fleeceweste", "fleece overall", "fleece weste", 
 				"fleecepullover", "fleece baby", "fleece halswaermer", "fleece pullover", "fleecehose");
-		underTest = new LuceneQuerySuggester(indexFolder, Locale.GERMAN,
+		underTest = new LuceneQuerySuggester(indexFolder, suggestConfig,
 				new ModifiedTermsService(emptyMap(), singletonMap("fleece", sharpenedQueries)),
 				getWordSet(Locale.GERMAN));
 
@@ -549,7 +563,7 @@ class LuceneQuerySuggesterTest {
 	@DisplayName("Search for `fleeceanzug` should return relaxed results")
 	@Test
 	void suggest_relaxed_relaxed(@TempDir Path indexFolder) throws IOException {
-		underTest = new LuceneQuerySuggester(indexFolder, Locale.GERMAN,
+		underTest = new LuceneQuerySuggester(indexFolder, suggestConfig,
 				new ModifiedTermsService(singletonMap("fleeceanzug", singletonList("fleece")), emptyMap()),
 				getWordSet(Locale.GERMAN));
 
@@ -577,9 +591,9 @@ class LuceneQuerySuggesterTest {
 	@DisplayName("If the proerpty 'doReorderSecondaryMatches=true' is set, primary and secondary matches should be reordered according to their weight")
 	@Test
 	void suggest_reorder_secondary_matches(@TempDir Path indexFolder) throws IOException {
-		System.setProperty("doReorderSecondaryMatches", "true");
+		suggestConfig.setDoReorderSecondaryMatches(true);
 		try {
-			underTest = new LuceneQuerySuggester(indexFolder, Locale.GERMAN, modifiedTermsService, getWordSet(Locale.GERMAN));
+			underTest = new LuceneQuerySuggester(indexFolder, suggestConfig, modifiedTermsService, getWordSet(Locale.GERMAN));
 
 			// will search for "sh"
 			final String primary1 = "shirt"; // <<sh matches primary
