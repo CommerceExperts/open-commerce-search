@@ -501,10 +501,15 @@ Example:
 
 ## Suggest Service
 
-The options of the "SmartSuggest Library" are used by the Suggest Service, configurable trough Java's system properties. 
-Optionaly you can put a file `suggest.properties` somewhere at classpath, the Suggest Service will load them into the system properties.
+Similar to the other ConfigurationProvider there is also a SuggestConfigProvider interface that can be implemented and added to the suggest-service classpath.
+It allows different suggest configurations per index.
+A default configuration can also be provided by Java system properties (see below).
+
+Details about the suggest service (host, port, etc.) are configured trough Java's system properties. 
+Optionaly you can put a file named `suggest.properties` into classpath, and the Suggest Service will load them into the system properties.
 
 For missing system properties the Suggest Service tries to lookup an environment variable where each dot `.` is replaced by underscore `_` and all letters are uppercase.
+(Example: If the property `suggest.index.folder` is undefined, it will lookup the `SUGGEST_INDEX_FOLDER` environment variable)
 
 Due to simplicity and having a proper blueprint, the properties are presented as a properties file including all explanation as comments and all default values already set.
 

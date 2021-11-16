@@ -13,6 +13,9 @@
     - [de.cxp.ocs.spi.search.RescorerProvider](#decxpocsspisearchrescorerprovider)
     - [de.cxp.ocs.spi.search.UserQueryAnalyzer](#decxpocsspisearchuserqueryanalyzer)
     - [de.cxp.ocs.spi.search.UserQueryPreprocessor](#decxpocsspisearchuserquerypreprocessor)
+  - [Suggest-Service SPI](#suggest-service-spi)
+    - [de.cxp.ocs.smartsuggest.spi.SuggestDataProvider](#decxpocssmartsuggestspisuggestdataprovider)
+    - [de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider](#decxpocssmartsuggestspisuggestconfigprovider)
 
 # Extending OCS - the Plugin Guide
 
@@ -129,6 +132,10 @@ Severl implementations can be used per tenant.
 ### de.cxp.ocs.smartsuggest.spi.SuggestDataProvider
 
 With an implementation of that interface you provide other data sources to the suggest service.
+
+### de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider
+
+With this plugin you can provide custom suggest configuration per index.
 
 [See details at the Java-docs](javadoc.html#apidocs/de/cxp/ocs/smartsuggest/spi/SuggestDataProvider.html)
 
