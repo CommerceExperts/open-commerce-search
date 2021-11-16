@@ -4,6 +4,9 @@ import lombok.NonNull;
 
 public interface SuggestConfigProvider {
 
-	SuggestConfig get(@NonNull String indexName);
+	SuggestConfig getConfig(@NonNull String indexName);
 
+	default int getPriority() {
+		return 100;
+	}
 }

@@ -16,10 +16,10 @@ public class CompoundSuggestConfigProvider implements SuggestConfigProvider {
 	}
 
 	@Override
-	public SuggestConfig get(@NonNull String indexName) {
+	public SuggestConfig getConfig(@NonNull String indexName) {
 		SuggestConfig foundConfig = null;
 		for (SuggestConfigProvider configProvider : configProviders) {
-			foundConfig = configProvider.get(indexName);
+			foundConfig = configProvider.getConfig(indexName);
 			if (foundConfig != null) break;
 		}
 		return foundConfig;

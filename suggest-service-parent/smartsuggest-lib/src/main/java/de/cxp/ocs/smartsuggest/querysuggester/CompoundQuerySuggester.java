@@ -37,7 +37,7 @@ public class CompoundQuerySuggester implements QuerySuggester, Accountable {
 		suggesterList = new ArrayList<>();
 		for (SuggestDataProvider dataProvider : dataProviders) {
 			if (dataProvider.hasData(indexName)) {
-				QuerySuggester suggester = factory.getSuggester(dataProvider.loadData(indexName), configProvider.get(indexName));
+				QuerySuggester suggester = factory.getSuggester(dataProvider.loadData(indexName), configProvider.getConfig(indexName));
 				suggesterList.add(suggester);
 			}
 		}

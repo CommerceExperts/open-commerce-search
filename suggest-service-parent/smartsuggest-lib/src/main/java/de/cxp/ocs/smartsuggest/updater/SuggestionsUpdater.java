@@ -107,7 +107,7 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 				}
 			}
 
-			SuggestConfig suggestConfig = configProvider.get(indexName);
+			SuggestConfig suggestConfig = configProvider.getConfig(indexName);
 			QuerySuggester querySuggester = factory.getSuggester(suggestData, suggestConfig);
 			final long count = querySuggester.recordCount();
 			try {

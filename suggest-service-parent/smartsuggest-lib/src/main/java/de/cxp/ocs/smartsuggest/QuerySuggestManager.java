@@ -6,6 +6,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -343,6 +345,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		else {
 			List<SuggestConfigProvider> configProviders = new ArrayList<>();
 			loadedConfigProviders.forEachRemaining(configProviders::add);
+			Collections.sort(configProviders, Comparator.comparingInt(SuggestConfigProvider::getPriority));
 			// add default config provider to make sure the config is never null
 			configProviders.add(new DefaultSuggestConfigProvider(defaultSuggestConfig));
 			return new CompoundSuggestConfigProvider(configProviders);
@@ -440,7 +443,7 @@ public class QuerySuggestManager implements AutoCloseable {
 			return initializeQuerySuggester(actualSuggestDataProviders.get(0), indexName, synchronous);
 		}
 
-		SuggestConfig suggestConfig = suggestConfigProvider.get(indexName);
+		SuggestConfig suggestConfig = suggestConfigProvider.getConfig(indexName);
 		if (suggestConfig.useDataSourceMerger) {
 			return initializeQuerySuggester(new MergingSuggestDataProvider(actualSuggestDataProviders), indexName, synchronous);
 		}

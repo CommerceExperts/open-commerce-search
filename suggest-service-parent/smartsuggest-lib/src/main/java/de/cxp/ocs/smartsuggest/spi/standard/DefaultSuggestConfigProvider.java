@@ -15,8 +15,13 @@ public class DefaultSuggestConfigProvider implements SuggestConfigProvider {
 	}
 
 	@Override
-	public SuggestConfig get(@NonNull String indexName) {
+	public SuggestConfig getConfig(@NonNull String indexName) {
 		return defaultSuggestConfig;
+	}
+
+	@Override
+	public int getPriority() {
+		return Integer.MAX_VALUE;
 	}
 
 }
