@@ -13,8 +13,6 @@ public class CompoundSuggestConfigProvider implements SuggestConfigProvider {
 
 	public CompoundSuggestConfigProvider(List<SuggestConfigProvider> configProviders) {
 		this.configProviders = new ArrayList<>(configProviders);
-		// add default config provider to make sure the config is never null
-		this.configProviders.add(new DefaultSuggestConfigProvider());
 	}
 
 	@Override

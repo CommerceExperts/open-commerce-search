@@ -40,6 +40,7 @@ import org.junit.jupiter.api.io.TempDir;
 import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig.SortStrategy;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import lombok.extern.slf4j.Slf4j;
 
@@ -591,7 +592,7 @@ class LuceneQuerySuggesterTest {
 	@DisplayName("If the proerpty 'doReorderSecondaryMatches=true' is set, primary and secondary matches should be reordered according to their weight")
 	@Test
 	void suggest_reorder_secondary_matches(@TempDir Path indexFolder) throws IOException {
-		suggestConfig.setDoReorderSecondaryMatches(true);
+		suggestConfig.setSortOrder(SortStrategy.PrimaryAndSecondaryByWeight);
 		try {
 			underTest = new LuceneQuerySuggester(indexFolder, suggestConfig, modifiedTermsService, getWordSet(Locale.GERMAN));
 

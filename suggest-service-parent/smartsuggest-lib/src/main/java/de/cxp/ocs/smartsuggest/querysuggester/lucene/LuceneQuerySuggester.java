@@ -58,6 +58,7 @@ import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
 import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig.SortStrategy;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.Util;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -289,7 +290,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			if (uniqueQueries.size() < maxResults) {
 				final int itemsToFetchTypos = maxResults - uniqueQueries.size();
 				int resultCount = collectSuggestions(term, contexts, typoSuggester, itemsToFetchTypos, uniqueQueries, itemsToFetchTypos, TYPO_MATCHES_GROUP_NAME, results);
-				if (suggestConfig.isDoReorderSecondaryMatches()) {
+				if (SortStrategy.PrimaryAndSecondaryByWeight.equals(suggestConfig.getSortStrategy())) {
 					reorderPrimaryAndSecondaryMatches(results);
 				}
 				perfResult.addStep("variantMatches", resultCount);
