@@ -78,6 +78,9 @@ abstract class SuggestionIterator implements InputIterator {
 			payload = Collections.singletonMap(CommonPayloadFields.PAYLOAD_LABEL_KEY, currentSuggestion.getPrimaryText());
 		}
 		else if (!payload.containsKey(CommonPayloadFields.PAYLOAD_LABEL_KEY)) {
+			if (!(payload instanceof HashMap<?, ?>)) {
+				payload = new HashMap<>(payload);
+			}
 			payload.put(CommonPayloadFields.PAYLOAD_LABEL_KEY, currentSuggestion.getPrimaryText());
 		}
 		if (!(payload instanceof Serializable)) {
