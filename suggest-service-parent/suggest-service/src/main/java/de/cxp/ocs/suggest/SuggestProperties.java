@@ -1,4 +1,4 @@
-package de.cxp.ocs;
+package de.cxp.ocs.suggest;
 
 import java.io.IOException;
 import java.io.InputStream;
