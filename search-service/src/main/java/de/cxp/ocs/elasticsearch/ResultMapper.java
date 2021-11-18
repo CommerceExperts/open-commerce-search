@@ -27,7 +27,8 @@ public class ResultMapper {
 	public static ResultHit mapSearchHit(SearchHit hit, Map<String, SortOrder> sortedFields) {
 		SearchHits variantHits = hit.getInnerHits().get("variants");
 		SearchHit variantHit = null;
-		if (variantHits.getHits().length > 0) {
+		if (variantHits.getHits().length == 1 ||
+				(variantHits.getHits().length >= 2 && variantHits.getAt(0).getScore() > variantHits.getAt(1).getScore())) {
 			variantHit = variantHits.getAt(0);
 		}
 
@@ -82,11 +83,9 @@ public class ResultMapper {
 		Document document = new Document(hit.getId());
 
 		if (source != null) {
-			for (String sourceDataField : new String[] { FieldConstants.SEARCH_DATA, FieldConstants.RESULT_DATA }) {
-				putDataIntoResult(hit.getSourceAsMap(), document.getData(), sourceDataField);
-				if (variantHit != null) {
-					putDataIntoResult(variantHit.getSourceAsMap(), document.getData(), sourceDataField);
-				}
+			putDataIntoResult(hit.getSourceAsMap(), document.getData(), FieldConstants.RESULT_DATA);
+			if (variantHit != null) {
+				putDataIntoResult(variantHit.getSourceAsMap(), document.getData(), FieldConstants.RESULT_DATA);
 			}
 		}
 

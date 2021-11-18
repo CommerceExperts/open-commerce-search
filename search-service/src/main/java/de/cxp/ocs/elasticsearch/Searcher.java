@@ -426,7 +426,7 @@ public class Searcher {
 	}
 
 	private InnerHitBuilder getVariantInnerHits(List<SortBuilder<?>> variantSortings) {
-		InnerHitBuilder variantInnerHits = new InnerHitBuilder().setSize(1).setFetchSourceContext(
+		InnerHitBuilder variantInnerHits = new InnerHitBuilder().setSize(2).setFetchSourceContext(
 				new FetchSourceContext(true, new String[] { VARIANTS + "." + RESULT_DATA + ".*" }, null));
 		if (!variantSortings.isEmpty()) {
 			variantInnerHits.setSorts(variantSortings);
