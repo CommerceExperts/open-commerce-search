@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -67,6 +68,9 @@ public class PredictionQueryFactory implements ESQueryFactory {
 	@Setter
 	private ESQueryFactory fallbackQueryBuilder;
 
+	private VariantQueryFactory variantQueryFactory = new VariantQueryFactory()
+			.setDefaultSearchField(FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + ".*.standard");
+
 	@Getter
 	@Setter
 	private String name;
@@ -77,6 +81,7 @@ public class PredictionQueryFactory implements ESQueryFactory {
 		this.settings.putAll(settings);
 		this.fieldWeights.putAll(fieldWeights);
 		metaFetcher.setAnalyzer(settings.get(QueryBuildingSetting.analyzer));
+		Optional.ofNullable(settings.get(QueryBuildingSetting.analyzer)).ifPresent(variantQueryFactory::setAnalyzer);
 	}
 
 	@Override
@@ -195,11 +200,7 @@ public class PredictionQueryFactory implements ESQueryFactory {
 		 *
 		 * Now prefer variants with more matching terms
 		 */
-		final QueryStringQueryBuilder variantScoreQuery = QueryBuilders.queryStringQuery(
-				ESQueryUtils.buildQueryString(searchWords, " "))
-				.defaultField(FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + ".*.standard")
-				.queryName("variants.boost(" + ESQueryUtils.getQueryLabel(searchWords) + ")");
-		variantScoreQuery.type(Type.MOST_FIELDS);
+		QueryBuilder variantScoreQuery = variantQueryFactory.createMatchAnyTermQuery(searchWords);
 
 		return new MasterVariantQuery(mainQuery, variantScoreQuery, true, unmatchedTerms.size() == 0);
 	}

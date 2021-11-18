@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder.Type;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 
@@ -60,10 +61,7 @@ public class DefaultQueryFactory implements ESQueryFactory {
 			mainQuery.fields(fields);
 		}
 
-		QueryStringQueryBuilder variantQuery = QueryBuilders.queryStringQuery(ESQueryUtils.buildQueryString(searchTerms, " "))
-				.minimumShouldMatch("1")
-				.analyzer("standard");
-		variantQuery.type(Type.MOST_FIELDS);
+		QueryBuilder variantQuery = new VariantQueryFactory().createMatchAnyTermQuery(searchTerms);
 
 		// isWithSpellCorrect=true because we use fuzzy matching
 		return new MasterVariantQuery(mainQuery, variantQuery, true, false);
