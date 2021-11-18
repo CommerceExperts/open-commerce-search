@@ -73,6 +73,7 @@ public class SuggestConfig {
 	 * Set locale for string transformation and sorting.
 	 * 
 	 * @param locale
+	 *        locale
 	 */
 	public void setLocale(Locale locale) {
 		this.locale = locale;
@@ -84,6 +85,7 @@ public class SuggestConfig {
 	 * also done if result size is below limit.
 	 * 
 	 * @param alwaysDoFuzzy
+	 *        true to activate
 	 */
 	public void setAlwaysDoFuzzy(boolean alwaysDoFuzzy) {
 		this.alwaysDoFuzzy = alwaysDoFuzzy;
@@ -92,7 +94,8 @@ public class SuggestConfig {
 	/**
 	 * Defines how matching suggest terms are ordered in the result.
 	 * 
-	 * @param doReorderSecondaryMatches
+	 * @param sortStrategy
+	 *        sortStrategy
 	 */
 	public void setSortOrder(SortStrategy sortStrategy) {
 		this.sortStrategy = sortStrategy;
@@ -113,6 +116,7 @@ public class SuggestConfig {
 	 * </p>
 	 * 
 	 * @param groupKey
+	 *        groupKey
 	 */
 	public void setGroupKey(String groupKey) {
 		this.groupKey = groupKey;
@@ -129,7 +133,9 @@ public class SuggestConfig {
 	 * </p>
 	 * 
 	 * @param groupName
+	 *        groupName
 	 * @param limit
+	 *        limit
 	 */
 	public void addGroupConfig(String groupName, int limit) {
 		groupConfig.add(new GroupConfig(groupName, limit));
@@ -152,6 +158,8 @@ public class SuggestConfig {
 	 * </p>
 	 * 
 	 * @param groupDeduplicationOrder
+	 *        ordered array, suggest entries from groups at beginning are
+	 *        preferred
 	 */
 	public void setGroupDeduplicationOrder(String[] groupDeduplicationOrder) {
 		this.groupDeduplicationOrder = Optional.ofNullable(groupDeduplicationOrder);
@@ -166,13 +174,13 @@ public class SuggestConfig {
 	 * </p>
 	 * 
 	 * @param useRelativeShareLimit
+	 *        set to true to activate relative share
 	 */
 	public void setUseRelativeShareLimit(boolean useRelativeShareLimit) {
 		this.useRelativeShareLimit = useRelativeShareLimit;
 	}
 
 	/**
-	 * <p>
 	 * Defines in which order the suggestion groups should be returned and how
 	 * they should be limited.
 	 * <ul>
@@ -180,13 +188,14 @@ public class SuggestConfig {
 	 * limits are considered absolute.</li>
 	 * <li>If 'useRelativeShareLimit' is 'true', the limits are normalized into
 	 * according relative values, e.g. 1, 2 and 2 becomes 20%, 40% and 40%</li>
-	 * </p>
+	 * </ul>
 	 * <p>
 	 * This only works, if the suggest service is configured with a grouping
 	 * key.
 	 * </p>
 	 * 
 	 * @param groupConfig
+	 *        full groupConfig
 	 */
 	public void setGroupConfig(List<GroupConfig> groupConfig) {
 		this.groupConfig = groupConfig;

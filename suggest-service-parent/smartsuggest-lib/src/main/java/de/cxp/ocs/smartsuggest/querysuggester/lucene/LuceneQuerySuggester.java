@@ -123,8 +123,8 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 * 
 	 * @param indexFolder
 	 *        the parent folder for the specific suggesters
-	 * @param locale
-	 *        the locale of the client. Used to load the proper stopwords
+	 * @param suggestConfig
+	 *        the full suggest configuration
 	 * @param modifiedTermsService
 	 *        service that provides mappings for modified terms
 	 * @param stopWords

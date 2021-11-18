@@ -98,6 +98,9 @@ public class QuerySuggestManager implements AutoCloseable {
 
 	public Limiter defaultLimiter;
 
+	/**
+	 * This builder should be used to set up the QuerySuggestManager
+	 */
 	public static class QuerySuggestManagerBuilder {
 
 		private Path suggestIndexFolder;
@@ -150,7 +153,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		 * @param engine
 		 *        engine to use
 		 * @deprecated only Lucene suggester implemented at the moment
-		 * @return the changed builder
+		 * @return fluid builder
 		 */
 		@Deprecated
 		public QuerySuggestManagerBuilder engine(SuggesterEngine engine) {
@@ -166,8 +169,10 @@ public class QuerySuggestManager implements AutoCloseable {
 		 * is loaded.
 		 * 
 		 * @param canonicalClassName
+		 *        class name of data provider for which to add configuration
 		 * @param config
-		 * @return
+		 *        the configuration
+		 * @return fluid builder
 		 */
 		public QuerySuggestManagerBuilder addDataProviderConfig(String canonicalClassName, Map<String, Object> config) {
 			dataProviderConfigs.put(canonicalClassName, config);
@@ -189,7 +194,8 @@ public class QuerySuggestManager implements AutoCloseable {
 		 * @see de.cxp.ocs.smartsuggest.limiter.ConfigurableShareLimiter
 		 * @see de.cxp.ocs.smartsuggest.limiter.CutOffLimiter
 		 * @param customLimiter
-		 * @return
+		 *        a limiter implementation
+		 * @return fluid builder
 		 */
 		public QuerySuggestManagerBuilder withLimiter(Limiter customLimiter) {
 			defaultLimiter = customLimiter;
@@ -222,7 +228,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		 * @see MergingSuggestDataProvider
 		 * @deprecated use SuggestConfigProvider to change this value per index
 		 *             or set defaultSuggestConfig instead.
-		 * @return builder
+		 * @return fluid builder
 		 */
 		@Deprecated
 		public QuerySuggestManagerBuilder useDataMerger() {
@@ -238,7 +244,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		 *        list of index names to be initialized synchronously when
 		 *        calling 'build()'
 		 * @return
-		 *         the changed builder
+		 *         fluid builder
 		 */
 		public QuerySuggestManagerBuilder preloadIndexes(String... indexNames) {
 			for (String indexName : indexNames) {
@@ -254,18 +260,32 @@ public class QuerySuggestManager implements AutoCloseable {
 		 * 
 		 * @param reg
 		 *        adapter with the wanted meter registry
-		 * @return the changed builder
+		 * @return fluid builder
 		 */
 		public QuerySuggestManagerBuilder addMetricsRegistryAdapter(MeterRegistryAdapter reg) {
 			this.metricsRegistry = reg;
 			return this;
 		}
 
+		/**
+		 * Add default suggest config that should be used in case no
+		 * SuggestConfigProvider exists or no provider has a config for a
+		 * certain index.
+		 * 
+		 * @param defaultSuggestConfig
+		 *        default suggest config object
+		 * @return fluid builder
+		 */
 		public QuerySuggestManagerBuilder withDefaultSuggestConfig(SuggestConfig defaultSuggestConfig) {
 			this.defaultSuggestConfig = defaultSuggestConfig;
 			return this;
 		}
 
+		/**
+		 * Build QuerySuggestManager that can manage multiple query suggesters.
+		 * 
+		 * @return the manager
+		 */
 		public QuerySuggestManager build() {
 			if (suggestIndexFolder == null) {
 				throw new IllegalArgumentException("required 'indexFolder' not specified");
@@ -367,24 +387,6 @@ public class QuerySuggestManager implements AutoCloseable {
 		catch (IOException iox) {
 			throw new UncheckedIOException(iox);
 		}
-	}
-
-	/**
-	 * Set the rate (in seconds) at which the update should run.
-	 * The value must be 5 &lt;= x &lt;= 3600.
-	 *
-	 * That rate is only applied to QuerySuggesters that will be fetched from
-	 * the
-	 * time after this value is set.
-	 * 
-	 * @deprecated use builder instead!
-	 * @param seconds
-	 */
-	@Deprecated
-	public void setUpdateRate(int seconds) {
-		if (seconds > 3600) seconds = 3600;
-		else if (seconds < 5) seconds = 5;
-		updateRate = seconds;
 	}
 
 	/**

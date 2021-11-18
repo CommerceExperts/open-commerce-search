@@ -11,6 +11,7 @@ public interface SuggestDataProvider {
 	 * instantiation.
 	 * 
 	 * @param config
+	 *        specific data provider configuration
 	 */
 	default void configure(Map<String, Object> config) {}
 
@@ -29,7 +30,7 @@ public interface SuggestDataProvider {
 	 * 
 	 * @param indexName
 	 *        identifier for the requested data
-	 * @return
+	 * @return if data is available
 	 */
 	boolean hasData(String indexName);
 
@@ -52,6 +53,7 @@ public interface SuggestDataProvider {
 	 *        identifier for the requested data
 	 * @return unix timestamp in millis
 	 * @throws IOException
+	 *         if resource is not available
 	 */
 	long getLastDataModTime(String indexName) throws IOException;
 
@@ -60,6 +62,7 @@ public interface SuggestDataProvider {
 	 *        identifier for the requested data
 	 * @return suggest data
 	 * @throws IOException
+	 *         if data couldn't be loaded
 	 */
 	SuggestData loadData(String indexName) throws IOException;
 
