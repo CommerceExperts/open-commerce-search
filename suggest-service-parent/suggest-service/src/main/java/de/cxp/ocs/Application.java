@@ -1,4 +1,4 @@
-package de.cxp.ocs.suggest;
+package de.cxp.ocs;
 
 import java.io.InputStream;
 import java.util.Collections;
@@ -13,6 +13,8 @@ import de.cxp.ocs.api.SuggestService;
 import de.cxp.ocs.smartsuggest.QuerySuggestManager;
 import de.cxp.ocs.smartsuggest.QuerySuggestManager.QuerySuggestManagerBuilder;
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
+import de.cxp.ocs.suggest.SuggestProperties;
+import de.cxp.ocs.suggest.SuggestServiceImpl;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
