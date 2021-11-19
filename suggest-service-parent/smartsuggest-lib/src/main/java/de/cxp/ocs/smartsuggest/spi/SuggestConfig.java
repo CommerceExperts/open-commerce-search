@@ -128,7 +128,7 @@ public class SuggestConfig {
 	 * ordered list.
 	 * </p>
 	 * <p>
-	 * Use the groupName {@link CommonPayloadFields.PAYLOAD_TYPE_OTHER} =
+	 * Use the groupName CommonPayloadFields.PAYLOAD_TYPE_OTHER =
 	 * 'other' to specify a default limit value.
 	 * </p>
 	 * 
