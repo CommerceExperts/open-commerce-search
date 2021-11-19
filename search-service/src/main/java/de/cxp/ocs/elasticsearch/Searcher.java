@@ -334,12 +334,15 @@ public class Searcher {
 
 		resultTimer.record(() -> {
 			if (searchResponse != null) {
-				int fetchOffset = 0;
+				Set<String> heroIds;
 				if (parameters.heroProductSets != null) {
-					fetchOffset = HeroProductHandler.extractSlices(searchResponse, parameters, searchResult);
+					heroIds = HeroProductHandler.extractSlices(searchResponse, parameters, searchResult);
+				}
+				else {
+					heroIds = Collections.emptySet();
 				}
 
-				SearchResultSlice searchResultSlice = toSearchResult(searchResponse, parameters, fetchOffset);
+				SearchResultSlice searchResultSlice = toSearchResult(searchResponse, parameters, heroIds);
 				if (parameters.isWithFacets()) {
 					searchResultSlice.facets = facetApplier.getFacets(searchResponse.getAggregations(), searchResultSlice.matchCount, filterContext, linkBuilder);
 				}
@@ -434,7 +437,7 @@ public class Searcher {
 		return variantInnerHits;
 	}
 
-	private SearchResultSlice toSearchResult(SearchResponse search, InternalSearchParams parameters, int fetchOffset) {
+	private SearchResultSlice toSearchResult(SearchResponse search, InternalSearchParams parameters, Set<String> heroIds) {
 		SearchHits searchHits = search.getHits();
 		SearchResultSlice srSlice = new SearchResultSlice();
 		// XXX think about building parameters according to the actual performed
@@ -445,11 +448,12 @@ public class Searcher {
 		Map<String, SortOrder> sortedFields = sortingHandler.getSortedNumericFields(parameters);
 
 		ArrayList<ResultHit> resultHits = new ArrayList<>();
-		for (int i = fetchOffset; i < searchHits.getHits().length; i++) {
+		for (int i = 0; i < searchHits.getHits().length; i++) {
 			SearchHit hit = searchHits.getHits()[i];
-			ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields);
-
-			resultHits.add(resultHit);
+			if (!heroIds.contains(hit.getId())) {
+				ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields);
+				resultHits.add(resultHit);
+			}
 		}
 		srSlice.hits = resultHits;
 		srSlice.nextOffset = parameters.offset + searchHits.getHits().length;

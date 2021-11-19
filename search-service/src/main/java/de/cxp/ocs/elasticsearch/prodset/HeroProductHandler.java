@@ -174,37 +174,45 @@ public class HeroProductHandler {
 	 * @param searchResponse
 	 * @param internalParams
 	 * @param searchResult
-	 * @return fetchOffset: the index of the first hit, that is not a hero
-	 *         product
+	 * @return set of ids, that are already part of primary slices
 	 */
-	public static int extractSlices(SearchResponse searchResponse, InternalSearchParams internalParams, SearchResult searchResult) {
+	public static Set<String> extractSlices(SearchResponse searchResponse, InternalSearchParams internalParams, SearchResult searchResult) {
 		if (internalParams.getSortings().size() == 0) {
 			StaticProductSet[] productSets = internalParams.heroProductSets;
-			int hitIndex = 0;
-			SearchHit[] hits = searchResponse.getHits().getHits();
-			// expected min boost is factor 10 smaller, because the scoring is
-			// also multiplied by values below 1
-			float expectedMinBoost = 10f * (float) Math.pow(10, productSets.length);
-			for (StaticProductSet productSet : productSets) {
-				List<ResultHit> resultHits = new ArrayList<>();
-				for (int i = 0; i < productSet.ids.length && hitIndex < hits.length && expectedMinBoost < hits[hitIndex].getScore(); i++) {
-					ResultHit resultHit = ResultMapper.mapSearchHit(hits[hitIndex], Collections.emptyMap());
-					resultHits.add(resultHit);
-					hitIndex++;
+			Map<String, Integer> productSetAssignment = new HashMap<>();
+			for (int i = 0; i < productSets.length; i++) {
+				for (int k = 0; k < productSets[i].ids.length; k++) {
+					productSetAssignment.putIfAbsent(productSets[i].ids[k], i);
 				}
-				expectedMinBoost /= 10;
 
-				if (resultHits.size() > 0) {
+				if (productSets[i].ids.length > 0) {
 					SearchResultSlice slice = new SearchResultSlice();
-					slice.setLabel(productSet.getName());
-					slice.setHits(resultHits);
-					slice.setMatchCount(resultHits.size());
+					slice.setLabel(productSets[i].getName());
+					slice.setMatchCount(productSets[i].getSize());
+					slice.setHits(new ArrayList<>());
 					searchResult.slices.add(slice);
 				}
+				else {
+					// add empty slice as placeholder so the slices-indexes are
+					// equal to i
+					searchResult.slices.add(new SearchResultSlice().setLabel("_empty"));
+				}
 			}
-			return hitIndex;
+
+			SearchHit[] hits = searchResponse.getHits().getHits();
+			for (int h = 0; h < hits.length; h++) {
+				Integer sliceIndex = productSetAssignment.get(hits[h].getId());
+				if (sliceIndex != null) {
+					ResultHit resultHit = ResultMapper.mapSearchHit(hits[h], Collections.emptyMap());
+					searchResult.slices.get(sliceIndex).getHits().add(resultHit);
+				}
+			}
+
+			searchResult.slices.removeIf(s -> "_empty".equals(s.getLabel()));
+
+			return productSetAssignment.keySet();
 		}
-		return 0;
+		return Collections.emptySet();
 	}
 
 }
