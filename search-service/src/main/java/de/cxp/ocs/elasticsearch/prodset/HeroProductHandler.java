@@ -12,6 +12,7 @@ import java.util.concurrent.CompletableFuture;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 
@@ -157,15 +158,30 @@ public class HeroProductHandler {
 				// since this is "just" another should clause, the product sets
 				// are still influenced by the matches of the generic user
 				// query.
-				// Also the whole query is wrapped into a function-score query
-				// to apply the scoring rules
-				// TODO: add possibility to guarantee the order of IDs of a set.
 				boolQuery.should(
-						QueryBuilders.idsQuery().addIds(productSets[i].ids).boost(boost));
+						QueryBuilders.queryStringQuery(idsAsOrderedBoostQuery(productSets[i].ids))
+								.boost(boost)
+								.defaultField("_id")
+								.defaultOperator(Operator.OR));
 				boost /= 10;
 			}
 			searchQuery.setMasterLevelQuery(boolQuery.should(searchQuery.getMasterLevelQuery()));
 		}
+	}
+
+	private static String idsAsOrderedBoostQuery(@NonNull String[] ids) {
+		long boost = 10 * ids.length;
+		// rough approx. of string-length
+		StringBuilder idsOrderedBoostQuery = new StringBuilder(ids.length * (ids[0].length() + 2 + String.valueOf(boost).length()));
+		for (String id : ids) {
+			idsOrderedBoostQuery
+					.append(id)
+					.append('^')
+					.append(String.valueOf(boost))
+					.append(' ');
+			boost -= 10;
+		}
+		return idsOrderedBoostQuery.toString();
 	}
 
 	/**
