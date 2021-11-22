@@ -5,11 +5,13 @@ import static de.cxp.ocs.config.FieldConstants.VARIANTS;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
@@ -31,6 +33,8 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
+import org.elasticsearch.search.rescore.QueryRescorerBuilder;
+import org.elasticsearch.search.rescore.RescorerBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Marker;
@@ -300,10 +304,39 @@ public class Searcher {
 
 	private void addRescorersFailsafe(InternalSearchParams parameters, SearchSourceBuilder searchSourceBuilder) {
 		Iterator<RescorerProvider> rescorerProviders = rescorers.iterator();
+
+		int maxWindowSize = 0;
+		float overallQueryWeight = 1f;
+		float overallRescorerWeight = 1f;
+		int heroProductsCount = 0;
+		if (parameters.heroProductSets.length > 0) {
+			heroProductsCount = Arrays.stream(parameters.heroProductSets).mapToInt(set -> set.ids.length).sum();
+		}
+
 		while (rescorerProviders.hasNext()) {
 			RescorerProvider rescorerProvider = rescorerProviders.next();
 			try {
-				rescorerProvider.get(parameters.userQuery, parameters.customParams).ifPresent(searchSourceBuilder::addRescorer);
+				Optional<RescorerBuilder<?>> providedRescorer = rescorerProvider.get(parameters.userQuery, parameters.customParams);
+				if (providedRescorer.isPresent()) {
+					RescorerBuilder<?> rescorer = providedRescorer.get();
+
+					Integer windowSize = rescorer.windowSize();
+					if (windowSize > maxWindowSize) {
+						maxWindowSize = windowSize;
+					}
+
+					// no need to add rescorers, that should not have an impact
+					// anyways (hero products should still be boosted to top)
+					if (windowSize > heroProductsCount) {
+						searchSourceBuilder.addRescorer(rescorer);
+
+						if (rescorer instanceof QueryRescorerBuilder) {
+							overallQueryWeight *= ((QueryRescorerBuilder) rescorer).getQueryWeight();
+							overallRescorerWeight *= ((QueryRescorerBuilder) rescorer).getRescoreQueryWeight();
+						}
+					}
+
+				}
 			}
 			catch (Exception e) {
 				log.error("RescorerProvider {} caused exception when creating rescorer based on userQuery {} and customParams {}!"
@@ -311,6 +344,19 @@ public class Searcher {
 						rescorerProvider.getClass().getCanonicalName(), parameters.userQuery, parameters.customParams, e);
 				rescorerProviders.remove();
 			}
+		}
+
+		// if there are rescorers, that lower the query-score effect, add
+		// another rescorer that revereses this effect
+		if (heroProductsCount > 0 && overallQueryWeight < overallRescorerWeight) {
+			float heroRescoreWeight = overallQueryWeight - overallRescorerWeight;
+			int heroWindowSize = maxWindowSize;
+			HeroProductHandler.getHeroQuery(parameters)
+					.ifPresent(heroQuery -> searchSourceBuilder.addRescorer(
+							new QueryRescorerBuilder(heroQuery)
+									.windowSize(heroWindowSize)
+									.setQueryWeight(1)
+									.setRescoreQueryWeight(heroRescoreWeight)));
 		}
 	}
 

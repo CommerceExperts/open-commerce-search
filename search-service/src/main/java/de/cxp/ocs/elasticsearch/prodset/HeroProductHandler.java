@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -142,14 +143,7 @@ public class HeroProductHandler {
 		}
 	}
 
-	/**
-	 * Extend MasterVariantQuery to inject the hero products and boost them to
-	 * the top.
-	 * 
-	 * @param searchQuery
-	 * @param internalParams
-	 */
-	public static void extendQuery(MasterVariantQuery searchQuery, InternalSearchParams internalParams) {
+	public static Optional<BoolQueryBuilder> getHeroQuery(InternalSearchParams internalParams) {
 		StaticProductSet[] productSets = internalParams.heroProductSets;
 		if (productSets.length > 0) {
 			BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
@@ -165,8 +159,21 @@ public class HeroProductHandler {
 								.defaultOperator(Operator.OR));
 				boost /= 10;
 			}
-			searchQuery.setMasterLevelQuery(boolQuery.should(searchQuery.getMasterLevelQuery()));
+			return Optional.of(boolQuery);
 		}
+		return Optional.empty();
+	}
+
+	/**
+	 * Extend MasterVariantQuery to inject the hero products and boost them to
+	 * the top.
+	 * 
+	 * @param searchQuery
+	 * @param internalParams
+	 */
+	public static void extendQuery(MasterVariantQuery searchQuery, InternalSearchParams internalParams) {
+		getHeroQuery(internalParams)
+				.ifPresent(bq -> searchQuery.setMasterLevelQuery(bq.should(searchQuery.getMasterLevelQuery())));
 	}
 
 	private static String idsAsOrderedBoostQuery(@NonNull String[] ids) {
