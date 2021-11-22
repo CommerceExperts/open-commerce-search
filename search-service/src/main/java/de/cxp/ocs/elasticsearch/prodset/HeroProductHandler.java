@@ -29,6 +29,28 @@ import de.cxp.ocs.util.InternalSearchParams;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Hero products that should be displayed at the top of the result, come with
+ * several uncomfortable requirements. This class helps to handle all of them:
+ * <ul>
+ * <li>hero products should also be reflected by the facets, so follow up
+ * requests with filters should also remove non-matching hero products.
+ * Result counts and facet counts of course should reflect this behavior.</li>
+ * <li>hero products should also be under the control of result-pages. This is
+ * especially important if the page-size/result limit is lower than the amount
+ * of hero products!</li>
+ * <li>If several sets of hero products are defined, make sure the same product
+ * does not appear in more that one.</li>
+ * <li>Multiple hero product sets should return in the order as they have been
+ * requested</li>
+ * <li>Static product sets and dynamic product sets with sorting should return
+ * the single hits in the order they have been requested.
+ * (not yet guaranteed TODO)</li>
+ * <li></li>
+ * </ul>
+ * 
+ * @author Rudolf Batt
+ */
 @Slf4j
 public class HeroProductHandler {
 
