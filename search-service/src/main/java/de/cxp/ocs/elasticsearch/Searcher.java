@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -42,6 +43,8 @@ import org.slf4j.MarkerFactory;
 
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.SearchPlugins;
+import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
+import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldUsage;
@@ -104,10 +107,12 @@ public class Searcher {
 	private final List<RescorerProvider> rescorers;
 
 	private final SortingHandler sortingHandler;
-	
+
 	private ScoringCreator scoringCreator;
 
 	private SpellCorrector spellCorrector;
+
+	private final Set<String> preferredVariantAttributes;
 
 	private final Timer findTimer;
 	private final Timer sqbTimer;
@@ -145,8 +150,9 @@ public class Searcher {
 		rescorers = SearchPlugins.initialize(config.getRescorers(), plugins.getRescorerProviders(), config.getPluginConfiguration());
 
 		queryBuilder = new ESQueryFactoryBuilder(restClient, searchContext, plugins.getEsQueryFactories()).build();
-	}
 
+		preferredVariantAttributes = initVariantHandling();
+	}
 
 	private Timer getTimer(final String name, final String indexName) {
 		return Timer.builder(name)
@@ -158,6 +164,14 @@ public class Searcher {
 	private SpellCorrector initSpellCorrection() {
 		Set<String> spellCorrectionFields = fieldIndex.getFieldsByUsage(FieldUsage.SEARCH).keySet();
 		return new SpellCorrector(spellCorrectionFields.toArray(new String[spellCorrectionFields.size()]));
+	}
+
+	private Set<String> initVariantHandling() {
+		return config.getFacetConfiguration().getFacets().stream()
+				.filter(FacetConfig::isPeferVariantOnFilter)
+				.map(FacetConfig::getSourceField)
+				.filter(facetField -> fieldIndex.getField(facetField).map(Field::isVariantLevel).orElse(false))
+				.collect(Collectors.toSet());
 	}
 
 	public SearchResult find(InternalSearchParams parameters) throws IOException {
@@ -256,7 +270,6 @@ public class Searcher {
 						parameters.userQuery, sw.getTime(), searchResponse.getHits().getTotalHits().value);
 			}
 			inputWordsSample.stop(inputWordsTimer);
-
 
 			// if we don't have any hits, but there's a chance to get corrected
 			// words, then enrich the search words with the corrected words
@@ -402,7 +415,6 @@ public class Searcher {
 		return searchResult;
 	}
 
-
 	private void setFetchSources(SearchSourceBuilder searchSourceBuilder, List<SortBuilder<?>> variantSortings, boolean fetchSources) {
 		if (fetchSources) {
 			List<String> includeFields = new ArrayList<>();
@@ -493,11 +505,16 @@ public class Searcher {
 
 		Map<String, SortOrder> sortedFields = sortingHandler.getSortedNumericFields(parameters);
 
+		boolean preferVariantHits = preferredVariantAttributes.size() > 0
+				&& ((int) parameters.getFilters().stream()
+						.filter(f -> preferredVariantAttributes.contains(f.getField().getName()))
+						.count()) == preferredVariantAttributes.size();
+
 		ArrayList<ResultHit> resultHits = new ArrayList<>();
 		for (int i = 0; i < searchHits.getHits().length; i++) {
 			SearchHit hit = searchHits.getHits()[i];
 			if (!heroIds.contains(hit.getId())) {
-				ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields);
+				ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields, preferVariantHits);
 				resultHits.add(resultHit);
 			}
 		}
@@ -505,6 +522,5 @@ public class Searcher {
 		srSlice.nextOffset = parameters.offset + searchHits.getHits().length;
 		return srSlice;
 	}
-
 
 }
