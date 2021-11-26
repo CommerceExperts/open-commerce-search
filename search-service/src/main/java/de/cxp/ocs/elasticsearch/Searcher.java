@@ -187,8 +187,9 @@ public class Searcher {
 
 			searchWords = userQueryAnalyzer.analyze(preprocessedQuery);
 			stagedQueryBuilders = queryBuilder.getMatchingFactories(searchWords);
-		} else {
-			stagedQueryBuilders = Collections.<ESQueryFactory>singletonList(new MatchAllQueryFactory()).iterator();
+		}
+		else {
+			stagedQueryBuilders = Collections.<ESQueryFactory> singletonList(new MatchAllQueryFactory()).iterator();
 			searchWords = Collections.emptyList();
 		}
 
@@ -253,7 +254,8 @@ public class Searcher {
 					&& stagedQueryBuilder.allowParallelSpellcheckExecution()
 					&& (!searchQuery.isWithSpellCorrection() || stagedQueryBuilders.hasNext())) {
 				searchSourceBuilder.suggest(spellCorrector.buildSpellCorrectionQuery(parameters.userQuery));
-			} else {
+			}
+			else {
 				searchSourceBuilder.suggest(null);
 			}
 
@@ -322,7 +324,7 @@ public class Searcher {
 		float overallQueryWeight = 1f;
 		float overallRescorerWeight = 1f;
 		int heroProductsCount = 0;
-		if (parameters.heroProductSets.length > 0) {
+		if (parameters.heroProductSets != null && parameters.heroProductSets.length > 0) {
 			heroProductsCount = Arrays.stream(parameters.heroProductSets).mapToInt(set -> set.ids.length).sum();
 		}
 
