@@ -23,7 +23,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.InnerHitBuilder;
 import org.elasticsearch.index.query.NestedQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -259,7 +258,7 @@ public class Searcher {
 				searchSourceBuilder.suggest(null);
 			}
 
-			searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
+			searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext, variantSortings));
 
 			if (log.isTraceEnabled()) {
 				log.trace(QUERY_MARKER, "{ \"user_query\": \"{}\", \"query\": {} }", parameters.userQuery, searchSourceBuilder.toString().replaceAll("[\n\\s]+", " "));
@@ -290,7 +289,7 @@ public class Searcher {
 					if (parameters.heroProductSets != null) {
 						HeroProductHandler.extendQuery(searchQuery, parameters);
 					}
-					searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
+					searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext, variantSortings));
 					searchResponse = executeSearchRequest(searchSourceBuilder);
 				}
 				correctedWordsSample.stop(correctedWordsTimer);
@@ -434,11 +433,10 @@ public class Searcher {
 		}
 	}
 
-
-	private QueryBuilder buildFinalQuery(MasterVariantQuery searchQuery, MasterVariantQuery basicFilters,
+	private QueryBuilder buildFinalQuery(MasterVariantQuery searchQuery, FilterContext filterContext,
 			List<SortBuilder<?>> variantSortings) {
 		QueryBuilder masterLevelQuery = ESQueryUtils.mergeQueries(searchQuery.getMasterLevelQuery(),
-				basicFilters.getMasterLevelQuery());
+				filterContext.getJoinedBasicFilters().getMasterLevelQuery());
 
 		FilterFunctionBuilder[] masterScoringFunctions = scoringCreator.getScoringFunctions(false);
 		if (masterScoringFunctions.length > 0) {
@@ -447,45 +445,52 @@ public class Searcher {
 					.scoreMode(scoringCreator.getScoreMode());
 		}
 
-		QueryBuilder varFilterQuery = basicFilters.getVariantLevelQuery();
-		QueryBuilder variantsMatchQuery;
+		QueryBuilder variantFilterQuery = filterContext.getJoinedBasicFilters().getVariantLevelQuery();
+		QueryBuilder variantPostFilters = filterContext.getVariantPostFilters();
 
-		// if sorting is available, scoring and boosting not necessary
-		if (variantSortings.isEmpty() && searchQuery.getVariantLevelQuery() != null) {
-			variantsMatchQuery = QueryBuilders.boolQuery();
-			if (varFilterQuery != null) {
-				((BoolQueryBuilder) variantsMatchQuery).must(varFilterQuery);
+		// build query that picks the best matching variants
+		QueryBuilder variantsMatchQuery = null;
+		boolean variantsOnlyFiltered = variantFilterQuery != null;
+		if (searchQuery.getVariantLevelQuery() != null) {
+			variantsMatchQuery = searchQuery.getVariantLevelQuery();
+			variantsOnlyFiltered = false;
+		}
+		if (variantFilterQuery != null) {
+			variantsMatchQuery = variantsMatchQuery == null ? variantFilterQuery : ESQueryUtils.mapToBoolQueryBuilder(variantsMatchQuery).filter(variantFilterQuery);
+		}
+		if (variantPostFilters != null) {
+			variantsMatchQuery = variantsMatchQuery == null ? variantPostFilters : ESQueryUtils.mapToBoolQueryBuilder(variantsMatchQuery).filter(variantPostFilters);
+			variantsOnlyFiltered = false;
+		}
+
+		FilterFunctionBuilder[] variantScoringFunctions = variantSortings.isEmpty() ? scoringCreator.getScoringFunctions(true) : new FilterFunctionBuilder[0];
+		if (variantScoringFunctions.length > 0) {
+			if (variantsMatchQuery == null) variantsMatchQuery = QueryBuilders.matchAllQuery();
+			variantsMatchQuery = QueryBuilders.functionScoreQuery(variantsMatchQuery, variantScoringFunctions);
+			variantsOnlyFiltered = false;
+		}
+
+		// if there are hard variant filters, add them as must clause
+		if (variantFilterQuery != null) {
+			NestedQueryBuilder variantQuery = QueryBuilders.nestedQuery(FieldConstants.VARIANTS, variantFilterQuery, ScoreMode.None);
+			if (variantsOnlyFiltered) {
+				variantQuery.innerHit(getVariantInnerHits(variantSortings));
 			}
-			((BoolQueryBuilder) variantsMatchQuery).should(searchQuery.getVariantLevelQuery().boost(2f));
-
-			FilterFunctionBuilder[] variantScoringFunctions = scoringCreator.getScoringFunctions(true);
-			if (variantScoringFunctions.length > 0) {
-				variantsMatchQuery = QueryBuilders.functionScoreQuery(variantsMatchQuery, variantScoringFunctions);
-			}
-		}
-		else if (varFilterQuery != null) {
-			variantsMatchQuery = varFilterQuery;
-		} else {
-			variantsMatchQuery = QueryBuilders.matchAllQuery();
+			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery)
+					.filter(variantQuery);
 		}
 
-		NestedQueryBuilder variantLevelQuery = QueryBuilders
-				.nestedQuery(FieldConstants.VARIANTS, variantsMatchQuery, ScoreMode.Avg)
-				.innerHit(getVariantInnerHits(variantSortings));
-
-		// if variant query contains hard filters, it should go into a
-		// boolean must clause
-		if (varFilterQuery != null) {
-			return ESQueryUtils.mergeQueries(masterLevelQuery, variantLevelQuery);
+		// variant inner hits are always retrieved in a should clause,
+		// because they may contain optional matchers and post filters
+		// only exception: if the variants are only filtered
+		if (variantsMatchQuery != null && !variantsOnlyFiltered) {
+			NestedQueryBuilder variantQuery = QueryBuilders.nestedQuery(FieldConstants.VARIANTS, variantsMatchQuery, ScoreMode.Avg)
+					.innerHit(getVariantInnerHits(variantSortings));
+			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery)
+					.should(variantQuery);
 		}
 
-		// in case the variant query has no required filter, we only use it in a
-		// should clause to accept products without variants as well!
-		if (masterLevelQuery instanceof BoolQueryBuilder) {
-			return ((BoolQueryBuilder) masterLevelQuery).should(variantLevelQuery);
-		} else {
-			return QueryBuilders.boolQuery().must(masterLevelQuery).should(variantLevelQuery);
-		}
+		return masterLevelQuery;
 	}
 
 	private InnerHitBuilder getVariantInnerHits(List<SortBuilder<?>> variantSortings) {

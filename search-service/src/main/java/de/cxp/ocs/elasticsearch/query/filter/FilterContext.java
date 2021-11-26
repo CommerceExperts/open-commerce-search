@@ -35,8 +35,11 @@ public class FilterContext {
 	@Getter
 	private final QueryBuilder joinedPostFilters;
 
+	@Getter
+	private final QueryBuilder variantPostFilters;
+
 	public FilterContext(Map<String, InternalResultFilter> internalFilters) {
-		this(internalFilters, NO_FILTER, NO_FILTER, NO_QUERY, null);
+		this(internalFilters, NO_FILTER, NO_FILTER, NO_QUERY, null, null);
 	}
 
 	/**

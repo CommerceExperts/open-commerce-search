@@ -32,7 +32,7 @@ public class MatchAllQueryFactory implements ESQueryFactory {
 				QueryBuilders
 						.matchAllQuery()
 						.queryName(name == null ? "_match_all" : name),
-				QueryBuilders.matchAllQuery(),
+				null,
 				// isWithSpellCorrect=true because we use match anything anyways
 				true,
 				// accept no results, because if "matchAll" matches nothing, no

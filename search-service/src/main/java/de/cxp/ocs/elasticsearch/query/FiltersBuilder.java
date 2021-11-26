@@ -99,7 +99,8 @@ public class FiltersBuilder {
 				Collections.unmodifiableMap(basicFilterQueries),
 				Collections.unmodifiableMap(postFilterQueries),
 				buildFilters(basicFilterQueries),
-				joinedPostFilters);
+				joinedPostFilters,
+				postFilterQuery.getVariantLevelQuery());
 	}
 
 	private boolean isBasicQuery(String fieldName) {
