@@ -20,7 +20,6 @@ import com.google.common.base.Functions;
 
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
-import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
@@ -136,7 +135,7 @@ public class FiltersBuilder {
 	}
 
 	private boolean isVariantField(String field) {
-		return indexedFieldConfig.getField(field).map(Field::isVariantLevel).orElse(false);
+		return indexedFieldConfig.getField(field).map(f -> f.isVariantLevel() && !f.isBothLevel()).orElse(false);
 	}
 
 }
