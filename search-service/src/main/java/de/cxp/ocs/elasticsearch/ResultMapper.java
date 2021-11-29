@@ -49,10 +49,16 @@ public class ResultMapper {
 	 * variant<br>
 	 * - the 'preferVariantHits' flag is true
 	 * </li>
+	 * </ul>
 	 * 
 	 * @param hit
+	 *        ES search hit
 	 * @param sortedFields
+	 *        map with field-to-sortOrder entries applicable on variant level
+	 *        (no validation done here)
 	 * @param preferVariantHits
+	 *        set to true, if you want to prefer the first variant hit if
+	 *        available
 	 * @return
 	 */
 	public static ResultHit mapSearchHit(SearchHit hit, Map<String, SortOrder> sortedFields, boolean preferVariantHits) {
@@ -83,8 +89,11 @@ public class ResultMapper {
 	 * if sorted by price descending.
 	 * 
 	 * @param hit
+	 *        ES search hit
 	 * @param resultHit
+	 *        according OCS mapped result hit
 	 * @param sortedFields
+	 *        map of sort fields
 	 */
 	@SuppressWarnings("unchecked")
 	private static void addSortFieldPrefix(SearchHit hit, ResultHit resultHit, Map<String, SortOrder> sortedFields) {
@@ -160,6 +169,7 @@ public class ResultMapper {
 		return mapped;
 	}
 
+	@SuppressWarnings("unchecked")
 	private static boolean isMapList(Object data, Predicate<Object> keyPredicate, Predicate<Object> valuePredicate) {
 		boolean isWantedMap = data instanceof List
 				&& ((List<Object>) data).size() > 0

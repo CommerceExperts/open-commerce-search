@@ -69,8 +69,11 @@ public class HeroProductHandler {
 	 * the matching IDs are fetched.
 	 * 
 	 * @param productSets
+	 *        array of product sets to be resolved to static product sets
 	 * @param searcher
+	 *        matching Searcher instance for these products
 	 * @param searchContext
+	 *        context
 	 * @return
 	 */
 	public static StaticProductSet[] resolve(ProductSet[] productSets, Searcher searcher, SearchContext searchContext) {
@@ -199,6 +202,7 @@ public class HeroProductHandler {
 	 * </p>
 	 * 
 	 * @param internalParams
+	 *        with hero product sets
 	 * @return the expected minimum hit count
 	 */
 	public static int getCorrectedMinHitCount(InternalSearchParams internalParams) {
@@ -217,8 +221,11 @@ public class HeroProductHandler {
 	 * </p>
 	 * 
 	 * @param searchResponse
+	 *        ES search result
 	 * @param internalParams
+	 *        with sortings and hero product-sets
 	 * @param searchResult
+	 *        where hero product slices should be added
 	 * @return set of ids, that are already part of primary slices
 	 */
 	public static Set<String> extractSlices(SearchResponse searchResponse, InternalSearchParams internalParams, SearchResult searchResult) {
