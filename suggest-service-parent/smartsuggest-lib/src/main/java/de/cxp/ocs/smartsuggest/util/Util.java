@@ -71,12 +71,11 @@ public class Util {
 	}
 
 	/**
-	 * Returns the {@code Comparator} used to sort fuzzy suggestions within the
-	 * {@value LuceneQuerySuggester#FUZZY_MATCHES_ONE_EDIT_GROUP_NAME}
-	 * and
-	 * {@value LuceneQuerySuggester#FUZZY_MATCHES_TWO_EDITS_GROUP_NAME}.
-	 * Those suggestions are sorted on their common chars to the search term at
-	 * first and on their weight at second.
+	 * <p>
+	 * Returns the {@code Comparator} that orders suggestion with according to
+	 * their common
+	 * chars to the given 'term'. Queries with more common chars are preferred.
+	 * </p>
 	 * 
 	 * @param locale
 	 *        the locale of the client. Used to load the proper stopwords
@@ -84,26 +83,27 @@ public class Util {
 	 *        the term for which to get suggestions
 	 * @return the {@code Comparator} for fuzzy suggestions.
 	 */
-	public static Comparator<Suggestion> getFuzzySuggestionComparator(Locale locale, String term) {
+	public static Comparator<Suggestion> getCommonCharsComparator(Locale locale, String term) {
 		return (s1, s2) -> {
 			final double s1CommonChars = Util.commonChars(locale, s1.getLabel(), term);
 			final double s2CommonChars = Util.commonChars(locale, s2.getLabel(), term);
 			// prefer more common chars => desc order
-			int commonCharsCompare = Double.compare(s2CommonChars, s1CommonChars);
-			return commonCharsCompare != 0
-					? commonCharsCompare
-					: Long.compare(s2.getWeight(), s1.getWeight());
+			return Double.compare(s2CommonChars, s1CommonChars);
 		};
 	}
 
 	/**
-	 * Returns the {@code Comparator} used to sort suggestions within the
-	 * {@value LuceneQuerySuggester#SHARPENED_GROUP_NAME}.
+	 * Returns the {@code Comparator} used to sort suggestions by their weight,
+	 * where queries of the group
+	 * {@value LuceneQuerySuggester#SHARPENED_GROUP_NAME} are preferred over all
+	 * others (=max weight).
 	 * 
 	 * @return the {@code Comparator} for sharpened suggestions.
 	 */
-	public static Comparator<Suggestion> getSharpenedGroupComparator() {
+	public static Comparator<Suggestion> getDescendingWeightComparator() {
 		return (s1, s2) -> {
+			// sharpened queries do not have a weight. they must be prefered
+			// everytime
 			String matchGroup1 = s1.getPayload().get(PAYLOAD_GROUPMATCH_KEY);
 			String matchGroup2 = s2.getPayload().get(PAYLOAD_GROUPMATCH_KEY);
 			if (SHARPENED_GROUP_NAME.equals(matchGroup1) || SHARPENED_GROUP_NAME.equals(matchGroup2)) {

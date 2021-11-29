@@ -112,7 +112,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	private final SuggestConfig			suggestConfig;
 	private final ModifiedTermsService	modifiedTermsService;
 
-	private Instant lastIndexTime;
+	private Instant	lastIndexTime;
 	private long	recordCount		= 0;
 	private long	memUsageBytes	= 0;
 
@@ -291,7 +291,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 				final int itemsToFetchTypos = maxResults - uniqueQueries.size();
 				int resultCount = collectSuggestions(term, contexts, typoSuggester, itemsToFetchTypos, uniqueQueries, itemsToFetchTypos, TYPO_MATCHES_GROUP_NAME, results);
 				if (SortStrategy.PrimaryAndSecondaryByWeight.equals(suggestConfig.getSortStrategy())) {
-					reorderPrimaryAndSecondaryMatches(results);
+					sortByWeight(results, term);
 				}
 				perfResult.addStep("variantMatches", resultCount);
 			}
@@ -328,6 +328,10 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 				perfResult.addStep("relaxedTerms", resultCount);
 			}
 
+			if (SortStrategy.AllByWeight.equals(suggestConfig.getSortStrategy())) {
+				sortByWeight(results, term);
+			}
+
 			perfResult.stop();
 			if (perfResult.getTotalTime().getTime() > 200L) {
 				perfLog.warn(perfResult.toString());
@@ -355,7 +359,9 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		suggestions.forEach(s -> withPayloadEntry(s, CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName));
 
 		if (!suggestions.isEmpty()) {
-			sortSuggestions(suggestions, term, groupName);
+			if (SortStrategy.MatchGroupsSeparated.equals(suggestConfig.getSortStrategy())) {
+				sortSuggestionsGroup(suggestions, term, groupName);
+			}
 			results.addAll(suggestions);
 			log.debug("Collected '{}' {} for term '{}': {}", suggestions.size(), groupName, term, suggestions);
 
@@ -383,10 +389,6 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		return 0;
 	}
 
-	private void reorderPrimaryAndSecondaryMatches(final List<Suggestion> results) {
-		Collections.sort(results, Util.getSharpenedGroupComparator());
-	}
-
 	private Suggestion withPayloadEntry(Suggestion s, String key, String value) {
 		if (s.getPayload() == null) {
 			s.setPayload(Collections.singletonMap(key, value));
@@ -402,14 +404,23 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		return s;
 	}
 
-	private void sortSuggestions(List<Suggestion> suggestions, String term, String groupName) {
+	private void sortByWeight(final List<Suggestion> results, String inputTerm) {
+		Collections.sort(results, Util.getDescendingWeightComparator()
+				// for queries with same weight, prefer the ones with more
+				// common chars
+				.thenComparing(Util.getCommonCharsComparator(suggestConfig.locale, inputTerm)));
+	}
+
+	private void sortSuggestionsGroup(List<Suggestion> suggestions, String term, String groupName) {
 		if (FUZZY_MATCHES_ONE_EDIT_GROUP_NAME.equals(groupName) || FUZZY_MATCHES_TWO_EDITS_GROUP_NAME.equals(groupName)) {
 			sortFuzzySuggestions(suggestions, term);
 		}
+		// no sorting for other groups
 	}
 
 	private void sortFuzzySuggestions(List<Suggestion> suggestions, String term) {
-		sort(suggestions, Util.getFuzzySuggestionComparator(suggestConfig.getLocale(), term));
+		sort(suggestions, Util.getCommonCharsComparator(suggestConfig.getLocale(), term)
+				.thenComparing(Util.getDescendingWeightComparator()));
 	}
 
 	private List<Suggestion> getUniqueSuggestions(List<Lookup.LookupResult> results, Set<String> uniqueQueries, int maxResults) {
