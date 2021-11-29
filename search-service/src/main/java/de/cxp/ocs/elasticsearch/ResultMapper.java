@@ -56,11 +56,11 @@ public class ResultMapper {
 	 * @return
 	 */
 	public static ResultHit mapSearchHit(SearchHit hit, Map<String, SortOrder> sortedFields, boolean preferVariantHits) {
-		SearchHits variantHits = hit.getInnerHits().get("variants");
+		SearchHits variantHits = hit.getInnerHits() == null ? null : hit.getInnerHits().get("variants");
 		SearchHit variantHit = null;
-		if (preferVariantHits && variantHits.getHits().length > 0
-				|| variantHits.getHits().length == 1 ||
-				(variantHits.getHits().length >= 2 && variantHits.getAt(0).getScore() > variantHits.getAt(1).getScore())) {
+		if (preferVariantHits && variantHits != null && variantHits.getHits().length > 0
+				|| variantHits != null && variantHits.getHits().length == 1
+				|| (variantHits != null && variantHits.getHits().length >= 2 && variantHits.getAt(0).getScore() > variantHits.getAt(1).getScore())) {
 			variantHit = variantHits.getAt(0);
 		}
 
