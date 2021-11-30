@@ -73,7 +73,6 @@ public class SuggestServiceImpl implements SuggestService {
 							.setPayload(suggestion.getPayload());
 
 					if (suggestion.getPayload() != null) {
-						suggestion.getPayload().remove(CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY);
 						suggestion.getPayload().remove(CommonPayloadFields.PAYLOAD_LABEL_KEY);
 						String type = suggestion.getPayload().remove(CommonPayloadFields.PAYLOAD_TYPE_KEY);
 						if (type != null) {
