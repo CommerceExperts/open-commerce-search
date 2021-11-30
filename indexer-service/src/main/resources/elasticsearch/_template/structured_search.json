@@ -162,7 +162,6 @@
           "path_match": "*resultData.*",
           "mapping": {
             "index": false,
-            "type": "text",
             "doc_values": false
           }
         }

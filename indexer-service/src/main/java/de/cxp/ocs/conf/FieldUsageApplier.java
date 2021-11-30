@@ -1,6 +1,12 @@
 package de.cxp.ocs.conf;
 
-import static de.cxp.ocs.util.Util.*;
+import static de.cxp.ocs.util.Util.collectObjects;
+import static de.cxp.ocs.util.Util.ensureNumberIsFloat;
+import static de.cxp.ocs.util.Util.ensureSameType;
+import static de.cxp.ocs.util.Util.isEmpty;
+import static de.cxp.ocs.util.Util.toNumberCollection;
+import static de.cxp.ocs.util.Util.toStringCollection;
+import static de.cxp.ocs.util.Util.tryToParseAsNumber;
 
 import java.util.ArrayList;
 import java.util.Collection;

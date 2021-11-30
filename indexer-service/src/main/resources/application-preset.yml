@@ -65,7 +65,7 @@ ocs:
             - Sort
             - Result
             - Facet
-          field-level: variant
+          field-level: both
         category:
           name: category
           type: category
@@ -80,6 +80,20 @@ ocs:
           type: string
           usage:
             - Search
+        color:
+          name: color
+          type: string
+          usage:
+            - Result
+            - Facet
+          field-level: both
+        size:
+          name: size
+          type: string
+          usage:
+            - Result
+            - Facet
+          field-level: variant
         search_combi:
           name: search_combi
           source-names:
@@ -136,12 +150,14 @@ ocs:
             - .*
           usage:
             - Facet
+            - Result
         - name: attribute
           type: string
           source-names:
             - .*
           usage:
             - Facet
+            - Result
         - name: category_levels
           type: string
           source-names:
