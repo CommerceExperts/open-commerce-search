@@ -1,7 +1,6 @@
 package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.sort;
 import static org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester.PRESERVE_SEP;
 import static org.apache.lucene.search.suggest.analyzing.BlendedInfixSuggester.DEFAULT_NUM_FACTOR;
 import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_MIN_FUZZY_LENGTH;
@@ -300,7 +299,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults
 					&& contexts == null) {
 				final int itemsToFetchOneEdit = maxResults - uniqueQueries.size();
-				int resultCount = collectSuggestions(term, contexts, fuzzySuggesterOneEdit, itemsToFetchOneEdit, uniqueQueries, itemsToFetchOneEdit,
+				int resultCount = collectFuzzySuggestions(term, contexts, fuzzySuggesterOneEdit, itemsToFetchOneEdit, uniqueQueries, itemsToFetchOneEdit,
 						FUZZY_MATCHES_ONE_EDIT_GROUP_NAME, results);
 				perfResult.addStep("fuzzy1Matches", resultCount);
 			}
@@ -309,7 +308,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults
 					&& contexts == null) {
 				final int itemsToFetchTwoEdits = maxResults - uniqueQueries.size();
-				int resultCount = collectSuggestions(term, contexts, fuzzySuggesterTwoEdits, itemsToFetchTwoEdits, uniqueQueries, itemsToFetchTwoEdits,
+				int resultCount = collectFuzzySuggestions(term, contexts, fuzzySuggesterTwoEdits, itemsToFetchTwoEdits, uniqueQueries, itemsToFetchTwoEdits,
 						FUZZY_MATCHES_TWO_EDITS_GROUP_NAME, results);
 				perfResult.addStep("fuzzy2Matches", resultCount);
 			}
@@ -317,7 +316,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			// lookup with shingles
 			if ((suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults && contexts == null) {
 				final int itemsToFetchShingles = maxResults - uniqueQueries.size();
-				int resultCount = collectSuggestions(term, contexts, shingleSuggester, itemsToFetchShingles, uniqueQueries, itemsToFetchShingles, SHINGLE_MATCHES_GROUP_NAME,
+				int resultCount = collectFuzzySuggestions(term, contexts, shingleSuggester, itemsToFetchShingles, uniqueQueries, itemsToFetchShingles, SHINGLE_MATCHES_GROUP_NAME,
 						results);
 				perfResult.addStep("shingleMatches", resultCount);
 			}
@@ -326,10 +325,6 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 				final int itemsToFetchShingles = maxResults - uniqueQueries.size();
 				int resultCount = collectModifiedSuggestions(term, modifiedTermsService.getRelaxedTerm(term), uniqueQueries, itemsToFetchShingles, RELAXED_GROUP_NAME, results);
 				perfResult.addStep("relaxedTerms", resultCount);
-			}
-
-			if (SortStrategy.AllByWeight.equals(suggestConfig.getSortStrategy())) {
-				sortByWeight(results, term);
 			}
 
 			perfResult.stop();
@@ -351,17 +346,38 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		}
 	}
 
+	private int collectFuzzySuggestions(String term, Set<BytesRef> contexts, Lookup suggester, final int itemsToFetch, Set<String> uniqueQueries,
+			int maxResults, String groupName, List<Suggestion> results) throws IOException {
+
+		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, Math.min(itemsToFetch * 100, 1000));
+
+		List<Suggestion> suggestions = lookupResults.stream()
+				.map(this::getBestMatch)
+				.filter(suggestion -> !uniqueQueries.contains(suggestion.getLabel()))
+				.collect(Util.getTopKFuzzySuggestionCollector(itemsToFetch, suggestConfig.locale, term));
+
+		suggestions.forEach(s -> {
+			uniqueQueries.add(s.getLabel());
+			withPayloadEntry(s, CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName);
+		});
+
+		if (!suggestions.isEmpty()) {
+			results.addAll(suggestions);
+			log.debug("Collected '{}' {} for term '{}': {}", suggestions.size(), groupName, term, suggestions);
+		}
+		return suggestions.size();
+	}
+
 	private int collectSuggestions(String term, Set<BytesRef> contexts, Lookup suggester, int itemsToFetch,
 			Set<String> uniqueQueries, int maxResults, String groupName, List<Suggestion> results) throws IOException {
 		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, itemsToFetch);
 
 		final List<Suggestion> suggestions = getUniqueSuggestions(lookupResults, uniqueQueries, maxResults);
-		suggestions.forEach(s -> withPayloadEntry(s, CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName));
+		suggestions.forEach(s -> {
+			withPayloadEntry(s, CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName);
+		});
 
 		if (!suggestions.isEmpty()) {
-			if (SortStrategy.MatchGroupsSeparated.equals(suggestConfig.getSortStrategy())) {
-				sortSuggestionsGroup(suggestions, term, groupName);
-			}
 			results.addAll(suggestions);
 			log.debug("Collected '{}' {} for term '{}': {}", suggestions.size(), groupName, term, suggestions);
 
@@ -389,7 +405,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		return 0;
 	}
 
-	private Suggestion withPayloadEntry(Suggestion s, String key, String value) {
+	private static Suggestion withPayloadEntry(Suggestion s, String key, String value) {
 		if (s.getPayload() == null) {
 			s.setPayload(Collections.singletonMap(key, value));
 		}
@@ -409,18 +425,6 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 				// for queries with same weight, prefer the ones with more
 				// common chars
 				.thenComparing(Util.getCommonCharsComparator(suggestConfig.locale, inputTerm)));
-	}
-
-	private void sortSuggestionsGroup(List<Suggestion> suggestions, String term, String groupName) {
-		if (FUZZY_MATCHES_ONE_EDIT_GROUP_NAME.equals(groupName) || FUZZY_MATCHES_TWO_EDITS_GROUP_NAME.equals(groupName)) {
-			sortFuzzySuggestions(suggestions, term);
-		}
-		// no sorting for other groups
-	}
-
-	private void sortFuzzySuggestions(List<Suggestion> suggestions, String term) {
-		sort(suggestions, Util.getCommonCharsComparator(suggestConfig.getLocale(), term)
-				.thenComparing(Util.getDescendingWeightComparator()));
 	}
 
 	private List<Suggestion> getUniqueSuggestions(List<Lookup.LookupResult> results, Set<String> uniqueQueries, int maxResults) {

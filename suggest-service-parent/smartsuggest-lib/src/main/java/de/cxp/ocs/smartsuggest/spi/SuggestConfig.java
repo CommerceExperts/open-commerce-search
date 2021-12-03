@@ -15,7 +15,7 @@ public class SuggestConfig {
 
 	public boolean alwaysDoFuzzy = Boolean.getBoolean("alwaysDoFuzzy");
 
-	private SortStrategy sortStrategy = SortStrategy.MatchGroupsSeparated;
+	private SortStrategy sortStrategy = SortStrategy.PrimaryAndSecondaryByWeight;
 
 	public boolean useDataSourceMerger = false;
 
@@ -54,12 +54,7 @@ public class SuggestConfig {
 		 * are considered equal and merged. Within these first match groups,
 		 * suggestions are only ordered by weight.
 		 */
-		PrimaryAndSecondaryByWeight,
-
-		/**
-		 * All matches are reordered purely by their weight.
-		 */
-		AllByWeight
+		PrimaryAndSecondaryByWeight
 	}
 
 	public SuggestConfig() {

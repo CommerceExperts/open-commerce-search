@@ -57,6 +57,7 @@ class LuceneQuerySuggesterTest {
 		suggestConfig = new SuggestConfig();
 		suggestConfig.setAlwaysDoFuzzy(true);
 		suggestConfig.setLocale(Locale.GERMAN);
+		suggestConfig.setSortOrder(SortStrategy.MatchGroupsSeparated);
 		underTest = new LuceneQuerySuggester(indexFolder, suggestConfig, modifiedTermsService, getWordSet(Locale.ROOT));
 	}
 
@@ -222,9 +223,9 @@ class LuceneQuerySuggesterTest {
 		final String Newton = "newton";
 		final String Renew = "renew";
 		List<SuggestRecord> toIndex = new ArrayList<>(asList(
-				asSuggestRecord(NewYork, "", 100),
-				asSuggestRecord(Renew, "", 100),
-				asSuggestRecord(Newton, "", 101)));
+				asSuggestRecord(NewYork, NewYork, 100),
+				asSuggestRecord(Renew, Renew, 100),
+				asSuggestRecord(Newton, Newton, 101)));
 
 		underTest.index(toIndex).join();
 
@@ -279,10 +280,11 @@ class LuceneQuerySuggesterTest {
 		List<Suggestion> results = underTest.suggest("beige men's shirts");
 		assertSuggestion(results.get(0), BeigeMensShirts, BEST_MATCHES_GROUP_NAME);
 
-		assertSuggestion(results.get(1), Shirts, SHINGLE_MATCHES_GROUP_NAME);
-		assertSuggestion(results.get(2), WorkShirts, SHINGLE_MATCHES_GROUP_NAME);
-		assertSuggestion(results.get(3), WomensShirts, SHINGLE_MATCHES_GROUP_NAME);
-		assertSuggestion(results.get(4), MensShirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(1), WomensShirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(2), MensShirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(3), Shirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(4), WorkShirts, SHINGLE_MATCHES_GROUP_NAME);
+
 	}
 
 	@DisplayName("When the search term is a phrase then it should return best matches first, then extra results for sub-phrase/words")
@@ -321,8 +323,8 @@ class LuceneQuerySuggesterTest {
 		assertSuggestion(results2.get(2), BeigeMensShirts, BEST_MATCHES_GROUP_NAME);
 				
 		assertSuggestion(results2.get(3), Shirts, SHINGLE_MATCHES_GROUP_NAME);
-		assertSuggestion(results2.get(4), WorkShirts, SHINGLE_MATCHES_GROUP_NAME);
-		assertSuggestion(results2.get(5), WomensShirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results2.get(4), WomensShirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results2.get(5), WorkShirts, SHINGLE_MATCHES_GROUP_NAME);
 	}
 
 	@DisplayName("Search for 'schuhe'")
