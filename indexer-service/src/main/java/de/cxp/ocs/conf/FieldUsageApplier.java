@@ -177,7 +177,7 @@ public class FieldUsageApplier {
 				parsedValue = tryToParseAsNumber(value.toString()).orElseThrow(
 						() -> new IllegalArgumentException("value for numeric field " + field.getName()
 								+ " is not numeric: " + value.toString().substring(0, 12)
-								+ (value.toString().length() > 12 ? "..." : "")));
+								+ (value.toString().length() > 15 ? value.toString().substring(0, 12) + "..." : value.toString())));
 			}
 		}
 		else if (FieldType.CATEGORY.equals(field.getType())) {
