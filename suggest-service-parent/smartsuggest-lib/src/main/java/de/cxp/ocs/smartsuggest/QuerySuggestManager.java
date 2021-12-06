@@ -434,7 +434,16 @@ public class QuerySuggestManager implements AutoCloseable {
 	 */
 	private QuerySuggester initializeQuerySuggesters(String indexName, boolean synchronous) {
 		List<SuggestDataProvider> actualSuggestDataProviders = suggestDataProviders.stream()
-				.filter(sdp -> sdp.hasData(indexName))
+				.filter(sdp -> {
+					try {
+						return sdp.hasData(indexName);
+					}
+					catch (Exception e) {
+						// catch potential Runtime Exceptions
+						log.warn("SuggestDataProvider implementation {} caused unexpected Exception: {}", sdp.getClass().getCanonicalName(), e);
+						return false;
+					}
+				})
 				.collect(Collectors.toList());
 
 		if (actualSuggestDataProviders.isEmpty()) {

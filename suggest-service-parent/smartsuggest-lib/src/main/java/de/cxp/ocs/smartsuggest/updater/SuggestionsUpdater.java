@@ -2,6 +2,7 @@ package de.cxp.ocs.smartsuggest.updater;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -90,6 +91,7 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 
 		Instant remoteModTime = Instant.ofEpochMilli(remoteModTimeMs);
 		if (lastUpdate == null || remoteModTime.isAfter(lastUpdate)) {
+			log.info("Fetching data for index {}", indexName);
 			SuggestData suggestData = dataProvider.loadData(indexName);
 
 			if (suggestData == null) {
@@ -107,9 +109,16 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 				}
 			}
 
+			log.info("Received data for index {} with {} records", indexName,
+					suggestData.getSuggestRecords() instanceof Collection ? ((Collection<?>) suggestData.getSuggestRecords()).size() : "?");
+
 			SuggestConfig suggestConfig = configProvider.getConfig(indexName);
+			long startIndexation = System.currentTimeMillis();
 			QuerySuggester querySuggester = factory.getSuggester(suggestData, suggestConfig);
 			final long count = querySuggester.recordCount();
+
+			log.info("Indexed {} suggest records for index {} in {}ms", count, indexName, System.currentTimeMillis() - startIndexation);
+
 			try {
 				querySuggesterProxy.updateQueryMapper(querySuggester);
 			}
@@ -119,7 +128,6 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 				throw ace;
 			}
 
-			log.info("Received suggest data for index {} with {} suggestions", indexName, count);
 			lastUpdate = remoteModTime;
 			updateSuccessCount++;
 			suggestionsCount = count;

@@ -1,6 +1,7 @@
 package de.cxp.ocs.elasticsearch;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.action.search.SearchRequest;
@@ -85,7 +87,11 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 		try {
 			return client.indices().exists(new GetIndexRequest(indexName), RequestOptions.DEFAULT);
 		}
-		catch (IOException e) {
+		catch (ElasticsearchException | ConnectException esExc) {
+			log.info("No connection to Elasticsearch. Won't fetch suggest data for index {}", indexName);
+			return false;
+		}
+		catch (Throwable e) {
 			log.warn("index exists request failed for index {} because of {}", indexName, e.getMessage());
 			return false;
 		}
