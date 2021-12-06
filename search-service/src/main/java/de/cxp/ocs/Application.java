@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.jsontype.NamedType;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import de.cxp.ocs.config.ApplicationProperties;
-import de.cxp.ocs.config.DefaultSearchConfigrationProvider;
+import de.cxp.ocs.config.DefaultSearchConfigurationProvider;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.RestClientBuilderFactory;
 import de.cxp.ocs.model.index.Document;
@@ -49,8 +49,8 @@ public class Application {
 		PluginManager pluginManager = new PluginManager(properties.getDisabledPlugins(), properties.getPreferedPlugins());
 
 		Optional<SearchConfigurationProvider> configurationProvider = pluginManager.loadPrefered(SearchConfigurationProvider.class);
-		SearchConfigurationProvider defaultConfigProvider = new DefaultSearchConfigrationProvider(properties);
-		configurationProvider.ifPresent(scp -> scp.setDefaultProvider(new DefaultSearchConfigrationProvider(properties)));
+		SearchConfigurationProvider defaultConfigProvider = new DefaultSearchConfigurationProvider(properties);
+		configurationProvider.ifPresent(scp -> scp.setDefaultProvider(new DefaultSearchConfigurationProvider(properties)));
 
 		return new SearchPlugins(pluginManager, configurationProvider.orElse(defaultConfigProvider));
 	}

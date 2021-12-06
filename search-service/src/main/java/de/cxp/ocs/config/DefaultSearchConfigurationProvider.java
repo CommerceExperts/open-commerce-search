@@ -12,7 +12,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class DefaultSearchConfigrationProvider implements SearchConfigurationProvider {
+public class DefaultSearchConfigurationProvider implements SearchConfigurationProvider {
 
 	@NonNull
 	private final ApplicationProperties properties;
