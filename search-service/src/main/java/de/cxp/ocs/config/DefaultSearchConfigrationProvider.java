@@ -103,4 +103,9 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 		return properties.getTenantConfig().keySet();
 	}
 
+	@Override
+	public void setDefaultProvider(SearchConfigurationProvider defaultSearchConfigrationProvider) {
+		// nothing to do. we are the default
+	}
+
 }

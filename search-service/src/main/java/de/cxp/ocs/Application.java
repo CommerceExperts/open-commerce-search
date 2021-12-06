@@ -1,5 +1,7 @@
 package de.cxp.ocs;
 
+import java.util.Optional;
+
 import org.elasticsearch.client.RestClientBuilder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -45,10 +47,12 @@ public class Application {
 	@Bean
 	public SearchPlugins pluginManager(ApplicationProperties properties) {
 		PluginManager pluginManager = new PluginManager(properties.getDisabledPlugins(), properties.getPreferedPlugins());
-		SearchConfigurationProvider configurationProvider = pluginManager.loadPrefered(SearchConfigurationProvider.class)
-				.orElseGet(() -> new DefaultSearchConfigrationProvider(properties));
-		SearchPlugins plugins = new SearchPlugins(pluginManager, configurationProvider);
-		return plugins;
+
+		Optional<SearchConfigurationProvider> configurationProvider = pluginManager.loadPrefered(SearchConfigurationProvider.class);
+		SearchConfigurationProvider defaultConfigProvider = new DefaultSearchConfigrationProvider(properties);
+		configurationProvider.ifPresent(scp -> scp.setDefaultProvider(new DefaultSearchConfigrationProvider(properties)));
+
+		return new SearchPlugins(pluginManager, configurationProvider.orElse(defaultConfigProvider));
 	}
 
 	@Bean

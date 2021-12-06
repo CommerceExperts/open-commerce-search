@@ -46,4 +46,9 @@ public class DefaultIndexerConfigurationProvider implements IndexerConfiguration
 		return Optional.ofNullable(getIndexConf(indexName).getDataProcessorConfiguration());
 	}
 
+	@Override
+	public void setDefaultProvider(IndexerConfigurationProvider defaultIndexerConfigurationProvider) {
+		// nothing to do - this is default!
+	}
+
 }
