@@ -353,6 +353,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 
 		List<Suggestion> suggestions = lookupResults.stream()
 				.map(this::getBestMatch)
+				.filter(Objects::nonNull)
 				.filter(suggestion -> !uniqueQueries.contains(suggestion.getLabel()))
 				.collect(Util.getTopKFuzzySuggestionCollector(itemsToFetch, suggestConfig.locale, term));
 
@@ -496,13 +497,19 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 * @see SuggestionIterator#payload()
 	 */
 	private Suggestion getBestMatch(Lookup.LookupResult result) {
-		Map<String, String> payload = SerializationUtils.deserialize(result.payload.bytes);
-		String label = payload.get(CommonPayloadFields.PAYLOAD_LABEL_KEY);
-		if (label == null) label = result.key.toString();
-		return new Suggestion(label)
-				.setPayload(payload)
-				.setWeight(result.value)
-				.setContext(result.contexts);
+		try {
+			Map<String, String> payload = SerializationUtils.deserialize(result.payload.bytes);
+			String label = payload.get(CommonPayloadFields.PAYLOAD_LABEL_KEY);
+			if (label == null) label = result.key.toString();
+			return new Suggestion(label)
+					.setPayload(payload)
+					.setWeight(result.value)
+					.setContext(result.contexts);
+		}
+		catch (Exception e) {
+			log.error("failed to deserialize LookupResult for key {}", result.key);
+			return null;
+		}
 	}
 
 	@Override
