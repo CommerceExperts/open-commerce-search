@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.LocaleUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
@@ -27,6 +28,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.rest.RestStatus;
 
 import de.cxp.ocs.DocumentMapper;
 import de.cxp.ocs.api.indexer.ImportSession;
@@ -168,7 +170,6 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 
 	private int extractIndexNumber(String fullIndexName) {
 		Matcher indexNameMatcher = INDEX_NAME_PATTERN.matcher(fullIndexName);
-		String numberedIndexName;
 		if (indexNameMatcher.find()) {
 			return Integer.parseInt(indexNameMatcher.group(1));
 		}
@@ -274,9 +275,17 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 			DocWriteResponse.Result result = indexClient.updateDocument(index, doc).getResult();
 			return translateResult(result);
 		}
-		catch (IOException e) {
-			log.error("update for document with id {} failed", doc.getId(), e);
-			throw new UncheckedIOException(e);
+		catch (ElasticsearchStatusException statusEx) {
+			log.error("update for document with id {} failed", doc.getId(), statusEx);
+			return translateResult(statusEx.status());
+		}
+		catch (IOException ioe) {
+			log.error("update for document with id {} failed", doc.getId(), ioe);
+			throw new UncheckedIOException(ioe);
+		}
+		catch (RuntimeException re) {
+			log.error("update for document with id {} failed", doc.getId(), re);
+			throw re;
 		}
 	}
 
@@ -292,9 +301,17 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 				return translateResult(result);
 			}
 		}
-		catch (IOException e) {
-			log.error("indexing document with id {} failed", doc.getId(), e);
-			throw new UncheckedIOException(e);
+		catch (ElasticsearchStatusException statusEx) {
+			log.error("indexing document with id {} failed", doc.getId(), statusEx);
+			return translateResult(statusEx.status());
+		}
+		catch (IOException ioe) {
+			log.error("indexing document with id {} failed", doc.getId(), ioe);
+			throw new UncheckedIOException(ioe);
+		}
+		catch (RuntimeException esEx) {
+			log.error("indexing document with id {} failed", doc.getId(), esEx);
+			throw esEx;
 		}
 	}
 
@@ -312,6 +329,10 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 			log.error("deleting documents with ids {} failed", ids, e);
 			throw new UncheckedIOException(e);
 		}
+		catch (RuntimeException esEx) {
+			log.error("deleting documents with ids {} failed", ids, esEx);
+			throw esEx;
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -322,7 +343,12 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 			return esDoc.getVersion() == -1 ? null : DocumentMapper.mapToOriginalDocument(id, esDoc.getSource(), getFieldConfIndex());
 		}
 		catch (IOException ioe) {
+			log.error("fetching document with id {} failed", id, ioe);
 			throw new UncheckedIOException(ioe);
+		}
+		catch (RuntimeException esEx) {
+			log.error("fetching document with id {} failed", id, esEx);
+			throw esEx;
 		}
 	}
 
@@ -340,6 +366,17 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 				return UpdateIndexService.Result.UPDATED;
 		}
 		return null;
+	}
+
+	private UpdateIndexService.Result translateResult(RestStatus status) {
+		switch (status) {
+			case CREATED:
+				return UpdateIndexService.Result.CREATED;
+			case NOT_FOUND:
+				return UpdateIndexService.Result.NOT_FOUND;
+			default:
+				return UpdateIndexService.Result.DISMISSED;
+		}
 	}
 
 }

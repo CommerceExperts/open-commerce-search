@@ -132,6 +132,8 @@ public class FieldUsageApplier {
 			value = convertCategoryDataToString(value, FieldUsageApplier::toCategoryPathString);
 		}
 
+		value = ensureCorrectValueType(field, value);
+
 		String fieldName = field.getName();
 		record.getResultData().compute(fieldName, joinDataValueFunction(value));
 	};
@@ -182,9 +184,6 @@ public class FieldUsageApplier {
 		}
 		else if (FieldType.CATEGORY.equals(field.getType())) {
 			parsedValue = convertCategoryDataToString(value, FieldUsageApplier::toCategoryPathString);
-		}
-		else if (value instanceof Collection) {
-
 		}
 		return parsedValue;
 	}
