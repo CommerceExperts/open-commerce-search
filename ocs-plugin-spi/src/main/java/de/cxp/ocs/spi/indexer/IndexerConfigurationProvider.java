@@ -45,7 +45,8 @@ public interface IndexerConfigurationProvider {
 	/**
 	 * Gives access to the default configuration provider.
 	 * 
-	 * @param defaultSearchConfigrationProvider
+	 * @param defaultIndexerConfigurationProvider
+	 *        default configuration provider
 	 */
 	void setDefaultProvider(IndexerConfigurationProvider defaultIndexerConfigurationProvider);
 

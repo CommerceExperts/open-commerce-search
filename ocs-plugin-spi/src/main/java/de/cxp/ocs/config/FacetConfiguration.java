@@ -213,7 +213,7 @@ public class FacetConfiguration {
 		 * 
 		 * @param isPreferVariantOnFilter
 		 *        default is false. set to true to activate.
-		 * @return
+		 * @return self
 		 */
 		public FacetConfig isPreferVariantOnFilter(boolean isPreferVariantOnFilter) {
 			this.peferVariantOnFilter = isPreferVariantOnFilter;

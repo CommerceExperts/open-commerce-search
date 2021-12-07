@@ -13,6 +13,7 @@ public interface SearchConfigurationProvider {
 	 * Gives access to the default configuration provider.
 	 * 
 	 * @param defaultSearchConfigrationProvider
+	 *        default configuration provider
 	 */
 	void setDefaultProvider(SearchConfigurationProvider defaultSearchConfigrationProvider);
 
