@@ -1,7 +1,6 @@
 package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.sort;
 import static org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester.PRESERVE_SEP;
 import static org.apache.lucene.search.suggest.analyzing.BlendedInfixSuggester.DEFAULT_NUM_FACTOR;
 import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_MIN_FUZZY_LENGTH;
@@ -19,7 +18,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -58,6 +56,8 @@ import de.cxp.ocs.smartsuggest.querysuggester.SuggestException;
 import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
 import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig.SortStrategy;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.Util;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -108,15 +108,10 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 */
 	private final FuzzySuggester		fuzzySuggesterTwoEdits;
 	private final List<Closeable>		closeables	= new ArrayList<>();
-	private final Locale				locale;
+	private final SuggestConfig			suggestConfig;
 	private final ModifiedTermsService	modifiedTermsService;
 
-	// TODO move suggester configuration outside and make it configurable per
-	// index
-	private boolean	alwaysDoFuzzy				= Boolean.getBoolean("alwaysDoFuzzy");
-	private boolean	doReorderSecondaryMatches	= Boolean.getBoolean("doReorderSecondaryMatches");
-
-	private Instant lastIndexTime;
+	private Instant	lastIndexTime;
 	private long	recordCount		= 0;
 	private long	memUsageBytes	= 0;
 
@@ -127,16 +122,16 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 * 
 	 * @param indexFolder
 	 *        the parent folder for the specific suggesters
-	 * @param locale
-	 *        the locale of the client. Used to load the proper stopwords
+	 * @param suggestConfig
+	 *        the full suggest configuration
 	 * @param modifiedTermsService
 	 *        service that provides mappings for modified terms
 	 * @param stopWords
 	 *        optional set of stopwords. may be null
 	 */
-	public LuceneQuerySuggester(@NonNull Path indexFolder, @NonNull Locale locale, @NonNull ModifiedTermsService modifiedTermsService, CharArraySet stopWords) {
+	public LuceneQuerySuggester(@NonNull Path indexFolder, @NonNull SuggestConfig suggestConfig, @NonNull ModifiedTermsService modifiedTermsService, CharArraySet stopWords) {
 		this.modifiedTermsService = modifiedTermsService;
-		this.locale = locale;
+		this.suggestConfig = suggestConfig;
 
 		try {
 			// TODO: extract a AnalyzerProviderInterface to make this
@@ -294,30 +289,32 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			if (uniqueQueries.size() < maxResults) {
 				final int itemsToFetchTypos = maxResults - uniqueQueries.size();
 				int resultCount = collectSuggestions(term, contexts, typoSuggester, itemsToFetchTypos, uniqueQueries, itemsToFetchTypos, TYPO_MATCHES_GROUP_NAME, results);
-				if (doReorderSecondaryMatches) {
-					reorderPrimaryAndSecondaryMatches(results);
+				if (SortStrategy.PrimaryAndSecondaryByWeight.equals(suggestConfig.getSortStrategy())) {
+					sortByWeight(results, term);
 				}
 				perfResult.addStep("variantMatches", resultCount);
 			}
 
 			// fuzzy lookup with one edit
-			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (alwaysDoFuzzy || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults && contexts == null) {
+			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults
+					&& contexts == null) {
 				final int itemsToFetchOneEdit = maxResults - uniqueQueries.size();
-				int resultCount = collectSuggestions(term, contexts, fuzzySuggesterOneEdit, itemsToFetchOneEdit, uniqueQueries, itemsToFetchOneEdit,
+				int resultCount = collectFuzzySuggestions(term, contexts, fuzzySuggesterOneEdit, itemsToFetchOneEdit, uniqueQueries, itemsToFetchOneEdit,
 						FUZZY_MATCHES_ONE_EDIT_GROUP_NAME, results);
 				perfResult.addStep("fuzzy1Matches", resultCount);
 			}
 
 			// fuzzy lookup with two edits
-			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (alwaysDoFuzzy || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults && contexts == null) {
+			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults
+					&& contexts == null) {
 				final int itemsToFetchTwoEdits = maxResults - uniqueQueries.size();
-				int resultCount = collectSuggestions(term, contexts, fuzzySuggesterTwoEdits, itemsToFetchTwoEdits, uniqueQueries, itemsToFetchTwoEdits,
+				int resultCount = collectFuzzySuggestions(term, contexts, fuzzySuggesterTwoEdits, itemsToFetchTwoEdits, uniqueQueries, itemsToFetchTwoEdits,
 						FUZZY_MATCHES_TWO_EDITS_GROUP_NAME, results);
 				perfResult.addStep("fuzzy2Matches", resultCount);
 			}
 
 			// lookup with shingles
-			if ((alwaysDoFuzzy || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults && contexts == null) {
+			if ((suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults && contexts == null) {
 				final int itemsToFetchShingles = maxResults - uniqueQueries.size();
 				int resultCount = collectSuggestions(term, contexts, shingleSuggester, itemsToFetchShingles, uniqueQueries, itemsToFetchShingles, SHINGLE_MATCHES_GROUP_NAME,
 						results);
@@ -349,15 +346,68 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		}
 	}
 
+	/**
+	 * <p>
+	 * Use this method for fuzzy suggesters that have only the primary-text /
+	 * labels indexed. It will fetch more suggestions and reorder them to get
+	 * terms with better prefix- and common-chars matches.
+	 * </p>
+	 * <p>
+	 * ATTENTION: This method MUST only be used for suggesters that only have
+	 * the primary text indexed, because we use the indexed text to check for
+	 * prefix match.
+	 * </p>
+	 * 
+	 * @param term
+	 * @param contexts
+	 * @param suggester
+	 * @param itemsToFetch
+	 * @param uniqueQueries
+	 * @param maxResults
+	 * @param groupName
+	 * @param results
+	 * @return
+	 * @throws IOException
+	 */
+	private int collectFuzzySuggestions(String term, Set<BytesRef> contexts, Lookup suggester, final int itemsToFetch, Set<String> uniqueQueries,
+			int maxResults, String groupName, List<Suggestion> results) throws IOException {
+
+		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, Math.min(itemsToFetch * 100, 1000));
+
+		List<Suggestion> suggestions = lookupResults.stream()
+				.filter(Objects::nonNull)
+				// do not deserialize the hundreds of results yet, instead use
+				// the LookupResult.key (=primary text / =label?) and s.value
+				// (=weight) directly.
+				// Because of that however, we can only use that method only for
+				// suggesters that have only indexed the primary texts = label!
+				.filter(s -> !uniqueQueries.contains(s.key))
+				.collect(Util.getTopKFuzzySuggestionCollector(itemsToFetch + uniqueQueries.size(), suggestConfig.locale, term))
+				.stream()
+				.map(this::getBestMatch)
+				.filter(Objects::nonNull)
+				.filter(s -> uniqueQueries.add(s.getLabel()))
+				.limit(itemsToFetch)
+				.peek(s -> withPayloadEntry(s, CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName))
+				.collect(Collectors.toList());
+
+		if (!suggestions.isEmpty()) {
+			results.addAll(suggestions);
+			log.debug("Collected '{}' {} for term '{}': {}", suggestions.size(), groupName, term, suggestions);
+		}
+		return suggestions.size();
+	}
+
 	private int collectSuggestions(String term, Set<BytesRef> contexts, Lookup suggester, int itemsToFetch,
 			Set<String> uniqueQueries, int maxResults, String groupName, List<Suggestion> results) throws IOException {
 		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, itemsToFetch);
 
 		final List<Suggestion> suggestions = getUniqueSuggestions(lookupResults, uniqueQueries, maxResults);
-		suggestions.forEach(s -> withPayloadEntry(s, CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName));
+		suggestions.forEach(s -> {
+			withPayloadEntry(s, CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName);
+		});
 
 		if (!suggestions.isEmpty()) {
-			sortSuggestions(suggestions, term, groupName);
 			results.addAll(suggestions);
 			log.debug("Collected '{}' {} for term '{}': {}", suggestions.size(), groupName, term, suggestions);
 
@@ -385,11 +435,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		return 0;
 	}
 
-	private void reorderPrimaryAndSecondaryMatches(final List<Suggestion> results) {
-		Collections.sort(results, Util.getSharpenedGroupComparator());
-	}
-
-	private Suggestion withPayloadEntry(Suggestion s, String key, String value) {
+	private static Suggestion withPayloadEntry(Suggestion s, String key, String value) {
 		if (s.getPayload() == null) {
 			s.setPayload(Collections.singletonMap(key, value));
 		}
@@ -404,14 +450,11 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		return s;
 	}
 
-	private void sortSuggestions(List<Suggestion> suggestions, String term, String groupName) {
-		if (FUZZY_MATCHES_ONE_EDIT_GROUP_NAME.equals(groupName) || FUZZY_MATCHES_TWO_EDITS_GROUP_NAME.equals(groupName)) {
-			sortFuzzySuggestions(suggestions, term);
-		}
-	}
-
-	private void sortFuzzySuggestions(List<Suggestion> suggestions, String term) {
-		sort(suggestions, Util.getFuzzySuggestionComparator(locale, term));
+	private void sortByWeight(final List<Suggestion> results, String inputTerm) {
+		Collections.sort(results, Util.getDescendingWeightComparator()
+				// for queries with same weight, prefer the ones with more
+				// common chars
+				.thenComparing(Util.getSuggestionsCommonCharsComparator(suggestConfig.locale, inputTerm)));
 	}
 
 	private List<Suggestion> getUniqueSuggestions(List<Lookup.LookupResult> results, Set<String> uniqueQueries, int maxResults) {
@@ -483,13 +526,19 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 * @see SuggestionIterator#payload()
 	 */
 	private Suggestion getBestMatch(Lookup.LookupResult result) {
-		Map<String, String> payload = SerializationUtils.deserialize(result.payload.bytes);
-		String label = payload.get(CommonPayloadFields.PAYLOAD_LABEL_KEY);
-		if (label == null) label = result.key.toString();
-		return new Suggestion(label)
-				.setPayload(payload)
-				.setWeight(result.value)
-				.setContext(result.contexts);
+		try {
+			Map<String, String> payload = SerializationUtils.deserialize(result.payload.bytes);
+			String label = payload.get(CommonPayloadFields.PAYLOAD_LABEL_KEY);
+			if (label == null) label = result.key.toString();
+			return new Suggestion(label)
+					.setPayload(payload)
+					.setWeight(result.value)
+					.setContext(result.contexts);
+		}
+		catch (Exception e) {
+			log.error("failed to deserialize LookupResult for key {}", result.key);
+			return null;
+		}
 	}
 
 	@Override

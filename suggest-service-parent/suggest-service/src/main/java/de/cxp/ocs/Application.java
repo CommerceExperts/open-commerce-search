@@ -2,7 +2,6 @@ package de.cxp.ocs;
 
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.Optional;
 
 import org.rapidoid.http.HttpHeaders;
@@ -13,10 +12,9 @@ import org.rapidoid.setup.On;
 import de.cxp.ocs.api.SuggestService;
 import de.cxp.ocs.smartsuggest.QuerySuggestManager;
 import de.cxp.ocs.smartsuggest.QuerySuggestManager.QuerySuggestManagerBuilder;
-import de.cxp.ocs.smartsuggest.limiter.ConfigurableShareLimiter;
-import de.cxp.ocs.smartsuggest.limiter.GroupedCutOffLimiter;
-import de.cxp.ocs.smartsuggest.limiter.Limiter;
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
+import de.cxp.ocs.suggest.SuggestProperties;
+import de.cxp.ocs.suggest.SuggestServiceImpl;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
@@ -84,20 +82,8 @@ public class Application {
 				.indexFolder(props.getIndexFolder())
 				.updateRate(props.getUpdateRateInSeconds())
 				.addMetricsRegistryAdapter(MeterRegistryAdapter.of(meterRegistry))
-				.preloadIndexes(props.getPreloadIndexes());
-
-		final Optional<String> groupKey = props.getGroupKey();
-		if (groupKey.isPresent()) {
-			Optional<String[]> groupDeduplicationOrder = props.getGroupDeduplicationOrder();
-			Limiter limiter = props.getGroupedShareConf()
-					.map(conf -> (Limiter) new ConfigurableShareLimiter(groupKey.get(), conf, groupDeduplicationOrder))
-					.orElseGet(() -> {
-						Integer cutoffDefault = props.getGroupedCutoffDefaultSize();
-						LinkedHashMap<String, Integer> conf = props.getGroupedCutoffConf().orElse(new LinkedHashMap<>(0));
-						return new GroupedCutOffLimiter(groupKey.get(), cutoffDefault, conf, groupDeduplicationOrder);
-					});
-			querySuggestManagerBuilder.withLimiter(limiter);
-		}
+				.preloadIndexes(props.getPreloadIndexes())
+				.withDefaultSuggestConfig(props.getDefaultSuggestConfig());
 
 		return querySuggestManagerBuilder.build();
 	}

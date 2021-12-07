@@ -1,6 +1,12 @@
 package de.cxp.ocs.conf;
 
-import static de.cxp.ocs.util.Util.*;
+import static de.cxp.ocs.util.Util.collectObjects;
+import static de.cxp.ocs.util.Util.ensureNumberIsFloat;
+import static de.cxp.ocs.util.Util.ensureSameType;
+import static de.cxp.ocs.util.Util.isEmpty;
+import static de.cxp.ocs.util.Util.toNumberCollection;
+import static de.cxp.ocs.util.Util.toStringCollection;
+import static de.cxp.ocs.util.Util.tryToParseAsNumber;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -126,6 +132,8 @@ public class FieldUsageApplier {
 			value = convertCategoryDataToString(value, FieldUsageApplier::toCategoryPathString);
 		}
 
+		value = ensureCorrectValueType(field, value);
+
 		String fieldName = field.getName();
 		record.getResultData().compute(fieldName, joinDataValueFunction(value));
 	};
@@ -171,14 +179,11 @@ public class FieldUsageApplier {
 				parsedValue = tryToParseAsNumber(value.toString()).orElseThrow(
 						() -> new IllegalArgumentException("value for numeric field " + field.getName()
 								+ " is not numeric: " + value.toString().substring(0, 12)
-								+ (value.toString().length() > 12 ? "..." : "")));
+								+ (value.toString().length() > 15 ? value.toString().substring(0, 12) + "..." : value.toString())));
 			}
 		}
 		else if (FieldType.CATEGORY.equals(field.getType())) {
 			parsedValue = convertCategoryDataToString(value, FieldUsageApplier::toCategoryPathString);
-		}
-		else if (value instanceof Collection) {
-
 		}
 		return parsedValue;
 	}

@@ -42,5 +42,12 @@ public interface IndexerConfigurationProvider {
 	 */
 	Optional<DataProcessorConfiguration> getDataProcessorConfiguration(String indexName);
 
+	/**
+	 * Gives access to the default configuration provider.
+	 * 
+	 * @param defaultIndexerConfigurationProvider
+	 *        default configuration provider
+	 */
+	void setDefaultProvider(IndexerConfigurationProvider defaultIndexerConfigurationProvider);
 
 }

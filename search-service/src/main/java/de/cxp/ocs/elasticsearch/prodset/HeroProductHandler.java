@@ -7,11 +7,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 
@@ -29,6 +31,28 @@ import de.cxp.ocs.util.InternalSearchParams;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Hero products that should be displayed at the top of the result, come with
+ * several uncomfortable requirements. This class helps to handle all of them:
+ * <ul>
+ * <li>hero products should also be reflected by the facets, so follow up
+ * requests with filters should also remove non-matching hero products.
+ * Result counts and facet counts of course should reflect this behavior.</li>
+ * <li>hero products should also be under the control of result-pages. This is
+ * especially important if the page-size/result limit is lower than the amount
+ * of hero products!</li>
+ * <li>If several sets of hero products are defined, make sure the same product
+ * does not appear in more that one.</li>
+ * <li>Multiple hero product sets should return in the order as they have been
+ * requested</li>
+ * <li>Static product sets and dynamic product sets with sorting should return
+ * the single hits in the order they have been requested.
+ * (not yet guaranteed TODO)</li>
+ * <li></li>
+ * </ul>
+ * 
+ * @author Rudolf Batt
+ */
 @Slf4j
 public class HeroProductHandler {
 
@@ -45,8 +69,11 @@ public class HeroProductHandler {
 	 * the matching IDs are fetched.
 	 * 
 	 * @param productSets
+	 *        array of product sets to be resolved to static product sets
 	 * @param searcher
+	 *        matching Searcher instance for these products
 	 * @param searchContext
+	 *        context
 	 * @return
 	 */
 	public static StaticProductSet[] resolve(ProductSet[] productSets, Searcher searcher, SearchContext searchContext) {
@@ -119,14 +146,7 @@ public class HeroProductHandler {
 		}
 	}
 
-	/**
-	 * Extend MasterVariantQuery to inject the hero products and boost them to
-	 * the top.
-	 * 
-	 * @param searchQuery
-	 * @param internalParams
-	 */
-	public static void extendQuery(MasterVariantQuery searchQuery, InternalSearchParams internalParams) {
+	public static Optional<BoolQueryBuilder> getHeroQuery(InternalSearchParams internalParams) {
 		StaticProductSet[] productSets = internalParams.heroProductSets;
 		if (productSets.length > 0) {
 			BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
@@ -135,15 +155,43 @@ public class HeroProductHandler {
 				// since this is "just" another should clause, the product sets
 				// are still influenced by the matches of the generic user
 				// query.
-				// Also the whole query is wrapped into a function-score query
-				// to apply the scoring rules
-				// TODO: add possibility to guarantee the order of IDs of a set.
 				boolQuery.should(
-						QueryBuilders.idsQuery().addIds(productSets[i].ids).boost(boost));
+						QueryBuilders.queryStringQuery(idsAsOrderedBoostQuery(productSets[i].ids))
+								.boost(boost)
+								.defaultField("_id")
+								.defaultOperator(Operator.OR));
 				boost /= 10;
 			}
-			searchQuery.setMasterLevelQuery(boolQuery.should(searchQuery.getMasterLevelQuery()));
+			return Optional.of(boolQuery);
 		}
+		return Optional.empty();
+	}
+
+	/**
+	 * Extend MasterVariantQuery to inject the hero products and boost them to
+	 * the top.
+	 * 
+	 * @param searchQuery
+	 * @param internalParams
+	 */
+	public static void extendQuery(MasterVariantQuery searchQuery, InternalSearchParams internalParams) {
+		getHeroQuery(internalParams)
+				.ifPresent(bq -> searchQuery.setMasterLevelQuery(bq.should(searchQuery.getMasterLevelQuery())));
+	}
+
+	private static String idsAsOrderedBoostQuery(@NonNull String[] ids) {
+		long boost = 10 * ids.length;
+		// rough approx. of string-length
+		StringBuilder idsOrderedBoostQuery = new StringBuilder(ids.length * (ids[0].length() + 2 + String.valueOf(boost).length()));
+		for (String id : ids) {
+			idsOrderedBoostQuery
+					.append(id)
+					.append('^')
+					.append(String.valueOf(boost))
+					.append(' ');
+			boost -= 10;
+		}
+		return idsOrderedBoostQuery.toString();
 	}
 
 	/**
@@ -154,6 +202,7 @@ public class HeroProductHandler {
 	 * </p>
 	 * 
 	 * @param internalParams
+	 *        with hero product sets
 	 * @return the expected minimum hit count
 	 */
 	public static int getCorrectedMinHitCount(InternalSearchParams internalParams) {
@@ -172,39 +221,50 @@ public class HeroProductHandler {
 	 * </p>
 	 * 
 	 * @param searchResponse
+	 *        ES search result
 	 * @param internalParams
+	 *        with sortings and hero product-sets
 	 * @param searchResult
-	 * @return fetchOffset: the index of the first hit, that is not a hero
-	 *         product
+	 *        where hero product slices should be added
+	 * @return set of ids, that are already part of primary slices
 	 */
-	public static int extractSlices(SearchResponse searchResponse, InternalSearchParams internalParams, SearchResult searchResult) {
+	public static Set<String> extractSlices(SearchResponse searchResponse, InternalSearchParams internalParams, SearchResult searchResult) {
 		if (internalParams.getSortings().size() == 0) {
 			StaticProductSet[] productSets = internalParams.heroProductSets;
-			int hitIndex = 0;
-			SearchHit[] hits = searchResponse.getHits().getHits();
-			// expected min boost is factor 10 smaller, because the scoring is
-			// also multiplied by values below 1
-			float expectedMinBoost = 10f * (float) Math.pow(10, productSets.length);
-			for (StaticProductSet productSet : productSets) {
-				List<ResultHit> resultHits = new ArrayList<>();
-				for (int i = 0; i < productSet.ids.length && hitIndex < hits.length && expectedMinBoost < hits[hitIndex].getScore(); i++) {
-					ResultHit resultHit = ResultMapper.mapSearchHit(hits[hitIndex], Collections.emptyMap());
-					resultHits.add(resultHit);
-					hitIndex++;
+			Map<String, Integer> productSetAssignment = new HashMap<>();
+			for (int i = 0; i < productSets.length; i++) {
+				for (int k = 0; k < productSets[i].ids.length; k++) {
+					productSetAssignment.putIfAbsent(productSets[i].ids[k], i);
 				}
-				expectedMinBoost /= 10;
 
-				if (resultHits.size() > 0) {
+				if (productSets[i].ids.length > 0) {
 					SearchResultSlice slice = new SearchResultSlice();
-					slice.setLabel(productSet.getName());
-					slice.setHits(resultHits);
-					slice.setMatchCount(resultHits.size());
+					slice.setLabel(productSets[i].getName());
+					slice.setMatchCount(productSets[i].getSize());
+					slice.setHits(new ArrayList<>());
 					searchResult.slices.add(slice);
 				}
+				else {
+					// add empty slice as placeholder so the slices-indexes are
+					// equal to i
+					searchResult.slices.add(new SearchResultSlice().setLabel("_empty"));
+				}
 			}
-			return hitIndex;
+
+			SearchHit[] hits = searchResponse.getHits().getHits();
+			for (int h = 0; h < hits.length; h++) {
+				Integer sliceIndex = productSetAssignment.get(hits[h].getId());
+				if (sliceIndex != null) {
+					ResultHit resultHit = ResultMapper.mapSearchHit(hits[h], Collections.emptyMap());
+					searchResult.slices.get(sliceIndex).getHits().add(resultHit);
+				}
+			}
+
+			searchResult.slices.removeIf(s -> "_empty".equals(s.getLabel()));
+
+			return productSetAssignment.keySet();
 		}
-		return 0;
+		return Collections.emptySet();
 	}
 
 }

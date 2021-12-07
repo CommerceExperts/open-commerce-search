@@ -5,12 +5,17 @@ import static de.cxp.ocs.config.FieldConstants.VARIANTS;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.search.SearchRequest;
@@ -18,7 +23,6 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.InnerHitBuilder;
 import org.elasticsearch.index.query.NestedQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -29,6 +33,8 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
+import org.elasticsearch.search.rescore.QueryRescorerBuilder;
+import org.elasticsearch.search.rescore.RescorerBuilder;
 import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Marker;
@@ -36,6 +42,8 @@ import org.slf4j.MarkerFactory;
 
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.SearchPlugins;
+import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
+import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldUsage;
@@ -98,10 +106,12 @@ public class Searcher {
 	private final List<RescorerProvider> rescorers;
 
 	private final SortingHandler sortingHandler;
-	
+
 	private ScoringCreator scoringCreator;
 
 	private SpellCorrector spellCorrector;
+
+	private final Set<String> preferredVariantAttributes;
 
 	private final Timer findTimer;
 	private final Timer sqbTimer;
@@ -139,11 +149,14 @@ public class Searcher {
 		rescorers = SearchPlugins.initialize(config.getRescorers(), plugins.getRescorerProviders(), config.getPluginConfiguration());
 
 		queryBuilder = new ESQueryFactoryBuilder(restClient, searchContext, plugins.getEsQueryFactories()).build();
+
+		preferredVariantAttributes = initVariantHandling();
 	}
 
-
 	private Timer getTimer(final String name, final String indexName) {
-		return Timer.builder(name).tag("indexName", indexName).publishPercentiles(0.5, 0.8, 0.9, 0.95)
+		return Timer.builder(name)
+				.tag("indexName", indexName)
+				.publishPercentiles(0.5, 0.8, 0.9, 0.95)
 				.register(registry);
 	}
 
@@ -152,22 +165,30 @@ public class Searcher {
 		return new SpellCorrector(spellCorrectionFields.toArray(new String[spellCorrectionFields.size()]));
 	}
 
-	// @Timed(value = "find", percentiles = { 0.5, 0.8, 0.95, 0.98 })
+	private Set<String> initVariantHandling() {
+		return config.getFacetConfiguration().getFacets().stream()
+				.filter(FacetConfig::isPeferVariantOnFilter)
+				.map(FacetConfig::getSourceField)
+				.filter(facetField -> fieldIndex.getField(facetField).map(Field::isVariantLevel).orElse(false))
+				.collect(Collectors.toSet());
+	}
+
 	public SearchResult find(InternalSearchParams parameters) throws IOException {
 		Sample findTimerSample = Timer.start(Clock.SYSTEM);
 		Iterator<ESQueryFactory> stagedQueryBuilders;
 		List<QueryStringTerm> searchWords;
+		String preprocessedQuery = null;
 		if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
-			String searchQuery = parameters.userQuery;
+			preprocessedQuery = parameters.userQuery;
 			for (UserQueryPreprocessor preprocessor : userQueryPreprocessors) {
-				searchQuery = preprocessor.preProcess(searchQuery);
+				preprocessedQuery = preprocessor.preProcess(preprocessedQuery);
 			}
 
-			searchWords = userQueryAnalyzer.analyze(searchQuery);
+			searchWords = userQueryAnalyzer.analyze(preprocessedQuery);
 			stagedQueryBuilders = queryBuilder.getMatchingFactories(searchWords);
-
-		} else {
-			stagedQueryBuilders = Collections.<ESQueryFactory>singletonList(new MatchAllQueryFactory()).iterator();
+		}
+		else {
+			stagedQueryBuilders = Collections.<ESQueryFactory> singletonList(new MatchAllQueryFactory()).iterator();
 			searchWords = Collections.emptyList();
 		}
 
@@ -232,11 +253,12 @@ public class Searcher {
 					&& stagedQueryBuilder.allowParallelSpellcheckExecution()
 					&& (!searchQuery.isWithSpellCorrection() || stagedQueryBuilders.hasNext())) {
 				searchSourceBuilder.suggest(spellCorrector.buildSpellCorrectionQuery(parameters.userQuery));
-			} else {
+			}
+			else {
 				searchSourceBuilder.suggest(null);
 			}
 
-			searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
+			searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext, variantSortings));
 
 			if (log.isTraceEnabled()) {
 				log.trace(QUERY_MARKER, "{ \"user_query\": \"{}\", \"query\": {} }", parameters.userQuery, searchSourceBuilder.toString().replaceAll("[\n\\s]+", " "));
@@ -249,7 +271,6 @@ public class Searcher {
 						parameters.userQuery, sw.getTime(), searchResponse.getHits().getTotalHits().value);
 			}
 			inputWordsSample.stop(inputWordsTimer);
-
 
 			// if we don't have any hits, but there's a chance to get corrected
 			// words, then enrich the search words with the corrected words
@@ -268,7 +289,7 @@ public class Searcher {
 					if (parameters.heroProductSets != null) {
 						HeroProductHandler.extendQuery(searchQuery, parameters);
 					}
-					searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext.getJoinedBasicFilters(), variantSortings));
+					searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext, variantSortings));
 					searchResponse = executeSearchRequest(searchSourceBuilder);
 				}
 				correctedWordsSample.stop(correctedWordsTimer);
@@ -284,6 +305,11 @@ public class Searcher {
 
 		SearchResult searchResult = buildResult(parameters, filterContext, searchResponse);
 
+		if (preprocessedQuery != null) {
+			searchResult.meta.put("preprocessedQuery", preprocessedQuery);
+			searchResult.meta.put("analyzedQuery", StringUtils.join(searchWords));
+		}
+
 		summary.record(i);
 		findTimerSample.stop(findTimer);
 
@@ -292,10 +318,39 @@ public class Searcher {
 
 	private void addRescorersFailsafe(InternalSearchParams parameters, SearchSourceBuilder searchSourceBuilder) {
 		Iterator<RescorerProvider> rescorerProviders = rescorers.iterator();
+
+		int maxWindowSize = 0;
+		float overallQueryWeight = 1f;
+		float overallRescorerWeight = 1f;
+		int heroProductsCount = 0;
+		if (parameters.heroProductSets != null && parameters.heroProductSets.length > 0) {
+			heroProductsCount = Arrays.stream(parameters.heroProductSets).mapToInt(set -> set.ids.length).sum();
+		}
+
 		while (rescorerProviders.hasNext()) {
 			RescorerProvider rescorerProvider = rescorerProviders.next();
 			try {
-				rescorerProvider.get(parameters.userQuery, parameters.customParams).ifPresent(searchSourceBuilder::addRescorer);
+				Optional<RescorerBuilder<?>> providedRescorer = rescorerProvider.get(parameters.userQuery, parameters.customParams);
+				if (providedRescorer.isPresent()) {
+					RescorerBuilder<?> rescorer = providedRescorer.get();
+
+					Integer windowSize = rescorer.windowSize();
+					if (windowSize > maxWindowSize) {
+						maxWindowSize = windowSize;
+					}
+
+					// no need to add rescorers, that should not have an impact
+					// anyways (hero products should still be boosted to top)
+					if (windowSize > heroProductsCount) {
+						searchSourceBuilder.addRescorer(rescorer);
+
+						if (rescorer instanceof QueryRescorerBuilder) {
+							overallQueryWeight *= ((QueryRescorerBuilder) rescorer).getQueryWeight();
+							overallRescorerWeight *= ((QueryRescorerBuilder) rescorer).getRescoreQueryWeight();
+						}
+					}
+
+				}
 			}
 			catch (Exception e) {
 				log.error("RescorerProvider {} caused exception when creating rescorer based on userQuery {} and customParams {}!"
@@ -303,6 +358,19 @@ public class Searcher {
 						rescorerProvider.getClass().getCanonicalName(), parameters.userQuery, parameters.customParams, e);
 				rescorerProviders.remove();
 			}
+		}
+
+		// if there are rescorers, that lower the query-score effect, add
+		// another rescorer that revereses this effect
+		if (heroProductsCount > 0 && overallQueryWeight < overallRescorerWeight) {
+			float heroRescoreWeight = overallQueryWeight - overallRescorerWeight;
+			int heroWindowSize = maxWindowSize;
+			HeroProductHandler.getHeroQuery(parameters)
+					.ifPresent(heroQuery -> searchSourceBuilder.addRescorer(
+							new QueryRescorerBuilder(heroQuery)
+									.windowSize(heroWindowSize)
+									.setQueryWeight(1)
+									.setRescoreQueryWeight(heroRescoreWeight)));
 		}
 	}
 
@@ -326,12 +394,15 @@ public class Searcher {
 
 		resultTimer.record(() -> {
 			if (searchResponse != null) {
-				int fetchOffset = 0;
+				Set<String> heroIds;
 				if (parameters.heroProductSets != null) {
-					fetchOffset = HeroProductHandler.extractSlices(searchResponse, parameters, searchResult);
+					heroIds = HeroProductHandler.extractSlices(searchResponse, parameters, searchResult);
+				}
+				else {
+					heroIds = Collections.emptySet();
 				}
 
-				SearchResultSlice searchResultSlice = toSearchResult(searchResponse, parameters, fetchOffset);
+				SearchResultSlice searchResultSlice = toSearchResult(searchResponse, parameters, heroIds);
 				if (parameters.isWithFacets()) {
 					searchResultSlice.facets = facetApplier.getFacets(searchResponse.getAggregations(), searchResultSlice.matchCount, filterContext, linkBuilder);
 				}
@@ -340,10 +411,10 @@ public class Searcher {
 			}
 		});
 		searchResult.sortOptions = sortingHandler.buildSortOptions(linkBuilder);
+		searchResult.meta = new HashMap<>();
 
 		return searchResult;
 	}
-
 
 	private void setFetchSources(SearchSourceBuilder searchSourceBuilder, List<SortBuilder<?>> variantSortings, boolean fetchSources) {
 		if (fetchSources) {
@@ -362,11 +433,10 @@ public class Searcher {
 		}
 	}
 
-
-	private QueryBuilder buildFinalQuery(MasterVariantQuery searchQuery, MasterVariantQuery basicFilters,
+	private QueryBuilder buildFinalQuery(MasterVariantQuery searchQuery, FilterContext filterContext,
 			List<SortBuilder<?>> variantSortings) {
 		QueryBuilder masterLevelQuery = ESQueryUtils.mergeQueries(searchQuery.getMasterLevelQuery(),
-				basicFilters.getMasterLevelQuery());
+				filterContext.getJoinedBasicFilters().getMasterLevelQuery());
 
 		FilterFunctionBuilder[] masterScoringFunctions = scoringCreator.getScoringFunctions(false);
 		if (masterScoringFunctions.length > 0) {
@@ -375,49 +445,56 @@ public class Searcher {
 					.scoreMode(scoringCreator.getScoreMode());
 		}
 
-		QueryBuilder varFilterQuery = basicFilters.getVariantLevelQuery();
-		QueryBuilder variantsMatchQuery;
+		QueryBuilder variantFilterQuery = filterContext.getJoinedBasicFilters().getVariantLevelQuery();
+		QueryBuilder variantPostFilters = filterContext.getVariantPostFilters();
 
-		// if sorting is available, scoring and boosting not necessary
-		if (variantSortings.isEmpty() && searchQuery.getVariantLevelQuery() != null) {
-			variantsMatchQuery = QueryBuilders.boolQuery();
-			if (varFilterQuery != null) {
-				((BoolQueryBuilder) variantsMatchQuery).must(varFilterQuery);
+		// build query that picks the best matching variants
+		QueryBuilder variantsMatchQuery = null;
+		boolean variantsOnlyFiltered = variantFilterQuery != null;
+		if (searchQuery.getVariantLevelQuery() != null) {
+			variantsMatchQuery = searchQuery.getVariantLevelQuery();
+			variantsOnlyFiltered = false;
+		}
+		if (variantFilterQuery != null) {
+			variantsMatchQuery = variantsMatchQuery == null ? variantFilterQuery : ESQueryUtils.mapToBoolQueryBuilder(variantsMatchQuery).filter(variantFilterQuery);
+		}
+		if (variantPostFilters != null) {
+			variantsMatchQuery = variantsMatchQuery == null ? variantPostFilters : ESQueryUtils.mapToBoolQueryBuilder(variantsMatchQuery).filter(variantPostFilters);
+			variantsOnlyFiltered = false;
+		}
+
+		FilterFunctionBuilder[] variantScoringFunctions = variantSortings.isEmpty() ? scoringCreator.getScoringFunctions(true) : new FilterFunctionBuilder[0];
+		if (variantScoringFunctions.length > 0) {
+			if (variantsMatchQuery == null) variantsMatchQuery = QueryBuilders.matchAllQuery();
+			variantsMatchQuery = QueryBuilders.functionScoreQuery(variantsMatchQuery, variantScoringFunctions);
+			variantsOnlyFiltered = false;
+		}
+
+		// if there are hard variant filters, add them as must clause
+		if (variantFilterQuery != null) {
+			NestedQueryBuilder variantQuery = QueryBuilders.nestedQuery(FieldConstants.VARIANTS, variantFilterQuery, ScoreMode.None);
+			if (variantsOnlyFiltered) {
+				variantQuery.innerHit(getVariantInnerHits(variantSortings));
 			}
-			((BoolQueryBuilder) variantsMatchQuery).should(searchQuery.getVariantLevelQuery().boost(2f));
-
-			FilterFunctionBuilder[] variantScoringFunctions = scoringCreator.getScoringFunctions(true);
-			if (variantScoringFunctions.length > 0) {
-				variantsMatchQuery = QueryBuilders.functionScoreQuery(variantsMatchQuery, variantScoringFunctions);
-			}
-		}
-		else if (varFilterQuery != null) {
-			variantsMatchQuery = varFilterQuery;
-		} else {
-			variantsMatchQuery = QueryBuilders.matchAllQuery();
+			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery)
+					.filter(variantQuery);
 		}
 
-		NestedQueryBuilder variantLevelQuery = QueryBuilders
-				.nestedQuery(FieldConstants.VARIANTS, variantsMatchQuery, ScoreMode.Avg)
-				.innerHit(getVariantInnerHits(variantSortings));
-
-		// if variant query contains hard filters, it should go into a
-		// boolean must clause
-		if (varFilterQuery != null) {
-			return ESQueryUtils.mergeQueries(masterLevelQuery, variantLevelQuery);
+		// variant inner hits are always retrieved in a should clause,
+		// because they may contain optional matchers and post filters
+		// only exception: if the variants are only filtered
+		if (variantsMatchQuery != null && !variantsOnlyFiltered) {
+			NestedQueryBuilder variantQuery = QueryBuilders.nestedQuery(FieldConstants.VARIANTS, variantsMatchQuery, ScoreMode.Avg)
+					.innerHit(getVariantInnerHits(variantSortings));
+			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery)
+					.should(variantQuery);
 		}
 
-		// in case the variant query has no required filter, we only use it in a
-		// should clause to accept products without variants as well!
-		if (masterLevelQuery instanceof BoolQueryBuilder) {
-			return ((BoolQueryBuilder) masterLevelQuery).should(variantLevelQuery);
-		} else {
-			return QueryBuilders.boolQuery().must(masterLevelQuery).should(variantLevelQuery);
-		}
+		return masterLevelQuery;
 	}
 
 	private InnerHitBuilder getVariantInnerHits(List<SortBuilder<?>> variantSortings) {
-		InnerHitBuilder variantInnerHits = new InnerHitBuilder().setSize(1).setFetchSourceContext(
+		InnerHitBuilder variantInnerHits = new InnerHitBuilder().setSize(2).setFetchSourceContext(
 				new FetchSourceContext(true, new String[] { VARIANTS + "." + RESULT_DATA + ".*" }, null));
 		if (!variantSortings.isEmpty()) {
 			variantInnerHits.setSorts(variantSortings);
@@ -425,7 +502,7 @@ public class Searcher {
 		return variantInnerHits;
 	}
 
-	private SearchResultSlice toSearchResult(SearchResponse search, InternalSearchParams parameters, int fetchOffset) {
+	private SearchResultSlice toSearchResult(SearchResponse search, InternalSearchParams parameters, Set<String> heroIds) {
 		SearchHits searchHits = search.getHits();
 		SearchResultSlice srSlice = new SearchResultSlice();
 		// XXX think about building parameters according to the actual performed
@@ -435,17 +512,22 @@ public class Searcher {
 
 		Map<String, SortOrder> sortedFields = sortingHandler.getSortedNumericFields(parameters);
 
-		ArrayList<ResultHit> resultHits = new ArrayList<>();
-		for (int i = fetchOffset; i < searchHits.getHits().length; i++) {
-			SearchHit hit = searchHits.getHits()[i];
-			ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields);
+		boolean preferVariantHits = preferredVariantAttributes.size() > 0
+				&& ((int) parameters.getFilters().stream()
+						.filter(f -> preferredVariantAttributes.contains(f.getField().getName()))
+						.count()) == preferredVariantAttributes.size();
 
-			resultHits.add(resultHit);
+		ArrayList<ResultHit> resultHits = new ArrayList<>();
+		for (int i = 0; i < searchHits.getHits().length; i++) {
+			SearchHit hit = searchHits.getHits()[i];
+			if (!heroIds.contains(hit.getId())) {
+				ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields, preferVariantHits);
+				resultHits.add(resultHit);
+			}
 		}
 		srSlice.hits = resultHits;
 		srSlice.nextOffset = parameters.offset + searchHits.getHits().length;
 		return srSlice;
 	}
-
 
 }

@@ -14,10 +14,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
-/**
- * a broad query that tries to get good results without loosing too much
- * precision.
- */
 @RequiredArgsConstructor
 public class MatchAllQueryFactory implements ESQueryFactory {
 
@@ -34,12 +30,13 @@ public class MatchAllQueryFactory implements ESQueryFactory {
 	public MasterVariantQuery createQuery(List<QueryStringTerm> searchTerms) {
 		return new MasterVariantQuery(
 				QueryBuilders
-				.matchAllQuery()
-				.queryName(name == null ? "_match_all" : name),
-				QueryBuilders.matchAllQuery(),
+						.matchAllQuery()
+						.queryName(name == null ? "_match_all" : name),
+				null,
 				// isWithSpellCorrect=true because we use match anything anyways
 				true,
-				// accept no results, because if "matchAll" matches nothing, no query will
+				// accept no results, because if "matchAll" matches nothing, no
+				// query will
 				true);
 	}
 

@@ -10,6 +10,14 @@ import de.cxp.ocs.config.SearchConfiguration;
 public interface SearchConfigurationProvider {
 
 	/**
+	 * Gives access to the default configuration provider.
+	 * 
+	 * @param defaultSearchConfigrationProvider
+	 *        default configuration provider
+	 */
+	void setDefaultProvider(SearchConfigurationProvider defaultSearchConfigrationProvider);
+
+	/**
 	 * @return
 	 *         the list of all configured tenants
 	 */
@@ -22,5 +30,6 @@ public interface SearchConfigurationProvider {
 	 *         the search configuration for the specified tenant
 	 */
 	SearchConfiguration getTenantSearchConfiguration(String tenant);
+
 
 }

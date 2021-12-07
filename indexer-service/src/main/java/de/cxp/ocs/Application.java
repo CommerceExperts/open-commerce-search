@@ -1,5 +1,7 @@
 package de.cxp.ocs;
 
+import java.util.Optional;
+
 import org.elasticsearch.client.RestClientBuilder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -54,8 +56,10 @@ public class Application {
 
 	@Bean
 	public IndexerConfigurationProvider configurationProvider(PluginManager pluginManager, ApplicationProperties properties) {
-		return pluginManager.loadPrefered(IndexerConfigurationProvider.class)
-				.orElseGet(() -> new DefaultIndexerConfigurationProvider(properties));
+		DefaultIndexerConfigurationProvider defaultConfigProvider = new DefaultIndexerConfigurationProvider(properties);
+		Optional<IndexerConfigurationProvider> indexerConfigurationProvider = pluginManager.loadPrefered(IndexerConfigurationProvider.class);
+		indexerConfigurationProvider.ifPresent(icp -> icp.setDefaultProvider(defaultConfigProvider));
+		return indexerConfigurationProvider.orElse(defaultConfigProvider);
 	}
 
 	// @Bean

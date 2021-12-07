@@ -11,5 +11,5 @@ Name | Type | Description | Notes
 **nextOffset** | **Long** | the offset value to use to get the next result batch | [optional] [default to null]
 **resultLink** | **URI** | The query that represents exact that passed slice. If send to the engine again, that slice should be returned as main result. | [optional] [default to null]
 
-[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+[[Back to Model list]](../index.md#documentation-for-models) [[Back to API list]](../index.md#documentation-for-api-endpoints) [[Back to README]](../index.md)
 

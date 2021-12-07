@@ -13,6 +13,9 @@
     - [de.cxp.ocs.spi.search.RescorerProvider](#decxpocsspisearchrescorerprovider)
     - [de.cxp.ocs.spi.search.UserQueryAnalyzer](#decxpocsspisearchuserqueryanalyzer)
     - [de.cxp.ocs.spi.search.UserQueryPreprocessor](#decxpocsspisearchuserquerypreprocessor)
+  - [Suggest-Service SPI](#suggest-service-spi)
+    - [de.cxp.ocs.smartsuggest.spi.SuggestDataProvider](#decxpocssmartsuggestspisuggestdataprovider)
+    - [de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider](#decxpocssmartsuggestspisuggestconfigprovider)
 
 # Extending OCS - the Plugin Guide
 
@@ -22,7 +25,7 @@ For example to supply a custom implementation of the indexer's `de.cxp.ocs.spi.i
 
 It makes totally sense to put all your customizations for the different OCSS services into a single component / JAR and put them into each service class path. The service are built to load the customizations gracefuly and only actively use them if configured.
 
-The Service-Provider-Interfaces of Indexer and Search-Service are defined at the [ocs-plugin-spi](/ocs-plugin-spi/) component. For Suggest-Service the data provider interface is part of the main library.
+The Service-Provider-Interfaces of Indexer and Search-Service are defined at the [ocs-plugin-spi](https://github.com/CommerceExperts/open-commerce-search/tree/master/ocs-plugin-spi) component. For Suggest-Service the data provider interface is part of the main library.
 
 Add the according dependencies to your "custom plugin" project:
 
@@ -129,6 +132,10 @@ Severl implementations can be used per tenant.
 ### de.cxp.ocs.smartsuggest.spi.SuggestDataProvider
 
 With an implementation of that interface you provide other data sources to the suggest service.
+
+### de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider
+
+With this plugin you can provide custom suggest configuration per index.
 
 [See details at the Java-docs](javadoc.html#apidocs/de/cxp/ocs/smartsuggest/spi/SuggestDataProvider.html)
 

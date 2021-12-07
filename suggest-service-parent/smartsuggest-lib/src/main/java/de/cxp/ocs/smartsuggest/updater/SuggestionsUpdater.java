@@ -2,6 +2,7 @@ package de.cxp.ocs.smartsuggest.updater;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -12,9 +13,10 @@ import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggesterProxy;
 import de.cxp.ocs.smartsuggest.querysuggester.SuggesterFactory;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
-import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.Util;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
@@ -28,6 +30,9 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 
 	@NonNull
 	private final SuggestDataProvider dataProvider;
+
+	@NonNull
+	private final SuggestConfigProvider configProvider;
 
 	@NonNull
 	private final String indexName;
@@ -86,6 +91,7 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 
 		Instant remoteModTime = Instant.ofEpochMilli(remoteModTimeMs);
 		if (lastUpdate == null || remoteModTime.isAfter(lastUpdate)) {
+			log.info("Fetching data for index {}", indexName);
 			SuggestData suggestData = dataProvider.loadData(indexName);
 
 			if (suggestData == null) {
@@ -103,9 +109,16 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 				}
 			}
 
-			Iterable<SuggestRecord> suggestRecords = suggestData.getSuggestRecords();
-			QuerySuggester querySuggester = factory.getSuggester(suggestData);
+			log.info("Received data for index {} with {} records", indexName,
+					suggestData.getSuggestRecords() instanceof Collection ? ((Collection<?>) suggestData.getSuggestRecords()).size() : "?");
+
+			SuggestConfig suggestConfig = configProvider.getConfig(indexName);
+			long startIndexation = System.currentTimeMillis();
+			QuerySuggester querySuggester = factory.getSuggester(suggestData, suggestConfig);
 			final long count = querySuggester.recordCount();
+
+			log.info("Indexed {} suggest records for index {} in {}ms", count, indexName, System.currentTimeMillis() - startIndexation);
+
 			try {
 				querySuggesterProxy.updateQueryMapper(querySuggester);
 			}
@@ -115,7 +128,6 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 				throw ace;
 			}
 
-			log.info("Received suggest data for index {} with {} suggestions", indexName, count);
 			lastUpdate = remoteModTime;
 			updateSuccessCount++;
 			suggestionsCount = count;

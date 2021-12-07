@@ -1,4 +1,4 @@
-package de.cxp.ocs;
+package de.cxp.ocs.suggest;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +14,7 @@ import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
 
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -46,6 +47,28 @@ public class SuggestProperties {
 				throw new UncheckedIOException("Failed to load custom suggest properties", e);
 			}
 		});
+	}
+
+	public SuggestConfig getDefaultSuggestConfig() {
+		SuggestConfig defaultConfig = new SuggestConfig();
+
+		getGroupKey().ifPresent(defaultConfig::setGroupKey);
+
+		Optional<LinkedHashMap<String, Double>> groupedShareConf = getGroupedShareConf();
+		defaultConfig.setUseRelativeShareLimit(groupedShareConf.isPresent());
+		groupedShareConf.ifPresent(
+				groupConfMap -> groupConfMap.entrySet().forEach(
+						e -> defaultConfig.addGroupConfig(e.getKey(), (int) (e.getValue() * 100))));
+
+		if (!defaultConfig.isUseRelativeShareLimit()) {
+			getGroupedCutoffConf().ifPresent(
+					groupConfMap -> groupConfMap.entrySet().forEach(
+							e -> defaultConfig.addGroupConfig(e.getKey(), e.getValue())));
+		}
+
+		getGroupDeduplicationOrder().ifPresent(defaultConfig::setGroupDeduplicationOrder);
+
+		return defaultConfig;
 	}
 
 	/**
@@ -276,4 +299,5 @@ public class SuggestProperties {
 		}
 		return Optional.ofNullable(value);
 	}
+
 }

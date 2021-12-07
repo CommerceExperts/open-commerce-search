@@ -71,6 +71,8 @@ public class FacetConfiguration {
 
 		private boolean excludeFromFacetLimit = false;
 
+		private boolean peferVariantOnFilter = false;
+
 		/**
 		 * Label of that facet
 		 * 
@@ -194,5 +196,28 @@ public class FacetConfiguration {
 			return this;
 		}
 
+		/**
+		 * <p>
+		 * Set to true, if variant documents should be preferred in the
+		 * result in case a filter of that facet/field is used. This can only
+		 * be used for facets/fields, that exist on variant level, otherwise it
+		 * is ignored.
+		 * </p>
+		 * <p>
+		 * If several facets have this flag activated, all of them must be
+		 * filtered to prefer a variant. E.g. if you have different variants per
+		 * "color" and "material", activate this flag for both facets, so
+		 * variants are only preferred if there is a color and a material
+		 * filter.
+		 * </p>
+		 * 
+		 * @param isPreferVariantOnFilter
+		 *        default is false. set to true to activate.
+		 * @return self
+		 */
+		public FacetConfig isPreferVariantOnFilter(boolean isPreferVariantOnFilter) {
+			this.peferVariantOnFilter = isPreferVariantOnFilter;
+			return this;
+		}
 	}
 }

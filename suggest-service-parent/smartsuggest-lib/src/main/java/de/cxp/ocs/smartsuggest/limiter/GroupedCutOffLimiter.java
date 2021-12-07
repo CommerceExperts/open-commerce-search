@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
+import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -35,7 +36,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GroupedCutOffLimiter implements Limiter {
 
-	public final static String OTHER_SHARE_KEY = "other";
+	public final static String OTHER_SHARE_KEY = CommonPayloadFields.PAYLOAD_TYPE_OTHER;
 
 	@NonNull
 	private final String groupingKey;

@@ -1,4 +1,4 @@
-package de.cxp.ocs;
+package de.cxp.ocs.suggest;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -18,7 +18,6 @@ import de.cxp.ocs.api.SuggestService;
 import de.cxp.ocs.model.suggest.Suggestion;
 import de.cxp.ocs.smartsuggest.QuerySuggestManager;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
-import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester;
 import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,26 +64,35 @@ public class SuggestServiceImpl implements SuggestService {
 
 		return qm.suggest(userQuery, limit, tagsFilter)
 				.stream()
-				// map internal "Suggestion"
-				// (de.cxp.ocs.smartsuggest.querysuggester.Suggestion)
-				// to external "Suggestion"
-				// (de.cxp.ocs.model.suggest.Suggestion.Suggestion)
-				.map(suggestion -> {
-					Suggestion mappedSuggestion = new Suggestion(suggestion.getLabel())
-							.setPayload(suggestion.getPayload());
-
-					if (suggestion.getPayload() != null) {
-						suggestion.getPayload().remove(LuceneQuerySuggester.PAYLOAD_GROUPMATCH_KEY);
-						suggestion.getPayload().remove(LuceneQuerySuggester.PAYLOAD_LABEL_KEY);
-						String type = suggestion.getPayload().remove(CommonPayloadFields.PAYLOAD_TYPE_KEY);
-						if (type != null) {
-							mappedSuggestion.setType(type);
-						}
-					}
-
-					return mappedSuggestion;
-				})
+				.map(this::mapToSuggestionModel)
 				.collect(Collectors.toList());
+	}
+
+	/**
+	 * map internal "Suggestion"
+	 * (de.cxp.ocs.smartsuggest.querysuggester.Suggestion) to external
+	 * "Suggestion" (de.cxp.ocs.model.suggest.Suggestion.Suggestion)
+	 * 
+	 * @param suggestion
+	 * @return
+	 */
+	private Suggestion mapToSuggestionModel(de.cxp.ocs.smartsuggest.querysuggester.Suggestion suggestion) {
+		Suggestion mappedSuggestion = new Suggestion(suggestion.getLabel());
+
+		if (suggestion.getPayload() != null) {
+			suggestion.getPayload().remove(CommonPayloadFields.PAYLOAD_LABEL_KEY);
+			String type = suggestion.getPayload().remove(CommonPayloadFields.PAYLOAD_TYPE_KEY);
+			if (type != null) {
+				mappedSuggestion.setType(type);
+			}
+			suggestion.getPayload().putIfAbsent(CommonPayloadFields.PAYLOAD_WEIGHT_KEY, String.valueOf(suggestion.getWeight()));
+			mappedSuggestion.setPayload(suggestion.getPayload());
+		}
+		else {
+			mappedSuggestion.setPayload(Collections.singletonMap(CommonPayloadFields.PAYLOAD_WEIGHT_KEY, String.valueOf(suggestion.getWeight())));
+		}
+
+		return mappedSuggestion;
 	}
 
 }

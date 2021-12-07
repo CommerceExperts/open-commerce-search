@@ -123,10 +123,7 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 		}
 
 		return new MasterVariantQuery(esQuery,
-				// boost variants with more matching words
-				QueryBuilders.queryStringQuery(queryString)
-						.analyzer(querySettings.get(analyzer))
-						.defaultField(FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + ".*"),
+				new VariantQueryFactory().createMatchAnyTermQuery(searchTerms),
 				!"0".equals(fuzzySetting),
 				Boolean.parseBoolean(querySettings.getOrDefault(acceptNoResult, "false")));
 	}

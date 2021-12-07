@@ -16,7 +16,7 @@ public interface FacetCreator {
 	/**
 	 * Build aggregation that is necessary to create the according facets.
 	 * 
-	 * @return
+	 * @return configured aggregation-builder
 	 */
 	AggregationBuilder buildAggregation();
 
@@ -26,7 +26,8 @@ public interface FacetCreator {
 	 * includes list.
 	 * 
 	 * @param includeNames
-	 * @return
+	 *        names of data fields for which the aggregations should be built
+	 * @return configured aggregation-builder
 	 */
 	AggregationBuilder buildIncludeFilteredAggregation(Set<String> includeNames);
 
@@ -35,7 +36,8 @@ public interface FacetCreator {
 	 * ones in the exlude list.
 	 * 
 	 * @param excludeNames
-	 * @return
+	 *        names of data fields that MUST NOT be part of this aggregation
+	 * @return configured aggregation-builder
 	 */
 	AggregationBuilder buildExcludeFilteredAggregation(Set<String> excludeNames);
 
@@ -43,9 +45,12 @@ public interface FacetCreator {
 	 * create facets from aggregation result.
 	 * 
 	 * @param aggResult
+	 *        ES aggregagtion result
 	 * @param filterContext
+	 *        the filter context
 	 * @param linkBuilder
-	 * @return
+	 *        a link builder to create facet-entry-links
+	 * @return a list of facets that can be derived from the aggregation result
 	 */
 	Collection<Facet> createFacets(Aggregations aggResult, FilterContext filterContext, SearchQueryBuilder linkBuilder);
 
@@ -54,8 +59,10 @@ public interface FacetCreator {
 	 * Optional.empty.
 	 * 
 	 * @param first
+	 *        Facet A
 	 * @param second
-	 * @return
+	 *        Facet B
+	 * @return optionally a merged Facet, otherwise Optional::empty
 	 */
 	Optional<Facet> mergeFacets(Facet first, Facet second);
 }

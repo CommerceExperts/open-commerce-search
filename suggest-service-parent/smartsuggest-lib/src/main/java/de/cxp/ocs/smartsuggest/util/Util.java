@@ -5,7 +5,15 @@ import static de.cxp.ocs.smartsuggest.spi.CommonPayloadFields.PAYLOAD_GROUPMATCH
 
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collector;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.lucene.search.suggest.Lookup;
+import org.apache.lucene.search.suggest.Lookup.LookupResult;
+
+import com.google.common.collect.Comparators;
 
 import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
 import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester;
@@ -71,39 +79,102 @@ public class Util {
 	}
 
 	/**
-	 * Returns the {@code Comparator} used to sort fuzzy suggestions within the
-	 * {@value LuceneQuerySuggester#FUZZY_MATCHES_ONE_EDIT_GROUP_NAME}
-	 * and
-	 * {@value LuceneQuerySuggester#FUZZY_MATCHES_TWO_EDITS_GROUP_NAME}.
-	 * Those suggestions are sorted on their common chars to the search term at
-	 * first and on their weight at second.
+	 * <p>
+	 * Returns the {@code Comparator} that orders suggestion according to
+	 * their common prefix to the given 'term'. Queries with a longer common
+	 * prefix are preferred.
+	 * </p>
 	 * 
 	 * @param locale
 	 *        the locale of the client. Used to load the proper stopwords
 	 * @param term
 	 *        the term for which to get suggestions
-	 * @return the {@code Comparator} for fuzzy suggestions.
+	 * @return the {@code Comparator}
 	 */
-	public static Comparator<Suggestion> getFuzzySuggestionComparator(Locale locale, String term) {
+	public static Comparator<Lookup.LookupResult> getCommonPrefixComparator(Locale locale, String term) {
 		return (s1, s2) -> {
-			final double s1CommonChars = Util.commonChars(locale, s1.getLabel(), term);
-			final double s2CommonChars = Util.commonChars(locale, s2.getLabel(), term);
+			String _term = term.toLowerCase(locale);
+			String s1Label = s1.key.toString().toLowerCase(locale);
+			String s2Label = s2.key.toString().toLowerCase(locale);
+
+			int s1CommonPrefix = getCommonPrefixLength(s1Label, _term);
+			int s2CommonPrefix = getCommonPrefixLength(s2Label, _term);
+
+			if (s1CommonPrefix == 0 && s2CommonPrefix == 0) {
+				// XXX we could improve hat a little more by considering the
+				// tokens of the term as well, but that will become costly..
+				s1CommonPrefix = getMaxTokenCommonPrefixLength(_term, StringUtils.split(s1Label, ' '), 1);
+				s2CommonPrefix = getMaxTokenCommonPrefixLength(_term, StringUtils.split(s2Label, ' '), 1);
+			}
+
+			// prefer longer common prefix => desc order
+			return Integer.compare(s2CommonPrefix, s1CommonPrefix);
+		};
+	}
+
+	private static int getMaxTokenCommonPrefixLength(String term, String[] tokens, int tokenOffset) {
+		int maxPrefixLength = 0;
+		for (int i = tokenOffset; i < tokens.length; i++) {
+			int tokenCommonPrefixLength = getCommonPrefixLength(tokens[i], term);
+			if (tokenCommonPrefixLength > maxPrefixLength) maxPrefixLength = tokenCommonPrefixLength;
+		}
+		return maxPrefixLength;
+	}
+
+	public static int getCommonPrefixLength(String a, String b) {
+		if (a == null || b == null || a.isEmpty() || b.isEmpty()) return 0;
+		int i = 0;
+		for (; i < a.length() && i < b.length(); i++) {
+			if (a.charAt(i) != b.charAt(i)) break;
+		}
+		return i;
+	}
+
+	/**
+	 * <p>
+	 * Returns the {@code Comparator} that orders suggestion with according to
+	 * their common chars to the given 'term'. Queries with more common chars
+	 * are preferred.
+	 * </p>
+	 * 
+	 * @param locale
+	 *        the locale of the client. Used to load the proper stopwords
+	 * @param term
+	 *        the term for which to get suggestions
+	 * @return the {@code Comparator}
+	 */
+	public static Comparator<Suggestion> getSuggestionsCommonCharsComparator(Locale locale, String term) {
+		return (s1, s2) -> {
+			double s1CommonChars = Util.commonChars(locale, s1.getLabel(), term);
+			double s2CommonChars = Util.commonChars(locale, s2.getLabel(), term);
+
 			// prefer more common chars => desc order
-			int commonCharsCompare = Double.compare(s2CommonChars, s1CommonChars);
-			return commonCharsCompare != 0
-					? commonCharsCompare
-					: Long.compare(s2.getWeight(), s1.getWeight());
+			return Double.compare(s2CommonChars, s1CommonChars);
+		};
+	}
+
+	private static Comparator<Lookup.LookupResult> getCommonCharsComparator(Locale locale, String term) {
+		return (s1, s2) -> {
+			double s1CommonChars = Util.commonChars(locale, s1.key.toString(), term);
+			double s2CommonChars = Util.commonChars(locale, s2.key.toString(), term);
+
+			// prefer more common chars => desc order
+			return Double.compare(s2CommonChars, s1CommonChars);
 		};
 	}
 
 	/**
-	 * Returns the {@code Comparator} used to sort suggestions within the
-	 * {@value LuceneQuerySuggester#SHARPENED_GROUP_NAME}.
+	 * Returns the {@code Comparator} used to sort suggestions by their weight,
+	 * where queries of the group
+	 * {@value LuceneQuerySuggester#SHARPENED_GROUP_NAME} are preferred over all
+	 * others (=max weight).
 	 * 
 	 * @return the {@code Comparator} for sharpened suggestions.
 	 */
-	public static Comparator<Suggestion> getSharpenedGroupComparator() {
+	public static Comparator<Suggestion> getDescendingWeightComparator() {
 		return (s1, s2) -> {
+			// sharpened queries do not have a weight. they must be prefered
+			// everytime
 			String matchGroup1 = s1.getPayload().get(PAYLOAD_GROUPMATCH_KEY);
 			String matchGroup2 = s2.getPayload().get(PAYLOAD_GROUPMATCH_KEY);
 			if (SHARPENED_GROUP_NAME.equals(matchGroup1) || SHARPENED_GROUP_NAME.equals(matchGroup2)) {
@@ -114,5 +185,34 @@ public class Util {
 			// prefer higher weight => reverse order
 			return Long.compare(s2.getWeight(), s1.getWeight());
 		};
+	}
+
+	private static Comparator<? super LookupResult> getRawDescendingWeightComparator() {
+		// TODO Auto-generated method stub
+		return (s1, s2) -> {
+			// prefer higher weight => reverse order
+			return Long.compare(s2.value, s1.value);
+		};
+	}
+
+	/**
+	 * get the first N that have a longer common prefix to the input term, and
+	 * for those with same common prefix, prefer the ones with the higher common
+	 * characters to the input-term, and for those with the same common
+	 * characters prefer the ones with the higher weight.
+	 * 
+	 * @param topK
+	 *        amount of suggestions to collect
+	 * @param locale
+	 *        locale
+	 * @param inputTerm
+	 *        term of the user
+	 * @return a suggestion collector
+	 */
+	public static Collector<Lookup.LookupResult, ?, List<Lookup.LookupResult>> getTopKFuzzySuggestionCollector(int topK, Locale locale, String inputTerm) {
+		return Comparators.least(topK,
+				Util.getCommonPrefixComparator(locale, inputTerm)
+						.thenComparing(Util.getCommonCharsComparator(locale, inputTerm))
+						.thenComparing(Util.getRawDescendingWeightComparator()));
 	}
 }

@@ -64,12 +64,13 @@ pipeline {
           sh 'docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate -i /local/open-commerce-search-api/src/main/resources/openapi.yaml -g markdown -o /local/docs/openapi/'
           sh 'sed -i "1,2d" docs/openapi/README.md' // remove first two lines with unnecessary header
           sh 'mv docs/openapi/README.md docs/openapi/index.md'
+          sh "grep -RFl 'README.md' docs/openapi/* | xargs -L1 sed -i 's/README.md/index.md/g'"
 
           // commit + push changes
           withCredentials([usernamePassword(credentialsId: 'github-cxp-bot-credentials', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
             sh 'git config credential.helper store'
             sh 'echo "https://$USERNAME:$PASSWORD@github.com" > ~/.git-credentials'
-            sh 'git commit docs/* -m "Update docs" && git push || echo "docs unchanged"'
+            sh 'git add docs/*; git commit -m "Update docs" && git push --force origin HEAD:docs || echo "docs unchanged"'
             sh 'rm ~/.git-credentials'
           }
         }

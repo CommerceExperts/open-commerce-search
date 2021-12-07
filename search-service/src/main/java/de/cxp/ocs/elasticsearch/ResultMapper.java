@@ -25,9 +25,48 @@ public class ResultMapper {
 	private ResultMapper() {}
 
 	public static ResultHit mapSearchHit(SearchHit hit, Map<String, SortOrder> sortedFields) {
-		SearchHits variantHits = hit.getInnerHits().get("variants");
+		return mapSearchHit(hit, sortedFields, false);
+	}
+
+	/**
+	 * Extract a result document from the search-hit. This includes some extra
+	 * logic for variant handling:
+	 * <ul>
+	 * <li>If sortedFields are given, then documents that have several values at
+	 * a sort field will get a "${fieldname}_prefix" field with the value
+	 * '{from}' (for asc order) or '{to}' (for desc order). Also according to
+	 * the sort order the according lowest or highest value is put into the
+	 * according field.<br>
+	 * Example: With this behavior it is possible to show "from 10€" (for
+	 * asc price sorting) or "to 59€" (for desc price sorting) for products that
+	 * have several variants with different prices.
+	 * </li>
+	 * <li>
+	 * The result-data of a variant is put into the document if one of the
+	 * following conditions met:<br>
+	 * - the search hit only contains 1 variant<br>
+	 * - the first variant has a better matching score than the second
+	 * variant<br>
+	 * - the 'preferVariantHits' flag is true
+	 * </li>
+	 * </ul>
+	 * 
+	 * @param hit
+	 *        ES search hit
+	 * @param sortedFields
+	 *        map with field-to-sortOrder entries applicable on variant level
+	 *        (no validation done here)
+	 * @param preferVariantHits
+	 *        set to true, if you want to prefer the first variant hit if
+	 *        available
+	 * @return
+	 */
+	public static ResultHit mapSearchHit(SearchHit hit, Map<String, SortOrder> sortedFields, boolean preferVariantHits) {
+		SearchHits variantHits = hit.getInnerHits() == null ? null : hit.getInnerHits().get("variants");
 		SearchHit variantHit = null;
-		if (variantHits.getHits().length > 0) {
+		if (preferVariantHits && variantHits != null && variantHits.getHits().length > 0
+				|| variantHits != null && variantHits.getHits().length == 1
+				|| (variantHits != null && variantHits.getHits().length >= 2 && variantHits.getAt(0).getScore() > variantHits.getAt(1).getScore())) {
 			variantHit = variantHits.getAt(0);
 		}
 
@@ -42,17 +81,19 @@ public class ResultMapper {
 
 	/**
 	 * If we sort by a numeric value (e.g. price) and there are several
-	 * different
-	 * values at a product for that given field (e.g. multiple prices from the
-	 * variants), then add a prefix "from" or "to" depending on sort order.
+	 * different values at a product for that given field (e.g. multiple prices
+	 * from the variants), then add a prefix "from" or "to" depending on sort
+	 * order.
 	 * 
 	 * The goal is to show "from 10€" if sorted by price ascending and "to 59€"
-	 * if
-	 * sorted by price descending.
+	 * if sorted by price descending.
 	 * 
 	 * @param hit
+	 *        ES search hit
 	 * @param resultHit
+	 *        according OCS mapped result hit
 	 * @param sortedFields
+	 *        map of sort fields
 	 */
 	@SuppressWarnings("unchecked")
 	private static void addSortFieldPrefix(SearchHit hit, ResultHit resultHit, Map<String, SortOrder> sortedFields) {
@@ -82,11 +123,9 @@ public class ResultMapper {
 		Document document = new Document(hit.getId());
 
 		if (source != null) {
-			for (String sourceDataField : new String[] { FieldConstants.SEARCH_DATA, FieldConstants.RESULT_DATA }) {
-				putDataIntoResult(hit.getSourceAsMap(), document.getData(), sourceDataField);
-				if (variantHit != null) {
-					putDataIntoResult(variantHit.getSourceAsMap(), document.getData(), sourceDataField);
-				}
+			putDataIntoResult(hit.getSourceAsMap(), document.getData(), FieldConstants.RESULT_DATA);
+			if (variantHit != null) {
+				putDataIntoResult(variantHit.getSourceAsMap(), document.getData(), FieldConstants.RESULT_DATA);
 			}
 		}
 
@@ -130,6 +169,7 @@ public class ResultMapper {
 		return mapped;
 	}
 
+	@SuppressWarnings("unchecked")
 	private static boolean isMapList(Object data, Predicate<Object> keyPredicate, Predicate<Object> valuePredicate) {
 		boolean isWantedMap = data instanceof List
 				&& ((List<Object>) data).size() > 0

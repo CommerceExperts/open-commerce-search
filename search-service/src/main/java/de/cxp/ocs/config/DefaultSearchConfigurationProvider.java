@@ -12,7 +12,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class DefaultSearchConfigrationProvider implements SearchConfigurationProvider {
+public class DefaultSearchConfigurationProvider implements SearchConfigurationProvider {
 
 	@NonNull
 	private final ApplicationProperties properties;
@@ -101,6 +101,11 @@ public class DefaultSearchConfigrationProvider implements SearchConfigurationPro
 	@Override
 	public Set<String> getConfiguredTenants() {
 		return properties.getTenantConfig().keySet();
+	}
+
+	@Override
+	public void setDefaultProvider(SearchConfigurationProvider defaultSearchConfigrationProvider) {
+		// nothing to do. we are the default
 	}
 
 }

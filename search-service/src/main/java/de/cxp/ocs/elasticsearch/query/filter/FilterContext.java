@@ -35,8 +35,11 @@ public class FilterContext {
 	@Getter
 	private final QueryBuilder joinedPostFilters;
 
+	@Getter
+	private final QueryBuilder variantPostFilters;
+
 	public FilterContext(Map<String, InternalResultFilter> internalFilters) {
-		this(internalFilters, NO_FILTER, NO_FILTER, NO_QUERY, null);
+		this(internalFilters, NO_FILTER, NO_FILTER, NO_QUERY, null, null);
 	}
 
 	/**
@@ -47,7 +50,7 @@ public class FilterContext {
 	 *        the filter query that should not be joined.
 	 * @param filterQueries
 	 *        all the filter queries that should be joined
-	 * @return
+	 * @return a merged QueryBuilder
 	 */
 	public static Optional<QueryBuilder> joinAllButOne(String exclude, Map<String, QueryBuilder> filterQueries) {
 		// don't use "remove" or similar on filterQueries,

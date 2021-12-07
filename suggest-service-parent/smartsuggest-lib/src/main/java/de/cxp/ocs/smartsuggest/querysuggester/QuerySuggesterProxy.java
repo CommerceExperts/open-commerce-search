@@ -49,7 +49,9 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 	 * names for logging and metrics
 	 * 
 	 * @param indexName
+	 *        index name
 	 * @param dataProviderName
+	 *        data provider name
 	 */
 	public QuerySuggesterProxy(String indexName, String dataProviderName) {
 		this.indexName = indexName;

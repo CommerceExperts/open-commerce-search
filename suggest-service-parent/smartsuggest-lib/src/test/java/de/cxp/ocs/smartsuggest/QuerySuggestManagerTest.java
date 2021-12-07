@@ -5,7 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -20,8 +23,10 @@ import de.cxp.ocs.smartsuggest.querysuggester.CompoundQuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggesterProxy;
 import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
+import de.cxp.ocs.smartsuggest.spi.standard.DefaultSuggestConfigProvider;
 
 class QuerySuggestManagerTest {
 
@@ -32,6 +37,7 @@ class QuerySuggestManagerTest {
 
 	private RemoteSuggestDataProviderSimulation				serviceMock	= new RemoteSuggestDataProviderSimulation();
 	private QuerySuggestManager querySuggestManager;
+	private SuggestConfigProvider				defaultConfigProvider	= new DefaultSuggestConfigProvider();
 
 	QuerySuggestManager withUpdateRate(QuerySuggestManager manager, int updateRate) throws Exception {
 		Field updateRateField = QuerySuggestManager.class.getDeclaredField("updateRate");
@@ -48,7 +54,7 @@ class QuerySuggestManagerTest {
 	@Test
 	void basicTest() throws Exception {
 		serviceMock.updateSuggestions(testTenant1, Collections.emptyList());
-		querySuggestManager = withUpdateRate(new QuerySuggestManager(serviceMock), 1);
+		querySuggestManager = withUpdateRate(new QuerySuggestManager(defaultConfigProvider, serviceMock), 1);
 		QuerySuggester suggester = querySuggestManager.getQuerySuggester(testTenant1);
 
 		assertThat(suggester).isNotNull();
@@ -70,7 +76,7 @@ class QuerySuggestManagerTest {
 
 	@Test
 	void twoChannelsBasicTest() throws Exception {
-		querySuggestManager = withUpdateRate(new QuerySuggestManager(serviceMock), 1);
+		querySuggestManager = withUpdateRate(new QuerySuggestManager(defaultConfigProvider, serviceMock), 1);
 
 		serviceMock.updateSuggestions(testTenant1, singletonList(s("foo", "fnord")));
 		serviceMock.updateSuggestions(testTenant2, singletonList(s("bar", "bart")));
@@ -93,7 +99,7 @@ class QuerySuggestManagerTest {
 	@Test
 	void failingService() throws Exception {
 		serviceMock.updateSuggestions(testTenant1, singletonList(s("foo", "fnord")));
-		querySuggestManager = withUpdateRate(new QuerySuggestManager(serviceMock), 1);
+		querySuggestManager = withUpdateRate(new QuerySuggestManager(defaultConfigProvider, serviceMock), 1);
 		QuerySuggester suggester = querySuggestManager.getQuerySuggester(testTenant1);
 
 		Thread.sleep(UPDATE_LATENCY); // wait shortly until loaded
@@ -135,7 +141,7 @@ class QuerySuggestManagerTest {
 	void noopChannel() throws IOException {
 		SuggestDataProvider api = mock(SuggestDataProvider.class);
 
-		try (QuerySuggestManager qm = new QuerySuggestManager(api)) {
+		try (QuerySuggestManager qm = new QuerySuggestManager(defaultConfigProvider, api)) {
 			QuerySuggester noopMapper = qm.getQuerySuggester("noop");
 			assertThat(noopMapper.suggest("foo")).isEmpty();
 		}
@@ -145,7 +151,7 @@ class QuerySuggestManagerTest {
 
 	@Test
 	void destroySuggesterTest() throws Exception {
-		querySuggestManager = withUpdateRate(new QuerySuggestManager(serviceMock), 1);
+		querySuggestManager = withUpdateRate(new QuerySuggestManager(defaultConfigProvider, serviceMock), 1);
 
 		serviceMock.updateSuggestions(testTenant1, Arrays.asList(s("foo", "1")));
 		QuerySuggester suggester = querySuggestManager.getQuerySuggester(testTenant1, true);
@@ -170,7 +176,7 @@ class QuerySuggestManagerTest {
 		RemoteSuggestDataProviderSimulation dp2 = new RemoteSuggestDataProviderSimulation();
 		SuggestDataProvider mock = mock(SuggestDataProvider.class);
 
-		querySuggestManager = withUpdateRate(new QuerySuggestManager(dp1, dp2, mock), 1);
+		querySuggestManager = withUpdateRate(new QuerySuggestManager(defaultConfigProvider, dp1, dp2, mock), 1);
 
 		// subtest 1: only one data provider has data
 		dp1.updateSuggestions("index1", Arrays.asList(new SuggestRecord("query1", "matching text", null, null, 10L)));
@@ -203,7 +209,7 @@ class QuerySuggestManagerTest {
 	 */
 	@SuppressWarnings("resource")
 	private QuerySuggester getQuerySuggester(SuggestDataProvider apiStub) {
-		return new QuerySuggestManager(apiStub).getQuerySuggester(testTenant1);
+		return new QuerySuggestManager(defaultConfigProvider, apiStub).getQuerySuggester(testTenant1);
 	}
 
 	private SuggestRecord s(String variant, String bestMatch) {

@@ -11,6 +11,7 @@ public interface Instrumentable {
 	 * meter-registry). If not available, no metrics should be measured.
 	 * 
 	 * @param metricsRegistryAdapter
+	 *        optional adapter
 	 * @param tags
 	 *        these "standard" tags should be used for all added sensors. More
 	 *        tags can be added.

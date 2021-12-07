@@ -11,5 +11,5 @@ Name | Type | Description | Notes
 **meta** | **Map** | Optional meta data for that facet, e.g. display hints like a label or a facet-type. | [optional] [default to null]
 **type** | **String** | The type of the facet, so the kind of FacetEntries it contains. See the according FacetEntry variants for more details. | [optional] [default to null]
 
-[[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
+[[Back to Model list]](../index.md#documentation-for-models) [[Back to API list]](../index.md#documentation-for-api-endpoints) [[Back to README]](../index.md)
 
