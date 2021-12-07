@@ -59,8 +59,8 @@ public class SuggestConfig {
 
 	public SuggestConfig() {
 		// legacy: it was possible to set this setting using a system property
-		if (Boolean.getBoolean("doReorderSecondaryMatches")) {
-			this.setSortStrategy(SortStrategy.PrimaryAndSecondaryByWeight);
+		if (System.getProperty("doReorderSecondaryMatches") != null && !Boolean.getBoolean("doReorderSecondaryMatches")) {
+			this.setSortStrategy(SortStrategy.MatchGroupsSeparated);
 		}
 	}
 
