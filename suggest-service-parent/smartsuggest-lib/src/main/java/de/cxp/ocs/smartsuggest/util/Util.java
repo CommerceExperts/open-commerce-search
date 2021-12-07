@@ -10,6 +10,8 @@ import java.util.Locale;
 import java.util.stream.Collector;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.lucene.search.suggest.Lookup;
+import org.apache.lucene.search.suggest.Lookup.LookupResult;
 
 import com.google.common.collect.Comparators;
 
@@ -89,11 +91,11 @@ public class Util {
 	 *        the term for which to get suggestions
 	 * @return the {@code Comparator}
 	 */
-	public static Comparator<Suggestion> getCommonPrefixComparator(Locale locale, String term) {
+	public static Comparator<Lookup.LookupResult> getCommonPrefixComparator(Locale locale, String term) {
 		return (s1, s2) -> {
 			String _term = term.toLowerCase(locale);
-			String s1Label = s1.getLabel().toLowerCase(locale);
-			String s2Label = s2.getLabel().toLowerCase(locale);
+			String s1Label = s1.key.toString().toLowerCase(locale);
+			String s2Label = s2.key.toString().toLowerCase(locale);
 
 			int s1CommonPrefix = getCommonPrefixLength(s1Label, _term);
 			int s2CommonPrefix = getCommonPrefixLength(s2Label, _term);
@@ -141,10 +143,20 @@ public class Util {
 	 *        the term for which to get suggestions
 	 * @return the {@code Comparator}
 	 */
-	public static Comparator<Suggestion> getCommonCharsComparator(Locale locale, String term) {
+	public static Comparator<Suggestion> getSuggestionsCommonCharsComparator(Locale locale, String term) {
 		return (s1, s2) -> {
 			double s1CommonChars = Util.commonChars(locale, s1.getLabel(), term);
 			double s2CommonChars = Util.commonChars(locale, s2.getLabel(), term);
+
+			// prefer more common chars => desc order
+			return Double.compare(s2CommonChars, s1CommonChars);
+		};
+	}
+
+	private static Comparator<Lookup.LookupResult> getCommonCharsComparator(Locale locale, String term) {
+		return (s1, s2) -> {
+			double s1CommonChars = Util.commonChars(locale, s1.key.toString(), term);
+			double s2CommonChars = Util.commonChars(locale, s2.key.toString(), term);
 
 			// prefer more common chars => desc order
 			return Double.compare(s2CommonChars, s1CommonChars);
@@ -175,6 +187,14 @@ public class Util {
 		};
 	}
 
+	private static Comparator<? super LookupResult> getRawDescendingWeightComparator() {
+		// TODO Auto-generated method stub
+		return (s1, s2) -> {
+			// prefer higher weight => reverse order
+			return Long.compare(s2.value, s1.value);
+		};
+	}
+
 	/**
 	 * get the first N that have a longer common prefix to the input term, and
 	 * for those with same common prefix, prefer the ones with the higher common
@@ -189,10 +209,10 @@ public class Util {
 	 *        term of the user
 	 * @return a suggestion collector
 	 */
-	public static Collector<Suggestion, ?, List<Suggestion>> getTopKFuzzySuggestionCollector(int topK, Locale locale, String inputTerm) {
+	public static Collector<Lookup.LookupResult, ?, List<Lookup.LookupResult>> getTopKFuzzySuggestionCollector(int topK, Locale locale, String inputTerm) {
 		return Comparators.least(topK,
 				Util.getCommonPrefixComparator(locale, inputTerm)
 						.thenComparing(Util.getCommonCharsComparator(locale, inputTerm))
-						.thenComparing(Util.getDescendingWeightComparator()));
+						.thenComparing(Util.getRawDescendingWeightComparator()));
 	}
 }

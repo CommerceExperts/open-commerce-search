@@ -316,7 +316,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			// lookup with shingles
 			if ((suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults && contexts == null) {
 				final int itemsToFetchShingles = maxResults - uniqueQueries.size();
-				int resultCount = collectFuzzySuggestions(term, contexts, shingleSuggester, itemsToFetchShingles, uniqueQueries, itemsToFetchShingles, SHINGLE_MATCHES_GROUP_NAME,
+				int resultCount = collectSuggestions(term, contexts, shingleSuggester, itemsToFetchShingles, uniqueQueries, itemsToFetchShingles, SHINGLE_MATCHES_GROUP_NAME,
 						results);
 				perfResult.addStep("shingleMatches", resultCount);
 			}
@@ -346,21 +346,50 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		}
 	}
 
+	/**
+	 * <p>
+	 * Use this method for fuzzy suggesters that have only the primary-text /
+	 * labels indexed. It will fetch more suggestions and reorder them to get
+	 * terms with better prefix- and common-chars matches.
+	 * </p>
+	 * <p>
+	 * ATTENTION: This method MUST only be used for suggesters that only have
+	 * the primary text indexed, because we use the indexed text to check for
+	 * prefix match.
+	 * </p>
+	 * 
+	 * @param term
+	 * @param contexts
+	 * @param suggester
+	 * @param itemsToFetch
+	 * @param uniqueQueries
+	 * @param maxResults
+	 * @param groupName
+	 * @param results
+	 * @return
+	 * @throws IOException
+	 */
 	private int collectFuzzySuggestions(String term, Set<BytesRef> contexts, Lookup suggester, final int itemsToFetch, Set<String> uniqueQueries,
 			int maxResults, String groupName, List<Suggestion> results) throws IOException {
 
 		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, Math.min(itemsToFetch * 100, 1000));
 
 		List<Suggestion> suggestions = lookupResults.stream()
+				.filter(Objects::nonNull)
+				// do not deserialize the hundreds of results yet, instead use
+				// the LookupResult.key (=primary text / =label?) and s.value
+				// (=weight) directly.
+				// Because of that however, we can only use that method only for
+				// suggesters that have only indexed the primary texts = label!
+				.filter(s -> !uniqueQueries.contains(s.key))
+				.collect(Util.getTopKFuzzySuggestionCollector(itemsToFetch + uniqueQueries.size(), suggestConfig.locale, term))
+				.stream()
 				.map(this::getBestMatch)
 				.filter(Objects::nonNull)
-				.filter(suggestion -> !uniqueQueries.contains(suggestion.getLabel()))
-				.collect(Util.getTopKFuzzySuggestionCollector(itemsToFetch, suggestConfig.locale, term));
-
-		suggestions.forEach(s -> {
-			uniqueQueries.add(s.getLabel());
-			withPayloadEntry(s, CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName);
-		});
+				.filter(s -> uniqueQueries.add(s.getLabel()))
+				.limit(itemsToFetch)
+				.peek(s -> withPayloadEntry(s, CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName))
+				.collect(Collectors.toList());
 
 		if (!suggestions.isEmpty()) {
 			results.addAll(suggestions);
@@ -425,7 +454,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		Collections.sort(results, Util.getDescendingWeightComparator()
 				// for queries with same weight, prefer the ones with more
 				// common chars
-				.thenComparing(Util.getCommonCharsComparator(suggestConfig.locale, inputTerm)));
+				.thenComparing(Util.getSuggestionsCommonCharsComparator(suggestConfig.locale, inputTerm)));
 	}
 
 	private List<Suggestion> getUniqueSuggestions(List<Lookup.LookupResult> results, Set<String> uniqueQueries, int maxResults) {
