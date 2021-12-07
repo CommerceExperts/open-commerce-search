@@ -61,7 +61,8 @@ pipeline {
           sh "rm -rf docs/apidocs && mv -v target/site/apidocs docs/"
 
           // regenerate openapi docs
-          sh 'docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli generate -i /local/open-commerce-search-api/src/main/resources/openapi.yaml -g markdown -o /local/docs/openapi/'
+          sh "mvn $MAVEN_CLI_OPTS process-sources -pl open-commerce-search-api -P sync-openapi-spec"
+          sh 'docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli:latest-release generate -i /local/open-commerce-search-api/src/main/resources/openapi.yaml -g markdown -o /local/docs/openapi/'
           sh 'sed -i "1,2d" docs/openapi/README.md' // remove first two lines with unnecessary header
           sh 'mv docs/openapi/README.md docs/openapi/index.md'
           sh "grep -RFl 'README.md' docs/openapi/* | xargs -L1 sed -i 's/README.md/index.md/g'"
