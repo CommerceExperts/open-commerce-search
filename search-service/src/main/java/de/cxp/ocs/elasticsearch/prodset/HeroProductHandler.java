@@ -152,14 +152,16 @@ public class HeroProductHandler {
 			BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
 			float boost = 100f * (float) Math.pow(10, productSets.length);
 			for (int i = 0; i < productSets.length; i++) {
-				// since this is "just" another should clause, the product sets
-				// are still influenced by the matches of the generic user
-				// query.
-				boolQuery.should(
-						QueryBuilders.queryStringQuery(idsAsOrderedBoostQuery(productSets[i].ids))
-								.boost(boost)
-								.defaultField("_id")
-								.defaultOperator(Operator.OR));
+				if (productSets[i].ids.length > 0) {
+					// since this is "just" another should clause, the product
+					// sets are still influenced by the matches of the generic
+					// user query.
+					boolQuery.should(
+							QueryBuilders.queryStringQuery(idsAsOrderedBoostQuery(productSets[i].ids))
+									.boost(boost)
+									.defaultField("_id")
+									.defaultOperator(Operator.OR));
+				}
 				boost /= 10;
 			}
 			return Optional.of(boolQuery);
