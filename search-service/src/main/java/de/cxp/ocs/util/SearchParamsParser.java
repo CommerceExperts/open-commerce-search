@@ -26,10 +26,12 @@ import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SortOrder;
 import de.cxp.ocs.model.result.Sorting;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Utility class to parse search parameters
  */
+@Slf4j
 public class SearchParamsParser {
 
 	public final static String ID_FILTER_SUFFIX = ".id";
@@ -89,41 +91,48 @@ public class SearchParamsParser {
 
 				if (matchingField.isPresent()) {
 					Field field = matchingField.get();
-					String[] paramValues = decodeValueDelimiter(split(paramValue, VALUE_DELIMITER));
-					switch (field.getType()) {
-						case CATEGORY:
-							filters.add(new TermResultFilter(field, paramValues)
-									.setFieldPrefix(FieldConstants.PATH_FACET_DATA)
-									.setFilterOnId(isIdFilter));
-							break;
-						case NUMBER:
-							paramValues = splitPreserveAllTokens(paramValue, VALUE_DELIMITER);
-							if (paramValues.length != 2) {
-								// Fallback logic to allow numeric filter values
-								// separated by dash, e.g. "50 - 100"
-								// however this is error prone, because dash is
-								// also used as minus for negative values. In
-								// such
-								// case this will simply fail
-								paramValues = splitPreserveAllTokens(paramValue, '-');
-								if (paramValues.length != 2) {
-									throw new IllegalArgumentException("unexpected numeric filter value: " + paramValue);
-								}
-							}
-							filters.add(new NumberResultFilter(
-									field,
-									Util.tryToParseAsNumber(paramValues[0]).orElse(null),
-									Util.tryToParseAsNumber(paramValues[1]).orElse(null)));
-							break;
-						default:
-							filters.add(new TermResultFilter(field, paramValues)
-									.setFilterOnId(isIdFilter));
+					try {
+						filters.add(toInternalFilter(field, paramValue, isIdFilter));
+					}
+					catch (IllegalArgumentException iae) {
+						log.error("Ignoring invalid filter parameter {}={}", paramName, paramValue);
 					}
 				}
 			}
 		}
 
 		return filters;
+	}
+
+	private static InternalResultFilter toInternalFilter(Field field, String paramValue, boolean isIdFilter) {
+		String[] paramValues = decodeValueDelimiter(split(paramValue, VALUE_DELIMITER));
+		switch (field.getType()) {
+			case CATEGORY:
+				return new TermResultFilter(field, paramValues)
+						.setFieldPrefix(FieldConstants.PATH_FACET_DATA)
+						.setFilterOnId(isIdFilter);
+			case NUMBER:
+				paramValues = splitPreserveAllTokens(paramValue, VALUE_DELIMITER);
+				if (paramValues.length != 2) {
+					// Fallback logic to allow numeric filter values
+					// separated by dash, e.g. "50 - 100"
+					// however this is error prone, because dash is
+					// also used as minus for negative values. In
+					// such
+					// case this will simply fail
+					paramValues = splitPreserveAllTokens(paramValue, '-');
+					if (paramValues.length != 2) {
+						throw new IllegalArgumentException("unexpected numeric filter value: " + paramValue);
+					}
+				}
+				return new NumberResultFilter(
+						field,
+						Util.tryToParseAsNumber(paramValues[0]).orElse(null),
+						Util.tryToParseAsNumber(paramValues[1]).orElse(null));
+			default:
+				return new TermResultFilter(field, paramValues)
+						.setFilterOnId(isIdFilter);
+		}
 	}
 
 	private static String[] decodeValueDelimiter(String[] split) {
