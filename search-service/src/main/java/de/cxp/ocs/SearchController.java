@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -92,9 +93,11 @@ public class SearchController implements SearchService {
 			.build();
 
 	@PostConstruct
-	private void init() {
-		log.info("SearchController initializing configured tenants {}", plugins.getConfigurationProvider().getConfiguredTenants());
-		plugins.getConfigurationProvider().getConfiguredTenants().forEach(this::flushConfig);
+	@Scheduled(fixedDelayString = "${ocs.scheduler.refresh-config-delay-ms:600000}")
+	public void refreshAllConfigs() {
+		Set<String> configuredTenants = plugins.getConfigurationProvider().getConfiguredTenants();
+		log.info("SearchController {} configured tenants {}", searchClientCache.size() == 0 ? "initializing" : "reloading", configuredTenants);
+		configuredTenants.forEach(this::flushConfig);
 	}
 
 	@GetMapping("/flushConfig/{tenant}")
