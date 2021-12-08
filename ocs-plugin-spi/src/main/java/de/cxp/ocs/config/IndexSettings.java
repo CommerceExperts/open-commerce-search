@@ -9,4 +9,6 @@ public class IndexSettings {
 
 	public String refreshInterval = "5s";
 
+	public long minimumDocumentCount = 1;
+
 }
