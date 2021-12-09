@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import org.elasticsearch.client.RestHighLevelClient;
@@ -36,7 +35,7 @@ public class IndexerFactory {
 
 	private final RestHighLevelClient elasticsearchClient;
 
-	private AtomicBoolean templatesInitialized = new AtomicBoolean(false);
+	private boolean templatesInitialized = false;
 
 	private final Map<String, Supplier<? extends DocumentPreProcessor>> docPreProcessorSuppliers;
 
@@ -61,6 +60,10 @@ public class IndexerFactory {
 		ExtensionSupplierRegistry<DocumentPostProcessor> indexableItemProcessor = new ExtensionSupplierRegistry<DocumentPostProcessor>();
 		pm.loadAll(DocumentPostProcessor.class).forEach(c -> indexableItemProcessor.register(c));
 		indexableItemProcessorSuppliers = indexableItemProcessor.getExtensionSuppliers();
+
+		// Initialize on startup to avoid blocking multiple index-start requests
+		// at the same time (method is internally synchronized)
+		initializeTemplates();
 	}
 
 	public AbstractIndexer create(IndexConfiguration indexConfiguration) {
@@ -68,6 +71,7 @@ public class IndexerFactory {
 		List<DocumentPostProcessor> postProcessors = new ArrayList<>();
 		initializeDataProcessors(indexConfiguration, preProcessors, postProcessors);
 
+		// make sure the templates are initialized
 		initializeTemplates();
 
 		return new ElasticsearchIndexer(
@@ -108,13 +112,17 @@ public class IndexerFactory {
 	}
 
 	private void initializeTemplates() {
-		if (!templatesInitialized.get()) {
-			try {
-				ElasticsearchBeyonder.start(elasticsearchClient.getLowLevelClient(), Defaults.ConfigDir, Defaults.MergeMappings, true);
-				templatesInitialized.set(true);
-			}
-			catch (Exception e) {
-				log.error("failed to initialize templates!", e);
+		if (!templatesInitialized) {
+			synchronized (this) {
+				if (!templatesInitialized) {
+					try {
+						ElasticsearchBeyonder.start(elasticsearchClient.getLowLevelClient(), Defaults.ConfigDir, Defaults.MergeMappings, true);
+						templatesInitialized = true;
+					}
+					catch (Exception e) {
+						log.error("failed to initialize templates!", e);
+					}
+				}
 			}
 		}
 	}
