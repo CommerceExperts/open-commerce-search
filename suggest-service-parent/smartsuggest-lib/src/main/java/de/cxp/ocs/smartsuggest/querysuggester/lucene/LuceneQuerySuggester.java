@@ -372,7 +372,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	private int collectFuzzySuggestions(String term, Set<BytesRef> contexts, Lookup suggester, final int itemsToFetch, Set<String> uniqueQueries,
 			int maxResults, String groupName, List<Suggestion> results) throws IOException {
 
-		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, Math.min(itemsToFetch * 100, 1000));
+		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, itemsToFetch + uniqueQueries.size());
 
 		List<Suggestion> suggestions = lookupResults.stream()
 				.filter(Objects::nonNull)
@@ -400,7 +400,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 
 	private int collectSuggestions(String term, Set<BytesRef> contexts, Lookup suggester, int itemsToFetch,
 			Set<String> uniqueQueries, int maxResults, String groupName, List<Suggestion> results) throws IOException {
-		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, itemsToFetch);
+		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, itemsToFetch + uniqueQueries.size());
 
 		final List<Suggestion> suggestions = getUniqueSuggestions(lookupResults, uniqueQueries, maxResults);
 		suggestions.forEach(s -> {

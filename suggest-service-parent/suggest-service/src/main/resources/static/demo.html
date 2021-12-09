@@ -37,7 +37,7 @@
 			checkForData();
 		}
 
-		var endpointUrl = 'smartsuggest/'+indexName+'?userQuery=';
+		var endpointUrl = '/suggest-api/v1/'+indexName+'/suggest/?userQuery=';
 		var waitTime = 2;
 		function checkForData() {
 			var xhr = new XMLHttpRequest();
@@ -81,7 +81,7 @@
 			renderItem: function (item, search){
 				search = search.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&amp;');
 				var re = new RegExp("(" + search.split(' ').join('|') + ")", "gi");
-				return '<div class="autocomplete-suggestion" data-val="'+item+'">'+item.replace(re, "<b>$1</b>")+'</div>';
+				return '<div class="autocomplete-suggestion" data-val="'+item.phrase+'">'+item.phrase.replace(re, "<b>$1</b>")+'</div>';
 			},
 			onSelect: function(e, term, item){
 				console.log('Item "'+item.getAttribute('data-val')+' selected by '+(e.type == 'keydown' ? 'pressing enter' : 'mouse click')+'.');
