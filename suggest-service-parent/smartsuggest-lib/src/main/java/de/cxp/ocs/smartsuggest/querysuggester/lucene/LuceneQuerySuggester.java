@@ -454,7 +454,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		Collections.sort(results, Util.getDescendingWeightComparator()
 				// for queries with same weight, prefer the ones with more
 				// common chars
-				.thenComparing(Util.getSuggestionsCommonCharsComparator(suggestConfig.locale, inputTerm)));
+				.thenComparing(Util.getCommonCharsComparator(suggestConfig.locale, inputTerm)));
 	}
 
 	private List<Suggestion> getUniqueSuggestions(List<Lookup.LookupResult> results, Set<String> uniqueQueries, int maxResults) {

@@ -7,6 +7,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Function;
 import java.util.stream.Collector;
 
 import org.apache.commons.lang3.StringUtils;
@@ -91,11 +92,19 @@ public class Util {
 	 *        the term for which to get suggestions
 	 * @return the {@code Comparator}
 	 */
-	public static Comparator<Lookup.LookupResult> getCommonPrefixComparator(Locale locale, String term) {
+	public static Comparator<Suggestion> getCommonPrefixComparator(Locale locale, String term) {
+		return _getCommonPrefixComparator(locale, term, Suggestion::getLabel);
+	}
+
+	private static Comparator<Lookup.LookupResult> getRawCommonPrefixComparator(Locale locale, String term) {
+		return _getCommonPrefixComparator(locale, term, r -> r.key.toString());
+	}
+
+	private static <T> Comparator<T> _getCommonPrefixComparator(Locale locale, String term, Function<T, String> toStringMethod) {
 		return (s1, s2) -> {
 			String _term = term.toLowerCase(locale);
-			String s1Label = s1.key.toString().toLowerCase(locale);
-			String s2Label = s2.key.toString().toLowerCase(locale);
+			String s1Label = toStringMethod.apply(s1).toLowerCase(locale);
+			String s2Label = toStringMethod.apply(s2).toLowerCase(locale);
 
 			int s1CommonPrefix = getCommonPrefixLength(s1Label, _term);
 			int s2CommonPrefix = getCommonPrefixLength(s2Label, _term);
@@ -143,20 +152,18 @@ public class Util {
 	 *        the term for which to get suggestions
 	 * @return the {@code Comparator}
 	 */
-	public static Comparator<Suggestion> getSuggestionsCommonCharsComparator(Locale locale, String term) {
-		return (s1, s2) -> {
-			double s1CommonChars = Util.commonChars(locale, s1.getLabel(), term);
-			double s2CommonChars = Util.commonChars(locale, s2.getLabel(), term);
-
-			// prefer more common chars => desc order
-			return Double.compare(s2CommonChars, s1CommonChars);
-		};
+	public static Comparator<Suggestion> getCommonCharsComparator(Locale locale, String term) {
+		return _getCommonCharsComparator(locale, term, Suggestion::getLabel);
 	}
 
-	private static Comparator<Lookup.LookupResult> getCommonCharsComparator(Locale locale, String term) {
+	private static Comparator<Lookup.LookupResult> getRawCommonCharsComparator(Locale locale, String term) {
+		return _getCommonCharsComparator(locale, term, r -> r.key.toString());
+	}
+
+	private static <T> Comparator<T> _getCommonCharsComparator(Locale locale, String term, Function<T, String> toStringMethod) {
 		return (s1, s2) -> {
-			double s1CommonChars = Util.commonChars(locale, s1.key.toString(), term);
-			double s2CommonChars = Util.commonChars(locale, s2.key.toString(), term);
+			double s1CommonChars = Util.commonChars(locale, toStringMethod.apply(s1), term);
+			double s2CommonChars = Util.commonChars(locale, toStringMethod.apply(s2), term);
 
 			// prefer more common chars => desc order
 			return Double.compare(s2CommonChars, s1CommonChars);
@@ -196,10 +203,13 @@ public class Util {
 	}
 
 	/**
-	 * get the first N that have a longer common prefix to the input term, and
-	 * for those with same common prefix, prefer the ones with the higher common
-	 * characters to the input-term, and for those with the same common
-	 * characters prefer the ones with the higher weight.
+	 * Collector to get the first N suggestions by this order:
+	 * <ul>
+	 * <li>First prefer the ones with more common prefix with the input
+	 * term</li>
+	 * <li>Then prefer the ones with more common chars with the input term</li>
+	 * <li>Finally prefer the ones with higher weight</li>
+	 * </ul>
 	 * 
 	 * @param topK
 	 *        amount of suggestions to collect
@@ -211,8 +221,27 @@ public class Util {
 	 */
 	public static Collector<Lookup.LookupResult, ?, List<Lookup.LookupResult>> getTopKFuzzySuggestionCollector(int topK, Locale locale, String inputTerm) {
 		return Comparators.least(topK,
-				Util.getCommonPrefixComparator(locale, inputTerm)
-						.thenComparing(Util.getCommonCharsComparator(locale, inputTerm))
+				Util.getRawCommonPrefixComparator(locale, inputTerm)
+						.thenComparing(Util.getRawCommonCharsComparator(locale, inputTerm))
 						.thenComparing(Util.getRawDescendingWeightComparator()));
+	}
+
+	/**
+	 * Retrieve comparator to optimally order fuzzy suggestions:
+	 * <ul>
+	 * <li>First prefer the ones with more common prefix with the input
+	 * term</li>
+	 * <li>Then prefer the ones with more common chars with the input term</li>
+	 * <li>Finally prefer the ones with higher weight</li>
+	 * </ul>
+	 * 
+	 * @param locale
+	 * @param inputTerm
+	 * @return
+	 */
+	public static Comparator<Suggestion> getFuzzySuggestionsComparator(Locale locale, String inputTerm) {
+		return Util.getCommonPrefixComparator(locale, inputTerm)
+				.thenComparing(Util.getCommonCharsComparator(locale, inputTerm))
+				.thenComparing(Util.getDescendingWeightComparator());
 	}
 }
