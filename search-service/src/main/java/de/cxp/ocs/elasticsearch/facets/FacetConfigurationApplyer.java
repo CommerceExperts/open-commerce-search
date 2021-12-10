@@ -297,9 +297,6 @@ public class FacetConfigurationApplyer {
 	}
 
 	private QueryBuilder getExclusivePostFilterQuery(String postFilterName, InternalResultFilter internalFilter, Map<String, QueryBuilder> postFilters) {
-		String nestedPrefix = internalFilter.getFieldPrefix();
-		String nestedFilterNamePath = nestedPrefix + ".name";
-
 		// and combines that with all other post filters
 		QueryBuilder finalAggFilter = FilterContext.joinAllButOne(postFilterName, postFilters)
 				.orElse(QueryBuilders.matchAllQuery());

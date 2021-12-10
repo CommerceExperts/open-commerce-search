@@ -420,9 +420,8 @@ public class Searcher {
 		if (fetchSources) {
 			List<String> includeFields = new ArrayList<>();
 			includeFields.add(FieldConstants.RESULT_DATA + ".*");
-			// TODO: return search data only if configured
-			includeFields.add(FieldConstants.SEARCH_DATA + ".*");
 			if (variantSortings.size() > 0) {
+				// necessary for ResultMapper::addSortFieldPrefix
 				includeFields.add(FieldConstants.SORT_DATA + ".*");
 			}
 

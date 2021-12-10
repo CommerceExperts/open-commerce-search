@@ -98,6 +98,7 @@ public final class Util {
 		return collection;
 	}
 
+	@SuppressWarnings("unchecked")
 	private static void unwrapIterable(Object o, Consumer<Collection<Object>> collectionConsumer, Consumer<Object> objectConsumer) {
 		if (o == null) return;
 		if (o instanceof Collection<?>) {

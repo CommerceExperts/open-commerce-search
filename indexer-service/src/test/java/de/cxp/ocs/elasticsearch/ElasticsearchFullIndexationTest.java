@@ -1,10 +1,19 @@
 package de.cxp.ocs.elasticsearch;
 
-import static de.cxp.ocs.config.FieldType.*;
-import static de.cxp.ocs.config.FieldUsage.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static de.cxp.ocs.config.FieldType.CATEGORY;
+import static de.cxp.ocs.config.FieldType.ID;
+import static de.cxp.ocs.config.FieldType.STRING;
+import static de.cxp.ocs.config.FieldUsage.FACET;
+import static de.cxp.ocs.config.FieldUsage.RESULT;
+import static de.cxp.ocs.config.FieldUsage.SEARCH;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -53,7 +62,7 @@ public class ElasticsearchFullIndexationTest {
 
 		when(mockedIndexClient.indexRecords(any(), any())).thenReturn(Optional.empty());
 		underTest.add(data);
-		verify(mockedIndexClient).indexRecords((String) argThat(new Equals(importSession.temporaryIndexName)), anyObject());
+		verify(mockedIndexClient).indexRecords((String) argThat(new Equals(importSession.temporaryIndexName)), any());
 
 		underTest.done(importSession);
 		verify(mockedIndexClient).updateAlias(importSession.finalIndexName, null, importSession.temporaryIndexName);

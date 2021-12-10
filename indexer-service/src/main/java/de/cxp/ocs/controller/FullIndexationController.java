@@ -34,7 +34,7 @@ public class FullIndexationController {
 	private IndexerCache indexerManager;
 
 	@GetMapping("/start/{indexName}")
-	public ResponseEntity startImport(@PathVariable("indexName") String indexName, @RequestParam("locale") String locale) {
+	public ResponseEntity<?> startImport(@PathVariable("indexName") String indexName, @RequestParam("locale") String locale) {
 		if (indexName == null || indexName.isEmpty()) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		if (locale == null || locale.isEmpty()) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		MDC.put("index", indexName);

@@ -1,6 +1,10 @@
 package de.cxp.ocs.preprocessor.impl;
 
-import static de.cxp.ocs.conf.converter.FlagFieldConfiguration.*;
+import static de.cxp.ocs.conf.converter.FlagFieldConfiguration.FIELD_FLAG_DESTINATION;
+import static de.cxp.ocs.conf.converter.FlagFieldConfiguration.FIELD_NO_MATCH;
+import static de.cxp.ocs.conf.converter.FlagFieldConfiguration.GROUP_SEPARATOR;
+import static de.cxp.ocs.conf.converter.FlagFieldConfiguration.TYPE_CONF;
+import static de.cxp.ocs.conf.converter.FlagFieldConfiguration.TYPE_FIELD;
 
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -69,11 +73,9 @@ import lombok.extern.slf4j.Slf4j;
 public class FlagFieldDataProcessor implements DocumentPreProcessor {
 
 	private List<FlagFieldConfiguration>	flagFieldConf;
-	private FieldConfigAccess				fieldConfAccess;
 
 	@Override
 	public void initialize(FieldConfigAccess fieldConfig, Map<String, String> confMap) {
-		fieldConfAccess = fieldConfig;
 		if (confMap != null) {
 			Map<String, Map<String, List<Entry<String, String>>>> groupToTypeConf = confMap.entrySet().stream()
 					.collect(Collectors

@@ -1,11 +1,13 @@
 package de.cxp.ocs.model.params;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 @NoArgsConstructor
 @Data
+@EqualsAndHashCode(callSuper = true)
 @Accessors(chain = true)
 public class ArrangedSearchQuery extends FilteredSearchQuery {
 

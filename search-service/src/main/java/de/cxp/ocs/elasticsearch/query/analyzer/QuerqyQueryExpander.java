@@ -114,7 +114,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 					terms.add(termFetcher.getWords().get(0));
 				}
 				else {
-					terms.add(new WordAssociation(fetchedWords.get(0).getWord(), new ArrayList(fetchedWords.subList(1, fetchedWords.size()))));
+					terms.add(new WordAssociation(fetchedWords.get(0).getWord(), new ArrayList<>(fetchedWords.subList(1, fetchedWords.size()))));
 				}
 				termFetcher.getWords().clear();
 
@@ -126,7 +126,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 
 		if (expandedQuery.getFilterQueries() != null) {
 			Collection<QuerqyQuery<?>> filterQueries = expandedQuery.getFilterQueries();
-			for (QuerqyQuery qq : filterQueries) {
+			for (QuerqyQuery<?> qq : filterQueries) {
 				qq.accept(termFetcher);
 				terms.addAll(termFetcher.getWords());
 				termFetcher.words.clear();

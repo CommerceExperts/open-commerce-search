@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest.AliasActions;
@@ -247,7 +246,6 @@ class ElasticsearchIndexClient {
 				log.warn("failed to add record to bulk request", e);
 			}
 		}
-		// TODO use BulkProcessor
 		if (docCount > 0) return Optional.ofNullable(highLevelClient.bulk(bulkIndexRequest, RequestOptions.DEFAULT));
 		else return Optional.empty();
 	}
@@ -308,8 +306,7 @@ class ElasticsearchIndexClient {
 			settings = highLevelClient.indices()
 					.getSettings(new GetSettingsRequest().indices(indexName), RequestOptions.DEFAULT);
 		}
-		// TODO: other methods catching exceptions should use Optional response
-		catch (ElasticsearchStatusException | IOException e) {
+		catch (RuntimeException | IOException e) {
 			log.warn("couldn't get settings for index {}: IOException: {}", indexName, e.getMessage());
 			return Optional.empty();
 		}

@@ -66,7 +66,7 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 	 * Similar to patchDocuments, but for the extended sub type {@link Product}
 	 * that supports variants. For some reason this is necessary.
 	 * 
-	 * TODO: may be solved with customer serializer.
+	 * XXX: may be solved with custom serializer.
 	 * 
 	 * @param indexName
 	 * @param products
