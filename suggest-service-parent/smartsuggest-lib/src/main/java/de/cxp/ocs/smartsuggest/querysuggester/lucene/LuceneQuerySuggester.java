@@ -290,7 +290,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 				final int itemsToFetchTypos = maxResults - uniqueQueries.size();
 				int resultCount = collectSuggestions(term, contexts, typoSuggester, itemsToFetchTypos, uniqueQueries, itemsToFetchTypos, TYPO_MATCHES_GROUP_NAME, results);
 				if (SortStrategy.PrimaryAndSecondaryByWeight.equals(suggestConfig.getSortStrategy())) {
-					sortByWeight(results, term);
+					Collections.sort(results, Util.getDefaultComparator(suggestConfig.locale, term));
 				}
 				perfResult.addStep("variantMatches", resultCount);
 			}
@@ -448,13 +448,6 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			s.getPayload().put(key, value);
 		}
 		return s;
-	}
-
-	private void sortByWeight(final List<Suggestion> results, String inputTerm) {
-		Collections.sort(results, Util.getDescendingWeightComparator()
-				// for queries with same weight, prefer the ones with more
-				// common chars
-				.thenComparing(Util.getCommonCharsComparator(suggestConfig.locale, inputTerm)));
 	}
 
 	private List<Suggestion> getUniqueSuggestions(List<Lookup.LookupResult> results, Set<String> uniqueQueries, int maxResults) {
