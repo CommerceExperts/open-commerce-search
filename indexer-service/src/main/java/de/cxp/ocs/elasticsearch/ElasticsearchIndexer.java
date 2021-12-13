@@ -224,12 +224,13 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 
 	@Override
 	public boolean deploy(ImportSession session) {
+
 		try {
 			boolean success = indexClient.finalizeIndex(session.temporaryIndexName, indexSettings.replicaCount, indexSettings.refreshInterval);
 			log.info("applying live settings to index {} was {}successful", session.temporaryIndexName, success ? "" : "not ");
 		}
 		catch (IOException e) {
-			log.error("can't finish import because index couldn't be flushed");
+			log.error("can't finish import because index {} couldn't be flushed", session.temporaryIndexName, e);
 			return false;
 		}
 
@@ -249,19 +250,33 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		}
 
 		try {
+			long docCount = indexClient.getDocCount(session.temporaryIndexName);
+			if (docCount < indexSettings.minimumDocumentCount) {
+				log.error("new index version {} for index {} has only {} documents indexed, which is not the required minimum document count of {}",
+						session.temporaryIndexName, session.finalIndexName, docCount, indexSettings.minimumDocumentCount);
+				return false;
+			}
+		}
+		catch (Exception e) {
+			log.error("Exception while trying to access new index {}", session.temporaryIndexName, e);
+			return false;
+		}
+
+		boolean result = false;
+		try {
 			indexClient.updateAlias(session.finalIndexName, oldIndexName, session.temporaryIndexName);
 			log.info("successful deployed index {} to internal index {}", session.finalIndexName, session.temporaryIndexName);
+			result = true;
 
 			if (oldIndexName != null) {
 				log.info("deleting old index {}", oldIndexName);
 				indexClient.deleteIndex(oldIndexName, false);
 			}
-			return true;
 		}
 		catch (Exception ex) {
-			log.warn("deploying index {} ot internal index {} failed", session.finalIndexName, session.temporaryIndexName, ex);
-			return false;
+			log.warn("Exception during deployment of index {} to internal index {}", session.finalIndexName, session.temporaryIndexName, ex);
 		}
+		return result;
 	}
 
 	public void deleteIndex(String indexName) {
@@ -335,7 +350,6 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	protected Document _get(String indexName, @NonNull String id) {
 		try {

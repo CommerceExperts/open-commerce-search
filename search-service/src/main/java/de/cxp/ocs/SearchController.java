@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 
 import org.elasticsearch.ElasticsearchStatusException;
@@ -26,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -84,34 +86,43 @@ public class SearchController implements SearchService {
 
 	private final Cache<String, Searcher> searchClientCache = CacheBuilder.newBuilder()
 			.expireAfterAccess(10, TimeUnit.MINUTES)
-			.maximumSize(10)
 			.build();
 
 	private final Cache<String, Exception> brokenTenantsCache = CacheBuilder.newBuilder()
 			.expireAfterWrite(5, TimeUnit.MINUTES)
 			.build();
 
+	@PostConstruct
+	@Scheduled(fixedDelayString = "${ocs.scheduler.refresh-config-delay-ms:600000}")
+	public void refreshAllConfigs() {
+		Set<String> configuredTenants = plugins.getConfigurationProvider().getConfiguredTenants();
+		log.info("SearchController {} configured tenants {}", searchClientCache.size() == 0 ? "initializing" : "reloading", configuredTenants);
+		configuredTenants.forEach(this::flushConfig);
+	}
+
 	@GetMapping("/flushConfig/{tenant}")
 	public ResponseEntity<HttpStatus> flushConfig(@PathVariable("tenant") String tenant) {
-		MDC.put("tenant", tenant);
 		HttpStatus status;
-		brokenTenantsCache.invalidate(tenant);
-		SearchContext searchContext = loadContext(tenant);
-		SearchContext oldConfig = searchContexts.put(tenant, searchContext);
-		if (oldConfig == null) {
-			log.info("config successfuly loaded for tenant {}", tenant);
-			status = HttpStatus.CREATED;
+		synchronized (tenant.intern()) {
+			MDC.put("tenant", tenant);
+			brokenTenantsCache.invalidate(tenant);
+			SearchContext searchContext = loadContext(tenant);
+			SearchContext oldConfig = searchContexts.put(tenant, searchContext);
+			if (oldConfig == null) {
+				log.info("config successfuly loaded for tenant {}", tenant);
+				status = HttpStatus.CREATED;
+			}
+			else if (oldConfig.equals(searchContexts.get(tenant))) {
+				log.info("config flush did not modify config for tenant {}", tenant);
+				status = HttpStatus.NOT_MODIFIED;
+			}
+			else {
+				log.info("config successfuly reloaded for tenant {}", tenant);
+				status = HttpStatus.OK;
+				searchClientCache.put(tenant, initializeSearcher(searchContext));
+			}
+			MDC.remove("tenant");
 		}
-		else if (oldConfig.equals(searchContexts.get(tenant))) {
-			log.info("config flush did not modify config for tenant {}", tenant);
-			status = HttpStatus.NOT_MODIFIED;
-		}
-		else {
-			log.info("config successfuly reloaded for tenant {}", tenant);
-			status = HttpStatus.OK;
-			searchClientCache.put(tenant, initializeSearcher(searchContext));
-		}
-		MDC.remove("tenant");
 
 		return new ResponseEntity<>(status, status);
 	}

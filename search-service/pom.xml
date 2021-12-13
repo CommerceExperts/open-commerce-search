@@ -7,12 +7,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.25.1</version>
+		<version>0.26.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>search-service</artifactId>
-	<version>0.22.1</version>
+	<version>0.23.0</version>
 	<packaging>jar</packaging>
 
 	<properties>
@@ -96,8 +96,6 @@
 			</exclusions>
 		</dependency>
 
-
-
 		<dependency>
 			<groupId>org.querqy</groupId>
 			<artifactId>querqy-core</artifactId>
@@ -108,16 +106,6 @@
 					<artifactId>asm</artifactId>
 				</exclusion>
 			</exclusions>
-		</dependency>
-
-		<dependency>
-			<groupId>net.logstash.logback</groupId>
-			<artifactId>logstash-logback-encoder</artifactId>
-			<version>6.4</version>
-		</dependency>
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
 		</dependency>
 
 		<dependency>
@@ -157,6 +145,11 @@
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.logstash.logback</groupId>
+			<artifactId>logstash-logback-encoder</artifactId>
+			<version>6.4</version>
 		</dependency>
 
 		<dependency>
@@ -256,7 +249,7 @@
 				<dependency>
 					<groupId>io.searchhub</groupId>
 					<artifactId>ocs-smartquery-plugin</artifactId>
-					<version>1.2.0</version>
+					<version>1.2.5</version>
 				</dependency>
 			</dependencies>
 		</profile>

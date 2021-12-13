@@ -232,7 +232,8 @@ public class Util {
 	 * <li>First prefer the ones with more common prefix with the input
 	 * term</li>
 	 * <li>Then prefer the ones with more common chars with the input term</li>
-	 * <li>Finally prefer the ones with higher weight</li>
+	 * <li>Then prefer the ones with higher weight</li>
+	 * <li>Finally do natural sorting to get consistent ordering</li>
 	 * </ul>
 	 * 
 	 * @param locale
@@ -242,6 +243,29 @@ public class Util {
 	public static Comparator<Suggestion> getFuzzySuggestionsComparator(Locale locale, String inputTerm) {
 		return Util.getCommonPrefixComparator(locale, inputTerm)
 				.thenComparing(Util.getCommonCharsComparator(locale, inputTerm))
-				.thenComparing(Util.getDescendingWeightComparator());
+				.thenComparing(Util.getDescendingWeightComparator())
+				.thenComparing((s1, s2) -> s1.getLabel().compareTo(s2.getLabel()));
+	}
+
+	/**
+	 * Retrieve comparator to order suggestions within a group:
+	 * <ul>
+	 * <li>First prefer the ones with higher weight</li>
+	 * <li>Then prefer the ones with more common chars with the input term</li>
+	 * <li>Finally do natural sorting to get consistent ordering</li>
+	 * </ul>
+	 * 
+	 * @param locale
+	 * @param inputTerm
+	 * @return
+	 */
+	public static Comparator<Suggestion> getDefaultComparator(Locale locale, String inputTerm) {
+		return Util.getDescendingWeightComparator()
+				// in case of same weight, prefer the ones with more common
+				// chars
+				.thenComparing(Util.getCommonCharsComparator(locale, inputTerm))
+				// in case of same weight and similar common chars, do natural
+				// ordering
+				.thenComparing((s1, s2) -> s1.getLabel().compareTo(s2.getLabel()));
 	}
 }

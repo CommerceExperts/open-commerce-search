@@ -38,7 +38,7 @@ public class DocumentMapper {
 		Document mapped;
 
 		Object variantsData = source.get(VARIANTS);
-		if (variantsData != null && variantsData instanceof List && ((List) variantsData).size() > 0) {
+		if (variantsData != null && variantsData instanceof List && ((List<?>) variantsData).size() > 0) {
 			mapped = new Product(id);
 			List<?> variantSources = (List<?>) variantsData;
 			Document[] variants = new Document[variantSources.size()];

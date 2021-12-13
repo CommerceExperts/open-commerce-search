@@ -46,8 +46,7 @@ import lombok.extern.slf4j.Slf4j;
  * <li>Multiple hero product sets should return in the order as they have been
  * requested</li>
  * <li>Static product sets and dynamic product sets with sorting should return
- * the single hits in the order they have been requested.
- * (not yet guaranteed TODO)</li>
+ * the single hits in the order they have been requested.</li>
  * <li></li>
  * </ul>
  * 

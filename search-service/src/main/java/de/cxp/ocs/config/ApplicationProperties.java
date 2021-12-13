@@ -14,7 +14,7 @@ import lombok.Getter;
 /**
  * Properties are configured in the application.yml file.
  */
-@ConfigurationProperties(prefix = "ocs", ignoreUnknownFields = false)
+@ConfigurationProperties(prefix = "ocs", ignoreUnknownFields = true)
 @Component
 @Getter
 public class ApplicationProperties {

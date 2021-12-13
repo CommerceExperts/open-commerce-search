@@ -89,7 +89,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 			return Optional.empty();
 		}
 
-		Map<String, FacetEntry> facetEntriesByKey = new HashMap();
+		Map<String, FacetEntry> facetEntriesByKey = new HashMap<>();
 		first.getEntries().forEach(e -> facetEntriesByKey.put(e.key, e));
 		for (FacetEntry additionalEntry : second.getEntries()) {
 			FacetEntry prevEntry = facetEntriesByKey.get(additionalEntry.key);
