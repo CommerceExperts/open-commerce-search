@@ -204,10 +204,10 @@ public class FacetConfiguration {
 		 * is ignored.
 		 * </p>
 		 * <p>
-		 * If several facets have this flag activated, all of them must be
+		 * If several facets have this flag activated, one of them must be
 		 * filtered to prefer a variant. E.g. if you have different variants per
-		 * "color" and "material", activate this flag for both facets, so
-		 * variants are only preferred if there is a color and a material
+		 * "color" and "material", and you set this flag for both facets,
+		 * variants will be shown if there is either a color or a material
 		 * filter.
 		 * </p>
 		 * 

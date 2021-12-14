@@ -511,16 +511,14 @@ public class Searcher {
 
 		Map<String, SortOrder> sortedFields = sortingHandler.getSortedNumericFields(parameters);
 
-		boolean preferVariantHits = preferredVariantAttributes.size() > 0
-				&& ((int) parameters.getFilters().stream()
-						.filter(f -> preferredVariantAttributes.contains(f.getField().getName()))
-						.count()) == preferredVariantAttributes.size();
+		boolean preferVariantHit = preferredVariantAttributes.size() > 0
+				&& parameters.getFilters().stream().anyMatch(f -> preferredVariantAttributes.contains(f.getField().getName()));
 
 		ArrayList<ResultHit> resultHits = new ArrayList<>();
 		for (int i = 0; i < searchHits.getHits().length; i++) {
 			SearchHit hit = searchHits.getHits()[i];
 			if (!heroIds.contains(hit.getId())) {
-				ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields, preferVariantHits);
+				ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields, preferVariantHit);
 				resultHits.add(resultHit);
 			}
 		}

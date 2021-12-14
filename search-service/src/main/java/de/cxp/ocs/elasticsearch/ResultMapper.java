@@ -56,15 +56,15 @@ public class ResultMapper {
 	 * @param sortedFields
 	 *        map with field-to-sortOrder entries applicable on variant level
 	 *        (no validation done here)
-	 * @param preferVariantHits
+	 * @param preferVariantHit
 	 *        set to true, if you want to prefer the first variant hit if
 	 *        available
 	 * @return
 	 */
-	public static ResultHit mapSearchHit(SearchHit hit, Map<String, SortOrder> sortedFields, boolean preferVariantHits) {
+	public static ResultHit mapSearchHit(SearchHit hit, Map<String, SortOrder> sortedFields, boolean preferVariantHit) {
 		SearchHits variantHits = hit.getInnerHits() == null ? null : hit.getInnerHits().get("variants");
 		SearchHit variantHit = null;
-		if (preferVariantHits && variantHits != null && variantHits.getHits().length > 0
+		if (preferVariantHit && variantHits != null && variantHits.getHits().length > 0
 				|| variantHits != null && variantHits.getHits().length == 1
 				|| (variantHits != null && variantHits.getHits().length >= 2 && variantHits.getAt(0).getScore() > variantHits.getAt(1).getScore())) {
 			variantHit = variantHits.getAt(0);
