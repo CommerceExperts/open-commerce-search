@@ -125,10 +125,12 @@ public class SearchParamsParser {
 						throw new IllegalArgumentException("unexpected numeric filter value: " + paramValue);
 					}
 				}
+				paramValues[0] = paramValues[0].trim();
+				paramValues[1] = paramValues[1].trim();
 				return new NumberResultFilter(
 						field,
-						Util.tryToParseAsNumber(paramValues[0]).orElse(null),
-						Util.tryToParseAsNumber(paramValues[1]).orElse(null));
+						paramValues[0].isEmpty() ? null : Util.tryToParseAsNumber(paramValues[0]).orElseThrow(IllegalArgumentException::new),
+						paramValues[1].isEmpty() ? null : Util.tryToParseAsNumber(paramValues[1]).orElseThrow(IllegalArgumentException::new));
 			default:
 				return new TermResultFilter(field, paramValues)
 						.setFilterOnId(isIdFilter);

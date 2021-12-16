@@ -14,9 +14,6 @@ public class NumberResultFilter implements InternalResultFilter {
 	private final Number upperBound;
 
 	public NumberResultFilter(Field field, Number lowerBound, Number upperBound) {
-		this.field = field;
-		this.lowerBound = lowerBound;
-		this.upperBound = upperBound;
 		if (lowerBound == null && upperBound == null) {
 			throw new IllegalArgumentException("number result filter without lower and upper bound not allowed!");
 		}
@@ -25,6 +22,9 @@ public class NumberResultFilter implements InternalResultFilter {
 		else if (lowerBound.doubleValue() > upperBound.doubleValue()) {
 			throw new IllegalArgumentException("lower bound can't be greater than upper bound!");
 		}
+		this.field = field;
+		this.lowerBound = lowerBound;
+		this.upperBound = upperBound;
 	}
 
 	@Override
