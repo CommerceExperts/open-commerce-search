@@ -363,7 +363,7 @@ public class Searcher {
 		// if there are rescorers, that lower the query-score effect, add
 		// another rescorer that revereses this effect
 		if (heroProductsCount > 0 && overallQueryWeight < overallRescorerWeight) {
-			float heroRescoreWeight = overallQueryWeight - overallRescorerWeight;
+			float heroRescoreWeight = overallRescorerWeight - overallQueryWeight;
 			int heroWindowSize = maxWindowSize;
 			HeroProductHandler.getHeroQuery(parameters)
 					.ifPresent(heroQuery -> searchSourceBuilder.addRescorer(
