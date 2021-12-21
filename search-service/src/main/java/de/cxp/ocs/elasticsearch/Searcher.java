@@ -522,8 +522,9 @@ public class Searcher {
 
 		Map<String, SortOrder> sortedFields = sortingHandler.getSortedNumericFields(parameters);
 
-		boolean preferVariantHit = preferredVariantAttributes.size() > 0
-				&& parameters.getFilters().stream().anyMatch(f -> preferredVariantAttributes.contains(f.getField().getName()));
+		boolean preferVariantHit = VariantPickingStrategy.pickAlways.equals(variantPickingStrategy)
+				|| (preferredVariantAttributes.size() > 0
+						&& parameters.getFilters().stream().anyMatch(f -> preferredVariantAttributes.contains(f.getField().getName())));
 
 		ArrayList<ResultHit> resultHits = new ArrayList<>();
 		for (int i = 0; i < searchHits.getHits().length; i++) {
