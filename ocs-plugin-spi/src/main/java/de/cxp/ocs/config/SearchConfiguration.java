@@ -179,6 +179,7 @@ public class SearchConfiguration {
 	}
 
 	/**
+	 * 
 	 * Set when variants should be the result hit instead of their main product.
 	 * Could be one of the following predefined strategies:
 	 * <ul>
@@ -191,7 +192,8 @@ public class SearchConfiguration {
 	 * variants matching.</li>
 	 * </ul>
 	 * 
-	 * @return
+	 * @param variantPickingStrategy
+	 *        name of variant picking strategy
 	 */
 	public void setVariantPickingStrategy(String variantPickingStrategy) {
 		this.variantPickingStrategy = variantPickingStrategy;
