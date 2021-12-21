@@ -51,6 +51,7 @@ public class MarkerFilter extends AbstractMatcherFilter<ILoggingEvent> {
 	 * The marker to match in the event.
 	 * 
 	 * @param markerName
+	 *        marker name
 	 */
 	public void setMarker(String markerName) {
 		marker = MarkerFactory.getMarker(markerName);

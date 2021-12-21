@@ -74,7 +74,7 @@ public class HeroProductHandler {
 	 *        matching Searcher instance for these products
 	 * @param searchContext
 	 *        context
-	 * @return
+	 * @return array of resolved product sets
 	 */
 	public static StaticProductSet[] resolve(ProductSet[] productSets, Searcher searcher, SearchContext searchContext) {
 		StaticProductSet[] resolvedSets = new StaticProductSet[productSets.length];
@@ -174,7 +174,9 @@ public class HeroProductHandler {
 	 * the top.
 	 * 
 	 * @param searchQuery
+	 *        main and variant Elasticsearch queries
 	 * @param internalParams
+	 *        internal parameters
 	 */
 	public static void extendQuery(MasterVariantQuery searchQuery, InternalSearchParams internalParams) {
 		getHeroQuery(internalParams)
@@ -228,6 +230,8 @@ public class HeroProductHandler {
 	 *        with sortings and hero product-sets
 	 * @param searchResult
 	 *        where hero product slices should be added
+	 * @param variantPickingStrategy
+	 *        function to pick variant in case of inner variant hits
 	 * @return set of ids, that are already part of primary slices
 	 */
 	public static Set<String> extractSlices(SearchResponse searchResponse, InternalSearchParams internalParams, SearchResult searchResult,
