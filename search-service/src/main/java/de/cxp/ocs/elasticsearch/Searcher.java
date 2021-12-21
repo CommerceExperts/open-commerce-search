@@ -172,7 +172,7 @@ public class Searcher {
 
 	private Set<String> initVariantHandling() {
 		return config.getFacetConfiguration().getFacets().stream()
-				.filter(FacetConfig::isPeferVariantOnFilter)
+				.filter(FacetConfig::isPreferVariantOnFilter)
 				.map(FacetConfig::getSourceField)
 				.filter(facetField -> fieldIndex.getField(facetField).map(Field::isVariantLevel).orElse(false))
 				.collect(Collectors.toSet());
