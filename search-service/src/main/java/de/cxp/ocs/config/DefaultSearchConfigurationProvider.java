@@ -26,6 +26,7 @@ public class DefaultSearchConfigurationProvider implements SearchConfigurationPr
 		getQueryProcessing(tenant).ifPresent(mergedConfig::setQueryProcessing);
 		getFacetConfiguration(tenant).ifPresent(mergedConfig::setFacetConfiguration);
 		getScoringConfiguration(tenant).ifPresent(mergedConfig::setScoring);
+		getVariantPickingStrategy(tenant).ifPresent(mergedConfig::setVariantPickingStrategy);
 
 		mergedConfig.getQueryConfigs().addAll(getQueryConfiguration(tenant));
 		mergedConfig.getSortConfigs().addAll(getSortConfigs(tenant));
@@ -45,6 +46,11 @@ public class DefaultSearchConfigurationProvider implements SearchConfigurationPr
 	public Optional<String> getTargetIndex(String tenant) {
 		return Optional.ofNullable(properties.getTenantConfig()
 				.getOrDefault(tenant, properties.getDefaultTenantConfig()).getIndexName());
+	}
+
+	private Optional<String> getVariantPickingStrategy(String tenant) {
+		return Optional.ofNullable(properties.getTenantConfig()
+				.getOrDefault(tenant, properties.getDefaultTenantConfig()).getVariantPickingStrategy());
 	}
 
 	public Optional<QueryProcessingConfiguration> getQueryProcessing(String tenant) {

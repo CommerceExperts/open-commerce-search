@@ -18,8 +18,9 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 
 import de.cxp.ocs.SearchContext;
-import de.cxp.ocs.elasticsearch.ResultMapper;
 import de.cxp.ocs.elasticsearch.Searcher;
+import de.cxp.ocs.elasticsearch.mapper.ResultMapper;
+import de.cxp.ocs.elasticsearch.mapper.VariantPickingStrategy;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.model.params.DynamicProductSet;
 import de.cxp.ocs.model.params.ProductSet;
@@ -73,7 +74,7 @@ public class HeroProductHandler {
 	 *        matching Searcher instance for these products
 	 * @param searchContext
 	 *        context
-	 * @return
+	 * @return array of resolved product sets
 	 */
 	public static StaticProductSet[] resolve(ProductSet[] productSets, Searcher searcher, SearchContext searchContext) {
 		StaticProductSet[] resolvedSets = new StaticProductSet[productSets.length];
@@ -173,7 +174,9 @@ public class HeroProductHandler {
 	 * the top.
 	 * 
 	 * @param searchQuery
+	 *        main and variant Elasticsearch queries
 	 * @param internalParams
+	 *        internal parameters
 	 */
 	public static void extendQuery(MasterVariantQuery searchQuery, InternalSearchParams internalParams) {
 		getHeroQuery(internalParams)
@@ -227,9 +230,12 @@ public class HeroProductHandler {
 	 *        with sortings and hero product-sets
 	 * @param searchResult
 	 *        where hero product slices should be added
+	 * @param variantPickingStrategy
+	 *        function to pick variant in case of inner variant hits
 	 * @return set of ids, that are already part of primary slices
 	 */
-	public static Set<String> extractSlices(SearchResponse searchResponse, InternalSearchParams internalParams, SearchResult searchResult) {
+	public static Set<String> extractSlices(SearchResponse searchResponse, InternalSearchParams internalParams, SearchResult searchResult,
+			VariantPickingStrategy variantPickingStrategy) {
 		if (internalParams.getSortings().size() == 0) {
 			StaticProductSet[] productSets = internalParams.heroProductSets;
 			Map<String, Integer> productSetAssignment = new HashMap<>();
@@ -256,7 +262,7 @@ public class HeroProductHandler {
 			for (int h = 0; h < hits.length; h++) {
 				Integer sliceIndex = productSetAssignment.get(hits[h].getId());
 				if (sliceIndex != null) {
-					ResultHit resultHit = ResultMapper.mapSearchHit(hits[h], Collections.emptyMap());
+					ResultHit resultHit = ResultMapper.mapSearchHit(hits[h], Collections.emptyMap(), variantPickingStrategy);
 					searchResult.slices.get(sliceIndex).getHits().add(resultHit);
 				}
 			}

@@ -1,4 +1,4 @@
-package de.cxp.ocs.elasticsearch;
+package de.cxp.ocs.elasticsearch.mapper;
 
 import static com.google.common.base.Predicates.instanceOf;
 
@@ -22,10 +22,8 @@ import de.cxp.ocs.model.result.ResultHit;
 
 public class ResultMapper {
 
-	private ResultMapper() {}
-
 	public static ResultHit mapSearchHit(SearchHit hit, Map<String, SortOrder> sortedFields) {
-		return mapSearchHit(hit, sortedFields, false);
+		return mapSearchHit(hit, sortedFields, VariantPickingStrategy.pickIfSingleHit);
 	}
 
 	/**
@@ -56,18 +54,21 @@ public class ResultMapper {
 	 * @param sortedFields
 	 *        map with field-to-sortOrder entries applicable on variant level
 	 *        (no validation done here)
-	 * @param preferVariantHit
-	 *        set to true, if you want to prefer the first variant hit if
-	 *        available
-	 * @return
+	 * @param variantPickingStrategy
+	 *        function to pick variant in case of inner variant hits
+	 * @return mapped result hit
 	 */
-	public static ResultHit mapSearchHit(SearchHit hit, Map<String, SortOrder> sortedFields, boolean preferVariantHit) {
+	public static ResultHit mapSearchHit(SearchHit hit, Map<String, SortOrder> sortedFields, VariantPickingStrategy variantPickingStrategy) {
 		SearchHits variantHits = hit.getInnerHits() == null ? null : hit.getInnerHits().get("variants");
+
+		int allVariantHitCount = 0;
+		if (variantPickingStrategy.isAllVariantHitCountRequired() && hit.getInnerHits() != null && hit.getInnerHits().get("_all") != null) {
+			allVariantHitCount = (int) hit.getInnerHits().get("_all").getTotalHits().value;
+		}
+
 		SearchHit variantHit = null;
-		if (preferVariantHit && variantHits != null && variantHits.getHits().length > 0
-				|| variantHits != null && variantHits.getHits().length == 1
-				|| (variantHits != null && variantHits.getHits().length >= 2 && variantHits.getAt(0).getScore() > variantHits.getAt(1).getScore())) {
-			variantHit = variantHits.getAt(0);
+		if (variantHits != null && variantHits.getHits().length > 0) {
+			variantHit = variantPickingStrategy.pick(variantHits, allVariantHitCount);
 		}
 
 		ResultHit resultHit = new ResultHit()

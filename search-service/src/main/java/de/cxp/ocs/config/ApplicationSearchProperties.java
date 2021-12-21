@@ -40,6 +40,8 @@ public class ApplicationSearchProperties {
 	 */
 	boolean useDefaultSortConfig = false;
 
+	private String variantPickingStrategy = "pickIfBestScored";
+
 	@NestedConfigurationProperty
 	private QueryProcessingConfiguration queryProcessing = new QueryProcessingConfiguration();
 

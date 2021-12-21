@@ -23,6 +23,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.InnerHitBuilder;
 import org.elasticsearch.index.query.NestedQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -49,6 +50,8 @@ import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.elasticsearch.facets.FacetConfigurationApplyer;
+import de.cxp.ocs.elasticsearch.mapper.ResultMapper;
+import de.cxp.ocs.elasticsearch.mapper.VariantPickingStrategy;
 import de.cxp.ocs.elasticsearch.prodset.HeroProductHandler;
 import de.cxp.ocs.elasticsearch.query.FiltersBuilder;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
@@ -111,15 +114,16 @@ public class Searcher {
 
 	private SpellCorrector spellCorrector;
 
-	private final Set<String> preferredVariantAttributes;
+	private final Set<String>				preferredVariantAttributes;
+	private final VariantPickingStrategy	variantPickingStrategy;
 
-	private final Timer findTimer;
-	private final Timer sqbTimer;
-	private final Timer inputWordsTimer;
-	private final Timer correctedWordsTimer;
-	private final Timer resultTimer;
-	private final Timer searchRequestTimer;
-	private final DistributionSummary summary;
+	private final Timer					findTimer;
+	private final Timer					sqbTimer;
+	private final Timer					inputWordsTimer;
+	private final Timer					correctedWordsTimer;
+	private final Timer					resultTimer;
+	private final Timer					searchRequestTimer;
+	private final DistributionSummary	summary;
 
 	public Searcher(RestHighLevelClient restClient, SearchContext searchContext, final MeterRegistry registry, final SearchPlugins plugins) {
 		this.restClient = restClient;
@@ -151,6 +155,7 @@ public class Searcher {
 		queryBuilder = new ESQueryFactoryBuilder(restClient, searchContext, plugins.getEsQueryFactories()).build();
 
 		preferredVariantAttributes = initVariantHandling();
+		variantPickingStrategy = VariantPickingStrategy.valueOf(config.getVariantPickingStrategy());
 	}
 
 	private Timer getTimer(final String name, final String indexName) {
@@ -167,7 +172,7 @@ public class Searcher {
 
 	private Set<String> initVariantHandling() {
 		return config.getFacetConfiguration().getFacets().stream()
-				.filter(FacetConfig::isPeferVariantOnFilter)
+				.filter(FacetConfig::isPreferVariantOnFilter)
 				.map(FacetConfig::getSourceField)
 				.filter(facetField -> fieldIndex.getField(facetField).map(Field::isVariantLevel).orElse(false))
 				.collect(Collectors.toSet());
@@ -396,7 +401,7 @@ public class Searcher {
 			if (searchResponse != null) {
 				Set<String> heroIds;
 				if (parameters.heroProductSets != null) {
-					heroIds = HeroProductHandler.extractSlices(searchResponse, parameters, searchResult);
+					heroIds = HeroProductHandler.extractSlices(searchResponse, parameters, searchResult, variantPickingStrategy);
 				}
 				else {
 					heroIds = Collections.emptySet();
@@ -475,8 +480,8 @@ public class Searcher {
 			if (variantsOnlyFiltered) {
 				variantQuery.innerHit(getVariantInnerHits(variantSortings));
 			}
-			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery)
-					.filter(variantQuery);
+			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).filter(variantQuery);
+			if (variantPickingStrategy.isAllVariantHitCountRequired()) ((BoolQueryBuilder) masterLevelQuery).should(getAllVariantInnerHits());
 		}
 
 		// variant inner hits are always retrieved in a should clause,
@@ -485,20 +490,26 @@ public class Searcher {
 		if (variantsMatchQuery != null && !variantsOnlyFiltered) {
 			NestedQueryBuilder variantQuery = QueryBuilders.nestedQuery(FieldConstants.VARIANTS, variantsMatchQuery, ScoreMode.Avg)
 					.innerHit(getVariantInnerHits(variantSortings));
-			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery)
-					.should(variantQuery);
+			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).should(variantQuery);
+			if (variantPickingStrategy.isAllVariantHitCountRequired()) ((BoolQueryBuilder) masterLevelQuery).should(getAllVariantInnerHits());
 		}
 
 		return masterLevelQuery;
 	}
 
 	private InnerHitBuilder getVariantInnerHits(List<SortBuilder<?>> variantSortings) {
-		InnerHitBuilder variantInnerHits = new InnerHitBuilder().setSize(2).setFetchSourceContext(
-				new FetchSourceContext(true, new String[] { VARIANTS + "." + RESULT_DATA + ".*" }, null));
+		InnerHitBuilder variantInnerHits = new InnerHitBuilder()
+				.setSize(2)
+				.setFetchSourceContext(new FetchSourceContext(true, new String[] { VARIANTS + "." + RESULT_DATA + ".*" }, null));
 		if (!variantSortings.isEmpty()) {
 			variantInnerHits.setSorts(variantSortings);
 		}
 		return variantInnerHits;
+	}
+
+	private NestedQueryBuilder getAllVariantInnerHits() {
+		return QueryBuilders.nestedQuery(FieldConstants.VARIANTS, QueryBuilders.matchAllQuery(), ScoreMode.None)
+				.innerHit(new InnerHitBuilder().setSize(0).setName("_all"));
 	}
 
 	private SearchResultSlice toSearchResult(SearchResponse search, InternalSearchParams parameters, Set<String> heroIds) {
@@ -511,14 +522,15 @@ public class Searcher {
 
 		Map<String, SortOrder> sortedFields = sortingHandler.getSortedNumericFields(parameters);
 
-		boolean preferVariantHit = preferredVariantAttributes.size() > 0
-				&& parameters.getFilters().stream().anyMatch(f -> preferredVariantAttributes.contains(f.getField().getName()));
+		boolean preferVariantHit = VariantPickingStrategy.pickAlways.equals(variantPickingStrategy)
+				|| (preferredVariantAttributes.size() > 0
+						&& parameters.getFilters().stream().anyMatch(f -> preferredVariantAttributes.contains(f.getField().getName())));
 
 		ArrayList<ResultHit> resultHits = new ArrayList<>();
 		for (int i = 0; i < searchHits.getHits().length; i++) {
 			SearchHit hit = searchHits.getHits()[i];
 			if (!heroIds.contains(hit.getId())) {
-				ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields, preferVariantHit);
+				ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields, preferVariantHit ? VariantPickingStrategy.pickAlways : variantPickingStrategy);
 				resultHits.add(resultHit);
 			}
 		}

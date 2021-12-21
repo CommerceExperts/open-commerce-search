@@ -71,7 +71,7 @@ public class FacetConfiguration {
 
 		private boolean excludeFromFacetLimit = false;
 
-		private boolean peferVariantOnFilter = false;
+		private boolean preferVariantOnFilter = false;
 
 		/**
 		 * Label of that facet
@@ -211,12 +211,12 @@ public class FacetConfiguration {
 		 * filter.
 		 * </p>
 		 * 
-		 * @param isPreferVariantOnFilter
+		 * @param preferVariantOnFilter
 		 *        default is false. set to true to activate.
 		 * @return self
 		 */
-		public FacetConfig isPreferVariantOnFilter(boolean isPreferVariantOnFilter) {
-			this.peferVariantOnFilter = isPreferVariantOnFilter;
+		public FacetConfig setPreferVariantOnFilter(boolean preferVariantOnFilter) {
+			this.preferVariantOnFilter = preferVariantOnFilter;
 			return this;
 		}
 	}
