@@ -20,6 +20,7 @@
       - [Rescorers](#rescorers)
       - [Facet Configuration](#facet-configuration)
       - [Sort Configuration](#sort-configuration)
+      - [Misc Configuration](#misc-configuration)
   - [Suggest Service](#suggest-service)
 
 
@@ -451,6 +452,7 @@ It contains two properties:
         exclude-from-facet-limit: <boolean>
         show-unselected-options: <boolean>
         is-multi-select: <boolean>
+        prefer-variant-on-filter: <boolean>
         meta-data:
           "<key>": "<value>"
       - ...
@@ -468,6 +470,7 @@ Each individual facet config may contain the following properties:
 - `explude-from-facet-limit`: (default = false) See `max-facets` description above
 - `show-unselected-options`: (default = false) If set to "true" all possible facet values will be returned, even if one of them is used as filter. Choosing another filter-option will then toggle the selected filter.
 - `is-multi-select`: (default = false) If set to "true" the behaviour is similar to `show-unselected-options` and additionally choosing another filter-option will filter the result for both of them inclusively (e.g. "blue" or "red").
+- `prefer-variant-on-filter`: (default = false) Set to true, if variant documents should be preferred in the result in case a filter of that facet/field is used. This can only be used for facets/fields, that exist on variant level, otherwise it is ignored. If several facets have this flag activated, one of them must be filtered to prefer a variant. E.g. if you have different variants per "color" and "material", and you set this flag for both facets, variants will be shown if there is either a color or a material filter. This setting is ignored if the "variant-picking-strategy" is set to "pickAlways".
 - `meta-data`: (default = null) Can be used to add arbitrary data to a facet. The value is a simple string map. This is useful to add configuration values that can be considered at the implementation side. Some internal data is also exposed at that meta-data map (e.g. label and count)
 
 
@@ -498,6 +501,22 @@ Example:
 
 [back to top](#)
 
+---
+
+#### Misc Configuration
+
+Some more stand-alone setting options on tenant level:
+
+- `variant-picking-strategy`: Set when variants should be the result hit instead of their main product.
+  One of "pickAlways", "pickIfDrilledDown", "pickIfBestScored"(default), "pickIfSingleHit" with the following behavior:
+  - "pickAlways": pick first variant if available.
+  - "pickIfDrilledDown": Pick best variant if at a single hit some variants were filtered.
+  - "pickIfBestScored": Pick first variant, if it has a better score than the second one or if it's the only one left.
+  - "pickIfSingleHit": Picks a variant only if there are no other variants matching.
+
+[back to top](#)
+
+---
 
 ## Suggest Service
 
