@@ -33,6 +33,8 @@ public class SearchConfiguration {
 
 	private List<SortOptionConfiguration> sortConfigs = new ArrayList<>();
 
+	private String variantPickingStrategy = "pickIfBestScored";
+
 	/**
 	 * Optional index-name that should be addressed by the tenant. If null, the
 	 * index name will be set to the tenant name.
@@ -174,5 +176,24 @@ public class SearchConfiguration {
 	public SearchConfiguration addPluginConfiguration(@NonNull String pluginClassName, @NonNull Map<String, String> pluginConfig) {
 		pluginConfiguration.put(pluginClassName, pluginConfig);
 		return this;
+	}
+
+	/**
+	 * Set when variants should be the result hit instead of their main product.
+	 * Could be one of the following predefined strategies:
+	 * <ul>
+	 * <li>"pickAlways": pick first variant if available.</li>
+	 * <li>"pickIfDrilledDown": Pick best variant if at a single hit some
+	 * variants were filtered.</li>
+	 * <li>"pickIfBestScored": Pick first variant, if it has a better score than
+	 * the second one or if it's the only one left.</li>
+	 * <li>"pickIfSingleHit": Picks a variant only if there are no other
+	 * variants matching.</li>
+	 * </ul>
+	 * 
+	 * @return
+	 */
+	public void setVariantPickingStrategy(String variantPickingStrategy) {
+		this.variantPickingStrategy = variantPickingStrategy;
 	}
 }
