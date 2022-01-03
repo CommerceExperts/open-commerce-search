@@ -32,7 +32,8 @@ public class VariantQueryFactory {
 							.analyzer(analyzer)
 							.defaultField(defaultSearchField)
 							.type(type)
-							.tieBreaker(tieBreaker));
+							.tieBreaker(tieBreaker)
+							.boost(0.1f));
 		}
 		return variantQuery;
 	}
