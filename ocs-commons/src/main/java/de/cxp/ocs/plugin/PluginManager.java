@@ -72,6 +72,7 @@ public class PluginManager {
 				T next = serviceImpls.next();
 				if (disabledServies.contains(next.getClass().getCanonicalName())) {
 					log.info("Service {} for interface {} is disabled", next.getClass(), serviceInterface.getCanonicalName());
+					continue;
 				}
 				// take first if non is prefered
 				if (preferedService == null) preferedService = next;
