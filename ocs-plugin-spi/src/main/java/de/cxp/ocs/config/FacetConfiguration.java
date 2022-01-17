@@ -67,7 +67,9 @@ public class FacetConfiguration {
 
 		private boolean isMultiSelect = false;
 
-		private byte order = Byte.MAX_VALUE;
+		private int order = 1000;
+
+		private ValueOrder valueOrder = ValueOrder.COUNT;
 
 		private boolean excludeFromFacetLimit = false;
 
@@ -218,6 +220,29 @@ public class FacetConfiguration {
 		public FacetConfig setPreferVariantOnFilter(boolean preferVariantOnFilter) {
 			this.preferVariantOnFilter = preferVariantOnFilter;
 			return this;
+		}
+
+		/**
+		 * <p>
+		 * Set the order of the facet values. Defaults to COUNT which means, the
+		 * value with the highest result coverage will be listed first.
+		 * </p>
+		 * 
+		 * <p>
+		 * This setting is only used for term-facets and category-facets.
+		 * </p>
+		 * 
+		 * @param valueOrder
+		 *        order of the values for that facet
+		 * @return self
+		 */
+		public FacetConfig setValueOrder(ValueOrder valueOrder) {
+			this.valueOrder = valueOrder;
+			return this;
+		}
+
+		public static enum ValueOrder {
+			COUNT, ALPHANUM_ASC, ALPHANUM_DESC;
 		}
 	}
 }

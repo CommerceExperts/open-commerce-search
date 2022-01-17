@@ -14,6 +14,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
+import de.cxp.ocs.config.FacetConfiguration.FacetConfig.ValueOrder;
 import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
@@ -61,6 +62,11 @@ public class TermFacetCreator extends NestedFacetCreator {
 		return AggregationBuilders.terms(FACET_VALUES_AGG)
 				.field(nestedPathPrefix + ".value")
 				.size(maxFacetValues)
+				// value order could be set here, but then would apply for all
+				// term facets.
+				// Considering the values with the highest count as more
+				// relevant than potentially lost alphanumeric values with a low
+				// count. Therefore applying the sort order per facet afterwards
 				.subAggregation(AggregationBuilders.terms(FACET_IDS_AGG)
 						.field(nestedPathPrefix + ".id")
 						.size(1));
@@ -77,6 +83,13 @@ public class TermFacetCreator extends NestedFacetCreator {
 		else {
 			// unfiltered facet
 			fillFacet(facet, facetNameBucket, null, facetConfig, linkBuilder);
+		}
+		
+		if (ValueOrder.ALPHANUM_ASC.equals(facetConfig.getValueOrder())) {
+			Collections.sort(facet.entries, Comparator.comparing(entry -> entry.key));
+		}
+		else if (ValueOrder.ALPHANUM_DESC.equals(facetConfig.getValueOrder())) {
+			Collections.sort(facet.entries, Comparator.<FacetEntry, String> comparing(entry -> entry.getKey()).reversed());
 		}
 
 		return facet.entries.isEmpty() ? Optional.empty() : Optional.of(facet);

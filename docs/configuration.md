@@ -448,6 +448,7 @@ It contains two properties:
         label: "<label>"
         type: [term|hierarchical|interval|range|<custom>]
         order: <int>
+        value-order: [COUNT|ALPHANUM_ASC|ALPHANUM_DESC]
         optimal-value-count: <int>
         exclude-from-facet-limit: <boolean>
         show-unselected-options: <boolean>
@@ -464,7 +465,8 @@ Each individual facet config may contain the following properties:
 - `label`: (default = source-field) Defines the 'label' for that facet. Will be part of the returned `meta-data`
 - `type`: Per default the type depends on the field type. This is "term" for string fields, "interval" for number fields, and "hierarchical" for category fields. 
   So basically this is only useful to set to "range" for numeric fields or in case a custom facet creator is used.
-- `order`: (default = 127) Accepted are values between 0 and 127. This order value will be used to sort the facets according to it (low order values are put higher).
+- `order`: (default = 1000) This order value will be used to sort the facets according to it (low order values are put on a prior position).
+- `value-order`: Set the order of the facet values. Defaults to COUNT which means, the value with the highest result coverage will be listed first. Other possible values are 'ALPHANUM_ASC' or 'ALPHANUM_DESC'. This setting is only used for term-facets and category-facets. Category facet will be sorted recursively.
   If the order of two facets is the same, the one that's filtered will be preferd. If both have the same filter-status, the one with the higher result-coverage will be prefered.
 - `optimal-value-count`: (default = 5) Only used for "interval" facets to specify how many interval-filter-options should be generated at the maximum (if there enough results).
 - `explude-from-facet-limit`: (default = false) See `max-facets` description above

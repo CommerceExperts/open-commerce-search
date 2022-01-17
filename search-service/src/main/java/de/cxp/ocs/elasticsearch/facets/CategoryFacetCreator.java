@@ -1,6 +1,8 @@
 package de.cxp.ocs.elasticsearch.facets;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +15,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
+import de.cxp.ocs.config.FacetConfiguration.FacetConfig.ValueOrder;
 import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldType;
@@ -145,8 +148,28 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 			}
 		}
 		facet.setAbsoluteFacetCoverage(absDocCount);
+		
 		entries.values().forEach(facet.getEntries()::add);
+
+		if (ValueOrder.ALPHANUM_ASC.equals(facetConfig.getValueOrder())) {
+			Comparator<FacetEntry> ascValueComparator = Comparator.comparing(entry -> entry.key);
+			Collections.sort(facet.entries, ascValueComparator);
+			facet.entries.forEach(parent -> sortChildren(parent, ascValueComparator));
+		}
+		else if (ValueOrder.ALPHANUM_DESC.equals(facetConfig.getValueOrder())) {
+			Comparator<FacetEntry> descValueComparator = Comparator.<FacetEntry, String> comparing(entry -> entry.getKey()).reversed();
+			Collections.sort(facet.entries, descValueComparator);
+			facet.entries.forEach(parent -> sortChildren(parent, descValueComparator));
+		}
+		
 		return Optional.of(facet);
+	}
+
+	private void sortChildren(FacetEntry parent, Comparator<FacetEntry> valueComparator) {
+		if (parent instanceof HierarchialFacetEntry && ((HierarchialFacetEntry)parent).getChildren().size() > 0) {
+			Collections.sort(((HierarchialFacetEntry) parent).getChildren(), valueComparator);
+			((HierarchialFacetEntry) parent).getChildren().forEach(subParent -> sortChildren(subParent, valueComparator));
+		}
 	}
 
 	private FacetEntry getChildByKey(HierarchialFacetEntry entry, String childKey) {
