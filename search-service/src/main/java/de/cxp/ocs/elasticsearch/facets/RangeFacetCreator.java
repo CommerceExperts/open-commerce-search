@@ -29,7 +29,6 @@ import de.cxp.ocs.util.SearchQueryBuilder;
  * At the moment, a selected filter range is represented at the returned link of
  * that {@link IntervalFacetEntry}.
  * </p>
- * TODO: add RangeFacetEntry with absolute min/max and selected min/max
  */
 public class RangeFacetCreator extends NestedFacetCreator {
 
