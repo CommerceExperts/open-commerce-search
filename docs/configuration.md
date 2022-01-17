@@ -446,7 +446,7 @@ It contains two properties:
       facets:
       - source-field: "<field-name>"
         label: "<label>"
-        type: [term|hierarchical|interval|range|<custom>]
+        type: [term|hierarchical|interval|range|ignore|<custom>]
         order: <int>
         value-order: [COUNT|ALPHANUM_ASC|ALPHANUM_DESC]
         optimal-value-count: <int>
@@ -464,7 +464,8 @@ Each individual facet config may contain the following properties:
 - `source-field`: (required) Specifies for which facet this configuration applies to. Only one facet config is allowed per field.
 - `label`: (default = source-field) Defines the 'label' for that facet. Will be part of the returned `meta-data`
 - `type`: Per default the type depends on the field type. This is "term" for string fields, "interval" for number fields, and "hierarchical" for category fields. 
-  So basically this is only useful to set to "range" for numeric fields or in case a custom facet creator is used.
+  It can also be set to "ignore" to avoid facet creation, even if that facet is indexed.
+  For number fields it can also be set to "range" to get a facet with a single entry that contains the global min and max value of that facet.
 - `order`: (default = 1000) This order value will be used to sort the facets according to it (low order values are put on a prior position).
 - `value-order`: Set the order of the facet values. Defaults to COUNT which means, the value with the highest result coverage will be listed first. Other possible values are 'ALPHANUM_ASC' or 'ALPHANUM_DESC'. This setting is only used for term-facets and category-facets. Category facet will be sorted recursively.
   If the order of two facets is the same, the one that's filtered will be preferd. If both have the same filter-status, the one with the higher result-coverage will be prefered.

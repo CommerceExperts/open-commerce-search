@@ -7,10 +7,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -93,6 +95,8 @@ public class FacetConfigurationApplyer {
 		Map<String, FacetConfig> variantRangeFacets = new HashMap<>();
 		Map<String, FacetConfig> variantTermFacets = new HashMap<>();
 
+		Set<Field> ignoredFields = new HashSet<>();
+
 		// put facet configs into according maps
 		for (FacetConfig facetConfig : context.config.getFacetConfiguration().getFacets()) {
 			Optional<Field> sourceField = context.getFieldConfigIndex().getField(facetConfig.getSourceField());
@@ -112,6 +116,10 @@ public class FacetConfigurationApplyer {
 
 			if (facetConfig.getType() == null) {
 				facetConfig.setType(getDefaultFacetType(facetField.getType()).name());
+			}
+			else if ("ignore".equalsIgnoreCase(facetConfig.getType())) {
+				ignoredFields.add(facetField);
+				continue;
 			}
 
 			if (FieldType.CATEGORY.equals(facetField.getType())) {
@@ -155,10 +163,12 @@ public class FacetConfigurationApplyer {
 
 		// build all generic facet creators passing the specific configs to it
 		CategoryFacetCreator categoryFacetCreator = new CategoryFacetCreator(hierarchicalFacets);
+		categoryFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(ignoredFields, FieldType.CATEGORY));
 		facetCreators.add(categoryFacetCreator);
 		facetCreatorsByTypes.put(FacetCreatorClassifier.hierarchicalFacet, categoryFacetCreator);
 
 		NestedFacetCreator masterTermFacetCreator = new TermFacetCreator(termFacets).setMaxFacets(maxFacets);
+		masterTermFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(ignoredFields, FieldType.STRING));
 		facetCreators.add(masterTermFacetCreator);
 		facetCreatorsByTypes.put(FacetCreatorClassifier.masterTermFacet, masterTermFacetCreator);
 
@@ -170,11 +180,17 @@ public class FacetConfigurationApplyer {
 			// TODO: FacetCreators that run on the same nested field, should be
 			// grouped to use a single nested-aggregation for their aggregations
 			NestedFacetCreator rangeFacetCreator = new RangeFacetCreator(rangeFacets).setMaxFacets(maxFacets);
+			rangeFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(ignoredFields, FieldType.NUMBER));
 			facetCreators.add(rangeFacetCreator);
 			facetCreatorsByTypes.put(FacetCreatorClassifier.masterRangeFacet, rangeFacetCreator);
 
 			// exclude range facets from interval facet generation
-			intervalFacetCreator.setGeneralExcludedFields(rangeFacets.keySet());
+			HashSet<String> excludeFields = new HashSet<>(rangeFacets.keySet());
+			excludeFields.addAll(getNamesOfMatchingFields(ignoredFields, FieldType.NUMBER));
+			intervalFacetCreator.setGeneralExcludedFields(excludeFields);
+		}
+		else {
+			intervalFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(ignoredFields, FieldType.NUMBER));
 		}
 
 		facetCreators.add(intervalFacetCreator);
@@ -182,6 +198,7 @@ public class FacetConfigurationApplyer {
 
 		List<FacetCreator> variantFacetCreators = new ArrayList<>();
 		NestedFacetCreator variantTermFacetCreator = new TermFacetCreator(variantTermFacets).setMaxFacets(maxFacets);
+		variantTermFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(ignoredFields, FieldType.NUMBER));
 		variantFacetCreators.add(variantTermFacetCreator);
 		facetCreatorsByTypes.put(FacetCreatorClassifier.variantTermFacet, new VariantFacetCreator(Collections.singleton(variantTermFacetCreator)));
 
@@ -191,13 +208,27 @@ public class FacetConfigurationApplyer {
 
 		if (!variantRangeFacets.isEmpty()) {
 			NestedFacetCreator variantRangeFacetCreator = new RangeFacetCreator(variantRangeFacets).setMaxFacets(maxFacets);
+			variantRangeFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(ignoredFields, FieldType.NUMBER));
 			variantFacetCreators.add(variantRangeFacetCreator);
 			facetCreatorsByTypes.put(FacetCreatorClassifier.variantRangeFacet, new VariantFacetCreator(Collections.singleton(variantRangeFacetCreator)));
 
-			variantIntervalFacetCreator.setGeneralExcludedFields(variantRangeFacets.keySet());
+			HashSet<String> excludeFields = new HashSet<>(variantRangeFacets.keySet());
+			excludeFields.addAll(getNamesOfMatchingFields(ignoredFields, FieldType.NUMBER));
+			variantIntervalFacetCreator.setGeneralExcludedFields(excludeFields);
 		}
+		else {
+			variantIntervalFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(ignoredFields, FieldType.NUMBER));
+		}
+
 		// consolidated variant facet creator
 		facetCreators.add(new VariantFacetCreator(variantFacetCreators));
+	}
+
+	private Set<String> getNamesOfMatchingFields(Set<Field> ignoredFields, FieldType fieldType) {
+		return ignoredFields.stream()
+				.filter(f -> fieldType.equals(f.getType()))
+				.map(Field::getName)
+				.collect(Collectors.toSet());
 	}
 
 	private FacetType getDefaultFacetType(FieldType type) {

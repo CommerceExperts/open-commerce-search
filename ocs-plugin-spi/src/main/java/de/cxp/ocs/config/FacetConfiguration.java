@@ -101,8 +101,10 @@ public class FacetConfiguration {
 		}
 
 		/**
+		 * <p>
 		 * Optional type that relates to the available FacetCreators.
 		 * If not set, it uses the default type of the related field.
+		 * </p>
 		 * From some field-types different facet types can be generated:
 		 * <ul>
 		 * <li>numeric fields generate "interval" facets per default, but can be
@@ -110,6 +112,10 @@ public class FacetConfiguration {
 		 * <li>TODO: custom facet creators can support their own facet
 		 * types</li>
 		 * </ul>
+		 * <p>
+		 * If set to 'ignore' the facet creation is avoided, even if that facet
+		 * is indexed.
+		 * </p>
 		 * 
 		 * @param type
 		 *        type of facet
