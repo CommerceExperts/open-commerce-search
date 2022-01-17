@@ -377,7 +377,7 @@ public class FacetConfigurationApplyer {
 			@Override
 			public int compare(Facet o1, Facet o2) {
 				// prio 1: configured order
-				int compare = Byte.compare(FacetFactory.getOrder(o1), FacetFactory.getOrder(o2));
+				int compare = Integer.compare(FacetFactory.getOrder(o1), FacetFactory.getOrder(o2));
 				// prio 2: prefer facets with filtered value
 				if (compare == 0) {
 					compare = Boolean.compare(o2.isFiltered(), o1.isFiltered());
