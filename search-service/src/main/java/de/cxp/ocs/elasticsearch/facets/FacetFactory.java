@@ -14,8 +14,8 @@ public class FacetFactory {
 		return facet.meta.getOrDefault(MetaDataValues.label.name(), facet.getFieldName()).toString();
 	}
 
-	public static byte getOrder(Facet facet) {
-		return (byte) facet.meta.get(MetaDataValues.order.name());
+	public static int getOrder(Facet facet) {
+		return (int) facet.meta.get(MetaDataValues.order.name());
 	}
 
 	public static Facet create(FacetConfig facetConfig, FacetType type) {

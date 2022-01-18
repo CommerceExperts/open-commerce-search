@@ -429,6 +429,7 @@ public class FacetConfigurationApplyer {
 
 		for (FacetCreator fc : facetCreators) {
 			Collection<Facet> createdFacets = fc.createFacets(aggregations, filterContext, linkBuilder);
+
 			for (Facet f : createdFacets) {
 				Facet previousFacet = facets.get(getLabel(f));
 
