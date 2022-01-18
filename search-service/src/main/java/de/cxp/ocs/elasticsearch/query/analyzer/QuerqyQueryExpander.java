@@ -1,6 +1,8 @@
 package de.cxp.ocs.elasticsearch.query.analyzer;
 
 import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -56,7 +58,16 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 				rewriteChain = initFromStream(resourceStream);
 			}
 			else {
-				InputStream resourceStream = this.getClass().getClassLoader().getResourceAsStream(commonRulesLocation);
+				InputStream resourceStream;
+
+				File rulesFile = new File(commonRulesLocation);
+				if (rulesFile.exists()) {
+					resourceStream = new FileInputStream(rulesFile);
+				}
+				else {
+					resourceStream = this.getClass().getClassLoader().getResourceAsStream(commonRulesLocation);
+				}
+
 				if (resourceStream != null) {
 					rewriteChain = initFromStream(resourceStream);
 				}
