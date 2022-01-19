@@ -186,7 +186,7 @@ public class FacetConfiguration {
 		 *        numeric value between 0 and 127
 		 * @return self
 		 */
-		public FacetConfig setOrder(byte order) {
+		public FacetConfig setOrder(int order) {
 			this.order = order;
 			return this;
 		}
