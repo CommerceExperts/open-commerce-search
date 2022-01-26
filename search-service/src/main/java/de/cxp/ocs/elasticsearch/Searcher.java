@@ -1,8 +1,14 @@
 package de.cxp.ocs.elasticsearch;
 
+import static de.cxp.ocs.util.SearchParamsParser.parseFilters;
+
 import static de.cxp.ocs.config.FieldConstants.RESULT_DATA;
 import static de.cxp.ocs.config.FieldConstants.VARIANTS;
 
+import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
+import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
+import de.cxp.ocs.elasticsearch.query.model.QueryFilterTerm;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -182,6 +188,7 @@ public class Searcher {
 		Sample findTimerSample = Timer.start(Clock.SYSTEM);
 		Iterator<ESQueryFactory> stagedQueryBuilders;
 		List<QueryStringTerm> searchWords;
+		//TODO: List<SomeFilterElements> querqyFilters;
 		String preprocessedQuery = null;
 		if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
 			preprocessedQuery = parameters.userQuery;
@@ -190,6 +197,8 @@ public class Searcher {
 			}
 
 			searchWords = userQueryAnalyzer.analyze(preprocessedQuery);
+			searchWords = handleFiltersOnFields(parameters, searchWords);
+
 			stagedQueryBuilders = queryBuilder.getMatchingFactories(searchWords);
 		}
 		else {
@@ -319,6 +328,58 @@ public class Searcher {
 		findTimerSample.stop(findTimer);
 
 		return searchResult;
+	}
+
+	private List<QueryStringTerm> handleFiltersOnFields(InternalSearchParams parameters, List<QueryStringTerm> searchWords) {
+		// Pull all QueryFilterTerm items into a list of its own
+		List<QueryFilterTerm> additionalQuerqyFilters = new ArrayList<>();
+		searchWords.stream().filter(searchWord -> searchWord instanceof QueryFilterTerm).forEach(
+			queryFilterTerm -> additionalQuerqyFilters.add((QueryFilterTerm)queryFilterTerm));
+		searchWords.removeAll(additionalQuerqyFilters);
+
+		// Generate the filters and add them
+		Map<String, String> filtersAsMap =
+			additionalQuerqyFilters.stream().collect(Collectors.toMap(QueryFilterTerm::getWord, QueryFilterTerm::getField));
+		// Join already existing filters on fields with query specific filters on the same fields
+
+		joinParameterFiltersLists(parameters.filters, filtersAsMap);
+//		List<InternalResultFilter> additionalQuerqyFiltersConverted = parseFilters(filtersAsMap, fieldIndex);
+//		parameters.filters.addAll(additionalQuerqyFiltersConverted);
+
+		return searchWords;
+	}
+
+	private void joinParameterFiltersLists(List<InternalResultFilter> sourceList, Map<String, String> additionalFilters){
+		for (String key: additionalFilters.keySet()){
+			List<String> additionalValues = Arrays.asList(additionalFilters.get(key).split(","));
+			Optional<InternalResultFilter> filterFromSourceList = sourceList.stream().filter(entry -> entry.getField().getName().equals(key)).findFirst();
+			if (filterFromSourceList.isPresent()){
+				InternalResultFilter filter = filterFromSourceList.get();
+				if (filter instanceof TermResultFilter){
+					TermResultFilter termResultFilter = (TermResultFilter)filter;
+					// Make sure we have no duplicates!
+					termResultFilter.getValuesAsList().removeAll(additionalValues);
+					// Add the values combined
+					termResultFilter.getValuesAsList().addAll(additionalValues);
+				} else if (filter instanceof NumberResultFilter){
+					log.debug("Cannot join numeric filters for field " + key);
+				} else {
+					log.warn("Unknown result filter type: " + filter.getClass());
+				}
+			} else {
+				sourceList.addAll(parseFilters(Collections.singletonMap(key, additionalFilters.get(key)), fieldIndex));
+			}
+		}
+//		for (InternalResultFilter additionalFilter : additionalList){
+//			Optional<InternalResultFilter> filterFromSourceList = sourceList.stream().filter(entry -> entry.getField().equals(additionalFilter.getField())).findFirst();
+//			if (filterFromSourceList.isPresent()){
+//				// Join
+//				InternalResultFilter filter = filterFromSourceList.get();
+//				filter.getValues()
+//			} else {
+//				sourceList.add(additionalFilter);
+//			}
+//		}
 	}
 
 	private void addRescorersFailsafe(InternalSearchParams parameters, SearchSourceBuilder searchSourceBuilder) {
