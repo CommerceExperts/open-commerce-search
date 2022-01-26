@@ -69,7 +69,15 @@ public class PluginManager {
 			ServiceLoader<T> loader = ServiceLoader.load(serviceInterface);
 			Iterator<T> serviceImpls = loader.iterator();
 			while (serviceImpls.hasNext()) {
-				T next = serviceImpls.next();
+				T next;
+				try {
+					next = serviceImpls.next();
+				}
+				catch (Exception e) {
+					log.error("Failed to init an implementation for service {}", serviceInterface.getCanonicalName(), e);
+					continue;
+				}
+
 				if (disabledServies.contains(next.getClass().getCanonicalName())) {
 					log.info("Service {} for interface {} is disabled", next.getClass(), serviceInterface.getCanonicalName());
 					continue;

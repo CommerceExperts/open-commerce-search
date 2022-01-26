@@ -52,7 +52,7 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-commons</artifactId>
-				<version>0.12.2</version>
+				<version>0.12.3-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
