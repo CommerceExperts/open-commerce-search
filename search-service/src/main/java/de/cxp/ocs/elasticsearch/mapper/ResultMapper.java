@@ -3,6 +3,7 @@ package de.cxp.ocs.elasticsearch.mapper;
 import static com.google.common.base.Predicates.instanceOf;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -104,17 +105,19 @@ public class ResultMapper {
 		Object sortData = source.get(FieldConstants.SORT_DATA);
 		if (sortData != null && sortData instanceof Map && sortedFields.size() > 0) {
 			sortedFields.forEach((fieldName, order) -> {
+				Map<String, String> fieldsToChange = new HashMap<String, String>();
 				resultHit.document.getData().computeIfPresent(fieldName, (fn, v) -> {
 					Object fieldSortData = ((Map<String, Object>) sortData).get(fn);
 					if (fieldSortData != null && fieldSortData instanceof Collection
 							&& ((Collection<?>) fieldSortData).size() > 1) {
-						resultHit.document.set(fn + "_prefix", SortOrder.ASC.equals(order) ? "{from}" : "{to}");
+						fieldsToChange.put(fn + "_prefix", SortOrder.ASC.equals(order) ? "{from}" : "{to}");
 						// collection is already sorted asc/desc: first value is
 						// the relevant one
 						return ((Collection<?>) fieldSortData).iterator().next();
 					}
 					return v;
 				});
+				fieldsToChange.forEach((field, value) -> resultHit.document.set(field, value));
 			});
 		}
 	}
