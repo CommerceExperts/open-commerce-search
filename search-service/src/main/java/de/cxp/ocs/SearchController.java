@@ -90,6 +90,7 @@ public class SearchController implements SearchService {
 
 	private final Cache<String, Exception> brokenTenantsCache = CacheBuilder.newBuilder()
 			.expireAfterWrite(5, TimeUnit.MINUTES)
+			.maximumSize(64)
 			.build();
 
 	@PostConstruct
