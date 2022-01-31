@@ -93,7 +93,7 @@ public class SearchController implements SearchService {
 			.build();
 
 	@PostConstruct
-	@Scheduled(fixedDelayString = "${ocs.scheduler.refresh-config-delay-ms:600000}")
+	@Scheduled(fixedDelayString = "${ocs.scheduler.refresh-config-delay-ms:300000}")
 	public void refreshAllConfigs() {
 		Set<String> configuredTenants = plugins.getConfigurationProvider().getConfiguredTenants();
 		log.info("SearchController {} configured tenants {}", searchClientCache.size() == 0 ? "initializing" : "reloading", configuredTenants);
