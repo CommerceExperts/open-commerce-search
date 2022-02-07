@@ -48,15 +48,40 @@ public class FiltersBuilder {
 		indexedFieldConfig = context.getFieldConfigIndex();
 	}
 
-	public FilterContext buildFilterContext(List<InternalResultFilter> filters) {
+	public FilterContext buildFilterContext(List<InternalResultFilter> filters, List<InternalResultFilter> querqyFilters) {
 		Map<String, InternalResultFilter> filtersByName = filters.stream().collect(Collectors.toMap(f -> f.getField().getName(), Functions.identity()));
 
-		if (filters.isEmpty()) return new FilterContext(filtersByName);
+		if (filters.isEmpty() && querqyFilters.isEmpty()) return new FilterContext(filtersByName);
 
 		Map<String, QueryBuilder> basicFilterQueries = new HashMap<>();
 		Map<String, QueryBuilder> postFilterQueries = new HashMap<>();
 
 		// collect filter queries on master and variant level
+		createFilterQueries(filters, basicFilterQueries, postFilterQueries, false);
+		createFilterQueries(querqyFilters, basicFilterQueries, postFilterQueries, true);
+
+		MasterVariantQuery postFilterQuery = buildFilters(postFilterQueries);
+		QueryBuilder joinedPostFilters = mergeQueries(postFilterQuery.getMasterLevelQuery(), postFilterQuery
+				.getVariantLevelQuery());
+
+		return new FilterContext(
+				filtersByName,
+				Collections.unmodifiableMap(basicFilterQueries),
+				Collections.unmodifiableMap(postFilterQueries),
+				buildFilters(basicFilterQueries),
+				joinedPostFilters,
+				postFilterQuery.getVariantLevelQuery());
+	}
+
+	/**
+	 *
+	 * @param filters
+	 * @param basicFilterQueries
+	 * @param postFilterQueries
+	 * @param addAllFiltersAsBasicFilters - if externally defined filters are used, they have to be treated as a basic filter
+	 */
+	private void createFilterQueries(List<InternalResultFilter> filters, Map<String, QueryBuilder> basicFilterQueries,
+		Map<String, QueryBuilder> postFilterQueries, boolean addAllFiltersAsBasicFilters) {
 		for (InternalResultFilter filter : filters) {
 			@SuppressWarnings("unchecked")
 			InternalResultFilterAdapter<? super InternalResultFilter> filterAdapter = (InternalResultFilterAdapter<? super InternalResultFilter>) filterAdapters
@@ -82,24 +107,12 @@ public class FiltersBuilder {
 				}
 			}
 
-			if (isBasicQuery(filter.getField().getName())) {
+			if (isBasicQuery(filter.getField().getName()) || addAllFiltersAsBasicFilters) {
 				basicFilterQueries.put(filter.getField().getName(), filterQuery);
-			}
-			else {
+			} else {
 				postFilterQueries.put(filter.getField().getName(), filterQuery);
 			}
 		}
-		MasterVariantQuery postFilterQuery = buildFilters(postFilterQueries);
-		QueryBuilder joinedPostFilters = mergeQueries(postFilterQuery.getMasterLevelQuery(), postFilterQuery
-				.getVariantLevelQuery());
-
-		return new FilterContext(
-				filtersByName,
-				Collections.unmodifiableMap(basicFilterQueries),
-				Collections.unmodifiableMap(postFilterQueries),
-				buildFilters(basicFilterQueries),
-				joinedPostFilters,
-				postFilterQuery.getVariantLevelQuery());
 	}
 
 	private boolean isBasicQuery(String fieldName) {

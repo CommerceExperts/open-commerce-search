@@ -39,6 +39,8 @@ public class InternalSearchParams {
 
 	public List<InternalResultFilter> filters = new ArrayList<>();
 
+	public List<InternalResultFilter> querqyFilters = new ArrayList<>();
+
 	public Map<String, String> customParams;
 
 	public StaticProductSet[] heroProductSets;

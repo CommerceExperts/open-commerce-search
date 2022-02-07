@@ -217,7 +217,9 @@ public class Searcher {
 
 		setFetchSources(searchSourceBuilder, variantSortings, parameters.withResultData);
 
-		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters);
+		List<InternalResultFilter> combinedFilters = new ArrayList<>();
+		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters, parameters.querqyFilters);
+
 		QueryBuilder postFilter = filterContext.getJoinedPostFilters();
 		if (postFilter != null) {
 			searchSourceBuilder.postFilter(postFilter);
@@ -330,6 +332,13 @@ public class Searcher {
 		return searchResult;
 	}
 
+	/**
+	 * For simple word filters the returned searchWords are used
+	 * For any special Querqy style filtering they are put into the parameters object
+	 * @param parameters
+	 * @param searchWords
+	 * @return
+	 */
 	private List<QueryStringTerm> handleFiltersOnFields(InternalSearchParams parameters, List<QueryStringTerm> searchWords) {
 		// Pull all QueryFilterTerm items into a list of its own
 		List<QueryFilterTerm> additionalQuerqyFilters = new ArrayList<>();
@@ -340,13 +349,18 @@ public class Searcher {
 		// Generate the filters and add them
 		Map<String, String> filtersAsMap =
 			additionalQuerqyFilters.stream().collect(Collectors.toMap(QueryFilterTerm::getWord, QueryFilterTerm::getField));
-		// Join already existing filters on fields with query specific filters on the same fields
-
-		joinParameterFiltersLists(parameters.filters, filtersAsMap);
-//		List<InternalResultFilter> additionalQuerqyFiltersConverted = parseFilters(filtersAsMap, fieldIndex);
-//		parameters.filters.addAll(additionalQuerqyFiltersConverted);
+		parameters.querqyFilters = convertToInternalResultFilters(filtersAsMap);
 
 		return searchWords;
+	}
+
+	private List<InternalResultFilter> convertToInternalResultFilters(Map<String, String> additionalFilters) {
+		List<InternalResultFilter> convertedFilters = new ArrayList<>();
+		for (String key : additionalFilters.keySet()) {
+			List<String> splitUpValues = Arrays.asList(additionalFilters.get(key).split(","));
+			convertedFilters = parseFilters(Collections.singletonMap(key, additionalFilters.get(key)), fieldIndex);
+		}
+		return convertedFilters;
 	}
 
 	private void joinParameterFiltersLists(List<InternalResultFilter> sourceList, Map<String, String> additionalFilters){
@@ -370,16 +384,6 @@ public class Searcher {
 				sourceList.addAll(parseFilters(Collections.singletonMap(key, additionalFilters.get(key)), fieldIndex));
 			}
 		}
-//		for (InternalResultFilter additionalFilter : additionalList){
-//			Optional<InternalResultFilter> filterFromSourceList = sourceList.stream().filter(entry -> entry.getField().equals(additionalFilter.getField())).findFirst();
-//			if (filterFromSourceList.isPresent()){
-//				// Join
-//				InternalResultFilter filter = filterFromSourceList.get();
-//				filter.getValues()
-//			} else {
-//				sourceList.add(additionalFilter);
-//			}
-//		}
 	}
 
 	private void addRescorersFailsafe(InternalSearchParams parameters, SearchSourceBuilder searchSourceBuilder) {
