@@ -138,7 +138,6 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 							log.warn("Found wrong QueryStringTerm entry, cannot add it to the list: " + fetchedWord.toString());
 						}
 					}
-					//new ArrayList<WeightedWord>((ArrayList<WeightedWord>)fetchedWords.subList(1, fetchedWords.size()))
 
 					terms.add(new WordAssociation(fetchedWords.get(0).getWord(), convertedList));
 				}
