@@ -349,15 +349,14 @@ public class Searcher {
 		// Generate the filters and add them
 		Map<String, String> filtersAsMap =
 			additionalQuerqyFilters.stream().collect(Collectors.toMap(QueryFilterTerm::getWord, QueryFilterTerm::getField));
-		parameters.querqyFilters = convertToInternalResultFilters(filtersAsMap);
+		parameters.querqyFilters = convertFiltersMapToInternalResultFilters(filtersAsMap);
 
 		return searchWords;
 	}
 
-	private List<InternalResultFilter> convertToInternalResultFilters(Map<String, String> additionalFilters) {
+	private List<InternalResultFilter> convertFiltersMapToInternalResultFilters(Map<String, String> additionalFilters) {
 		List<InternalResultFilter> convertedFilters = new ArrayList<>();
 		for (String key : additionalFilters.keySet()) {
-			List<String> splitUpValues = Arrays.asList(additionalFilters.get(key).split(","));
 			convertedFilters = parseFilters(Collections.singletonMap(key, additionalFilters.get(key)), fieldIndex);
 		}
 		return convertedFilters;
