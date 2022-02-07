@@ -52,7 +52,6 @@
 			<groupId>io.micrometer</groupId>
 			<artifactId>micrometer-core</artifactId>
 			<scope>compile</scope>
-			<optional>true</optional>
 		</dependency>
 
 		<dependency>
