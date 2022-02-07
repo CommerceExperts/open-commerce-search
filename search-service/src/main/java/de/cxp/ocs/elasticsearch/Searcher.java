@@ -188,7 +188,7 @@ public class Searcher {
 		Sample findTimerSample = Timer.start(Clock.SYSTEM);
 		Iterator<ESQueryFactory> stagedQueryBuilders;
 		List<QueryStringTerm> searchWords;
-		//TODO: List<SomeFilterElements> querqyFilters;
+
 		String preprocessedQuery = null;
 		if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
 			preprocessedQuery = parameters.userQuery;
@@ -342,16 +342,21 @@ public class Searcher {
 	private List<QueryStringTerm> handleFiltersOnFields(InternalSearchParams parameters, List<QueryStringTerm> searchWords) {
 		// Pull all QueryFilterTerm items into a list of its own
 		List<QueryFilterTerm> additionalQuerqyFilters = new ArrayList<>();
-		searchWords.stream().filter(searchWord -> searchWord instanceof QueryFilterTerm).forEach(
-			queryFilterTerm -> additionalQuerqyFilters.add((QueryFilterTerm)queryFilterTerm));
-		searchWords.removeAll(additionalQuerqyFilters);
+		List<QueryStringTerm> remainingSearchWords = new ArrayList<>();
+		searchWords.stream()
+			.filter(searchWord -> searchWord instanceof QueryFilterTerm)
+			.forEach(queryFilterTerm -> additionalQuerqyFilters.add((QueryFilterTerm)queryFilterTerm));
+
+		searchWords.stream()
+			.filter(searchWord -> searchWord instanceof QueryFilterTerm == false)
+			.forEach(searchWord -> remainingSearchWords.add(searchWord));
 
 		// Generate the filters and add them
 		Map<String, String> filtersAsMap =
 			additionalQuerqyFilters.stream().collect(Collectors.toMap(QueryFilterTerm::getWord, QueryFilterTerm::getField));
 		parameters.querqyFilters = convertFiltersMapToInternalResultFilters(filtersAsMap);
 
-		return searchWords;
+		return remainingSearchWords;
 	}
 
 	private List<InternalResultFilter> convertFiltersMapToInternalResultFilters(Map<String, String> additionalFilters) {

@@ -3,11 +3,7 @@ package de.cxp.ocs.elasticsearch.query.filter;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -49,6 +45,6 @@ public class TermResultFilter implements InternalResultFilter {
 
 	@Override
 	public String[] getValues(){
-		return valuesAsList.stream().toArray(String[]::new);
+		return valuesAsList.toArray(new String[0]);
 	}
 }
