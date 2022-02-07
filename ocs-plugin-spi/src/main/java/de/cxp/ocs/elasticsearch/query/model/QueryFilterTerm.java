@@ -15,9 +15,9 @@ import org.apache.lucene.search.BooleanClause.Occur;
 public class QueryFilterTerm implements QueryStringTerm {
 
     @NonNull
-    private String	word;
-    @NonNull
     private String  field;
+    @NonNull
+    private String	word;
 
     private Occur   occur			= Occur.MUST;
 
