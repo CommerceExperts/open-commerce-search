@@ -362,29 +362,6 @@ public class Searcher {
 		return convertedFilters;
 	}
 
-	private void joinParameterFiltersLists(List<InternalResultFilter> sourceList, Map<String, String> additionalFilters){
-		for (String key: additionalFilters.keySet()){
-			List<String> additionalValues = Arrays.asList(additionalFilters.get(key).split(","));
-			Optional<InternalResultFilter> filterFromSourceList = sourceList.stream().filter(entry -> entry.getField().getName().equals(key)).findFirst();
-			if (filterFromSourceList.isPresent()){
-				InternalResultFilter filter = filterFromSourceList.get();
-				if (filter instanceof TermResultFilter){
-					TermResultFilter termResultFilter = (TermResultFilter)filter;
-					// Make sure we have no duplicates!
-					termResultFilter.getValuesAsList().removeAll(additionalValues);
-					// Add the values combined
-					termResultFilter.getValuesAsList().addAll(additionalValues);
-				} else if (filter instanceof NumberResultFilter){
-					log.debug("Cannot join numeric filters for field " + key);
-				} else {
-					log.warn("Unknown result filter type: " + filter.getClass());
-				}
-			} else {
-				sourceList.addAll(parseFilters(Collections.singletonMap(key, additionalFilters.get(key)), fieldIndex));
-			}
-		}
-	}
-
 	private void addRescorersFailsafe(InternalSearchParams parameters, SearchSourceBuilder searchSourceBuilder) {
 		Iterator<RescorerProvider> rescorerProviders = rescorers.iterator();
 
