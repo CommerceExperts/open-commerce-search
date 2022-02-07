@@ -1,14 +1,9 @@
 package de.cxp.ocs.elasticsearch;
 
-import static de.cxp.ocs.util.SearchParamsParser.parseFilters;
-
 import static de.cxp.ocs.config.FieldConstants.RESULT_DATA;
 import static de.cxp.ocs.config.FieldConstants.VARIANTS;
+import static de.cxp.ocs.util.SearchParamsParser.parseFilters;
 
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
-import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
-import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
-import de.cxp.ocs.elasticsearch.query.model.QueryFilterTerm;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,6 +61,8 @@ import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries;
 import de.cxp.ocs.elasticsearch.query.builder.ESQueryFactoryBuilder;
 import de.cxp.ocs.elasticsearch.query.builder.MatchAllQueryFactory;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
+import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.query.model.QueryFilterTerm;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
 import de.cxp.ocs.model.result.ResultHit;
@@ -341,19 +338,14 @@ public class Searcher {
 	 */
 	private List<QueryStringTerm> handleFiltersOnFields(InternalSearchParams parameters, List<QueryStringTerm> searchWords) {
 		// Pull all QueryFilterTerm items into a list of its own
-		List<QueryFilterTerm> additionalQuerqyFilters = new ArrayList<>();
 		List<QueryStringTerm> remainingSearchWords = new ArrayList<>();
-		searchWords.stream()
-			.filter(searchWord -> searchWord instanceof QueryFilterTerm)
-			.forEach(queryFilterTerm -> additionalQuerqyFilters.add((QueryFilterTerm)queryFilterTerm));
 
-		searchWords.stream()
-			.filter(searchWord -> searchWord instanceof QueryFilterTerm == false)
-			.forEach(searchWord -> remainingSearchWords.add(searchWord));
+		Map<String, String> filtersAsMap = searchWords.stream()
+			.filter(searchWord -> searchWord instanceof QueryFilterTerm || !remainingSearchWords.add(searchWord))
+			// Generate the filters and add them
+			.map(term -> (QueryFilterTerm) term)
+			.collect(Collectors.toMap(QueryFilterTerm::getWord, QueryFilterTerm::getField));
 
-		// Generate the filters and add them
-		Map<String, String> filtersAsMap =
-			additionalQuerqyFilters.stream().collect(Collectors.toMap(QueryFilterTerm::getWord, QueryFilterTerm::getField));
 		parameters.querqyFilters = convertFiltersMapToInternalResultFilters(filtersAsMap);
 
 		return remainingSearchWords;
