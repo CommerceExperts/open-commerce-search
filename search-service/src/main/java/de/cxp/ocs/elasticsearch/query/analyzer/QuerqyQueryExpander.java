@@ -164,7 +164,6 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 	static class TermFetcher extends AbstractNodeVisitor<Node> {
 
 		@Getter
-		//List<WeightedWord>	words	= new ArrayList<>();
 		//TODO: Add new impl. of QueryStringTerm as e.g. FilterWord and use that with a field in visit(RawQuery)
 		List<QueryStringTerm>	words	= new ArrayList<>();
 		private Occur			occur;
