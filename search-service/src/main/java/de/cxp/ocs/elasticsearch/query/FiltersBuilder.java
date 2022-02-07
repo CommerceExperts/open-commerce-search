@@ -57,8 +57,8 @@ public class FiltersBuilder {
 		Map<String, QueryBuilder> postFilterQueries = new HashMap<>();
 
 		// collect filter queries on master and variant level
-		createFilterQueries(filters, basicFilterQueries, postFilterQueries, false);
-		createFilterQueries(querqyFilters, basicFilterQueries, postFilterQueries, true);
+		buildFilterQueries(filters, basicFilterQueries, postFilterQueries, false);
+		buildFilterQueries(querqyFilters, basicFilterQueries, postFilterQueries, true);
 
 		MasterVariantQuery postFilterQuery = buildFilters(postFilterQueries);
 		QueryBuilder joinedPostFilters = mergeQueries(postFilterQuery.getMasterLevelQuery(), postFilterQuery
@@ -80,7 +80,7 @@ public class FiltersBuilder {
 	 * @param postFilterQueries
 	 * @param addAllFiltersAsBasicFilters - if externally defined filters are used, they have to be treated as a basic filter
 	 */
-	private void createFilterQueries(List<InternalResultFilter> filters, Map<String, QueryBuilder> basicFilterQueries,
+	private void buildFilterQueries(List<InternalResultFilter> filters, Map<String, QueryBuilder> basicFilterQueries,
 		Map<String, QueryBuilder> postFilterQueries, boolean addAllFiltersAsBasicFilters) {
 		for (InternalResultFilter filter : filters) {
 			@SuppressWarnings("unchecked")
