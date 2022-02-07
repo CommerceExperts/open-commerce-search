@@ -108,7 +108,10 @@ public class FiltersBuilder {
 			}
 
 			if (isBasicQuery(filter.getField().getName()) || addAllFiltersAsBasicFilters) {
-				basicFilterQueries.put(filter.getField().getName(), filterQuery);
+				QueryBuilder conflictingFilter = basicFilterQueries.put(filter.getField().getName(), filterQuery);
+				if (conflictingFilter != null) {
+					basicFilterQueries.put(filter.getField().getName(), mergeQueries(conflictingFilter, filterQuery));
+				}
 			} else {
 				postFilterQueries.put(filter.getField().getName(), filterQuery);
 			}
