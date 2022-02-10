@@ -2,6 +2,7 @@ package de.cxp.ocs;
 
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import org.rapidoid.http.HttpHeaders;
@@ -10,11 +11,13 @@ import org.rapidoid.http.ReqHandler;
 import org.rapidoid.setup.On;
 
 import de.cxp.ocs.api.SuggestService;
+import de.cxp.ocs.model.suggest.Suggestion;
 import de.cxp.ocs.smartsuggest.QuerySuggestManager;
 import de.cxp.ocs.smartsuggest.QuerySuggestManager.QuerySuggestManagerBuilder;
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
 import de.cxp.ocs.suggest.SuggestProperties;
 import de.cxp.ocs.suggest.SuggestServiceImpl;
+import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
@@ -42,8 +45,12 @@ public class Application {
 
 					@Override
 					public Object execute(Req req) throws Exception {
+						long start = System.currentTimeMillis();
+
 						req.response().header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 						req.response().header(HttpHeaders.CACHE_CONTROL.name(), "public, max-age=60");
+
+						List<Suggestion> result = Collections.emptyList();
 						try {
 							String userQuery = req.params().get("userQuery");
 							if (userQuery != null && !userQuery.isEmpty()) {
@@ -51,7 +58,7 @@ public class Application {
 								String filter = req.param("filter", null);
 								int limit = Integer.valueOf(req.param("limit", "10"));
 
-								return suggestService.suggest(indexname, userQuery, limit, filter);
+								result = suggestService.suggest(indexname, userQuery, limit, filter);
 							}
 							else {
 								req.response().code(400).header("Warning", "no userQuery defined");
@@ -62,7 +69,15 @@ public class Application {
 									req.params(), e.getClass().getSimpleName(), e.getMessage());
 							req.response().code(500);
 						}
-						return Collections.emptyList();
+
+						double durationSeconds = ((double) System.currentTimeMillis() - start) / 1000;
+
+						DistributionSummary summary = meterRegistry.summary("http_server_requests_seconds",
+								"uri", req.path(),
+								"status", String.valueOf(req.response().code()));
+						summary.record(durationSeconds);
+
+						return result;
 					}
 				});
 
