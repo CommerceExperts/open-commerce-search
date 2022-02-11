@@ -93,9 +93,14 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 			
 			final boolean isSelectedPath;
 			if (isFiltered && intFacetFilter != null && intFacetFilter.getValues().length > 0 && categoryPath != null) {
+
 				String[] filterValues = intFacetFilter.getValues();
+				String[] filterValuesSplitByCategories = filterValues.length == 1 && filterValues[0].contains("/") 
+						? filterValues[0].split("/") 
+						: filterValues;
+				
 				// skip this path, if it is not a child of the selected path
-				if (filterValues.length == 1 ? !categoryPath.contains(filterValues[0]) : Arrays.stream(filterValues).noneMatch(categoryPath::contains)) {
+				if (Arrays.stream(filterValuesSplitByCategories).noneMatch(categoryPath::contains)) {
 					continue;
 				}
 				else {
