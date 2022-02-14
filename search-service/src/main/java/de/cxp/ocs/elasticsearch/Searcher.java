@@ -475,13 +475,14 @@ public class Searcher {
 		}
 
 		// if there are hard variant filters, add them as must clause
+		boolean isRetrieveVariantInnerHits = false;
 		if (variantFilterQuery != null) {
 			NestedQueryBuilder variantQuery = QueryBuilders.nestedQuery(FieldConstants.VARIANTS, variantFilterQuery, ScoreMode.None);
 			if (variantsOnlyFiltered) {
 				variantQuery.innerHit(getVariantInnerHits(variantSortings));
 			}
 			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).filter(variantQuery);
-			if (variantPickingStrategy.isAllVariantHitCountRequired()) ((BoolQueryBuilder) masterLevelQuery).should(getAllVariantInnerHits());
+			isRetrieveVariantInnerHits = true;
 		}
 
 		// variant inner hits are always retrieved in a should clause,
@@ -491,7 +492,11 @@ public class Searcher {
 			NestedQueryBuilder variantQuery = QueryBuilders.nestedQuery(FieldConstants.VARIANTS, variantsMatchQuery, ScoreMode.Avg)
 					.innerHit(getVariantInnerHits(variantSortings));
 			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).should(variantQuery);
-			if (variantPickingStrategy.isAllVariantHitCountRequired()) ((BoolQueryBuilder) masterLevelQuery).should(getAllVariantInnerHits());
+			isRetrieveVariantInnerHits = true;
+		}
+
+		if (variantPickingStrategy.isAllVariantHitCountRequired() && isRetrieveVariantInnerHits) {
+			((BoolQueryBuilder) masterLevelQuery).should(getAllVariantInnerHits());
 		}
 
 		return masterLevelQuery;
