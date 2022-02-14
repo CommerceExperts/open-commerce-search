@@ -1,5 +1,6 @@
 package de.cxp.ocs.elasticsearch.prodset;
 
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.apache.lucene.search.TotalHits;
@@ -31,9 +32,10 @@ public class StaticProductSetResolver implements ProductSetResolver {
 			}
 			else if (searchResponse.getHits().getTotalHits().value < productSet.getSize()
 					&& searchResponse.getHits().getTotalHits().relation.equals(TotalHits.Relation.EQUAL_TO)) {
-				staticSet.setIds((String[]) StreamSupport.stream(searchResponse.getHits().spliterator(), false)
+				staticSet.setIds(StreamSupport.stream(searchResponse.getHits().spliterator(), false)
 						.map(hit -> hit.getId())
-						.toArray());
+						.collect(Collectors.toList())
+						.toArray(new String[0]));
 			}
 		}
 		catch (Exception e) {
