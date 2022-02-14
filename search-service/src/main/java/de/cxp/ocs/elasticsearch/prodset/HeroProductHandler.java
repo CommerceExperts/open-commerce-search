@@ -129,7 +129,7 @@ public class HeroProductHandler {
 				List<String> deduplicatedIDs = new ArrayList<>(Math.min(productSets[i].getSize(), resolvedSet.ids.length));
 				int k_offset = 0;
 				for (int k = 0; k < productSets[i].getSize() && k + k_offset < resolvedSet.ids.length; k++) {
-					while (foundHeroProductIds.add(resolvedSet.ids[k + k_offset]) == false && k + k_offset < resolvedSet.ids.length) {
+					while (k + k_offset < resolvedSet.ids.length && foundHeroProductIds.add(resolvedSet.ids[k + k_offset]) == false) {
 						k_offset++;
 					}
 					deduplicatedIDs.add(resolvedSet.ids[k + k_offset]);
