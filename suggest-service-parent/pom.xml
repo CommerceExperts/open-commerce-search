@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.26.0</version>
+		<version>0.29.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
@@ -16,7 +16,7 @@
 	<description>intermediate parent project that splits the Suggest Service into several modules</description>
 
 	<properties>
-		<lucene.version>8.10.1</lucene.version>
+		<lucene.version>8.11.1</lucene.version>
 		<micrometer.version>1.5.14</micrometer.version>
 	</properties>
 	
@@ -25,12 +25,12 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>smartsuggest-lib</artifactId>
-				<version>0.9.0</version>
+				<version>0.10.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-suggest-data-provider</artifactId>
-				<version>0.7.0</version>
+				<version>0.8.0</version>
 			</dependency>
 			
 			<dependency>
