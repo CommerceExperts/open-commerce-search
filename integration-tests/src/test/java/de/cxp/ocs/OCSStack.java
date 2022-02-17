@@ -68,7 +68,7 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 				}
 			}
 			else {
-				elasticsearch = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:7.14.0");
+				elasticsearch = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:7.17.0");
 				elasticsearch.addEnv("discovery.type", "single-node");
 				elasticsearch.setExposedPorts(Collections.singletonList(ES_DEFAULT_PORT));
 				elasticsearch.withNetwork(Network.newNetwork());
