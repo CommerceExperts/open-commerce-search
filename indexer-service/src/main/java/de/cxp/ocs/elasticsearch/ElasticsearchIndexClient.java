@@ -228,17 +228,17 @@ class ElasticsearchIndexClient {
 	 * Will apply all record inside one single bulk request. The target index
 	 * will be delete before if already present.
 	 * 
-	 * @param records
+	 * @param items
 	 * @return
 	 * @throws IOException
 	 */
-	public Optional<BulkResponse> indexRecords(String indexName, Iterator<IndexableItem> records) throws IOException {
+	public Optional<BulkResponse> indexRecords(String indexName, List<IndexableItem> items) throws IOException {
 		BulkRequest bulkIndexRequest = new BulkRequest();
 		int docCount = 0;
-		while (records.hasNext()) {
+		for (IndexableItem item : items) {
 			IndexRequest indexRequest;
 			try {
-				indexRequest = asIndexRequest(indexName, records.next());
+				indexRequest = asIndexRequest(indexName, item);
 				bulkIndexRequest.add(indexRequest);
 				docCount++;
 			}
@@ -246,7 +246,9 @@ class ElasticsearchIndexClient {
 				log.warn("failed to add record to bulk request", e);
 			}
 		}
-		if (docCount > 0) return Optional.ofNullable(highLevelClient.bulk(bulkIndexRequest, RequestOptions.DEFAULT));
+		if (docCount > 0) {
+			return Optional.ofNullable(highLevelClient.bulk(bulkIndexRequest, RequestOptions.DEFAULT));
+		}
 		else return Optional.empty();
 	}
 

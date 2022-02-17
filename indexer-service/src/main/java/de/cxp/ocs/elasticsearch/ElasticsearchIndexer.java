@@ -192,9 +192,22 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		}
 		else {
 			log.info("Adding {} documents to index {}", bulk.size(), session.finalIndexName);
-			return indexClient.indexRecords(session.temporaryIndexName, bulk.iterator())
-					.map(this::getSuccessCount)
-					.orElse(0);
+			try {
+				return indexClient.indexRecords(session.temporaryIndexName, bulk)
+						.map(this::getSuccessCount)
+						.orElse(0);
+			}
+			catch (ElasticsearchStatusException ese) {
+				if (ese.getMessage().contains("Data too large")) {
+					log.warn("BulkSize seems to high for index request to {} with {} items. Bulk Indexation will be split in two parts...", session.finalIndexName, bulk.size());
+					return indexClient.indexRecordsChunkwise(session.temporaryIndexName, bulk.iterator(), bulk.size() / 2)
+							.stream()
+							.collect(Collectors.summingInt(this::getSuccessCount));
+				}
+				else {
+					throw ese;
+				}
+			}
 		}
 	}
 
