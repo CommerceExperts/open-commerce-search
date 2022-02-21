@@ -11,12 +11,14 @@ import java.util.Set;
 
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.DocWriteRequest.OpType;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
+import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest.AliasActions;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
-import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
+import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
+import org.elasticsearch.action.admin.indices.refresh.RefreshResponse;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsResponse;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
@@ -37,6 +39,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.xcontent.XContentType;
@@ -141,13 +144,12 @@ class ElasticsearchIndexClient {
 	public boolean finalizeIndex(String indexName, int numberOfReplicas, String refreshInterval) throws IOException {
 		boolean success = applyIndexSettings(indexName, numberOfReplicas, refreshInterval);
 
-		ForceMergeRequest forceMergeRequest = new ForceMergeRequest(indexName);
-		forceMergeRequest.flush(true);
-		ForceMergeResponse forceMergeResponse = highLevelClient.indices().forcemerge(forceMergeRequest, RequestOptions.DEFAULT);
+		// refresh immediately
+		RefreshResponse refresh = highLevelClient.indices().refresh(new RefreshRequest(indexName), RequestOptions.DEFAULT);
 
-		if (forceMergeResponse.getFailedShards() > 0) {
-			log.error("Failed to force-merge & flush complete index. {} out of {} shards failed.",
-					forceMergeResponse.getFailedShards(), forceMergeResponse.getTotalShards());
+		if (refresh.getFailedShards() > 0) {
+			log.error("Failed to refresh index. {} out of {} shards failed.",
+					refresh.getFailedShards(), refresh.getTotalShards());
 			return false;
 		}
 		return success;
@@ -174,6 +176,26 @@ class ElasticsearchIndexClient {
 					e.getClass().getSimpleName(), e.getMessage());
 		}
 		return false;
+	}
+
+	public ClusterHealthStatus waitUntilHealthy(String indexName, int timeoutMillis) {
+		long start = System.currentTimeMillis();
+		ClusterHealthResponse health = null;
+		do {
+			try {
+				health = highLevelClient.cluster().health(new ClusterHealthRequest(indexName), RequestOptions.DEFAULT);
+				Thread.sleep(50);
+			}
+			catch (IOException e) {
+				log.warn("Could not fetch health status for index {} because of {}", indexName, e.getMessage());
+			}
+			catch (InterruptedException e) {
+				log.info("Interrupted waiting for healthy index {}", indexName);
+				break;
+			}
+		}
+		while (!ClusterHealthStatus.GREEN.equals(health.getStatus()) && (System.currentTimeMillis() - start) < timeoutMillis);
+		return health == null ? ClusterHealthStatus.RED : health.getStatus();
 	}
 
 	/**

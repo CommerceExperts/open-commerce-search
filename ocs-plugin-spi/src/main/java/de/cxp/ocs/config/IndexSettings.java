@@ -9,6 +9,8 @@ public class IndexSettings {
 
 	public String refreshInterval = "5s";
 
-	public long minimumDocumentCount = 1;
+	public int minimumDocumentCount = 1;
+
+	public int waitTimeMsForHealthyIndex = 3000;
 
 }

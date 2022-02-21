@@ -26,6 +26,7 @@ import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.RestStatus;
@@ -263,6 +264,12 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		}
 
 		try {
+			ClusterHealthStatus indexHealth = indexClient.waitUntilHealthy(session.temporaryIndexName, indexSettings.waitTimeMsForHealthyIndex);
+			if (ClusterHealthStatus.RED.equals(indexHealth)) {
+				log.error("Index {} not healthy after {}ms! Won't deploy!", session.temporaryIndexName, indexSettings.waitTimeMsForHealthyIndex);
+				return false;
+			}
+
 			long docCount = indexClient.getDocCount(session.temporaryIndexName);
 			if (docCount < indexSettings.minimumDocumentCount) {
 				log.error("new index version {} for index {} has only {} documents indexed, which is not the required minimum document count of {}",
