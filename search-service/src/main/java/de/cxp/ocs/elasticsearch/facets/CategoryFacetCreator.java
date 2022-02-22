@@ -184,11 +184,18 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 	private HierarchialFacetEntry toFacetEntry(String value, String categoryPath, FacetConfig facetConfig, SearchQueryBuilder linkBuilder, boolean isSelected) {
 		String link;
 		if (isSelected) {
-			int parentPathEndIndex = categoryPath.lastIndexOf('/');
-			if (parentPathEndIndex != -1)
-				link = linkBuilder.withFilterAsLink(facetConfig, categoryPath.substring(0, parentPathEndIndex));
-			else
+			int unselectPathEndIndex = categoryPath.lastIndexOf('/');
+			if (unselectPathEndIndex == -1) {
 				link = linkBuilder.withoutFilterAsLink(facetConfig, categoryPath);
+			}
+			else if (categoryPath.endsWith(value)) {
+				link = linkBuilder.withFilterAsLink(facetConfig, categoryPath.substring(0, unselectPathEndIndex));
+			}
+			else {
+				unselectPathEndIndex = categoryPath.lastIndexOf(value + "/") + value.length();
+				link = linkBuilder.withFilterAsLink(facetConfig, categoryPath.substring(0, unselectPathEndIndex));
+			}
+
 		}
 		else {
 			link = linkBuilder.withFilterAsLink(facetConfig, categoryPath);
