@@ -1,5 +1,6 @@
 package de.cxp.ocs.elasticsearch.query.analyzer;
 
+import de.cxp.ocs.elasticsearch.query.model.QueryFilterTerm;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,6 +21,7 @@ import de.cxp.ocs.spi.search.ConfigurableExtension;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.lucene.search.Weight;
 import querqy.model.AbstractNodeVisitor;
 import querqy.model.BooleanClause;
 import querqy.model.BooleanQuery;
@@ -29,6 +31,8 @@ import querqy.model.DisjunctionMaxQuery;
 import querqy.model.ExpandedQuery;
 import querqy.model.Node;
 import querqy.model.QuerqyQuery;
+import querqy.model.RawQuery;
+import querqy.model.StringRawQuery;
 import querqy.model.Term;
 import querqy.parser.QuerqyParser;
 import querqy.parser.WhiteSpaceQuerqyParser;
@@ -118,14 +122,24 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 
 			for (BooleanClause clause : userQuery.getClauses()) {
 				clause.accept(termFetcher);
-				List<WeightedWord> fetchedWords = termFetcher.getWords();
+				List<QueryStringTerm> fetchedWords = termFetcher.getWords();
 				if (fetchedWords.isEmpty()) continue;
 
 				if (fetchedWords.size() == 1) {
 					terms.add(termFetcher.getWords().get(0));
 				}
 				else {
-					terms.add(new WordAssociation(fetchedWords.get(0).getWord(), new ArrayList<>(fetchedWords.subList(1, fetchedWords.size()))));
+					List<WeightedWord> convertedList = new ArrayList<>();
+					for (int index = 1; index < fetchedWords.size(); index++){
+						QueryStringTerm fetchedWord = fetchedWords.get(index);
+						if (fetchedWord instanceof WeightedWord) {
+							convertedList.add((WeightedWord) fetchedWords.get(index));
+						} else {
+							log.warn("Found wrong QueryStringTerm entry, cannot add it to the list: " + fetchedWord.toString());
+						}
+					}
+
+					terms.add(new WordAssociation(fetchedWords.get(0).getWord(), convertedList));
 				}
 				termFetcher.getWords().clear();
 
@@ -150,8 +164,8 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 	static class TermFetcher extends AbstractNodeVisitor<Node> {
 
 		@Getter
-		List<WeightedWord>	words	= new ArrayList<>();
-		private Occur		occur;
+		List<QueryStringTerm>	words	= new ArrayList<>();
+		private Occur			occur;
 
 		@Override
 		public Node visit(BooleanQuery booleanQuery) {
@@ -163,6 +177,17 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 		public Node visit(DisjunctionMaxQuery disjunctionMaxQuery) {
 			this.occur = disjunctionMaxQuery.occur;
 			return super.visit(disjunctionMaxQuery);
+		}
+
+		@Override
+		public Node visit(RawQuery rawQuery) {
+			this.occur = rawQuery.occur;
+			String rawQueryFieldAndValues = ((StringRawQuery)rawQuery).getQueryString();
+			String fieldName = rawQueryFieldAndValues.split(":")[0];
+			String values = rawQueryFieldAndValues.split(":")[1];
+			//TODO: Make it possible to use " AND " as a conjunction for these values
+			words.add(new QueryFilterTerm(fieldName, values));
+			return super.visit(rawQuery);
 		}
 
 		@Override

@@ -2,6 +2,7 @@ package de.cxp.ocs.elasticsearch;
 
 import static de.cxp.ocs.config.FieldConstants.RESULT_DATA;
 import static de.cxp.ocs.config.FieldConstants.VARIANTS;
+import static de.cxp.ocs.util.SearchParamsParser.parseFilters;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -60,6 +61,8 @@ import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries;
 import de.cxp.ocs.elasticsearch.query.builder.ESQueryFactoryBuilder;
 import de.cxp.ocs.elasticsearch.query.builder.MatchAllQueryFactory;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
+import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.query.model.QueryFilterTerm;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
 import de.cxp.ocs.model.result.ResultHit;
@@ -182,6 +185,7 @@ public class Searcher {
 		Sample findTimerSample = Timer.start(Clock.SYSTEM);
 		Iterator<ESQueryFactory> stagedQueryBuilders;
 		List<QueryStringTerm> searchWords;
+
 		String preprocessedQuery = null;
 		if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
 			preprocessedQuery = parameters.userQuery;
@@ -190,6 +194,8 @@ public class Searcher {
 			}
 
 			searchWords = userQueryAnalyzer.analyze(preprocessedQuery);
+			searchWords = handleFiltersOnFields(parameters, searchWords);
+
 			stagedQueryBuilders = queryBuilder.getMatchingFactories(searchWords);
 		}
 		else {
@@ -208,7 +214,9 @@ public class Searcher {
 
 		setFetchSources(searchSourceBuilder, variantSortings, parameters.withResultData);
 
-		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters);
+		List<InternalResultFilter> combinedFilters = new ArrayList<>();
+		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters, parameters.querqyFilters);
+
 		QueryBuilder postFilter = filterContext.getJoinedPostFilters();
 		if (postFilter != null) {
 			searchSourceBuilder.postFilter(postFilter);
@@ -319,6 +327,36 @@ public class Searcher {
 		findTimerSample.stop(findTimer);
 
 		return searchResult;
+	}
+
+	/**
+	 * For simple word filters the returned searchWords are used
+	 * For any special Querqy style filtering they are put into the parameters object
+	 * @param parameters
+	 * @param searchWords
+	 * @return
+	 */
+	private List<QueryStringTerm> handleFiltersOnFields(InternalSearchParams parameters, List<QueryStringTerm> searchWords) {
+		// Pull all QueryFilterTerm items into a list of its own
+		List<QueryStringTerm> remainingSearchWords = new ArrayList<>();
+
+		Map<String, String> filtersAsMap = searchWords.stream()
+			.filter(searchWord -> searchWord instanceof QueryFilterTerm || !remainingSearchWords.add(searchWord))
+			// Generate the filters and add them
+			.map(term -> (QueryFilterTerm) term)
+			.collect(Collectors.toMap(QueryFilterTerm::getField, QueryFilterTerm::getWord));
+
+		parameters.querqyFilters = convertFiltersMapToInternalResultFilters(filtersAsMap);
+
+		return remainingSearchWords;
+	}
+
+	private List<InternalResultFilter> convertFiltersMapToInternalResultFilters(Map<String, String> additionalFilters) {
+		List<InternalResultFilter> convertedFilters = new ArrayList<>();
+		for (String key : additionalFilters.keySet()) {
+			convertedFilters = parseFilters(Collections.singletonMap(key, additionalFilters.get(key)), fieldIndex);
+		}
+		return convertedFilters;
 	}
 
 	private void addRescorersFailsafe(InternalSearchParams parameters, SearchSourceBuilder searchSourceBuilder) {
