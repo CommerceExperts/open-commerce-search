@@ -106,21 +106,17 @@ public class SearchController implements SearchService {
 		HttpStatus status;
 		synchronized (tenant.intern()) {
 			MDC.put("tenant", tenant);
-			brokenTenantsCache.invalidate(tenant);
-
 			try {
+				brokenTenantsCache.invalidate(tenant);
 				SearchContext searchContext = loadContext(tenant);
 				SearchContext oldConfig = searchContexts.put(tenant, searchContext);
-
 				if (oldConfig == null) {
 					log.info("config successfuly loaded for tenant {}", tenant);
 					status = HttpStatus.CREATED;
-				}
-				else if (oldConfig.equals(searchContexts.get(tenant))) {
+				} else if (oldConfig.equals(searchContexts.get(tenant))) {
 					log.info("config flush did not modify config for tenant {}", tenant);
 					status = HttpStatus.NOT_MODIFIED;
-				}
-				else {
+				} else {
 					log.info("config successfuly reloaded for tenant {}", tenant);
 					status = HttpStatus.OK;
 					searchClientCache.put(tenant, initializeSearcher(searchContext));

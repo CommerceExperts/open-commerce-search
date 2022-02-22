@@ -2,6 +2,8 @@ package de.cxp.ocs.elasticsearch.query.filter;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -14,7 +16,7 @@ public class TermResultFilter implements InternalResultFilter {
 
 	private final Field field;
 
-	private final String[] values;
+	private final List<String> valuesAsList = new ArrayList<>();
 
 	private boolean filterOnId = false;
 
@@ -22,21 +24,27 @@ public class TermResultFilter implements InternalResultFilter {
 
 	public TermResultFilter(Field field, String... inputValues) {
 		this.field = field;
-		values = inputValues;
+
+		for (String singleValue : inputValues) valuesAsList.add(singleValue);
 	}
 
 	public String getSingleValue() {
-		if (values.length > 0) return values[0];
+		if (valuesAsList.size() > 0) return valuesAsList.get(0);
 		return null;
 	}
 
 	public String getValue(int index) {
-		if (values.length > index) return values[index];
+		if (valuesAsList.size() > index) return valuesAsList.get(index);
 		return null;
 	}
 
 	@Override
 	public boolean isNestedFilter() {
 		return true;
+	}
+
+	@Override
+	public String[] getValues(){
+		return valuesAsList.toArray(new String[0]);
 	}
 }
