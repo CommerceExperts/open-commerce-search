@@ -14,7 +14,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 
 import org.elasticsearch.ElasticsearchStatusException;
@@ -27,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -66,6 +66,7 @@ import lombok.extern.slf4j.Slf4j;
 @CrossOrigin(origins = "http://localhost:8081")
 @RestController
 @RequestMapping(path = "/search-api/v1")
+@EnableScheduling
 @Slf4j
 public class SearchController implements SearchService {
 
@@ -93,8 +94,7 @@ public class SearchController implements SearchService {
 			.maximumSize(64)
 			.build();
 
-	@PostConstruct
-	@Scheduled(fixedDelayString = "${ocs.scheduler.refresh-config-delay-ms:PT10M}")
+	@Scheduled(fixedDelayString = "${ocs.scheduler.refresh-config-delay-ms:60000}")
 	public void refreshAllConfigs() {
 		Set<String> configuredTenants = plugins.getConfigurationProvider().getConfiguredTenants();
 		log.info("SearchController {} configured tenants {}", searchClientCache.size() == 0 ? "initializing" : "reloading", configuredTenants);
