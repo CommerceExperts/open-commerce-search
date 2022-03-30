@@ -7,7 +7,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.31.2</version>
+	<version>0.31.3</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -33,7 +33,7 @@
 		<elasticsearch.version>7.17.1</elasticsearch.version>
 		<spring-boot.version>2.3.12.RELEASE</spring-boot.version>
 		<spring-cloud.version>Hoxton.SR12</spring-cloud.version>
-		<jackson.version>2.11.3</jackson.version>
+		<jackson.version>2.12.6.1</jackson.version>
 		<junit.jupiter.version>5.7.0</junit.jupiter.version>
 	</properties>
 
@@ -52,17 +52,17 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-commons</artifactId>
-				<version>0.14.0</version>
+				<version>0.14.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>indexer-service</artifactId>
-				<version>0.18.0</version>
+				<version>0.18.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>search-service</artifactId>
-				<version>0.28.2</version>
+				<version>0.28.3</version>
 			</dependency>
 			<!-- only including the suggest-service directly, because it depends on 
 				the other suggest modules -->
