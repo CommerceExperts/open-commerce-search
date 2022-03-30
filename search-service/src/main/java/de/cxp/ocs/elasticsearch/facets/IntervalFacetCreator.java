@@ -170,16 +170,15 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 	@NoArgsConstructor
 	private static class NumericFacetEntryBuilder {
 
-		Double	lowerBound;
-		Double	upperBound;
+		Number	lowerBound;
+		Number	upperBound;
 		long	currentDocumentCount	= 0;
 		int		currentVariantCount		= 0;
 
 		NumericFacetEntryBuilder(NumberResultFilter facetFilter) {
-			Number lowerBoundValue = facetFilter.getLowerBound();
-			Number upperBoundValue = facetFilter.getUpperBound();
-			lowerBound = lowerBoundValue == null ? null : lowerBoundValue.doubleValue();
-			upperBound = upperBoundValue == null ? null : upperBoundValue.doubleValue();
+			lowerBound = facetFilter.getLowerBound();
+			upperBound = facetFilter.getUpperBound();
+			
 		}
 
 		String[] getFilterValues() {
