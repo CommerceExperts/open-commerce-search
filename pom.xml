@@ -33,7 +33,7 @@
 		<elasticsearch.version>7.17.1</elasticsearch.version>
 		<spring-boot.version>2.3.12.RELEASE</spring-boot.version>
 		<spring-cloud.version>Hoxton.SR12</spring-cloud.version>
-		<jackson.version>2.11.3</jackson.version>
+		<jackson.version>2.12.6.1</jackson.version>
 		<junit.jupiter.version>5.7.0</junit.jupiter.version>
 	</properties>
 
