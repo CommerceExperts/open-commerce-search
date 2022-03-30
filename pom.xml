@@ -7,7 +7,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.31.1</version>
+	<version>0.31.2</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -30,7 +30,7 @@
 		<docker.tag>latest</docker.tag>
 		<dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
 
-		<elasticsearch.version>7.17.0</elasticsearch.version>
+		<elasticsearch.version>7.17.1</elasticsearch.version>
 		<spring-boot.version>2.3.12.RELEASE</spring-boot.version>
 		<spring-cloud.version>Hoxton.SR12</spring-cloud.version>
 		<jackson.version>2.11.3</jackson.version>
@@ -62,7 +62,7 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>search-service</artifactId>
-				<version>0.28.1</version>
+				<version>0.28.2</version>
 			</dependency>
 			<!-- only including the suggest-service directly, because it depends on 
 				the other suggest modules -->
