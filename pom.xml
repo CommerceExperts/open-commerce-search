@@ -7,7 +7,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.31.3</version>
+	<version>0.31.4</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -34,6 +34,7 @@
 		<spring-boot.version>2.3.12.RELEASE</spring-boot.version>
 		<spring-cloud.version>Hoxton.SR12</spring-cloud.version>
 		<jackson.version>2.13.2</jackson.version>
+		<jackson.databind.version>2.13.2.2</jackson.databind.version>
 		<junit.jupiter.version>5.7.0</junit.jupiter.version>
 	</properties>
 
@@ -52,24 +53,24 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-commons</artifactId>
-				<version>0.14.1</version>
+				<version>0.14.2</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>indexer-service</artifactId>
-				<version>0.18.1</version>
+				<version>0.18.2</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>search-service</artifactId>
-				<version>0.28.3</version>
+				<version>0.28.4</version>
 			</dependency>
 			<!-- only including the suggest-service directly, because it depends on 
 				the other suggest modules -->
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>suggest-service</artifactId>
-				<version>0.13.0</version>
+				<version>0.13.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
@@ -85,7 +86,7 @@
 			<dependency>
 				<groupId>com.fasterxml.jackson.core</groupId>
 				<artifactId>jackson-databind</artifactId>
-				<version>${jackson.version}</version>
+				<version>${jackson.databind.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.fasterxml.jackson.core</groupId>
