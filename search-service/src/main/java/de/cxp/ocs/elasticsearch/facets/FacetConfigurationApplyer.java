@@ -198,11 +198,12 @@ public class FacetConfigurationApplyer {
 
 		List<FacetCreator> variantFacetCreators = new ArrayList<>();
 		NestedFacetCreator variantTermFacetCreator = new TermFacetCreator(variantTermFacets).setMaxFacets(maxFacets);
-		variantTermFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(ignoredFields, FieldType.NUMBER));
+		variantTermFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(ignoredFields, FieldType.STRING));
 		variantFacetCreators.add(variantTermFacetCreator);
 		facetCreatorsByTypes.put(FacetCreatorClassifier.variantTermFacet, new VariantFacetCreator(Collections.singleton(variantTermFacetCreator)));
 
 		NestedFacetCreator variantIntervalFacetCreator = new IntervalFacetCreator(variantIntervalFacets).setMaxFacets(maxFacets);
+		variantIntervalFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(ignoredFields, FieldType.NUMBER));
 		variantFacetCreators.add(variantIntervalFacetCreator);
 		facetCreatorsByTypes.put(FacetCreatorClassifier.variantIntervalFacet, new VariantFacetCreator(Collections.singleton(variantIntervalFacetCreator)));
 
