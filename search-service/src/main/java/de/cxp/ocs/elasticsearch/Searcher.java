@@ -344,6 +344,7 @@ public class Searcher {
 			.filter(searchWord -> searchWord instanceof QueryFilterTerm || !remainingSearchWords.add(searchWord))
 			// Generate the filters and add them
 			.map(term -> (QueryFilterTerm) term)
+			// TODO: support exclude filters
 			.collect(Collectors.toMap(QueryFilterTerm::getField, QueryFilterTerm::getWord));
 
 		parameters.querqyFilters = convertFiltersMapToInternalResultFilters(filtersAsMap);

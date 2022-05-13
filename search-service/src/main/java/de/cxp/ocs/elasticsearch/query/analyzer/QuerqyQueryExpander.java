@@ -1,6 +1,5 @@
 package de.cxp.ocs.elasticsearch.query.analyzer;
 
-import de.cxp.ocs.elasticsearch.query.model.QueryFilterTerm;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,14 +13,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import de.cxp.ocs.elasticsearch.query.model.QueryFilterTerm;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
+import de.cxp.ocs.elasticsearch.query.model.RawQueryString;
 import de.cxp.ocs.elasticsearch.query.model.WeightedWord;
 import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
 import de.cxp.ocs.spi.search.ConfigurableExtension;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.lucene.search.Weight;
 import querqy.model.AbstractNodeVisitor;
 import querqy.model.BooleanClause;
 import querqy.model.BooleanQuery;
@@ -182,11 +182,32 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 		@Override
 		public Node visit(RawQuery rawQuery) {
 			this.occur = rawQuery.occur;
-			String rawQueryFieldAndValues = ((StringRawQuery)rawQuery).getQueryString();
-			String fieldName = rawQueryFieldAndValues.split(":")[0];
-			String values = rawQueryFieldAndValues.split(":")[1];
-			//TODO: Make it possible to use " AND " as a conjunction for these values
-			words.add(new QueryFilterTerm(fieldName, values));
+			String rawQueryString = ((StringRawQuery) rawQuery).getQueryString();
+
+			if (rawQueryString.indexOf(':') > 0) {
+				String[] rawQuerySplit = rawQueryString.split(":");
+				// TODO: Make it possible to use " AND " as a conjunction for
+				// these values
+				String fieldName = rawQuerySplit[0];
+				String value = rawQuerySplit[1];
+
+				org.apache.lucene.search.BooleanClause.Occur occur;
+				if (fieldName.charAt(0) == '-') {
+					fieldName = fieldName.substring(1);
+					occur = org.apache.lucene.search.BooleanClause.Occur.MUST_NOT;
+				}
+				else {
+					occur = org.apache.lucene.search.BooleanClause.Occur.MUST;
+				}
+
+				QueryFilterTerm queryFilterTerm = new QueryFilterTerm(fieldName, value);
+				queryFilterTerm.setOccur(occur);
+
+				words.add(queryFilterTerm);
+			}
+			else {
+				words.add(new RawQueryString(rawQueryString));
+			}
 			return super.visit(rawQuery);
 		}
 
