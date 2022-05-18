@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -36,8 +37,8 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 	@Setter
 	private int maxFacetValues = 250;
 
-	public CategoryFacetCreator(Map<String, FacetConfig> facetConfigs) {
-		super(facetConfigs);
+	public CategoryFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider) {
+		super(facetConfigs, defaultFacetConfigProvider);
 	}
 	
 	@Override

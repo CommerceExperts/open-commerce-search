@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -46,13 +47,20 @@ public abstract class NestedFacetCreator implements FacetCreator {
 	private String uniqueAggregationName = this.getClass().getSimpleName() + "Aggregation";
 
 	private final Map<String, FacetConfig> facetConfigs;
+	private final Function<String, FacetConfig>	defaultFacetConfigProvider;
 
 	@Setter
 	@NonNull
 	private Set<String> generalExcludedFields = Collections.emptySet();
 
-	public NestedFacetCreator(Map<String, FacetConfig> facetConfigs) {
+	public NestedFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider) {
 		this.facetConfigs = facetConfigs;
+		if (defaultFacetConfigProvider == null) {
+			this.defaultFacetConfigProvider = name -> new FacetConfig(name, name);
+		}
+		else {
+			this.defaultFacetConfigProvider = defaultFacetConfigProvider;
+		}
 	}
 
 	protected abstract String getNestedPath();
@@ -164,7 +172,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 			String facetName = facetNameBucket.getKeyAsString();
 
 			FacetConfig facetConfig = facetConfigs.get(facetName);
-			if (facetConfig == null) facetConfig = new FacetConfig(facetName, facetName);
+			if (facetConfig == null) facetConfig = defaultFacetConfigProvider.apply(facetName);
 
 			InternalResultFilter facetFilter = filterContext.getInternalFilters().get(facetName);
 

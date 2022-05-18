@@ -431,18 +431,33 @@ These customization allows the usage of the [Query Rescorer API](https://www.ela
 #### Facet Configuration
 
 With the facet configuration you can add additional behaviour about how facets are generated. 
-It contains two properties:
+It contains the following properties:
 - `max-facets`: (default = 5). With this facet you can limit the amount of facets that should be generated. 
 
   A low number improves performance (and maybe even usability) because less facets are generated. 
   Each individual facet can set the value `excludeFromFacetLimit: true` to make it being generated all the time, ignoring that limit (useful for standard facets). 
   In general the most common facets for a particular result are generated, but if facets are equally common, it's up to Elasticsearch's logic which facets are returned.
 
+- `default-facet-configuration`: A optional configuration with all setting-options that should be applied to all facets that have no specific configuration.
+  
+  The single properties for this configuration are the same ones as supported for every specific facet. Only the "source-field" and "label" setting are ignored.
+
 - `facets`: A list of individual facet configs. Without an individual facet config, facets are generated with default behaviour.
 
 ```yaml
     facet-configuration:
       max-facets: <int>
+      default-facet-configuration:
+        type: [term|hierarchical|interval|range|ignore|<custom>]
+        order: <int>
+        value-order: [COUNT|ALPHANUM_ASC|ALPHANUM_DESC]
+        optimal-value-count: <int>
+        exclude-from-facet-limit: <boolean>
+        show-unselected-options: <boolean>
+        is-multi-select: <boolean>
+        prefer-variant-on-filter: <boolean>
+        meta-data:
+          "<key>": "<value>"
       facets:
       - source-field: "<field-name>"
         label: "<label>"

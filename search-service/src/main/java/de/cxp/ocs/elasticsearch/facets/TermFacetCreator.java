@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -33,8 +34,8 @@ public class TermFacetCreator extends NestedFacetCreator {
 	@Setter
 	private int maxFacetValues = 100;
 
-	public TermFacetCreator(Map<String, FacetConfig> facetConfigs) {
-		super(facetConfigs);
+	public TermFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider) {
+		super(facetConfigs, defaultFacetConfigProvider);
 	}
 
 	@Override

@@ -14,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 @NoArgsConstructor
 public class FacetConfiguration {
 
+	private FacetConfig defaultFacetConfiguration = new FacetConfig();
+
 	private List<FacetConfig> facets = new ArrayList<>();
 
 	private int maxFacets = 5;

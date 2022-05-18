@@ -2,6 +2,7 @@ package de.cxp.ocs.elasticsearch.facets;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -34,8 +35,8 @@ public class RangeFacetCreator extends NestedFacetCreator {
 
 	public final static String AGGREGATION_NAME = "_stats";
 
-	public RangeFacetCreator(Map<String, FacetConfig> facetConfigs) {
-		super(facetConfigs);
+	public RangeFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider) {
+		super(facetConfigs, defaultFacetConfigProvider);
 		// ensure the according filters are applied as post filters
 		facetConfigs.values().forEach(c -> c.setShowUnselectedOptions(true));
 	}
