@@ -169,8 +169,51 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 
 		@Override
 		public Node visit(BooleanQuery booleanQuery) {
-			this.occur = booleanQuery.occur;
-			return super.visit(booleanQuery);
+			if(booleanQuery.getClauses() != null &&  booleanQuery.getClauses().size() > 1) {
+
+				StringBuilder finalTermValue = new StringBuilder();
+				float boost = 0.0f;
+
+				for (BooleanClause clause : booleanQuery.getClauses()) {
+					if (clause instanceof DisjunctionMaxQuery) {
+
+						this.occur = clause.getOccur();
+						List<?> innerClauses = ((DisjunctionMaxQuery) clause).getClauses();
+
+						if (innerClauses != null && innerClauses.size() > 0 && innerClauses.get(0) instanceof Term) {
+							Term termClause = (Term) innerClauses.get(0);
+
+							if(termClause instanceof BoostedTerm) {
+								boost = ((BoostedTerm) termClause).getBoost();
+							}
+							String termClauseValue = termClause.getValue().toString();
+							finalTermValue.append(termClauseValue);
+							finalTermValue.append(" ");
+						}
+					}
+				}
+
+				if(finalTermValue.length() > 0) {
+					finalTermValue.deleteCharAt(finalTermValue.length() - 1);
+				}
+
+				WeightedWord weightedWord;
+				if (boost != 0.0f) {
+					weightedWord = new WeightedWord(finalTermValue.toString(), boost);
+				} else {
+					weightedWord = new WeightedWord(finalTermValue.toString());
+				}
+				if (occur != null) {
+					weightedWord.setOccur(org.apache.lucene.search.BooleanClause.Occur.valueOf(occur.name()));
+					this.occur = null;
+				}
+				words.add(weightedWord);
+
+				return null;
+
+			} else {
+				return super.visit(booleanQuery);
+			}
 		}
 
 		@Override
@@ -185,30 +228,47 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			String rawQueryString = ((StringRawQuery) rawQuery).getQueryString();
 
 			if (rawQueryString.indexOf(':') > 0) {
-				String[] rawQuerySplit = rawQueryString.split(":");
-				// TODO: Make it possible to use " AND " as a conjunction for
-				// these values
-				String fieldName = rawQuerySplit[0];
-				String value = rawQuerySplit[1];
 
-				org.apache.lucene.search.BooleanClause.Occur occur;
-				if (fieldName.charAt(0) == '-') {
-					fieldName = fieldName.substring(1);
-					occur = org.apache.lucene.search.BooleanClause.Occur.MUST_NOT;
+				if(rawQueryString.indexOf(' ') > 0) {
+					String[] rawFiltersSplit = rawQueryString.split(" ");
+					for(String rawFilter: rawFiltersSplit) {
+						if(rawFilter.indexOf(':') > 0) {
+							QueryFilterTerm queryFilterTerm = getQueryFilterTerm(rawFilter);
+							words.add(queryFilterTerm);
+						} else {
+							words.add(new RawQueryString(rawQueryString));
+						}
+					}
+				} else {
+					QueryFilterTerm queryFilterTerm = getQueryFilterTerm(rawQueryString);
+					words.add(queryFilterTerm);
 				}
-				else {
-					occur = org.apache.lucene.search.BooleanClause.Occur.MUST;
-				}
-
-				QueryFilterTerm queryFilterTerm = new QueryFilterTerm(fieldName, value);
-				queryFilterTerm.setOccur(occur);
-
-				words.add(queryFilterTerm);
 			}
 			else {
 				words.add(new RawQueryString(rawQueryString));
 			}
 			return super.visit(rawQuery);
+		}
+
+		private QueryFilterTerm getQueryFilterTerm(String rawQueryString) {
+
+			String[] rawQuerySplit = rawQueryString.split(":");
+			// TODO: Make it possible to use " AND " as a conjunction for
+			// these values
+			String fieldName = rawQuerySplit[0];
+			String value = rawQuerySplit[1];
+
+			org.apache.lucene.search.BooleanClause.Occur occur;
+			if(Occur.MUST_NOT.equals(this.occur)) {
+				occur = org.apache.lucene.search.BooleanClause.Occur.MUST_NOT;
+			} else {
+				occur = org.apache.lucene.search.BooleanClause.Occur.MUST;
+			}
+
+			QueryFilterTerm queryFilterTerm = new QueryFilterTerm(fieldName, value);
+			queryFilterTerm.setOccur(occur);
+
+			return queryFilterTerm;
 		}
 
 		@Override
