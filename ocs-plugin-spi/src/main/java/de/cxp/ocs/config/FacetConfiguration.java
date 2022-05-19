@@ -67,7 +67,7 @@ public class FacetConfiguration {
 
 		private boolean showUnselectedOptions = false;
 
-		private boolean isMultiSelect = false;
+		private boolean isMultiSelect = true;
 
 		private int order = 1000;
 
