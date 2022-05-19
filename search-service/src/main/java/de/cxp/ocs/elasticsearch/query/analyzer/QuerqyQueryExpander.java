@@ -22,7 +22,6 @@ import de.cxp.ocs.spi.search.ConfigurableExtension;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.CollectionUtils;
 import querqy.model.AbstractNodeVisitor;
 import querqy.model.BooleanClause;
 import querqy.model.BooleanQuery;
@@ -179,9 +178,9 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 					if (clause instanceof DisjunctionMaxQuery) {
 
 						this.occur = clause.getOccur();
-						List innerClauses = ((DisjunctionMaxQuery) clause).getClauses();
+						List<?> innerClauses = ((DisjunctionMaxQuery) clause).getClauses();
 
-						if (CollectionUtils.isNotEmpty(innerClauses) && innerClauses.get(0) instanceof Term) {
+						if (innerClauses != null && innerClauses.size() > 0 && innerClauses.get(0) instanceof Term) {
 							Term termClause = (Term) innerClauses.get(0);
 
 							if(termClause instanceof BoostedTerm) {
