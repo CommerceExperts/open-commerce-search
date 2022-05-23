@@ -193,10 +193,10 @@ public class SearchQueryBuilder {
 		return filterName;
 	}
 
-	public String withFilterAsLink(FacetConfig facetConfig, String... filterValues) {
+	public String withFilterAsLink(FacetConfig facetConfig, String... filterInputValues) {
 		String filterName = getFilterName(facetConfig);
-		String filterValue = joinParameterValues(filterValues);
-		if (isFilterSelected(filterName, filterValue)) {
+		String filterValues = joinParameterValues(filterInputValues);
+		if (isFilterSelected(filterName, filterValues)) {
 			return searchQueryLink.toString();
 		}
 		if (searchQueryLink.toString().matches(".*[?&]" + Pattern.quote(filterName) + "=.*")) {
@@ -206,18 +206,18 @@ public class SearchQueryBuilder {
 						.filter(param -> filterName.equals(param.getName())).findFirst()
 						.map(NameValuePair::getValue);
 				linkBuilder.setParameter(filterName, otherValues
-						.map(val -> val + VALUE_DELIMITER + joinParameterValues(filterValue)).orElse(filterValue));
+						.map(val -> escapeValueDelimiter(val) + VALUE_DELIMITER + filterValues).orElse(filterValues));
 			} else {
-				linkBuilder.setParameter(filterName, filterValue);
+				linkBuilder.setParameter(filterName, filterValues);
 			}
 			try {
 				return linkBuilder.build().getRawQuery();
 			} catch (URISyntaxException e) {
 				throw new IllegalArgumentException(
-						"parameter caused URISyntaxException: " + filterName + "=" + filterValue, e);
+						"parameter caused URISyntaxException: " + filterName + "=" + filterValues, e);
 			}
 		} else {
-			String newParam = filterName + "=" + urlEncodeValue(filterValue);
+			String newParam = filterName + "=" + urlEncodeValue(filterValues);
 			String query = searchQueryLink.getRawQuery();
 			if (query == null || query.length() == 0)
 				return newParam;

@@ -59,11 +59,13 @@ public class SearchQueryBuilderTest {
 		SearchQueryBuilder underTest = new SearchQueryBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
-						.withFilter(new TermResultFilter(new Field("brand"), "äpple")));
+						.withFilter(new TermResultFilter(new Field("brand"), "äpple"))
+						.withFilter(new TermResultFilter(new Field("cat"), "Foobar, 6% off")));
 		String result = underTest.withFilterAsLink(
-				new FacetConfig("Category", "cat"), "Männer", "Was für's Köpfchen, Mützen & Schals");
+				new FacetConfig("Category", "cat").setMultiSelect(true),
+				"Männer", "Was für's Köpfchen, Mützen & Schals");
 		assertTrue(result.contains("brand=%C3%A4pple"), result);
-		assertTrue(result.contains("cat=M%C3%A4nner%2CWas+f%C3%BCr%27s+K%C3%B6pfchen%252C+M%C3%BCtzen+%26+Schals"), result);
+		assertTrue(result.contains("cat=Foobar%252C+6%25+off%2CM%C3%A4nner%2CWas+f%C3%BCr%27s+K%C3%B6pfchen%252C+M%C3%BCtzen+%26+Schals"), result);
 	}
 
 	@Test
