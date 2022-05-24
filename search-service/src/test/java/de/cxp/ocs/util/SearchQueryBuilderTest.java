@@ -1,5 +1,6 @@
 package de.cxp.ocs.util;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -40,6 +41,42 @@ public class SearchQueryBuilderTest {
 				new FacetConfig("Brand", "brand").setMultiSelect(true),
 				"orange");
 		assertTrue(result.contains("brand=apple%2Corange"), result);
+	}
+
+	@Test
+	public void testAddThirdFilterToSelectedFilters() {
+		SearchQueryBuilder underTest = new SearchQueryBuilder(
+				new InternalSearchParams()
+						.setUserQuery("foo")
+						.withFilter(new TermResultFilter(new Field("brand"), "apple", "orange")));
+		String result = underTest.withFilterAsLink(
+				new FacetConfig("Brand", "brand").setMultiSelect(true),
+				"banana");
+		assertTrue(result.contains("brand=apple%2Corange%2Cbanana"), result);
+	}
+
+	@Test
+	public void testAddSeveralFiltersToSelectedFilters() {
+		SearchQueryBuilder underTest = new SearchQueryBuilder(
+				new InternalSearchParams()
+						.setUserQuery("foo")
+						.withFilter(new TermResultFilter(new Field("brand"), "apple", "orange")));
+		String result = underTest.withFilterAsLink(
+				new FacetConfig("Brand", "brand").setMultiSelect(true),
+				"banana", "pineapple");
+		assertTrue(result.contains("brand=apple%2Corange%2Cbanana%2Cpineapple"), result);
+	}
+
+	@Test
+	public void testAddSeveralSpecialCharacterFiltersToSelectedFilters() {
+		SearchQueryBuilder underTest = new SearchQueryBuilder(
+				new InternalSearchParams()
+						.setUserQuery("foo")
+						.withFilter(new TermResultFilter(new Field("brand"), "pine & apple")));
+		String result = underTest.withFilterAsLink(
+				new FacetConfig("Brand", "brand").setMultiSelect(true),
+				"ba, na & na", "oränge");
+		assertTrue(result.contains("brand=pine+%26+apple%2Cba%252C+na+%26+na%2Cor%C3%A4nge"), result);
 	}
 
 	@Test
@@ -95,5 +132,32 @@ public class SearchQueryBuilderTest {
 		String result = underTest.withoutFilterAsLink(new FacetConfig("Price", "price"), "1.23", "4.56");
 		assertFalse(result.contains("price"), result);
 		assertTrue(result.contains("brand=apple%2Corange"), result);
+	}
+
+	@Test
+	public void testNonMultiSelectFilter() {
+		SearchQueryBuilder underTest = new SearchQueryBuilder(
+				new InternalSearchParams()
+						.setUserQuery("foo")
+						.withFilter(new TermResultFilter(new Field("brand"), "bar")));
+		String result = underTest.withFilterAsLink(new FacetConfig("Brand", "brand"), "bro");
+		assertTrue(result.contains("brand=bro"), result);
+	}
+
+	@Test
+	public void testSetOnlyFilter() {
+		SearchQueryBuilder underTest = new SearchQueryBuilder(new InternalSearchParams());
+		String result = underTest.withFilterAsLink(new FacetConfig("Brand", "brand"), "foo,bar");
+		assertEquals(result, "brand=foo%252Cbar");
+	}
+
+	@Test
+	public void testSetFilterAlreadySelected() {
+		SearchQueryBuilder underTest = new SearchQueryBuilder(
+				new InternalSearchParams()
+						.setUserQuery("foo")
+						.withFilter(new TermResultFilter(new Field("brand"), "bar")));
+		String result = underTest.withFilterAsLink(new FacetConfig("Brand", "brand"), "bar");
+		assertEquals(result, "q=foo&brand=bar");
 	}
 }

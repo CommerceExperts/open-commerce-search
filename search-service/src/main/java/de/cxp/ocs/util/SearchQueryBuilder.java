@@ -197,7 +197,7 @@ public class SearchQueryBuilder {
 		String filterName = getFilterName(facetConfig);
 		String filterValues = joinParameterValues(filterInputValues);
 		if (isFilterSelected(filterName, filterValues)) {
-			return searchQueryLink.toString();
+			return searchQueryLink.getRawQuery();
 		}
 		if (searchQueryLink.toString().matches(".*[?&]" + Pattern.quote(filterName) + "=.*")) {
 			URIBuilder linkBuilder = new URIBuilder(searchQueryLink);
@@ -206,7 +206,7 @@ public class SearchQueryBuilder {
 						.filter(param -> filterName.equals(param.getName())).findFirst()
 						.map(NameValuePair::getValue);
 				linkBuilder.setParameter(filterName, otherValues
-						.map(val -> escapeValueDelimiter(val) + VALUE_DELIMITER + filterValues).orElse(filterValues));
+						.map(val -> val + VALUE_DELIMITER + filterValues).orElse(filterValues));
 			} else {
 				linkBuilder.setParameter(filterName, filterValues);
 			}
