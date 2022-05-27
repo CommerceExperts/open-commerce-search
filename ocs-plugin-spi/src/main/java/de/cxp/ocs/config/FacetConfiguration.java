@@ -48,6 +48,11 @@ public class FacetConfiguration {
 		return this;
 	}
 
+	public FacetConfiguration setDefaultFacetConfiguration(de.cxp.ocs.config.FacetConfiguration.FacetConfig defaultFacetConfiguration) {
+		this.defaultFacetConfiguration = defaultFacetConfiguration;
+		return this;
+	}
+
 	@Getter // write setters with java-doc!
 	@NoArgsConstructor
 	@RequiredArgsConstructor
@@ -177,6 +182,11 @@ public class FacetConfiguration {
 		 * @return self
 		 */
 		public FacetConfig setMultiSelect(boolean isMultiSelect) {
+			this.isMultiSelect = isMultiSelect;
+			return this;
+		}
+
+		public FacetConfig setIsMultiSelect(boolean isMultiSelect) {
 			this.isMultiSelect = isMultiSelect;
 			return this;
 		}
