@@ -252,6 +252,10 @@ public final class FieldConfigIndex implements FieldConfigAccess {
 			for (DynamicFieldConfig dynamicFieldConf : dynamicFields) {
 				if (dynamicFieldConf.matches(fieldName, value)) {
 					generatedField = cloneField(dynamicFieldConf.fieldConfig);
+					
+					if(value instanceof Attribute && isFieldNameStartedWithUnderscore(fieldName)) {
+						fieldName = fieldName.substring(1);
+					}
 					generatedField.setName(fieldName);
 					generatedFields.put(fieldName, generatedField);
 					updateFieldIndexes(generatedField);
@@ -261,6 +265,11 @@ public final class FieldConfigIndex implements FieldConfigAccess {
 		}
 
 		return generatedField == null ? Collections.emptySet() : Collections.singleton(generatedField);
+	}
+	
+	private boolean isFieldNameStartedWithUnderscore (String fieldName) {
+		return fieldName != null && fieldName.length() > 0 && fieldName.substring(0, 1).equals("_");
+		
 	}
 
 	/**
