@@ -15,8 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.elasticsearch.common.unit.Fuzziness;
@@ -129,15 +127,26 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 	}
 
 	private String buildQueryString(List<QueryStringTerm> searchTerms, String operator) {
+		List<QueryStringTerm> excludeTerms = new ArrayList<>();
+		List<QueryStringTerm> includeTerms = new ArrayList<>();
+		for (QueryStringTerm term : searchTerms) {
+			if (Occur.MUST_NOT.equals(term.getOccur())) {
+				excludeTerms.add(term);
+			}
+			else {
+				includeTerms.add(term);
+			}
+		}
+
 		StringBuilder queryStringBuilder = new StringBuilder();
 		if ("OR".equals(operator)) {
 			queryStringBuilder
-					.append(ESQueryUtils.buildQueryString(searchTerms, " OR "));
+					.append(ESQueryUtils.buildQueryString(includeTerms, " OR "));
 		}
 		else {
 			queryStringBuilder
 				.append('(')
-				.append(ESQueryUtils.buildQueryString(searchTerms, " "))
+					.append(ESQueryUtils.buildQueryString(includeTerms, " "))
 				.append(')');
 		}
 
@@ -147,42 +156,38 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 				.append(" OR ")
 				.append('(')
 				.append('"')
-				.append(ESQueryUtils.buildQueryString(searchTerms, " "))
+				.append(ESQueryUtils.buildQueryString(includeTerms, " "))
 				.append('"')
 				.append(")^1.5");
 
 		// build shingle variants if enabled
 		if (querySettings.getOrDefault(isQueryWithShingles, "false").equalsIgnoreCase("true")) {
-			attachQueryTermsAsShingles(searchTerms, queryStringBuilder);
+			attachQueryTermsAsShingles(includeTerms, queryStringBuilder);
 		}
+
+		if (excludeTerms.size() > 0) {
+			queryStringBuilder
+					.append(' ')
+					.append(ESQueryUtils.buildQueryString(excludeTerms, " "));
+		}
+
 		return queryStringBuilder.toString();
 	}
 
-	private void attachQueryTermsAsShingles(List<QueryStringTerm> searchTerms, StringBuilder queryStringBuilder) {
-		Predicate<QueryStringTerm> isMustNot = q -> Occur.MUST_NOT.equals(q.getOccur());
-		List<QueryStringTerm> withoutExcludes = new ArrayList<>(searchTerms);
-		List<QueryStringTerm> excludes = withoutExcludes.stream()
-				.filter(isMustNot)
-				.collect(Collectors.toList());
-		if (!excludes.isEmpty()) withoutExcludes.removeIf(isMustNot);
-
-		for (int i = 0; i < withoutExcludes.size() - 1; i++) {
-			List<QueryStringTerm> shingledSearchTerms = new ArrayList<>(withoutExcludes);
+	private void attachQueryTermsAsShingles(List<QueryStringTerm> includeTerms, StringBuilder queryStringBuilder) {
+		for (int i = 0; i < includeTerms.size() - 1; i++) {
+			List<QueryStringTerm> shingledSearchTerms = new ArrayList<>(includeTerms);
 
 			QueryStringTerm wordA = shingledSearchTerms.remove(i);
 			// shingled word has double weight, since it practically matches
 			// two input tokens
-			WeightedWord shingleWord = new WeightedWord(wordA.getWord() + withoutExcludes.get(i + 1).getWord(), 2f);
+			WeightedWord shingleWord = new WeightedWord(wordA.getWord() + includeTerms.get(i + 1).getWord(), 2f);
 			shingleWord.setFuzzy(wordA instanceof WeightedWord && ((WeightedWord) wordA).isFuzzy());
 			shingledSearchTerms.set(i, shingleWord);
 			queryStringBuilder.append(" OR ")
 					.append('(')
 					.append(ESQueryUtils.buildQueryString(shingledSearchTerms, " "));
 
-			// add excludes if available
-			if (excludes.size() > 0) {
-				queryStringBuilder.append(' ').append(ESQueryUtils.buildQueryString(excludes, " "));
-			}
 
 			// the whole variant with shingles has a lower weight
 			// than the original terms
