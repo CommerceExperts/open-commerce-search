@@ -2,11 +2,7 @@ package de.cxp.ocs.elasticsearch.query.model;
 
 import org.apache.lucene.search.BooleanClause.Occur;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 /**
  * A term that accepts a weight and a optional fuzzy operator.
@@ -17,12 +13,16 @@ import lombok.RequiredArgsConstructor;
 @NoArgsConstructor
 public class WeightedWord implements QueryStringTerm {
 
+	private final String	QUOTE	= "\"";
+	private final String	EMPTY	= "";
+
 	@NonNull
 	private String	word;
 	private float	weight			= 1f;
 	// TODO: remove because unused?
 	private int		termFrequency	= -1;
 	private boolean	isFuzzy			= false;
+	private boolean	isQuoted		= false;
 	private Occur	occur			= Occur.SHOULD;
 
 	public WeightedWord(String word, float weight) {
@@ -38,8 +38,11 @@ public class WeightedWord implements QueryStringTerm {
 
 	@Override
 	public String toQueryString() {
+		String optionalQuote = isQuoted ? QUOTE : EMPTY;
 		return occur.toString()
+				+ optionalQuote
 				+ EscapeUtil.escapeReservedESCharacters(word)
+				+ optionalQuote
 				+ (isFuzzy ? "~" : "")
 				+ (weight != 1f ? "^" + weight : "");
 	}
