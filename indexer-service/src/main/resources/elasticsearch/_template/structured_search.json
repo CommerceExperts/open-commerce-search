@@ -103,7 +103,6 @@
           ],
           "filter": [
             "lowercase",
-            "asciifolding",
             "glued_shingle"
           ],
           "type": "custom",
