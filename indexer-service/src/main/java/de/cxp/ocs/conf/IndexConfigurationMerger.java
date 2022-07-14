@@ -33,9 +33,10 @@ public class IndexConfigurationMerger {
         final FieldConfiguration defaultFieldConfiguration = defaultIndexConfig.getFieldConfiguration();
 
         if (Objects.isNull(filedConfiguration) || (filedConfiguration.getFields().isEmpty()
-                && filedConfiguration.getDynamicFields().isEmpty()) || filedConfiguration.isUseDefaultConfig()) {
+                && filedConfiguration.getDynamicFields().isEmpty())) {
             return defaultFieldConfiguration;
-        } else {
+        } else if(filedConfiguration.isUseDefaultConfig() && !filedConfiguration.getFields().isEmpty()
+                && !filedConfiguration.getDynamicFields().isEmpty()) {
             updatedFieldConfig.getFields().putAll(mergeFields(filedConfiguration, defaultFieldConfiguration));
             updatedFieldConfig.getDynamicFields().addAll(mergeDynamicFields(filedConfiguration, defaultFieldConfiguration));
         }
