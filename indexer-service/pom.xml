@@ -74,7 +74,6 @@
 		<dependency>
 			<groupId>de.cxp.ocs</groupId>
 			<artifactId>ocs-plugin-spi</artifactId>
-			<version>0.18.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>de.cxp.ocs</groupId>
