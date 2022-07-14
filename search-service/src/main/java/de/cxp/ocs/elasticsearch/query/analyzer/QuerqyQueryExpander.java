@@ -1,39 +1,16 @@
 package de.cxp.ocs.elasticsearch.query.analyzer;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import de.cxp.ocs.elasticsearch.query.model.QueryFilterTerm;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
-import de.cxp.ocs.elasticsearch.query.model.RawQueryString;
-import de.cxp.ocs.elasticsearch.query.model.WeightedWord;
-import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
+import de.cxp.ocs.elasticsearch.query.model.*;
 import de.cxp.ocs.spi.search.ConfigurableExtension;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import querqy.model.AbstractNodeVisitor;
-import querqy.model.BooleanClause;
-import querqy.model.BooleanQuery;
-import querqy.model.BoostedTerm;
+import querqy.model.*;
 import querqy.model.Clause.Occur;
-import querqy.model.DisjunctionMaxQuery;
-import querqy.model.ExpandedQuery;
-import querqy.model.Node;
-import querqy.model.QuerqyQuery;
-import querqy.model.RawQuery;
-import querqy.model.StringRawQuery;
-import querqy.model.Term;
 import querqy.parser.QuerqyParser;
 import querqy.parser.WhiteSpaceQuerqyParser;
 import querqy.rewrite.RewriteChain;
@@ -205,6 +182,10 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 				}
 				if (occur != null) {
 					weightedWord.setOccur(org.apache.lucene.search.BooleanClause.Occur.valueOf(occur.name()));
+					// guard MUST/NOT terms from analyzer
+					if (occur.equals(Occur.MUST) || occur.equals(Occur.MUST_NOT)) {
+						weightedWord.setQuoted(true);
+					}
 					this.occur = null;
 				}
 				words.add(weightedWord);
@@ -282,6 +263,11 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			}
 			if (occur != null) {
 				weightedWord.setOccur(org.apache.lucene.search.BooleanClause.Occur.valueOf(occur.name()));
+
+				// guard MUST/NOT terms from analyzer
+				if (occur.equals(Occur.MUST) || occur.equals(Occur.MUST_NOT)) {
+					weightedWord.setQuoted(true);
+				}
 				occur = null;
 			}
 			words.add(weightedWord);

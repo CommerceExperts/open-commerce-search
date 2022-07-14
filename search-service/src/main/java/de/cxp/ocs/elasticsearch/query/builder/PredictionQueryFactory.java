@@ -3,26 +3,14 @@ package de.cxp.ocs.elasticsearch.query.builder;
 import static de.cxp.ocs.config.QueryBuildingSetting.analyzer;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.elasticsearch.common.unit.Fuzziness;
-import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder.Type;
-import org.elasticsearch.index.query.Operator;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
 
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldConstants;
@@ -194,6 +182,12 @@ public class PredictionQueryFactory implements ESQueryFactory {
 					.queryName("boost(" + ESQueryUtils.getQueryLabel(unmatchedTerms.values()) + ")");
 		}
 
+		for (QueryStringTerm term : searchWords) {
+			if (term.getOccur().equals(Occur.MUST_NOT)) {
+				mainQuery = ESQueryUtils.mapToBoolQueryBuilder(mainQuery).mustNot(exactMatchQuery(term.getWord()));
+			}
+		}
+
 		/**
 		 * We have copied all searchable variant-level data to master level and
 		 * skip searching on variant level in the first step.
@@ -285,6 +279,12 @@ public class PredictionQueryFactory implements ESQueryFactory {
 		}
 
 		return multiMatchQuery;
+	}
+
+	private QueryBuilder exactMatchQuery(String word) {
+		return QueryBuilders.multiMatchQuery(word, fieldWeights.keySet().toArray(new String[0]))
+				.analyzer("whitespace")
+				.operator(Operator.AND);
 	}
 
 	/**

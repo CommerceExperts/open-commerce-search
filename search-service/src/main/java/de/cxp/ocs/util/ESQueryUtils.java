@@ -38,7 +38,7 @@ public class ESQueryUtils {
 		for (QueryStringTerm qst : termsUnique) {
 			queryLabel.append(' ');
 			if (qst instanceof WordAssociation) {
-				queryLabel.append(getFuzzyTermLabel((WordAssociation) qst));
+				queryLabel.append(qst.toQueryString());
 			}
 			else {
 				queryLabel.append(qst.getWord());

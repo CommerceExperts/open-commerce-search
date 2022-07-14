@@ -21,11 +21,17 @@
           "type": "mapping",
           "mappings": [
             "Ä => ae",
+            "Ä => ae",
             "ä => ae",
+            "ä => ae",
             "Ö => oe",
+            "Ö => oe",
             "ö => oe",
+            "ö => oe",
             "Ü => ue",
+            "Ü => ue",
             "ü => ue",
+            "ü => ue",
             "ß => ss"
           ]
         },

@@ -1,20 +1,12 @@
 package de.cxp.ocs.elasticsearch.query.builder;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -58,12 +50,24 @@ class QueryPredictor {
 	protected List<PredictedQuery> getQueryMetaData(final List<QueryStringTerm> searchTerms,
 			final Map<String, Float> fieldWeights)
 			throws IOException {
+		// put "must-not" terms into separate list
+		List<QueryStringTerm> searchWordsCleaned = new ArrayList<>(searchTerms.size());
+		List<QueryStringTerm> filterWords = new ArrayList<>(0);
+		for (QueryStringTerm term : searchTerms) {
+			if (term.getOccur().equals(Occur.MUST_NOT)) {
+				filterWords.add(term);
+			}
+			else {
+				searchWordsCleaned.add(term);
+			}
+		}
+
 		// create ordered shingles from the original words
-		final Map<String, Set<String>> shingles = createOrderedShingles(searchTerms);
+		final Map<String, Set<String>> shingles = createOrderedShingles(searchWordsCleaned);
 		final Map<String, Set<String>> shingleSources = invertedIndex(shingles);
 
 		// ..and add them to the list of searched terms
-		final Set<QueryStringTerm> actualSearchTerms = new HashSet<>(searchTerms);
+		final Set<QueryStringTerm> actualSearchTerms = new HashSet<>(searchWordsCleaned);
 		shingles.keySet().forEach(shingleWord -> actualSearchTerms.add(new WeightedWord(shingleWord)));
 
 		final SpellCorrector corrector = getSpellCorrector(fieldWeights.keySet());
@@ -71,6 +75,7 @@ class QueryPredictor {
 		final SearchResponse searchResponse = runTermAnalysis(
 				fieldWeights.keySet(),
 				actualSearchTerms,
+				filterWords,
 				predictionWords,
 				corrector);
 
@@ -85,6 +90,7 @@ class QueryPredictor {
 				.getBuckets()) {
 			final PredictedQuery predictedQuery = new PredictedQuery();
 			final LinkedHashMap<String, QueryStringTerm> matchingTerms = getMatchingTerms(predictionWords, scoreBucket);
+			if (matchingTerms.size() == 0) continue;
 			if (matchingTerms.size() == 1) {
 				String matchedTerm = matchingTerms.keySet().iterator().next();
 				predictionWords.values().stream()
@@ -95,7 +101,7 @@ class QueryPredictor {
 
 			predictedQuery.matchCount = scoreBucket.getDocCount();
 			predictedQuery.termsUnique.putAll(matchingTerms);
-			applyTermMatches(searchTerms, shingleSources, predictedQuery, correctedWords);
+			applyTermMatches(searchWordsCleaned, shingleSources, predictedQuery, correctedWords);
 			hasFoundQueryWithAllTermsMatching ^= predictedQuery.isContainsAllTerms();
 
 			// if one of the searched terms matches documents but also has
@@ -167,7 +173,7 @@ class QueryPredictor {
 				predictedQuery.matchCount = correctedWord.getRelatedWords().values().stream()
 						.mapToLong(ww -> ww.getTermFrequency()).sum();
 
-				applyTermMatches(searchTerms, shingleSources, predictedQuery, correctedWords);
+				applyTermMatches(searchWordsCleaned, shingleSources, predictedQuery, correctedWords);
 				predictedQueries.put(getQueryKey(predictedQuery), predictedQuery);
 			}
 		}
@@ -199,6 +205,7 @@ class QueryPredictor {
 	 * @param fieldWeights
 	 *        fields to search
 	 * @param terms
+	 * @param filterWords
 	 * @param predictionWords
 	 *        empty map that will be filled with the exponential boost values of
 	 *        each term
@@ -207,12 +214,14 @@ class QueryPredictor {
 	 * @throws IOException
 	 */
 	private SearchResponse runTermAnalysis(final Collection<String> searchFields, final Set<QueryStringTerm> terms,
-			final Map<Float, WeightedWord> predictionWords, final SpellCorrector corrector) throws IOException {
+			List<QueryStringTerm> filterWords, final Map<Float, WeightedWord> predictionWords, final SpellCorrector corrector) throws IOException {
 		final SuggestBuilder spellCheckQuery = corrector.buildSpellCorrectionQuery(
 				terms.stream().map(qst -> qst.getWord()).collect(Collectors.joining(" ")));
 
-		// build boolean-should query with exponential boost values
 		final BoolQueryBuilder metaFetchQuery = QueryBuilders.boolQuery();
+		filterWords.forEach(term -> metaFetchQuery.filter(buildTermQuery(term, searchFields)));
+
+		// build boolean-should query with exponential boost values
 		float queryWeight = (float) Math.pow(2, terms.size() - 1);
 		for (final QueryStringTerm term : terms) {
 			metaFetchQuery.should(QueryBuilders
