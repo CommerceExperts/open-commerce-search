@@ -1,12 +1,6 @@
 package de.cxp.ocs.elasticsearch.facets;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
@@ -80,6 +74,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 
 		// let it crash if it's from the wrong type
 		TermResultFilter facetFilter = (TermResultFilter) intFacetFilter;
+		String[] filterValues = intFacetFilter.getValues();
 
 		Facet facet = FacetFactory.create(facetConfig, FacetType.HIERARCHICAL);
 
@@ -87,22 +82,39 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		long absDocCount = 0;
 		boolean isFiltered = isMatchingFilterType(intFacetFilter);
 
+		Set<String> filteredCategories;
+		if (isFiltered && facetFilter.isFilterOnId()) {
+			filteredCategories = new HashSet<>(filterValues.length);
+		}
+		else {
+			filteredCategories = new HashSet<>(Arrays.asList(filterValues));
+		}
+
 		for (Bucket categoryBucket : catBuckets) {
 			String categoryPath = categoryBucket.getKeyAsString();
-
 			String[] categories = StringUtils.split(categoryPath, '/');
 			
+			Terms idsAgg = (Terms)categoryBucket.getAggregations().get(FACET_IDS_AGG);
+			List<? extends Bucket> idBuckets = idsAgg.getBuckets();
+			final Set<String> ids = new HashSet<>(idBuckets.size());
+			if (idBuckets != null && idBuckets.size() > 0) {
+				idBuckets.forEach(b -> ids.add(b.getKeyAsString()));
+			}
+
 			final boolean isSelectedPath;
 			if (isFiltered && intFacetFilter != null && intFacetFilter.getValues().length > 0 && categoryPath != null) {
-				String[] filterValues = intFacetFilter.getValues();
-				// skip this path, if it is not a child of the selected path
-				if (filterValues.length == 1 ? !categoryPath.contains(filterValues[0]) : Arrays.stream(filterValues).noneMatch(categoryPath::contains)) {
-					continue;
+				if (facetFilter.isFilterOnId()) {
+					isSelectedPath = filterValues.length == 1 ? ids.contains(filterValues[0]) : Arrays.stream(filterValues).anyMatch(ids::contains);
+					if (isSelectedPath) filteredCategories.add(categoryPath);
 				}
 				else {
 					// only set true, if this is a complete matching path
 					isSelectedPath = filterValues.length == 1 ? filterValues[0].equals(categoryPath) : Arrays.stream(filterValues).anyMatch(categoryPath::equals);
 				}
+
+				// TODO: skip/remove path, if it's not a child of the selected path
+				// if (filteredCategories.stream().noneMatch(categoryPath::contains)) continue;
+
 			}
 			else {
 				isSelectedPath = false;
@@ -125,9 +137,8 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 			lastLevelEntry.setDocCount(docCount);
 			lastLevelEntry.setPath(categoryPath);
 
-			Terms idsAgg = (Terms) categoryBucket.getAggregations().get(FACET_IDS_AGG);
-			if (idsAgg != null && idsAgg.getBuckets().size() > 0) {
-				lastLevelEntry.setId(idsAgg.getBuckets().get(0).getKeyAsString());
+			if (idBuckets != null && idBuckets.size() > 0) {
+				lastLevelEntry.setId(idBuckets.get(0).getKeyAsString());
 
 				if (facetFilter != null && facetFilter.isFilterOnId()) {
 					// TODO: support filtering on multiple ids
