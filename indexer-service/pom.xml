@@ -12,7 +12,7 @@
 	</parent>
 
 	<artifactId>indexer-service</artifactId>
-	<version>0.18.3</version>
+	<version>0.18.4-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<!-- Import dependency management from Spring Boot -->
@@ -74,6 +74,7 @@
 		<dependency>
 			<groupId>de.cxp.ocs</groupId>
 			<artifactId>ocs-plugin-spi</artifactId>
+			<version>0.18.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>de.cxp.ocs</groupId>
