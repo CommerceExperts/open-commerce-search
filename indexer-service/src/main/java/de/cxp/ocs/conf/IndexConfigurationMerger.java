@@ -35,8 +35,8 @@ public class IndexConfigurationMerger {
         if (Objects.isNull(filedConfiguration) || (filedConfiguration.getFields().isEmpty()
                 && filedConfiguration.getDynamicFields().isEmpty())) {
             return defaultFieldConfiguration;
-        } else if(filedConfiguration.isUseDefaultConfig() && !filedConfiguration.getFields().isEmpty()
-                && !filedConfiguration.getDynamicFields().isEmpty()) {
+        } else if((filedConfiguration.isUseDefaultConfig() && !filedConfiguration.getFields().isEmpty())
+                || (filedConfiguration.isUseDefaultConfig() && !filedConfiguration.getDynamicFields().isEmpty())) {
             updatedFieldConfig.getFields().putAll(mergeFields(filedConfiguration, defaultFieldConfiguration));
             updatedFieldConfig.getDynamicFields().addAll(mergeDynamicFields(filedConfiguration, defaultFieldConfiguration));
         }
@@ -58,7 +58,7 @@ public class IndexConfigurationMerger {
     private List<Field> mergeDynamicFields(final FieldConfiguration fieldConfiguration, final FieldConfiguration defaultFieldConfiguration) {
         final List<Field> dynamicFields = fieldConfiguration.getDynamicFields();
         final List<Field> defaultDynamicFields= defaultFieldConfiguration.getDynamicFields();
-        if (Objects.isNull(dynamicFields)) {
+        if (Objects.isNull(dynamicFields) || dynamicFields.isEmpty()) {
             return defaultDynamicFields;
         }
         final List<Field> updatedFields = new ArrayList<>(dynamicFields);
