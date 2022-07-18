@@ -29,16 +29,18 @@ public class IndexConfigurationMerger {
 
     private FieldConfiguration getFieldConfiguration() {
         final FieldConfiguration updatedFieldConfig = new FieldConfiguration();
-        final FieldConfiguration filedConfiguration = indexConfig.getFieldConfiguration();
+        final FieldConfiguration fieldConfiguration = indexConfig.getFieldConfiguration();
         final FieldConfiguration defaultFieldConfiguration = defaultIndexConfig.getFieldConfiguration();
+        final boolean haveFields = !fieldConfiguration.getFields().isEmpty() || !fieldConfiguration.getDynamicFields().isEmpty();
+        final boolean useDefaultConfig = fieldConfiguration.isUseDefaultConfig();
 
-        if (Objects.isNull(filedConfiguration) || (filedConfiguration.getFields().isEmpty()
-                && filedConfiguration.getDynamicFields().isEmpty())) {
+        if(!useDefaultConfig && haveFields) {
+            return fieldConfiguration;
+        } else if (useDefaultConfig && !haveFields) {
             return defaultFieldConfiguration;
-        } else if((filedConfiguration.isUseDefaultConfig() && !filedConfiguration.getFields().isEmpty())
-                || (filedConfiguration.isUseDefaultConfig() && !filedConfiguration.getDynamicFields().isEmpty())) {
-            updatedFieldConfig.getFields().putAll(mergeFields(filedConfiguration, defaultFieldConfiguration));
-            updatedFieldConfig.getDynamicFields().addAll(mergeDynamicFields(filedConfiguration, defaultFieldConfiguration));
+        } else if((useDefaultConfig && haveFields)) {
+            updatedFieldConfig.getFields().putAll(mergeFields(fieldConfiguration, defaultFieldConfiguration));
+            updatedFieldConfig.getDynamicFields().addAll(mergeDynamicFields(fieldConfiguration, defaultFieldConfiguration));
         }
         return updatedFieldConfig;
     }

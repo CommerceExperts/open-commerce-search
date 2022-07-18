@@ -43,7 +43,7 @@ public class DefaultIndexerConfigurationProvider implements IndexerConfiguration
 		if (Objects.nonNull(indexConfig)) {
 			return new IndexConfigurationMerger(indexConfig, properties.getDefaultIndexConfig()).getIndexConfig();
 		}
-		return properties.getIndexConfig().getOrDefault(indexName, properties.getDefaultIndexConfig());
+		return properties.getDefaultIndexConfig();
 	}
 
 	@Override
