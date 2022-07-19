@@ -6,7 +6,6 @@ import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.config.IndexSettings;
 import lombok.RequiredArgsConstructor;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -63,17 +62,7 @@ public class IndexConfigurationMerger {
         if (Objects.isNull(dynamicFields) || dynamicFields.isEmpty()) {
             return defaultDynamicFields;
         }
-        final List<Field> updatedFields = new ArrayList<>(dynamicFields);
-        dynamicFields.forEach(field -> updatedFields.addAll(getUniqueFields(field ,defaultDynamicFields, updatedFields)));
-        return updatedFields;
-    }
-
-    private List<Field> getUniqueFields(final Field field, final List<Field> defaultDynamicFields, final List<Field> updatedDynamicFields) {
-        return defaultDynamicFields.stream().filter(f -> !isSimilarField(f, field) && !updatedDynamicFields.contains(f)).collect(Collectors.toList());
-    }
-
-    private boolean isSimilarField(final Field field1, final Field field2) {
-       return field1.getName().equalsIgnoreCase(field2.getName()) && field1.getType().equals(field2.getType());
+        return Stream.concat(dynamicFields.stream(), defaultDynamicFields.stream()).distinct().collect(Collectors.toList());
     }
 
     private DataProcessorConfiguration getDataProcessConfiguration() {
