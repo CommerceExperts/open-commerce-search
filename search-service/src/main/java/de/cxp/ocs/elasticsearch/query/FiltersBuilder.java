@@ -3,13 +3,8 @@ package de.cxp.ocs.elasticsearch.query;
 import static de.cxp.ocs.config.FieldConstants.VARIANTS;
 import static de.cxp.ocs.util.ESQueryUtils.mergeQueries;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.lucene.search.join.ScoreMode;
@@ -21,13 +16,7 @@ import com.google.common.base.Functions;
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FieldConfigIndex;
-import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilterAdapter;
-import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
-import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilterAdapter;
-import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
-import de.cxp.ocs.elasticsearch.query.filter.TermResultFilterAdapter;
+import de.cxp.ocs.elasticsearch.query.filter.*;
 
 public class FiltersBuilder {
 
@@ -39,6 +28,7 @@ public class FiltersBuilder {
 	static {
 		filterAdapters.put(NumberResultFilter.class, new NumberResultFilterAdapter());
 		filterAdapters.put(TermResultFilter.class, new TermResultFilterAdapter());
+		filterAdapters.put(PathResultFilter.class, new PathResultFilterAdapter());
 	}
 
 	public FiltersBuilder(SearchContext context) {

@@ -15,7 +15,7 @@ import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
-import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
+import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
@@ -73,21 +73,24 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		if (catBuckets.size() == 0) return Optional.empty();
 
 		// let it crash if it's from the wrong type
-		TermResultFilter facetFilter = (TermResultFilter) intFacetFilter;
+		PathResultFilter facetFilter = (PathResultFilter) intFacetFilter;
 		Facet facet = FacetFactory.create(facetConfig, FacetType.HIERARCHICAL);
 
 		Map<String, HierarchialFacetEntry> entries = new LinkedHashMap<>(catBuckets.size());
+		Set<String> selectedPaths = new HashSet<>(facetFilter.getValuesAsList().size());
+
 		long absDocCount = 0;
-		boolean isFiltered = isMatchingFilterType(intFacetFilter);
-		Set<String> selectedPaths = new HashSet<>();
+		boolean isFiltered = isMatchingFilterType(facetFilter);
+
+		Map<String, String> idPaths = new HashMap<String, String>(catBuckets.size());
 
 		for (Bucket categoryBucket : catBuckets) {
-			String categoryPath = categoryBucket.getKeyAsString();
-			String[] categories = StringUtils.split(categoryPath, '/');
+			final String categoryPath = categoryBucket.getKeyAsString();
+			final String[] categories = StringUtils.split(categoryPath, PathResultFilter.PATH_SEPARATOR);
+			final String categoryId = extractCategoryId(categoryBucket);
+			final String idPath = getIdPath(categoryPath, categoryId, idPaths);
 
-			final Set<String> ids = extractCategoryIds(categoryBucket);
-			final boolean isSelectedPath = isFiltered && isSelectedPath(categoryPath, ids, facetFilter);
-
+			final boolean isSelectedPath = isFiltered && isSelectedPath(categoryPath, categoryId, idPath, facetFilter);
 			if (isSelectedPath) {
 				selectedPaths.add(categoryPath);
 			}
@@ -95,7 +98,6 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 			// make sure the whole path exists as a nested HierarchialFacetEntry,
 			// each element of the path being a HierarchialFacetEntry
 			HierarchialFacetEntry lastLevelEntry = entries.computeIfAbsent(categories[0], c -> toFacetEntry(c, categoryPath, facetConfig, linkBuilder, isSelectedPath));
-
 			for (int i = 1; i < categories.length; i++) {
 				// mark the whole path as selected if a child is selected
 				if (isSelectedPath) {
@@ -117,14 +119,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 			absDocCount += docCount;
 			lastLevelEntry.setDocCount(docCount);
 			lastLevelEntry.setPath(categoryPath);
-
-			if (ids.size() == 1) {
-				lastLevelEntry.setId(ids.iterator().next());
-			}
-			else if (ids.size() > 1) {
-				// FIXME? When can there be more than one ID?
-				lastLevelEntry.setId(ids.iterator().next());
-			}
+			lastLevelEntry.setId(categoryId);
 		}
 		facet.setAbsoluteFacetCoverage(absDocCount);
 
@@ -155,25 +150,45 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		return Optional.of(facet);
 	}
 
-	private void removeUnselectedChildren(Set<String> selectedPaths, HierarchialFacetEntry rootEntry) {
-		Iterator<FacetEntry> childIterator = rootEntry.getChildren().iterator();
-		while (childIterator.hasNext()) {
-			HierarchialFacetEntry child = (HierarchialFacetEntry) childIterator.next();
-			if (!child.isSelected()) {
-				childIterator.remove();
-			}
-			else if (!selectedPaths.contains(child.getPath())) {
-				removeUnselectedChildren(selectedPaths, child);
+	private String extractCategoryId(Bucket categoryBucket) {
+		Terms idsAgg = (Terms) categoryBucket.getAggregations().get(FACET_IDS_AGG);
+		List<? extends Bucket> idBuckets = idsAgg.getBuckets();
+		String id = null;
+		if (idBuckets != null && idBuckets.size() > 0) {
+			id = idBuckets.iterator().next().getKeyAsString();
+			if (idBuckets.size() > 1) {
+				log.warn("Unexpected category bucket: More than one ID for the same category name can't be handled (yet)."
+						+ " Will just use the first ID! id={} for bucket key={}", id, categoryBucket.getKeyAsString());
 			}
 		}
+		return id;
 	}
 
-	private boolean isSelectedPath(String categoryPath, final Set<String> ids, TermResultFilter facetFilter) {
+	private String getIdPath(String categoryPath, final String categoryId, Map<String, String> idPaths) {
+		String parentIdPath = null;
+		int parentPathEndIndex = categoryPath.lastIndexOf(PathResultFilter.PATH_SEPARATOR);
+		if (parentPathEndIndex >= 0) {
+			parentIdPath = idPaths.get(categoryPath.substring(0, parentPathEndIndex));
+		}
+
+		String idPath;
+		if (parentIdPath != null) {
+			idPath = parentIdPath + PathResultFilter.PATH_SEPARATOR + categoryId;
+		}
+		else {
+			idPath = PathResultFilter.PATH_SEPARATOR + categoryId;
+		}
+		idPaths.put(categoryPath, idPath);
+		return idPath;
+	}
+
+	private boolean isSelectedPath(String categoryPath, String categoryId, String idPath, PathResultFilter facetFilter) {
 		boolean isSelectedPath = false;
 		if (facetFilter.getValues().length > 0) {
 			if (facetFilter.isFilterOnId()) {
-				for (String filterId : facetFilter.getValuesAsList()) {
-					if (ids.contains(filterId)) {
+				for (String idFilter : facetFilter.getValuesAsList()) {
+					if ((idFilter.charAt(0) == PathResultFilter.PATH_SEPARATOR && idPath.equals(idFilter))
+							|| categoryId.equals(idFilter)) {
 						isSelectedPath = true;
 						break;
 					}
@@ -188,14 +203,17 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		return isSelectedPath;
 	}
 
-	private Set<String> extractCategoryIds(Bucket categoryBucket) {
-		Terms idsAgg = (Terms) categoryBucket.getAggregations().get(FACET_IDS_AGG);
-		List<? extends Bucket> idBuckets = idsAgg.getBuckets();
-		final Set<String> ids = new HashSet<>(idBuckets.size());
-		if (idBuckets != null && idBuckets.size() > 0) {
-			idBuckets.forEach(b -> ids.add(b.getKeyAsString()));
+	private void removeUnselectedChildren(Set<String> selectedPaths, HierarchialFacetEntry rootEntry) {
+		Iterator<FacetEntry> childIterator = rootEntry.getChildren().iterator();
+		while (childIterator.hasNext()) {
+			HierarchialFacetEntry child = (HierarchialFacetEntry) childIterator.next();
+			if (!child.isSelected()) {
+				childIterator.remove();
+			}
+			else if (!selectedPaths.contains(child.getPath())) {
+				removeUnselectedChildren(selectedPaths, child);
+			}
 		}
-		return ids;
 	}
 
 	private void sortChildren(FacetEntry parent, Comparator<FacetEntry> valueComparator) {
