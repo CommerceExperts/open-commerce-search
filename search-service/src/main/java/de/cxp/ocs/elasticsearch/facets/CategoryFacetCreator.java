@@ -1,5 +1,7 @@
 package de.cxp.ocs.elasticsearch.facets;
 
+import static de.cxp.ocs.elasticsearch.query.filter.PathResultFilter.PATH_SEPARATOR;
+
 import java.util.*;
 import java.util.function.Function;
 
@@ -78,15 +80,17 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		Facet facet = FacetFactory.create(facetConfig, FacetType.HIERARCHICAL);
 
 		// map of every path to its full id-path
-		Map<String, String> idPathIndex = new HashMap<String, String>(catBuckets.size());
-		Set<String> selectedPaths = new HashSet<>(facetFilter.getValuesAsList().size());
-		Map<String, HierarchialFacetEntry> entries = new LinkedHashMap<>(catBuckets.size());
+		Set<String> selectedPaths = facetFilter == null || facetFilter.getValuesAsList().isEmpty() ? Collections.emptySet() : new HashSet<>(facetFilter.getValuesAsList().size());
+		CategoryContext context = new CategoryContext(catBuckets.size());
+		context.facetConfig = facetConfig;
+		context.linkBuilder = linkBuilder;
+		context.facetFilter = facetFilter;
 
 		long absDocCount = 0;
 		boolean isFiltered = isMatchingFilterType(facetFilter);
 
 		for (Bucket categoryBucket : catBuckets) {
-			CategoryExtract category = extractCategoryData(categoryBucket, idPathIndex);
+			CategoryExtract category = extractCategoryData(categoryBucket, context.idPathIndex);
 
 			if (isFiltered && isSelectedPath(category, facetFilter)) {
 				category.isSelectedPath = Boolean.TRUE;
@@ -96,7 +100,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 			long docCount = nestedFacetCorrector != null ? nestedFacetCorrector.getCorrectedDocumentCount(categoryBucket) : categoryBucket.getDocCount();
 			absDocCount += docCount;
 
-			HierarchialFacetEntry lastLevelEntry = createFacetEntryInHierarchy(category, entries, facetConfig, linkBuilder);
+			HierarchialFacetEntry lastLevelEntry = createFacetEntryInHierarchy(category, context);
 			lastLevelEntry.setDocCount(docCount);
 			lastLevelEntry.setPath(category.pathString);
 			lastLevelEntry.setId(category.id);
@@ -104,10 +108,12 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		facet.setAbsoluteFacetCoverage(absDocCount);
 
 		// copy relevant entries into facet
-		for (HierarchialFacetEntry rootEntry : entries.values()) {
+		for (HierarchialFacetEntry rootEntry : context.entries.values()) {
 			if (!facetConfig.isShowUnselectedOptions() && isFiltered) {
 				if (rootEntry.isSelected()) {
-					removeUnselectedChildren(selectedPaths, rootEntry);
+					if (!selectedPaths.contains(rootEntry.getPath())) {
+						removeUnselectedChildren(selectedPaths, rootEntry);
+					}
 					facet.getEntries().add(rootEntry);
 				}
 				// unselected paths are skipped/removed
@@ -145,17 +151,17 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 
 	private String getIdPath(String categoryPath, final String categoryId, Map<String, String> idPathIndex) {
 		String parentIdPath = null;
-		int parentPathEndIndex = categoryPath.lastIndexOf(PathResultFilter.PATH_SEPARATOR);
+		int parentPathEndIndex = categoryPath.lastIndexOf(PATH_SEPARATOR);
 		if (parentPathEndIndex >= 0) {
 			parentIdPath = idPathIndex.get(categoryPath.substring(0, parentPathEndIndex));
 		}
 
 		String idPath;
 		if (parentIdPath != null) {
-			idPath = parentIdPath + PathResultFilter.PATH_SEPARATOR + categoryId;
+			idPath = parentIdPath + PATH_SEPARATOR + categoryId;
 		}
 		else {
-			idPath = PathResultFilter.PATH_SEPARATOR + categoryId;
+			idPath = PATH_SEPARATOR + categoryId;
 		}
 		idPathIndex.put(categoryPath, idPath);
 		return idPath;
@@ -166,7 +172,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		if (facetFilter.getValues().length > 0) {
 			if (facetFilter.isFilterOnId()) {
 				for (String idFilter : facetFilter.getValuesAsList()) {
-					if ((idFilter.charAt(0) == PathResultFilter.PATH_SEPARATOR && category.idPath.equals(idFilter))
+					if ((idFilter.charAt(0) == PATH_SEPARATOR && category.idPathString.equals(idFilter))
 							|| category.id.equals(idFilter)) {
 						isSelectedPath = true;
 						break;
@@ -183,11 +189,10 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		return isSelectedPath;
 	}
 
-	private HierarchialFacetEntry createFacetEntryInHierarchy(CategoryExtract category, Map<String, HierarchialFacetEntry> entries, FacetConfig facetConfig,
-			SearchQueryBuilder linkBuilder) {
+	private HierarchialFacetEntry createFacetEntryInHierarchy(CategoryExtract category, CategoryContext context) {
 		// make sure the whole path exists as a nested HierarchialFacetEntry,
-		// each element of the path being a HierarchialFacetEntry
-		HierarchialFacetEntry lastLevelEntry = entries.computeIfAbsent(category.path[0], c -> toFacetEntry(c, category, facetConfig, linkBuilder));
+		// each element of the path being a HierarchialFacetEntr
+		HierarchialFacetEntry lastLevelEntry = context.entries.computeIfAbsent(category.path[0], c -> toFacetEntry(0, category, context));
 		for (int i = 1; i < category.path.length; i++) {
 			// mark the whole path as selected if a child is selected
 			if (category.isSelectedPath) {
@@ -199,7 +204,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 				lastLevelEntry = (HierarchialFacetEntry) child;
 			}
 			else {
-				HierarchialFacetEntry newChild = toFacetEntry(category.path[i], category, facetConfig, linkBuilder);
+				HierarchialFacetEntry newChild = toFacetEntry(i, category, context);
 				lastLevelEntry.addChild(newChild);
 				lastLevelEntry = newChild;
 			}
@@ -207,28 +212,69 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		return lastLevelEntry;
 	}
 
-	private HierarchialFacetEntry toFacetEntry(String value, CategoryExtract categoryContext, FacetConfig facetConfig, SearchQueryBuilder linkBuilder) {
+	private HierarchialFacetEntry toFacetEntry(final int categoryPathIndex, final CategoryExtract category, final CategoryContext context) {
 		String link;
-		boolean isSelected = categoryContext.isSelectedPath;
-		String categoryPath = categoryContext.pathString;
+		boolean isSelected = category.isSelectedPath;
+		String categoryName = category.path[categoryPathIndex];
+		
 		if (isSelected) {
-			int unselectPathEndIndex = categoryPath.lastIndexOf('/');
-			if (unselectPathEndIndex == -1) {
-				link = linkBuilder.withoutFilterAsLink(facetConfig, categoryPath);
+			String filterValue = joinPartialPath(context.facetFilter.isFilterOnId() ? category.idPath : category.path, categoryPathIndex);
+			String[] filterValues;
+			if (context.facetConfig.isMultiSelect()) {
+				// if a filter is already set that includes that path, we have to check if that specific path is a
+				// parent path or exact that category path.
+				// In case it is a parent path, that parent path can be selected to unselect the child path.
+				// In case this exact category is selected already, we want that filter-value removed completely
+				filterValues = new String[context.facetFilter.getValuesAsList().size()];
+				int i = 0;
+				for (String value : context.facetFilter.getValuesAsList()) {
+					if (value.equals(filterValue)) {
+						// skip
+					}
+					else if (value.startsWith(filterValue)) {
+						// replace old value with current subPath
+						filterValues[i++] = filterValue;
+					}
+					else if (context.facetFilter.isFilterOnId() && value.equals(category.idPath[categoryPathIndex])) {
+						// skip special case: a filter on single ID without the full path
+					}
+					else {
+						filterValues[i++] = value;
+					}
+				}
 			}
-			else if (categoryPath.endsWith(value)) {
-				link = linkBuilder.withFilterAsLink(facetConfig, categoryPath.substring(0, unselectPathEndIndex));
+			else if (categoryName.equals(filterValue)) {
+				filterValues = null;
 			}
 			else {
-				unselectPathEndIndex = categoryPath.lastIndexOf(value + "/") + value.length();
-				link = linkBuilder.withFilterAsLink(facetConfig, categoryPath.substring(0, unselectPathEndIndex));
+				filterValues = new String[] { filterValue };
 			}
-
+			link = filterValues == null ? context.linkBuilder.withoutFilterAsLink(context.facetConfig)
+					: context.linkBuilder.withExactFilterAsLink(context.facetConfig, filterValues);
 		}
 		else {
-			link = linkBuilder.withFilterAsLink(facetConfig, categoryPath);
+			String filterValue = joinPartialPath(category.path, categoryPathIndex);
+			String[] filterValues;
+			if (context.facetConfig.isMultiSelect()) {
+				filterValues = new String[context.facetFilter.getValuesAsList().size() + 1];
+				int i = 0;
+				for (String value : context.facetFilter.getValuesAsList()) {
+					filterValues[i++] = value;
+				}
+				filterValues[i] = filterValue;
+			}
+			else {
+				filterValues = new String[] { filterValue };
+			}
+			link = context.linkBuilder.withExactFilterAsLink(context.facetConfig, filterValues);
 		}
-		return new HierarchialFacetEntry(value, null, 0, link, isSelected);
+		return new HierarchialFacetEntry(categoryName, null, 0, link, isSelected);
+	}
+
+	private String joinPartialPath(String[] pathValues, int endIndex) {
+		if (endIndex < 0 || endIndex >= pathValues.length) throw new IndexOutOfBoundsException("no pathValues for index " + endIndex);
+		if (endIndex == 0) return pathValues[0];
+		return StringUtils.join(pathValues, PATH_SEPARATOR, 0, endIndex + 1);
 	}
 
 	private FacetEntry getChildByKey(HierarchialFacetEntry entry, String childKey) {
@@ -285,14 +331,30 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		final String	pathString;
 		final String[]	path;
 		final String	id;
-		final String	idPath;
+		final String	idPathString;
+		final String[]	idPath;
 		boolean			isSelectedPath;
 
-		public CategoryExtract(final String categoryPath, final String categoryId, String idPath) {
-			this.pathString = categoryPath;
-			this.id = categoryId;
-			this.idPath = idPath;
-			path = StringUtils.split(categoryPath, PathResultFilter.PATH_SEPARATOR);
+		public CategoryExtract(final String categoryPathStr, final String categoryId, String idPathStr) {
+			pathString = categoryPathStr;
+			id = categoryId;
+			idPathString = idPathStr;
+			path = StringUtils.split(categoryPathStr, PATH_SEPARATOR);
+			idPath = StringUtils.split(idPathStr, PATH_SEPARATOR);
+		}
+	}
+
+	private static class CategoryContext {
+
+		PathResultFilter							facetFilter;
+		SearchQueryBuilder							linkBuilder;
+		FacetConfig									facetConfig;
+		final Map<String, String>					idPathIndex;
+		final Map<String, HierarchialFacetEntry>	entries;
+
+		public CategoryContext(int expectedEntriesSize) {
+			idPathIndex = new HashMap<String, String>(expectedEntriesSize);
+			entries = new LinkedHashMap<>(expectedEntriesSize);
 		}
 	}
 }
