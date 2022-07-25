@@ -213,62 +213,55 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 	}
 
 	private HierarchialFacetEntry toFacetEntry(final int categoryPathIndex, final CategoryExtract category, final CategoryContext context) {
-		String link;
-		boolean isSelected = category.isSelectedPath;
 		String categoryName = category.path[categoryPathIndex];
-		
-		if (isSelected) {
-			String filterValue = joinPartialPath(context.facetFilter.isFilterOnId() ? category.idPath : category.path, categoryPathIndex);
-			String[] filterValues;
-			if (context.facetConfig.isMultiSelect()) {
-				// if a filter is already set that includes that path, we have to check if that specific path is a
-				// parent path or exact that category path.
-				// In case it is a parent path, that parent path can be selected to unselect the child path.
-				// In case this exact category is selected already, we want that filter-value removed completely
-				filterValues = new String[context.facetFilter.getValuesAsList().size()];
-				int i = 0;
-				for (String value : context.facetFilter.getValuesAsList()) {
-					if (value.equals(filterValue)) {
-						// skip
-					}
-					else if (value.startsWith(filterValue)) {
-						// replace old value with current subPath
-						filterValues[i++] = filterValue;
-					}
-					else if (context.facetFilter.isFilterOnId() && value.equals(category.idPath[categoryPathIndex])) {
-						// skip special case: a filter on single ID without the full path
-					}
-					else {
-						filterValues[i++] = value;
-					}
-				}
-			}
-			else if (categoryName.equals(filterValue)) {
-				filterValues = null;
-			}
-			else {
-				filterValues = new String[] { filterValue };
-			}
-			link = filterValues == null ? context.linkBuilder.withoutFilterAsLink(context.facetConfig)
-					: context.linkBuilder.withExactFilterAsLink(context.facetConfig, filterValues);
+		String link = createLink(categoryPathIndex, category, context);
+		return new HierarchialFacetEntry(categoryName, null, 0, link, category.isSelectedPath);
+	}
+
+	private String createLink(final int categoryPathIndex, final CategoryExtract category, final CategoryContext context) {
+		String link;
+		String pathFilterValue;
+		if (context.facetFilter.isFilterOnId()) {
+			pathFilterValue = PATH_SEPARATOR + joinPartialPath(category.idPath, categoryPathIndex);
 		}
 		else {
-			String filterValue = joinPartialPath(category.path, categoryPathIndex);
-			String[] filterValues;
-			if (context.facetConfig.isMultiSelect()) {
-				filterValues = new String[context.facetFilter.getValuesAsList().size() + 1];
-				int i = 0;
-				for (String value : context.facetFilter.getValuesAsList()) {
-					filterValues[i++] = value;
-				}
-				filterValues[i] = filterValue;
-			}
-			else {
-				filterValues = new String[] { filterValue };
-			}
-			link = context.linkBuilder.withExactFilterAsLink(context.facetConfig, filterValues);
+			pathFilterValue = joinPartialPath(category.path, categoryPathIndex);
 		}
-		return new HierarchialFacetEntry(categoryName, null, 0, link, isSelected);
+
+		String[] filterValues;
+		if (context.facetConfig.isMultiSelect()) {
+			// if a filter is already set that includes that path, we have to check if that specific path is a
+			// parent path or exact that category path.
+			// In case it is a parent path, that parent path can be selected to unselect the child path.
+			// In case this exact category is selected already, we want that filter-value removed completely
+			Set<String> filterValuesSet = new HashSet<>(context.facetFilter.getValuesAsList().size());
+			int i = 0;
+			for (String value : context.facetFilter.getValuesAsList()) {
+				if (value.equals(pathFilterValue)) {
+					// skip
+				}
+				else if (value.startsWith(pathFilterValue) || pathFilterValue.startsWith(value)) {
+					// replace old value with current subPath
+					filterValuesSet.add(pathFilterValue);
+				}
+				else if (context.facetFilter.isFilterOnId() && value.equals(category.idPath[categoryPathIndex])) {
+					// skip special case: a filter on single ID without the full path
+				}
+				else {
+					filterValuesSet.add(value);
+				}
+			}
+			if (!category.isSelectedPath) filterValuesSet.add(pathFilterValue);
+			filterValues = filterValuesSet.size() == 0 ? null : filterValuesSet.toArray(new String[filterValuesSet.size()]);
+		}
+		else if (category.isSelectedPath) {
+			filterValues = null;
+		}
+		else {
+			filterValues = new String[] { pathFilterValue };
+		}
+		link = filterValues == null ? context.linkBuilder.withoutFilterAsLink(context.facetConfig) : context.linkBuilder.withExactFilterAsLink(context.facetConfig, filterValues);
+		return link;
 	}
 
 	private String joinPartialPath(String[] pathValues, int endIndex) {
