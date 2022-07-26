@@ -6,8 +6,10 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.experimental.Accessors;
 
 @Data
@@ -20,6 +22,8 @@ public class FieldConfiguration {
 
 	@NonNull
 	private final List<Field> dynamicFields = new ArrayList<>();
+
+	public boolean useDefaultConfig;
 
 	/**
 	 * Add explicit field configuration. Defines how data fields are indexed.
@@ -89,4 +93,5 @@ public class FieldConfiguration {
 	public boolean hasField(final String name) {
 		return fields.containsKey(name);
 	}
+
 }

@@ -1,6 +1,7 @@
 package de.cxp.ocs.conf;
 
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 
 import de.cxp.ocs.config.DataProcessorConfiguration;
@@ -38,7 +39,11 @@ public class DefaultIndexerConfigurationProvider implements IndexerConfiguration
 	}
 
 	private IndexConfiguration getIndexConf(String indexName) {
-		return properties.getIndexConfig().getOrDefault(indexName, properties.getDefaultIndexConfig());
+		final IndexConfiguration indexConfig = properties.getIndexConfig().get(indexName);
+		if (Objects.nonNull(indexConfig)) {
+			return new IndexConfigurationMerger(indexConfig, properties.getDefaultIndexConfig()).getIndexConfig();
+		}
+		return properties.getDefaultIndexConfig();
 	}
 
 	@Override

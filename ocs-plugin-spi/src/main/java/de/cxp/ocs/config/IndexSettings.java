@@ -1,5 +1,6 @@
 package de.cxp.ocs.config;
 
+import lombok.Getter;
 import lombok.Setter;
 
 @Setter
@@ -13,4 +14,6 @@ public class IndexSettings {
 
 	public int waitTimeMsForHealthyIndex = 3000;
 
+	@Getter
+	public boolean useDefaultConfig;
 }

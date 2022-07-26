@@ -7,13 +7,8 @@ import static org.apache.commons.lang3.StringUtils.replace;
 import static org.apache.commons.lang3.StringUtils.split;
 import static org.apache.commons.lang3.StringUtils.splitPreserveAllTokens;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
 
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.config.Field;
@@ -22,6 +17,7 @@ import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
+import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SortOrder;
@@ -108,7 +104,7 @@ public class SearchParamsParser {
 		String[] paramValues = decodeValueDelimiter(split(paramValue, VALUE_DELIMITER));
 		switch (field.getType()) {
 			case CATEGORY:
-				return new TermResultFilter(field, paramValues)
+				return new PathResultFilter(field, paramValues)
 						.setFieldPrefix(FieldConstants.PATH_FACET_DATA)
 						.setFilterOnId(isIdFilter);
 			case NUMBER:
