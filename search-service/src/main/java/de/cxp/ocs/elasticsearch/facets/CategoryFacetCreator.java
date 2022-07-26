@@ -107,20 +107,14 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		}
 		facet.setAbsoluteFacetCoverage(absDocCount);
 
-		// copy relevant entries into facet
-		for (HierarchialFacetEntry rootEntry : context.entries.values()) {
-			if (!facetConfig.isShowUnselectedOptions() && isFiltered) {
-				if (rootEntry.isSelected()) {
-					if (!selectedPaths.contains(rootEntry.getPath())) {
-						removeUnselectedChildren(selectedPaths, rootEntry);
-					}
-					facet.getEntries().add(rootEntry);
-				}
-				// unselected paths are skipped/removed
-			}
-			else {
-				facet.getEntries().add(rootEntry);
-			}
+		if (!facetConfig.isShowUnselectedOptions() && isFiltered) {
+			// if unselected options should not be shown,
+			// this removes all siblings of selected elements.
+			copyOnlySelectedPaths(context.entries.values(), facet, selectedPaths);
+		}
+		else {
+			// copy all entries into facet
+			context.entries.values().forEach(facet.getEntries()::add);
 		}
 
 		sortFacetEntries(facetConfig, facet);
@@ -235,7 +229,6 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 			// In case it is a parent path, that parent path can be selected to unselect the child path.
 			// In case this exact category is selected already, we want that filter-value removed completely
 			Set<String> filterValuesSet = new HashSet<>(context.facetFilter.getValuesAsList().size());
-			int i = 0;
 			for (String value : context.facetFilter.getValuesAsList()) {
 				if (value.equals(pathFilterValue)) {
 					// skip
@@ -277,6 +270,18 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 			}
 		}
 		return null;
+	}
+
+	private void copyOnlySelectedPaths(Collection<HierarchialFacetEntry> rootEntries, Facet facet, Set<String> selectedPaths) {
+		for (HierarchialFacetEntry rootEntry : rootEntries) {
+			if (rootEntry.isSelected()) {
+				if (!selectedPaths.contains(rootEntry.getPath())) {
+					removeUnselectedChildren(selectedPaths, rootEntry);
+				}
+				facet.getEntries().add(rootEntry);
+			}
+			// unselected root-entries are skipped/removed
+		}
 	}
 
 	private void removeUnselectedChildren(Set<String> selectedPaths, HierarchialFacetEntry rootEntry) {
