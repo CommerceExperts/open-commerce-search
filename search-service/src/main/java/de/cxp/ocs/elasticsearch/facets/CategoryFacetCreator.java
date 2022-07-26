@@ -206,13 +206,50 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		return lastLevelEntry;
 	}
 
-	private HierarchialFacetEntry toFacetEntry(final int categoryPathIndex, final CategoryExtract category, final CategoryContext context) {
+	/**
+	 * Create the facet entry for the category defined by the categoryPathIndex that refers to the according path of the
+	 * given CategoryExtract. The documentCount will be corrected afterwards.
+	 * 
+	 * @param categoryPathIndex
+	 * @param category
+	 * @param context
+	 * @return
+	 */
+	protected HierarchialFacetEntry toFacetEntry(final int categoryPathIndex, final CategoryExtract category, final CategoryContext context) {
 		String categoryName = category.path[categoryPathIndex];
 		String link = createLink(categoryPathIndex, category, context);
 		return new HierarchialFacetEntry(categoryName, null, 0, link, category.isSelectedPath);
 	}
 
-	private String createLink(final int categoryPathIndex, final CategoryExtract category, final CategoryContext context) {
+	/**
+	 * Creates a link for the category defined by the categoryPathIndex that refers to the according path of the
+	 * current category.
+	 * 
+	 * <p>
+	 * The logic depends on the different settings & active filters:
+	 * </p>
+	 * 
+	 * <p>
+	 * If "multi-select" is enabled, the filters unrelated to this path stay as is. The current path is then just
+	 * appended as filter value. This is also the case for "siblings" of a selected path. This means sibling categories
+	 * have a classic "multi-select behaviour".<br>
+	 * Parent elements of a selected path get a link that replaces the child filter by that parent filter. That means
+	 * choosing a parent facet entry / filter, will remove the child-filter and select the parent.<br>
+	 * Same for child elements of a selected path: the active filter is replaced by that child path, which on the
+	 * contrary to parent filters will reduce the result size.
+	 * </p>
+	 * <p>
+	 * In case "multi-select" is <strong>disabled</strong>, each facet element will get a link that selects only that
+	 * filter and removes other potential filters of that facet.<br>
+	 * Selected facet elements will receive a filter that removes all facet-filters completely.
+	 * </p>
+	 * 
+	 * @param categoryPathIndex
+	 * @param category
+	 * @param context
+	 * @return
+	 */
+	protected String createLink(final int categoryPathIndex, final CategoryExtract category, final CategoryContext context) {
 		String link;
 		String pathFilterValue;
 		if (context.facetFilter.isFilterOnId()) {
@@ -233,12 +270,12 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 				if (value.equals(pathFilterValue)) {
 					// skip
 				}
+				else if (context.facetFilter.isFilterOnId() && value.equals(category.idPath[categoryPathIndex])) {
+					// skip special case: a filter on single ID without the full path
+				}
 				else if (value.startsWith(pathFilterValue) || pathFilterValue.startsWith(value)) {
 					// replace old value with current subPath
 					filterValuesSet.add(pathFilterValue);
-				}
-				else if (context.facetFilter.isFilterOnId() && value.equals(category.idPath[categoryPathIndex])) {
-					// skip special case: a filter on single ID without the full path
 				}
 				else {
 					filterValuesSet.add(value);
@@ -257,7 +294,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		return link;
 	}
 
-	private String joinPartialPath(String[] pathValues, int endIndex) {
+	protected String joinPartialPath(String[] pathValues, int endIndex) {
 		if (endIndex < 0 || endIndex >= pathValues.length) throw new IndexOutOfBoundsException("no pathValues for index " + endIndex);
 		if (endIndex == 0) return pathValues[0];
 		return StringUtils.join(pathValues, PATH_SEPARATOR, 0, endIndex + 1);
@@ -324,7 +361,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 	}
 
 	@ToString
-	private static class CategoryExtract {
+	protected static class CategoryExtract {
 
 		final String	pathString;
 		final String[]	path;
@@ -342,7 +379,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		}
 	}
 
-	private static class CategoryContext {
+	protected static class CategoryContext {
 
 		PathResultFilter							facetFilter;
 		SearchQueryBuilder							linkBuilder;
