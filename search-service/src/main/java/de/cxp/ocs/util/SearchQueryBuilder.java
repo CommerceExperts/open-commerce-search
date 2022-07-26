@@ -264,7 +264,7 @@ public class SearchQueryBuilder {
 	 * </p>
 	 * 
 	 * @param facetConfig
-	 * @param filterValue
+	 * @param filterInputValues
 	 * @return
 	 */
 	public String withExactFilterAsLink(FacetConfig facetConfig, String... filterInputValues) {

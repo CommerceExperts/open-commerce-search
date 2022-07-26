@@ -211,9 +211,12 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 	 * given CategoryExtract. The documentCount will be corrected afterwards.
 	 * 
 	 * @param categoryPathIndex
+	 *        the index of the category inside the path for which a link should be created.
 	 * @param category
+	 *        the current full category. The actual category could be a parent of it.
 	 * @param context
-	 * @return
+	 *        category context will all objects around this facet.
+	 * @return the created facet entry
 	 */
 	protected HierarchialFacetEntry toFacetEntry(final int categoryPathIndex, final CategoryExtract category, final CategoryContext context) {
 		String categoryName = category.path[categoryPathIndex];
@@ -222,11 +225,11 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 	}
 
 	/**
-	 * Creates a link for the category defined by the categoryPathIndex that refers to the according path of the
-	 * current category.
+	 * Creates a link (using the context.linkBuilder) for the category defined by the categoryPathIndex that refers to
+	 * the according path of the current category.
 	 * 
 	 * <p>
-	 * The logic depends on the different settings & active filters:
+	 * The logic depends on the different settings and active filters:
 	 * </p>
 	 * 
 	 * <p>
@@ -245,9 +248,12 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 	 * </p>
 	 * 
 	 * @param categoryPathIndex
+	 *        the index of the category inside the path for which a link should be created.
 	 * @param category
+	 *        the current full category. The actual category could be a parent of it.
 	 * @param context
-	 * @return
+	 *        category context will all objects around this facet.
+	 * @return the link as URL query part (e.g. "category.id=123&amp;q=foo")
 	 */
 	protected String createLink(final int categoryPathIndex, final CategoryExtract category, final CategoryContext context) {
 		String link;
