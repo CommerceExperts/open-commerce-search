@@ -258,7 +258,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 	protected String createLink(final int categoryPathIndex, final CategoryExtract category, final CategoryContext context) {
 		String link;
 		String pathFilterValue;
-		if (context.facetFilter.isFilterOnId()) {
+		if (context.facetFilter != null && context.facetFilter.isFilterOnId()) {
 			pathFilterValue = PATH_SEPARATOR + joinPartialPath(category.idPath, categoryPathIndex);
 		}
 		else {
@@ -266,7 +266,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		}
 
 		String[] filterValues;
-		if (context.facetConfig.isMultiSelect()) {
+		if (context.facetFilter != null && context.facetConfig.isMultiSelect()) {
 			// if a filter is already set that includes that path, we have to check if that specific path is a
 			// parent path or exact that category path.
 			// In case it is a parent path, that parent path can be selected to unselect the child path.
