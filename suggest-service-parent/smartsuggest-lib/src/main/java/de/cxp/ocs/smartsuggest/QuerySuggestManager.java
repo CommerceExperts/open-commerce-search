@@ -4,26 +4,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import de.cxp.ocs.smartsuggest.limiter.ConfigurableShareLimiter;
@@ -32,18 +14,9 @@ import de.cxp.ocs.smartsuggest.limiter.GroupedCutOffLimiter;
 import de.cxp.ocs.smartsuggest.limiter.Limiter;
 import de.cxp.ocs.smartsuggest.monitoring.Instrumentable;
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
-import de.cxp.ocs.smartsuggest.querysuggester.CompoundQuerySuggester;
-import de.cxp.ocs.smartsuggest.querysuggester.NoopQuerySuggester;
-import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
-import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggesterProxy;
-import de.cxp.ocs.smartsuggest.querysuggester.SuggesterEngine;
-import de.cxp.ocs.smartsuggest.querysuggester.SuggesterFactory;
+import de.cxp.ocs.smartsuggest.querysuggester.*;
 import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneSuggesterFactory;
-import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
-import de.cxp.ocs.smartsuggest.spi.MergingSuggestDataProvider;
-import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
-import de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider;
-import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
+import de.cxp.ocs.smartsuggest.spi.*;
 import de.cxp.ocs.smartsuggest.spi.standard.CompoundSuggestConfigProvider;
 import de.cxp.ocs.smartsuggest.spi.standard.DefaultSuggestConfigProvider;
 import de.cxp.ocs.smartsuggest.updater.SuggestionsUpdater;
@@ -432,7 +405,7 @@ public class QuerySuggestManager implements AutoCloseable {
 	 * @param synchronous
 	 * @return
 	 */
-	private QuerySuggester initializeQuerySuggesters(String indexName, boolean synchronous) {
+	private QuerySuggester initializeQuerySuggesters(final String indexName, final boolean synchronous) {
 		List<SuggestDataProvider> actualSuggestDataProviders = suggestDataProviders.stream()
 				.filter(sdp -> {
 					try {
@@ -448,6 +421,11 @@ public class QuerySuggestManager implements AutoCloseable {
 
 		if (actualSuggestDataProviders.isEmpty()) {
 			log.warn("No SuggestDataProvider provides data for index {}. Will use NoopQuerySuggester", indexName);
+
+			// schedule a task that will cause a invalidation as soon as "done".
+			ScheduledFuture<?> scheduledTask = executor.schedule(() -> log.info("Invalidating NoopQuerySuggester for index '{}'", indexName), 10, TimeUnit.MINUTES);
+			scheduledTasks.put(indexName, scheduledTask);
+
 			return new NoopQuerySuggester(true);
 		}
 		if (actualSuggestDataProviders.size() == 1) {
