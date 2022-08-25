@@ -1,14 +1,6 @@
 package de.cxp.ocs.elasticsearch.prodset;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import org.elasticsearch.action.search.SearchResponse;
@@ -55,6 +47,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class HeroProductHandler {
+
+	private static int MAX_IDS_ORDERED_BOOSTING = 1000;
 
 	@NonNull
 	private final static Map<String, ProductSetResolver> resolvers = new HashMap<>(2);
@@ -150,14 +144,27 @@ public class HeroProductHandler {
 		StaticProductSet[] productSets = internalParams.heroProductSets;
 		if (productSets.length > 0) {
 			BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-			float boost = 100f * (float) Math.pow(10, productSets.length);
+			/**
+			 * assume 3 sets, each with 1000/max ids
+			 * boost-ranges should be:
+			 * A: 1000_000 * [1000 : 1] = 1000_000_000 : 1000_000
+			 * B: 1000 * [1000 : 1] = 1000_000 : 1000
+			 * C: 1 * [1000 : 1] = 1000 : 1
+			 * 
+			 * last product of set A has boost (1_000_000 * 1),
+			 * which must be greater than
+			 * the first product of set B that has boost (1000 * 1000)
+			 * 
+			 * Additional add factor 10 to ensure those IDs are returned prior to the "natural" result.
+			 */
+			float boost = 10f * (float) Math.pow(MAX_IDS_ORDERED_BOOSTING, productSets.length);
 			for (int i = 0; i < productSets.length; i++) {
 				if (productSets[i].ids.length > 0) {
 					// normaly we would generate a query-string query to
 					// guarantee the order of the IDs, but that's limited to
 					// 1024 clauses. So in case we have more IDs, we have to
 					// switch to the normal ids query
-					if (productSets[i].ids.length > 1024) {
+					if (productSets[i].ids.length > MAX_IDS_ORDERED_BOOSTING) {
 						log.warn("Cannot guarantee the order of the provided IDs for a product set with more than 1024 IDs (for request with user query = {})",
 								internalParams.getUserQuery());
 						boolQuery.should(QueryBuilders.idsQuery().addIds(productSets[i].ids).boost(boost));
@@ -175,7 +182,7 @@ public class HeroProductHandler {
 										.defaultOperator(Operator.OR));
 					}
 				}
-				boost /= 10;
+				boost /= MAX_IDS_ORDERED_BOOSTING;
 			}
 			return Optional.of(boolQuery);
 		}
@@ -197,7 +204,7 @@ public class HeroProductHandler {
 	}
 
 	private static String idsAsOrderedBoostQuery(@NonNull String[] ids) {
-		long boost = 10 * ids.length;
+		long boost = MAX_IDS_ORDERED_BOOSTING;
 		// rough approx. of string-length
 		StringBuilder idsOrderedBoostQuery = new StringBuilder(ids.length * (ids[0].length() + 2 + String.valueOf(boost).length()));
 		for (String id : ids) {
@@ -206,7 +213,7 @@ public class HeroProductHandler {
 					.append('^')
 					.append(String.valueOf(boost))
 					.append(' ');
-			boost -= 10;
+			boost -= 1;
 		}
 		return idsOrderedBoostQuery.toString();
 	}
