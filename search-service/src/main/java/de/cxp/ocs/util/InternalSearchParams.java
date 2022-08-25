@@ -35,6 +35,11 @@ public class InternalSearchParams {
 	 */
 	public boolean withResultData = true;
 
+	/**
+	 * See ArrangedSearchQuery::includeMainResult
+	 */
+	public boolean includeMainResult = true;
+
 	public List<Sorting> sortings = new ArrayList<>();
 
 	public List<InternalResultFilter> filters = new ArrayList<>();

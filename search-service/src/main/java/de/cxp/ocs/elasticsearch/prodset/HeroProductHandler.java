@@ -200,7 +200,12 @@ public class HeroProductHandler {
 	 */
 	public static void extendQuery(MasterVariantQuery searchQuery, InternalSearchParams internalParams) {
 		getHeroQuery(internalParams)
-				.ifPresent(bq -> searchQuery.setMasterLevelQuery(bq.should(searchQuery.getMasterLevelQuery())));
+				.ifPresent(bq -> {
+					if (searchQuery.getMasterLevelQuery() != null) {
+						bq = bq.should(searchQuery.getMasterLevelQuery());
+					}
+					searchQuery.setMasterLevelQuery(bq);
+				});
 	}
 
 	private static String idsAsOrderedBoostQuery(@NonNull String[] ids) {

@@ -5,15 +5,7 @@ import static de.cxp.ocs.config.FieldConstants.VARIANTS;
 import static de.cxp.ocs.util.SearchParamsParser.parseFilters;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -24,11 +16,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.InnerHitBuilder;
-import org.elasticsearch.index.query.NestedQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder.FilterFunctionBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -44,12 +32,8 @@ import org.slf4j.MarkerFactory;
 
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.SearchPlugins;
+import de.cxp.ocs.config.*;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
-import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldConfigIndex;
-import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.config.FieldUsage;
-import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.elasticsearch.facets.FacetConfigurationApplyer;
 import de.cxp.ocs.elasticsearch.mapper.ResultMapper;
 import de.cxp.ocs.elasticsearch.mapper.VariantPickingStrategy;
@@ -187,7 +171,11 @@ public class Searcher {
 		List<QueryStringTerm> searchWords;
 
 		String preprocessedQuery = null;
-		if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
+		if (!parameters.includeMainResult) {
+			stagedQueryBuilders = Collections.<ESQueryFactory> singletonList(new MatchAllQueryFactory()).iterator();
+			searchWords = Collections.emptyList();
+		}
+		else if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
 			preprocessedQuery = parameters.userQuery;
 			for (UserQueryPreprocessor preprocessor : userQueryPreprocessors) {
 				preprocessedQuery = preprocessor.preProcess(preprocessedQuery);
@@ -214,7 +202,6 @@ public class Searcher {
 
 		setFetchSources(searchSourceBuilder, variantSortings, parameters.withResultData);
 
-		List<InternalResultFilter> combinedFilters = new ArrayList<>();
 		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters, parameters.querqyFilters);
 
 		QueryBuilder postFilter = filterContext.getJoinedPostFilters();
@@ -255,12 +242,16 @@ public class Searcher {
 						searchQuery == null ? "NULL"
 								: searchQuery.getMasterLevelQuery().toString().replaceAll("[\n\\s]+", " "));
 			}
-			if (searchQuery == null)
-				continue;
+			if (searchQuery == null) continue;
 
 			if (parameters.heroProductSets != null) {
 				HeroProductHandler.extendQuery(searchQuery, parameters);
 			}
+
+			// this can be the case if arranged search is requested
+			// with "includeMainResult=false" but without any valid product set!
+			if (searchQuery.getMasterLevelQuery() == null)
+				continue;
 
 			if (correctedWords == null && spellCorrector != null
 					&& stagedQueryBuilder.allowParallelSpellcheckExecution()
@@ -446,12 +437,14 @@ public class Searcher {
 					heroIds = Collections.emptySet();
 				}
 
-				SearchResultSlice searchResultSlice = toSearchResult(searchResponse, parameters, heroIds);
-				if (parameters.isWithFacets()) {
-					searchResultSlice.facets = facetApplier.getFacets(searchResponse.getAggregations(), searchResultSlice.matchCount, filterContext, linkBuilder);
+				if (parameters.includeMainResult) {
+					SearchResultSlice searchResultSlice = toSearchResult(searchResponse, parameters, heroIds);
+					if (parameters.isWithFacets()) {
+						searchResultSlice.facets = facetApplier.getFacets(searchResponse.getAggregations(), searchResultSlice.matchCount, filterContext, linkBuilder);
+					}
+					searchResultSlice.label = "main";
+					searchResult.slices.add(searchResultSlice);
 				}
-				searchResultSlice.label = "main";
-				searchResult.slices.add(searchResultSlice);
 			}
 		});
 		searchResult.sortOptions = sortingHandler.buildSortOptions(linkBuilder);

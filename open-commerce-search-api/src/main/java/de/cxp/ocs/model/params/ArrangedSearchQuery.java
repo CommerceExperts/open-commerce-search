@@ -18,4 +18,9 @@ public class ArrangedSearchQuery extends FilteredSearchQuery {
 	 */
 	public ProductSet[] arrangedProductSets;
 
+	/**
+	 * Per default the "natural unarranged results" defined by the included query+filters are part of the response. If
+	 * those are not required, set this flag to 'false'.
+	 */
+	public boolean includeMainResult = true;
 }
