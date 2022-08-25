@@ -7,8 +7,8 @@ info:
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  title: Open Commerce Search API
-  version: "0.2"
+  title: Open Commerce Search Stack API
+  version: "0.16"
 paths:
   /indexer-api/v1/full/add:
     post:
@@ -480,6 +480,8 @@ components:
           type: object
           additionalProperties:
             type: string
+        includeMainResult:
+          type: boolean
         limit:
           type: integer
           format: int32
