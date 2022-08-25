@@ -3,6 +3,7 @@ package de.cxp.ocs.util;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.model.params.StaticProductSet;
@@ -49,6 +50,8 @@ public class InternalSearchParams {
 	public Map<String, String> customParams;
 
 	public StaticProductSet[] heroProductSets;
+
+	public Set<String> excludedIds;
 
 	public InternalSearchParams withSorting(Sorting sorting) {
 		sortings.add(sorting);

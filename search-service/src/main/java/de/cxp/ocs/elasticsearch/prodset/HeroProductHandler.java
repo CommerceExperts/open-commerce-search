@@ -1,7 +1,6 @@
 package de.cxp.ocs.elasticsearch.prodset;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -72,12 +71,8 @@ public class HeroProductHandler {
 	 */
 	public static StaticProductSet[] resolve(ProductSet[] productSets, Searcher searcher, SearchContext searchContext) {
 		StaticProductSet[] resolvedSets = new StaticProductSet[productSets.length];
-		@SuppressWarnings("unchecked")
-		CompletableFuture<Void>[] futures = new CompletableFuture[productSets.length];
 		int nextPos = 0;
-		// fetch extra products for dynamic product sets, in case there are
-		// overlapping IDs
-		final int[] extraBuffer = new int[] { 0 };
+		Set<String> foundIds = new HashSet<String>(Arrays.stream(productSets).mapToInt(ProductSet::getSize).sum());
 		for (ProductSet set : productSets) {
 			int position = nextPos++;
 
@@ -86,58 +81,19 @@ public class HeroProductHandler {
 			if (resolver == null) {
 				log.error("No resolver found for product set type '{}'", set.getType());
 				resolvedSets[position] = new StaticProductSet().setIds(new String[0]).setName(set.getName());
-				futures[position] = CompletableFuture.completedFuture(null);
 			}
 			// only run async, if there are more than 1 sets
 			else if (resolver.runAsync() && productSets.length > 1) {
-				futures[position] = CompletableFuture.supplyAsync(() -> resolver.resolve(set, extraBuffer[0], searcher, searchContext))
-						.thenAccept(resolvedIds -> resolvedSets[position] = resolvedIds);
-				extraBuffer[0] += set.getSize();
+				resolvedSets[position] = resolver.resolve(set, foundIds, searcher, searchContext);
+				foundIds.addAll(Arrays.asList(resolvedSets[position].getIds()));
 			}
 			else {
-				resolvedSets[position] = resolver.resolve(set, extraBuffer[0], searcher, searchContext);
-				extraBuffer[0] += set.getSize();
-				futures[position] = CompletableFuture.completedFuture(null);
+				resolvedSets[position] = resolver.resolve(set, foundIds, searcher, searchContext);
+				foundIds.addAll(Arrays.asList(resolvedSets[position].getIds()));
 			}
-		}
-		try {
-			CompletableFuture.allOf(futures).join();
-
-			if (productSets.length > 1) {
-				// deduplicate ids from the different sets
-				deduplicate(productSets, resolvedSets);
-			}
-		}
-		catch (Exception e) {
-			log.error("resolving product sets failed", e);
 		}
 
 		return resolvedSets;
-	}
-
-	private static void deduplicate(ProductSet[] productSets, StaticProductSet[] resolvedSets) {
-		Set<String> foundHeroProductIds = new HashSet<>();
-		for (int i = 0; i < productSets.length; i++) {
-			StaticProductSet resolvedSet = resolvedSets[i];
-			if (i > 0) {
-				List<String> deduplicatedIDs = new ArrayList<>(Math.min(productSets[i].getSize(), resolvedSet.ids.length));
-				int k_offset = 0;
-				for (int k = 0; k < productSets[i].getSize() && k + k_offset < resolvedSet.ids.length; k++) {
-					while (k + k_offset < resolvedSet.ids.length && foundHeroProductIds.add(resolvedSet.ids[k + k_offset]) == false) {
-						k_offset++;
-					}
-					deduplicatedIDs.add(resolvedSet.ids[k + k_offset]);
-				}
-				if (k_offset > 0 || deduplicatedIDs.size() != resolvedSet.ids.length) {
-					resolvedSet.setIds(deduplicatedIDs.toArray(new String[deduplicatedIDs.size()]));
-				}
-			}
-			else {
-				for (String id : resolvedSet.ids) {
-					foundHeroProductIds.add(id);
-				}
-			}
-		}
 	}
 
 	public static Optional<BoolQueryBuilder> getHeroQuery(InternalSearchParams internalParams) {
@@ -157,7 +113,7 @@ public class HeroProductHandler {
 			 * 
 			 * Additional add factor 10 to ensure those IDs are returned prior to the "natural" result.
 			 */
-			float boost = 10f * (float) Math.pow(MAX_IDS_ORDERED_BOOSTING, productSets.length);
+			float boost = 10f * (float) Math.pow(MAX_IDS_ORDERED_BOOSTING, productSets.length - 1);
 			for (int i = 0; i < productSets.length; i++) {
 				if (productSets[i].ids.length > 0) {
 					// normaly we would generate a query-string query to

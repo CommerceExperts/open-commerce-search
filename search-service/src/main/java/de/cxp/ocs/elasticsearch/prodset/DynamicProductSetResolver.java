@@ -3,6 +3,7 @@ package de.cxp.ocs.elasticsearch.prodset;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collections;
+import java.util.Set;
 
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.elasticsearch.Searcher;
@@ -18,27 +19,28 @@ import de.cxp.ocs.util.SearchParamsParser;
 public class DynamicProductSetResolver implements ProductSetResolver {
 
 	@Override
-	public StaticProductSet resolve(ProductSet dynamicProductSet, int extraBuffer, Searcher searcher, SearchContext searchContext) {
+	public StaticProductSet resolve(ProductSet dynamicProductSet, Set<String> excludedIds, Searcher searcher, SearchContext searchContext) {
 		DynamicProductSet productSet = (DynamicProductSet) dynamicProductSet;
 
 		SearchQuery searchQuery = new SearchQuery();
 		searchQuery.q = productSet.query;
 		searchQuery.sort = productSet.sort;
-		searchQuery.limit = productSet.limit + extraBuffer;
+		searchQuery.limit = productSet.limit;
 		searchQuery.withFacets = false;
 
-		// TODO: add caching
-		StaticProductSet resolved = search(dynamicProductSet, searcher, searchContext, productSet, searchQuery);
-		return resolved;
-	}
-
-	private StaticProductSet search(ProductSet dynamicProductSet, Searcher searcher, SearchContext searchContext, DynamicProductSet productSet, SearchQuery searchQuery) {
 		InternalSearchParams productSetParams = SearchParamsParser.extractInternalParams(
 				searchQuery,
 				productSet.filters == null ? Collections.emptyMap() : productSet.filters,
 				searchContext);
+		productSetParams.excludedIds = excludedIds;
 		productSetParams.setWithResultData(false);
 
+		// TODO: add caching
+		StaticProductSet resolved = search(dynamicProductSet, searcher, productSetParams);
+		return resolved;
+	}
+
+	private StaticProductSet search(ProductSet dynamicProductSet, Searcher searcher, InternalSearchParams productSetParams) {
 		try {
 			SearchResult prodSetResult = searcher.find(productSetParams);
 			if (prodSetResult.getSlices().size() > 0) {

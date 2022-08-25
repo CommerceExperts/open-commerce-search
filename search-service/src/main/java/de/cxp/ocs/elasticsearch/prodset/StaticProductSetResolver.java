@@ -1,5 +1,7 @@
 package de.cxp.ocs.elasticsearch.prodset;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -19,23 +21,39 @@ import lombok.extern.slf4j.Slf4j;
 public class StaticProductSetResolver implements ProductSetResolver {
 
 	@Override
-	public StaticProductSet resolve(final ProductSet productSet, int extraBuffer, Searcher searcher, SearchContext searchContext) {
+	public StaticProductSet resolve(final ProductSet productSet, Set<String> excludedIds, Searcher searcher, SearchContext searchContext) {
 		StaticProductSet staticSet = (StaticProductSet) productSet;
-		IdsQueryBuilder addIds = QueryBuilders.idsQuery().addIds(staticSet.getIds());
+		
+		IdsQueryBuilder requestedIds;
+		if (excludedIds != null && excludedIds.size() > 0) {
+			Set<String> filteredIds = new HashSet<String>(staticSet.getIds().length);
+			for (String id : staticSet.getIds()) {
+				if (!excludedIds.contains(id)) {
+					filteredIds.add(id);
+				}
+			}
+			requestedIds = QueryBuilders.idsQuery().addIds(filteredIds.toArray(new String[filteredIds.size()]));
+		} else {
+			requestedIds = QueryBuilders.idsQuery().addIds(staticSet.getIds());
+		}
+		
 		try {
 			SearchResponse searchResponse = searcher.executeSearchRequest(SearchSourceBuilder.searchSource()
-					.query(addIds)
+					.query(requestedIds)
 					.fetchSource(false)
-					.size(productSet.getSize()));
+					.size(requestedIds.ids().size()));
 			if (searchResponse.getHits().getTotalHits().value == 0) {
 				staticSet.setIds(new String[0]);
 			}
-			else if (searchResponse.getHits().getTotalHits().value < productSet.getSize()
+			else if (searchResponse.getHits().getTotalHits().value < requestedIds.ids().size()
 					&& searchResponse.getHits().getTotalHits().relation.equals(TotalHits.Relation.EQUAL_TO)) {
 				staticSet.setIds(StreamSupport.stream(searchResponse.getHits().spliterator(), false)
 						.map(hit -> hit.getId())
 						.collect(Collectors.toList())
 						.toArray(new String[0]));
+					}
+			else if (requestedIds.ids().size() < staticSet.getSize()) {
+				staticSet.setIds(requestedIds.ids().toArray(new String[0]));
 			}
 		}
 		catch (Exception e) {

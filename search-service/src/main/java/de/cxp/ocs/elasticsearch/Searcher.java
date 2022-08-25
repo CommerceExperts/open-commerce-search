@@ -262,6 +262,12 @@ public class Searcher {
 				searchSourceBuilder.suggest(null);
 			}
 
+			if (parameters.excludedIds != null && parameters.excludedIds.size() > 0) {
+				BoolQueryBuilder masterLevelQueryWithExcludes = ESQueryUtils.mapToBoolQueryBuilder(searchQuery.getMasterLevelQuery())
+						.mustNot(QueryBuilders.idsQuery().addIds(parameters.excludedIds.toArray(new String[0])));
+				searchQuery.setMasterLevelQuery(masterLevelQueryWithExcludes);
+			}
+
 			searchSourceBuilder.query(buildFinalQuery(searchQuery, filterContext, variantSortings));
 
 			if (log.isTraceEnabled()) {
