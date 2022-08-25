@@ -19,6 +19,7 @@ import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
+import de.cxp.ocs.model.params.ArrangedSearchQuery;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SortOrder;
 import de.cxp.ocs.model.result.Sorting;
@@ -50,6 +51,10 @@ public class SearchParamsParser {
 			customParams.remove(f.getField().getName() + SearchParamsParser.ID_FILTER_SUFFIX);
 		});
 		parameters.customParams = customParams;
+
+		if (searchQuery instanceof ArrangedSearchQuery) {
+			parameters.includeMainResult = ((ArrangedSearchQuery) searchQuery).includeMainResult;
+		}
 
 		return parameters;
 	}

@@ -1,15 +1,6 @@
 package de.cxp.ocs.elasticsearch.prodset;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import java.util.*;
 
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
@@ -56,6 +47,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HeroProductHandler {
 
+	private static int MAX_IDS_ORDERED_BOOSTING = 1000;
+
 	@NonNull
 	private final static Map<String, ProductSetResolver> resolvers = new HashMap<>(2);
 	static {
@@ -78,12 +71,8 @@ public class HeroProductHandler {
 	 */
 	public static StaticProductSet[] resolve(ProductSet[] productSets, Searcher searcher, SearchContext searchContext) {
 		StaticProductSet[] resolvedSets = new StaticProductSet[productSets.length];
-		@SuppressWarnings("unchecked")
-		CompletableFuture<Void>[] futures = new CompletableFuture[productSets.length];
 		int nextPos = 0;
-		// fetch extra products for dynamic product sets, in case there are
-		// overlapping IDs
-		final int[] extraBuffer = new int[] { 0 };
+		Set<String> foundIds = new HashSet<String>(Arrays.stream(productSets).mapToInt(ProductSet::getSize).sum());
 		for (ProductSet set : productSets) {
 			int position = nextPos++;
 
@@ -92,72 +81,46 @@ public class HeroProductHandler {
 			if (resolver == null) {
 				log.error("No resolver found for product set type '{}'", set.getType());
 				resolvedSets[position] = new StaticProductSet().setIds(new String[0]).setName(set.getName());
-				futures[position] = CompletableFuture.completedFuture(null);
 			}
 			// only run async, if there are more than 1 sets
 			else if (resolver.runAsync() && productSets.length > 1) {
-				futures[position] = CompletableFuture.supplyAsync(() -> resolver.resolve(set, extraBuffer[0], searcher, searchContext))
-						.thenAccept(resolvedIds -> resolvedSets[position] = resolvedIds);
-				extraBuffer[0] += set.getSize();
+				resolvedSets[position] = resolver.resolve(set, foundIds, searcher, searchContext);
+				foundIds.addAll(Arrays.asList(resolvedSets[position].getIds()));
 			}
 			else {
-				resolvedSets[position] = resolver.resolve(set, extraBuffer[0], searcher, searchContext);
-				extraBuffer[0] += set.getSize();
-				futures[position] = CompletableFuture.completedFuture(null);
+				resolvedSets[position] = resolver.resolve(set, foundIds, searcher, searchContext);
+				foundIds.addAll(Arrays.asList(resolvedSets[position].getIds()));
 			}
-		}
-		try {
-			CompletableFuture.allOf(futures).join();
-
-			if (productSets.length > 1) {
-				// deduplicate ids from the different sets
-				deduplicate(productSets, resolvedSets);
-			}
-		}
-		catch (Exception e) {
-			log.error("resolving product sets failed", e);
 		}
 
 		return resolvedSets;
-	}
-
-	private static void deduplicate(ProductSet[] productSets, StaticProductSet[] resolvedSets) {
-		Set<String> foundHeroProductIds = new HashSet<>();
-		for (int i = 0; i < productSets.length; i++) {
-			StaticProductSet resolvedSet = resolvedSets[i];
-			if (i > 0) {
-				List<String> deduplicatedIDs = new ArrayList<>(Math.min(productSets[i].getSize(), resolvedSet.ids.length));
-				int k_offset = 0;
-				for (int k = 0; k < productSets[i].getSize() && k + k_offset < resolvedSet.ids.length; k++) {
-					while (k + k_offset < resolvedSet.ids.length && foundHeroProductIds.add(resolvedSet.ids[k + k_offset]) == false) {
-						k_offset++;
-					}
-					deduplicatedIDs.add(resolvedSet.ids[k + k_offset]);
-				}
-				if (k_offset > 0 || deduplicatedIDs.size() != resolvedSet.ids.length) {
-					resolvedSet.setIds(deduplicatedIDs.toArray(new String[deduplicatedIDs.size()]));
-				}
-			}
-			else {
-				for (String id : resolvedSet.ids) {
-					foundHeroProductIds.add(id);
-				}
-			}
-		}
 	}
 
 	public static Optional<BoolQueryBuilder> getHeroQuery(InternalSearchParams internalParams) {
 		StaticProductSet[] productSets = internalParams.heroProductSets;
 		if (productSets.length > 0) {
 			BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-			float boost = 100f * (float) Math.pow(10, productSets.length);
+			/**
+			 * assume 3 sets, each with 1000/max ids
+			 * boost-ranges should be:
+			 * A: 1000_000 * [1000 : 1] = 1000_000_000 : 1000_000
+			 * B: 1000 * [1000 : 1] = 1000_000 : 1000
+			 * C: 1 * [1000 : 1] = 1000 : 1
+			 * 
+			 * last product of set A has boost (1_000_000 * 1),
+			 * which must be greater than
+			 * the first product of set B that has boost (1000 * 1000)
+			 * 
+			 * Additional add factor 10 to ensure those IDs are returned prior to the "natural" result.
+			 */
+			float boost = 10f * (float) Math.pow(MAX_IDS_ORDERED_BOOSTING, productSets.length - 1);
 			for (int i = 0; i < productSets.length; i++) {
 				if (productSets[i].ids.length > 0) {
 					// normaly we would generate a query-string query to
 					// guarantee the order of the IDs, but that's limited to
 					// 1024 clauses. So in case we have more IDs, we have to
 					// switch to the normal ids query
-					if (productSets[i].ids.length > 1024) {
+					if (productSets[i].ids.length > MAX_IDS_ORDERED_BOOSTING) {
 						log.warn("Cannot guarantee the order of the provided IDs for a product set with more than 1024 IDs (for request with user query = {})",
 								internalParams.getUserQuery());
 						boolQuery.should(QueryBuilders.idsQuery().addIds(productSets[i].ids).boost(boost));
@@ -175,7 +138,7 @@ public class HeroProductHandler {
 										.defaultOperator(Operator.OR));
 					}
 				}
-				boost /= 10;
+				boost /= MAX_IDS_ORDERED_BOOSTING;
 			}
 			return Optional.of(boolQuery);
 		}
@@ -193,11 +156,16 @@ public class HeroProductHandler {
 	 */
 	public static void extendQuery(MasterVariantQuery searchQuery, InternalSearchParams internalParams) {
 		getHeroQuery(internalParams)
-				.ifPresent(bq -> searchQuery.setMasterLevelQuery(bq.should(searchQuery.getMasterLevelQuery())));
+				.ifPresent(bq -> {
+					if (searchQuery.getMasterLevelQuery() != null) {
+						bq = bq.should(searchQuery.getMasterLevelQuery());
+					}
+					searchQuery.setMasterLevelQuery(bq);
+				});
 	}
 
 	private static String idsAsOrderedBoostQuery(@NonNull String[] ids) {
-		long boost = 10 * ids.length;
+		long boost = MAX_IDS_ORDERED_BOOSTING;
 		// rough approx. of string-length
 		StringBuilder idsOrderedBoostQuery = new StringBuilder(ids.length * (ids[0].length() + 2 + String.valueOf(boost).length()));
 		for (String id : ids) {
@@ -206,7 +174,7 @@ public class HeroProductHandler {
 					.append('^')
 					.append(String.valueOf(boost))
 					.append(' ');
-			boost -= 10;
+			boost -= 1;
 		}
 		return idsOrderedBoostQuery.toString();
 	}

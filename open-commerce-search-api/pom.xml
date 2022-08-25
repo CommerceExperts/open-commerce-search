@@ -7,12 +7,17 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.26.0</version>
+		<version>0.35.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>open-commerce-search-api</artifactId>
-	<version>0.15.1</version>
+	<!-- 
+	 upon version bump, don't forget to update src/main/resources/openapi.yaml
+	 first by setting the correct api version at src/main/resources/openapi-configuration.json
+	 then my running 'mvn process-sources -P sync-openapi-spec'
+	-->
+	<version>0.16.0</version>
 	<packaging>jar</packaging>
 
 	<description>An open and abstract search API that covers minimal search functionality</description>
