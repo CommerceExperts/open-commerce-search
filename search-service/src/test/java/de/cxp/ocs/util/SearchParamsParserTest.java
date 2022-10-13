@@ -7,14 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
-import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldConfigIndex;
-import de.cxp.ocs.config.FieldConfiguration;
-import de.cxp.ocs.config.FieldType;
-import de.cxp.ocs.config.FieldUsage;
+import de.cxp.ocs.config.*;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
@@ -31,7 +28,7 @@ public class SearchParamsParserTest {
 
 	@Test
 	public void parseNormalNumericRangeFilter() {
-		List<InternalResultFilter> parsedFilters = parseFilters(Collections.singletonMap("price", "12,34"), fieldConfIndex);
+		List<InternalResultFilter> parsedFilters = parseFilters(Collections.singletonMap("price", "12,34"), fieldConfIndex, Locale.ROOT);
 		assertEquals(1, parsedFilters.size());
 		assertTrue(parsedFilters.get(0) instanceof NumberResultFilter);
 		NumberResultFilter priceFilter = (NumberResultFilter) parsedFilters.get(0);
@@ -42,7 +39,7 @@ public class SearchParamsParserTest {
 
 	@Test
 	public void parseFallbackNumericRangeFilter() {
-		List<InternalResultFilter> parsedFilters = parseFilters(Collections.singletonMap("price", "12 - 34"), fieldConfIndex);
+		List<InternalResultFilter> parsedFilters = parseFilters(Collections.singletonMap("price", "12 - 34"), fieldConfIndex, Locale.ROOT);
 		assertEquals(1, parsedFilters.size());
 		assertTrue(parsedFilters.get(0) instanceof NumberResultFilter);
 		NumberResultFilter priceFilter = (NumberResultFilter) parsedFilters.get(0);
@@ -53,7 +50,7 @@ public class SearchParamsParserTest {
 
 	@Test
 	public void parseTextFilter() {
-		List<InternalResultFilter> parsedFilters = parseFilters(Collections.singletonMap("brand", "foo,bar,pum"), fieldConfIndex);
+		List<InternalResultFilter> parsedFilters = parseFilters(Collections.singletonMap("brand", "foo,bar,pum"), fieldConfIndex, Locale.ROOT);
 		assertEquals(1, parsedFilters.size());
 
 		assertTrue(parsedFilters.get(0) instanceof TermResultFilter);
@@ -63,7 +60,7 @@ public class SearchParamsParserTest {
 
 	@Test
 	public void ignoreNonFacetParameter() {
-		List<InternalResultFilter> parsedFilters = parseFilters(Collections.singletonMap("image", "awesome.jpg"), fieldConfIndex);
+		List<InternalResultFilter> parsedFilters = parseFilters(Collections.singletonMap("image", "awesome.jpg"), fieldConfIndex, Locale.ROOT);
 		assertEquals(0, parsedFilters.size());
 	}
 

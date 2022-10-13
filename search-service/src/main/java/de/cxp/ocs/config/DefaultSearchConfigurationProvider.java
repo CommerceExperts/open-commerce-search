@@ -1,9 +1,6 @@
 package de.cxp.ocs.config;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -22,6 +19,11 @@ public class DefaultSearchConfigurationProvider implements SearchConfigurationPr
 		SearchConfiguration mergedConfig = new SearchConfiguration();
 
 		mergedConfig.setIndexName(getTargetIndex(tenant).orElse(tenant));
+
+		Locale locale = Optional.ofNullable(properties.getTenantConfig().get(tenant))
+				.orElseGet(properties::getDefaultTenantConfig)
+				.getLocale();
+		mergedConfig.setLocale(locale == null ? Locale.ROOT : locale);
 
 		getQueryProcessing(tenant).ifPresent(mergedConfig::setQueryProcessing);
 		getFacetConfiguration(tenant).ifPresent(mergedConfig::setFacetConfiguration);
