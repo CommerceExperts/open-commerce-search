@@ -134,6 +134,13 @@
         },
         "category_analyzer": {
           "tokenizer": "path_hierarchy"
+        },
+        "filter_normalizer": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": [
+            "lowercase"
+          ]
         }
       },
       "tokenizer": {
@@ -232,7 +239,7 @@
       "resultData": {"type": "object"},
       "sortData": {"type": "object"},
       "scores": {"type": "object"},
-	  "categories": {"type": "object"},
+	    "categories": {"type": "object"},
       "termFacetData": {
         "type": "nested",
         "properties": {
@@ -246,7 +253,15 @@
           },
           "value": {
             "type": "keyword",
-            "eager_global_ordinals": true
+            "eager_global_ordinals": true,
+            "fields": {
+              "normalized": {
+                "norms": false,
+                "analyzer": "filter_normalizer",
+                "type": "text",
+                "fielddata": "true"
+              }
+            }
           }
         }
       },
@@ -286,16 +301,24 @@
             "type": "nested",
             "properties": {
               "id": {
-	            "type": "keyword",
-	            "eager_global_ordinals": true
-	          },
+		            "type": "keyword",
+		            "eager_global_ordinals": true
+	        	  },
               "name": {
                 "type": "keyword",
                 "eager_global_ordinals": true
               },
               "value": {
                 "type": "keyword",
-                "eager_global_ordinals": true
+                "eager_global_ordinals": true,
+                "fields": {
+		              "normalized": {
+		                "norms": false,
+		                "analyzer": "filter_normalizer",
+		                "type": "text",
+		                "fielddata": "true"
+		              }
+		            }
               }
             }
           },
