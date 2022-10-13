@@ -133,6 +133,10 @@ public class SearchParamsParser {
 						paramValues[0].isEmpty() ? null : Util.tryToParseAsNumber(paramValues[0]).orElseThrow(IllegalArgumentException::new),
 						paramValues[1].isEmpty() ? null : Util.tryToParseAsNumber(paramValues[1]).orElseThrow(IllegalArgumentException::new));
 			default:
+				// TODO For greek, turkish and irish a custom locale has to be passed to the term result filter in order
+				// to allow case-insensitive filtering. This should be configurable per index.
+				// see:
+				// https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-lowercase-tokenfilter.html
 				return new TermResultFilter(field, paramValues)
 						.setFilterOnId(isIdFilter);
 		}

@@ -80,7 +80,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		Facet facet = FacetFactory.create(facetConfig, FacetType.HIERARCHICAL);
 
 		// map of every path to its full id-path
-		Set<String> selectedPaths = facetFilter == null || facetFilter.getValuesAsList().isEmpty() ? Collections.emptySet() : new HashSet<>(facetFilter.getValuesAsList().size());
+		Set<String> selectedPaths = facetFilter == null || facetFilter.getValues().length == 0 ? Collections.emptySet() : new HashSet<>(facetFilter.getValues().length);
 		CategoryContext context = new CategoryContext(catBuckets.size());
 		context.facetConfig = facetConfig;
 		context.linkBuilder = linkBuilder;
@@ -165,7 +165,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		boolean isSelectedPath = false;
 		if (facetFilter.getValues().length > 0) {
 			if (facetFilter.isFilterOnId()) {
-				for (String idFilter : facetFilter.getValuesAsList()) {
+				for (String idFilter : facetFilter.getValues()) {
 					if ((idFilter.charAt(0) == PATH_SEPARATOR && category.idPathString.equals(idFilter))
 							|| category.id.equals(idFilter)) {
 						isSelectedPath = true;
@@ -271,8 +271,8 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 			// parent path or exact that category path.
 			// In case it is a parent path, that parent path can be selected to unselect the child path.
 			// In case this exact category is selected already, we want that filter-value removed completely
-			Set<String> filterValuesSet = new HashSet<>(context.facetFilter.getValuesAsList().size());
-			for (String value : context.facetFilter.getValuesAsList()) {
+			Set<String> filterValuesSet = new HashSet<>(context.facetFilter.getValues().length);
+			for (String value : context.facetFilter.getValues()) {
 				if (value.equals(pathFilterValue)) {
 					// skip
 				}

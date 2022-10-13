@@ -1,7 +1,6 @@
 package de.cxp.ocs.elasticsearch.query.filter;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.Locale;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
@@ -17,24 +16,31 @@ public class TermResultFilter implements InternalResultFilter {
 
 	private final Field field;
 
-	private final List<String> valuesAsList;
+	private final String[] values;
 
 	private boolean filterOnId = false;
 
 	private String fieldPrefix = FieldConstants.TERM_FACET_DATA;
 
 	public TermResultFilter(Field field, String... inputValues) {
+		this(Locale.ROOT, field, inputValues);
+	}
+
+	public TermResultFilter(Locale lowerCaseLocale, Field field, String... inputValues) {
 		this.field = field;
-		valuesAsList = Arrays.asList(inputValues);
+		values = new String[inputValues.length];
+		for (int i = 0; i < inputValues.length; i++) {
+			values[i] = inputValues[i].toLowerCase(lowerCaseLocale);
+		}
 	}
 
 	public String getSingleValue() {
-		if (valuesAsList.size() > 0) return valuesAsList.get(0);
+		if (values.length > 0) return values[0];
 		return null;
 	}
 
 	public String getValue(int index) {
-		if (valuesAsList.size() > index) return valuesAsList.get(index);
+		if (values.length > index) return values[index];
 		return null;
 	}
 
@@ -43,8 +49,4 @@ public class TermResultFilter implements InternalResultFilter {
 		return true;
 	}
 
-	@Override
-	public String[] getValues(){
-		return valuesAsList.toArray(new String[valuesAsList.size()]);
-	}
 }

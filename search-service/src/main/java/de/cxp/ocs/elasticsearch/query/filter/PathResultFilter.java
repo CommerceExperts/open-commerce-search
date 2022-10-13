@@ -1,5 +1,6 @@
 package de.cxp.ocs.elasticsearch.query.filter;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -7,12 +8,19 @@ import org.apache.commons.lang3.StringUtils;
 
 import de.cxp.ocs.config.Field;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.experimental.Accessors;
 
 @Accessors(chain = true)
-public class PathResultFilter extends TermResultFilter {
+public class PathResultFilter implements InternalResultFilter {
 
 	public static final char PATH_SEPARATOR = '/';
+
+	@Getter
+	private final Field field;
+
+	@Getter
+	private String[] values;
 
 	@Getter
 	private List<String[]> filterPaths;
@@ -20,10 +28,18 @@ public class PathResultFilter extends TermResultFilter {
 	@Getter
 	private String[] leastPathValues;
 
-	public PathResultFilter(Field field, String[] inputValues) {
-		super(field, inputValues);
+	@Getter
+	@Setter
+	private boolean filterOnId = false;
 
-		filterPaths = this.getValuesAsList().stream()
+	@Getter
+	@Setter
+	private String fieldPrefix;
+
+	public PathResultFilter(Field field, String[] inputValues) {
+		this.field = field;
+		values = inputValues;
+		filterPaths = Arrays.asList(inputValues).stream()
 				.map(s -> StringUtils.split(s, PATH_SEPARATOR))
 				.collect(Collectors.toList());
 
@@ -33,5 +49,11 @@ public class PathResultFilter extends TermResultFilter {
 			leastPathValues[i] = filterPath[filterPath.length - 1];
 		}
 	}
+
+	@Override
+	public boolean isNestedFilter() {
+		return fieldPrefix != null;
+	}
+
 
 }
