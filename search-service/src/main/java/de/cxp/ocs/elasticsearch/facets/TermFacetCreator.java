@@ -1,12 +1,6 @@
 package de.cxp.ocs.elasticsearch.facets;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -32,10 +26,12 @@ import lombok.extern.slf4j.Slf4j;
 public class TermFacetCreator extends NestedFacetCreator {
 
 	@Setter
-	private int maxFacetValues = 100;
+	private int				maxFacetValues	= 100;
+	private final Locale	locale;
 
-	public TermFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider) {
+	public TermFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider, Locale l) {
 		super(facetConfigs, defaultFacetConfigProvider);
+		this.locale = l;
 	}
 
 	@Override
@@ -149,7 +145,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 					isSelected = filterValues.contains(facetValueId);
 				}
 				else {
-					isSelected = filterValues.contains(facetValue);
+					isSelected = filterValues.contains(facetValue.toLowerCase(locale));
 				}
 
 				if (!facetConfig.isMultiSelect() && !facetConfig.isShowUnselectedOptions() && !isSelected) {
