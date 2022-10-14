@@ -22,6 +22,11 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-core</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>de.cxp.ocs</groupId>
 			<artifactId>ocs-commons</artifactId>
 		</dependency>
