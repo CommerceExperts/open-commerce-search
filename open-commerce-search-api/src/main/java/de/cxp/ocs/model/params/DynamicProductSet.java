@@ -19,7 +19,7 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = false)
 @Schema(allOf = { ProductSet.class })
 public class DynamicProductSet extends ProductSet {
 
