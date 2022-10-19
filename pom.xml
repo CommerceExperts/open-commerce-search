@@ -35,7 +35,7 @@
 		<spring-boot.version>2.5.12</spring-boot.version>
 		<spring-cloud.version>2020.0.5</spring-cloud.version>
 		<jackson.version>2.13.2</jackson.version>
-		<jackson.databind.version>2.13.2.2</jackson.databind.version>
+		<jackson.databind.version>2.13.4.1</jackson.databind.version>
 		<junit.jupiter.version>5.7.0</junit.jupiter.version>
 	</properties>
 
