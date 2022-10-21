@@ -34,8 +34,7 @@
 		<spring.version>5.3.18</spring.version>
 		<spring-boot.version>2.5.12</spring-boot.version>
 		<spring-cloud.version>2020.0.5</spring-cloud.version>
-		<jackson.version>2.13.2</jackson.version>
-		<jackson.databind.version>[2.14.0-rc1,)</jackson.databind.version>
+		<jackson.version>[2.14.0-rc1,)</jackson.version>
 		<junit.jupiter.version>5.7.0</junit.jupiter.version>
 	</properties>
 
@@ -87,7 +86,7 @@
 			<dependency>
 				<groupId>com.fasterxml.jackson.core</groupId>
 				<artifactId>jackson-databind</artifactId>
-				<version>${jackson.databind.version}</version>
+				<version>${jackson.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.fasterxml.jackson.core</groupId>
@@ -114,7 +113,7 @@
 			<dependency>
 				<groupId>fr.pilato.elasticsearch</groupId>
 				<artifactId>elasticsearch-beyonder</artifactId>
-				<version>7.0</version>
+				<version>7.16</version>
 			</dependency>
 			<dependency>
 				<groupId>pl.allegro.tech</groupId>

@@ -17,19 +17,11 @@ import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.elasticsearch.ElasticsearchIndexer;
 import de.cxp.ocs.plugin.ExtensionSupplierRegistry;
 import de.cxp.ocs.plugin.PluginManager;
-import de.cxp.ocs.preprocessor.impl.AsciiFoldingDataProcessor;
-import de.cxp.ocs.preprocessor.impl.ExtractCategoryLevelDataProcessor;
-import de.cxp.ocs.preprocessor.impl.FlagFieldDataProcessor;
-import de.cxp.ocs.preprocessor.impl.RemoveFieldContentDelimiterProcessor;
-import de.cxp.ocs.preprocessor.impl.RemoveValuesDataProcessor;
-import de.cxp.ocs.preprocessor.impl.ReplacePatternInValuesDataProcessor;
-import de.cxp.ocs.preprocessor.impl.SkipDocumentDataProcessor;
-import de.cxp.ocs.preprocessor.impl.SplitValueDataProcessor;
-import de.cxp.ocs.preprocessor.impl.WordSplitterDataProcessor;
+import de.cxp.ocs.preprocessor.impl.*;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import fr.pilato.elasticsearch.tools.ElasticsearchBeyonder;
-import fr.pilato.elasticsearch.tools.SettingsFinder.Defaults;
+import fr.pilato.elasticsearch.tools.util.SettingsFinder.Defaults;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
