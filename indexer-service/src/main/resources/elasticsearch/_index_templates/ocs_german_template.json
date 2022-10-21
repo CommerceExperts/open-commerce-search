@@ -1,0 +1,59 @@
+{
+  "index_patterns": "ocs-*-de",
+  "priority": 200,
+  "composed_of": [
+    "ocs_default"
+  ],
+  "template": {
+    "settings": {
+      "analysis": {
+        "filter": {
+          "custom_stemmer": {
+            "type": "stemmer",
+            "language": "light_german"
+          },
+          "custom_stop_filter": {
+            "type": "stop",
+            "stopwords": "_german_"
+          }
+        },
+        "char_filter": {
+          "german_special_letters": {
+            "type": "mapping",
+            "mappings": [
+              "Ä => ae",
+              "Ä => ae",
+              "ä => ae",
+              "ä => ae",
+              "Ö => oe",
+              "Ö => oe",
+              "ö => oe",
+              "ö => oe",
+              "Ü => ue",
+              "Ü => ue",
+              "ü => ue",
+              "ü => ue",
+              "ß => ss"
+            ]
+          }
+        },
+        "analyzer": {
+          "standard": {
+            "filter": [
+              "lowercase",
+              "custom_stop_filter",
+              "custom_stemmer"
+            ],
+            "char_filter": [
+              "html",
+              "german_special_letters",
+              "irrelevant_chars"
+            ],
+            "type": "custom",
+            "tokenizer": "standard"
+          }
+        }
+      }
+    }
+  }
+}

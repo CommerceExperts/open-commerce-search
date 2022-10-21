@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.Response;
+import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.stereotype.Component;
 
@@ -115,12 +118,28 @@ public class IndexerFactory {
 		if (!templatesInitialized) {
 			synchronized (this) {
 				if (!templatesInitialized) {
+					RestClient restClient = elasticsearchClient.getLowLevelClient();
+
 					try {
-						ElasticsearchBeyonder.start(elasticsearchClient.getLowLevelClient(), Defaults.ConfigDir, Defaults.MergeMappings, true);
+						ElasticsearchBeyonder.start(restClient, Defaults.ConfigDir, true);
 						templatesInitialized = true;
 					}
 					catch (Exception e) {
 						log.error("failed to initialize templates!", e);
+					}
+
+					// check for old legacy templates
+					if (templatesInitialized) {
+						try {
+							Request getOldIndexTemplReq = new Request("GET", "_template/*structured_search");
+							Response getOldIndexTemplResp = restClient.performRequest(getOldIndexTemplReq);
+							if (getOldIndexTemplResp.getStatusLine().getStatusCode() == 200) {
+								log.warn("Old deprecated template(s) '*structured_search' found. Consider deleting them or migrate to new composable index template format.");
+							}
+						}
+						catch (Exception e) {
+							// all OK: old templates are already deleted/migrated
+						}
 					}
 				}
 			}
