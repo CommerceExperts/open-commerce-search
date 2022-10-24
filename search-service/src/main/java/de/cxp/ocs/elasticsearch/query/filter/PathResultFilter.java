@@ -36,7 +36,7 @@ public class PathResultFilter implements InternalResultFilter {
 	@Setter
 	private String fieldPrefix;
 
-	public PathResultFilter(Field field, String[] inputValues) {
+	public PathResultFilter(Field field, String... inputValues) {
 		this.field = field;
 		values = inputValues;
 		filterPaths = Arrays.asList(inputValues).stream()
