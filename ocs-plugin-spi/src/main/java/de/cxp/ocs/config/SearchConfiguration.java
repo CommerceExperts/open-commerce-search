@@ -1,9 +1,6 @@
 package de.cxp.ocs.config;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,6 +15,8 @@ import lombok.NonNull;
 public class SearchConfiguration {
 
 	private String indexName;
+
+	private Locale locale = Locale.ROOT;
 
 	private QueryProcessingConfiguration queryProcessing = new QueryProcessingConfiguration();
 
@@ -45,6 +44,20 @@ public class SearchConfiguration {
 	 */
 	public SearchConfiguration setIndexName(String indexName) {
 		this.indexName = indexName;
+		return this;
+	}
+
+	/**
+	 * Set locale to handle certain language specific normalization inside the searcher,
+	 * like case-insensitive filters.
+	 * Defaults to ROOT locale.
+	 * 
+	 * @param locale
+	 *        locale to set
+	 * @return self
+	 */
+	public SearchConfiguration setLocale(Locale locale) {
+		this.locale = locale;
 		return this;
 	}
 

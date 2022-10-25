@@ -10,6 +10,7 @@ import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
+import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 
 public class SearchQueryBuilderTest {
@@ -92,12 +93,24 @@ public class SearchQueryBuilderTest {
 	}
 
 	@Test
+	public void testCaseSensitiveFilters() {
+		SearchQueryBuilder underTest = new SearchQueryBuilder(
+				new InternalSearchParams()
+						.setUserQuery("foo")
+						.withFilter(new TermResultFilter(new Field("brand"), "Apple", "Orange", "apple")));
+		String result = underTest.withFilterAsLink(
+				new FacetConfig("Price", "price"), "0", "10");
+		assertTrue(result.contains("brand=apple%2Corange"), result);
+		assertTrue(result.contains("price=0%2C10"), result);
+	}
+
+	@Test
 	public void testEncodedFilters() {
 		SearchQueryBuilder underTest = new SearchQueryBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
 						.withFilter(new TermResultFilter(new Field("brand"), "äpple"))
-						.withFilter(new TermResultFilter(new Field("cat"), "Foobar, 6% off")));
+						.withFilter(new PathResultFilter(new Field("cat"), "Foobar, 6% off")));
 		String result = underTest.withFilterAsLink(
 				new FacetConfig("Category", "cat").setMultiSelect(true),
 				"Männer", "Was für's Köpfchen, Mützen & Schals");

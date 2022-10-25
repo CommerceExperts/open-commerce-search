@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.Response;
+import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.stereotype.Component;
 
@@ -14,19 +17,11 @@ import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.elasticsearch.ElasticsearchIndexer;
 import de.cxp.ocs.plugin.ExtensionSupplierRegistry;
 import de.cxp.ocs.plugin.PluginManager;
-import de.cxp.ocs.preprocessor.impl.AsciiFoldingDataProcessor;
-import de.cxp.ocs.preprocessor.impl.ExtractCategoryLevelDataProcessor;
-import de.cxp.ocs.preprocessor.impl.FlagFieldDataProcessor;
-import de.cxp.ocs.preprocessor.impl.RemoveFieldContentDelimiterProcessor;
-import de.cxp.ocs.preprocessor.impl.RemoveValuesDataProcessor;
-import de.cxp.ocs.preprocessor.impl.ReplacePatternInValuesDataProcessor;
-import de.cxp.ocs.preprocessor.impl.SkipDocumentDataProcessor;
-import de.cxp.ocs.preprocessor.impl.SplitValueDataProcessor;
-import de.cxp.ocs.preprocessor.impl.WordSplitterDataProcessor;
+import de.cxp.ocs.preprocessor.impl.*;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import fr.pilato.elasticsearch.tools.ElasticsearchBeyonder;
-import fr.pilato.elasticsearch.tools.SettingsFinder.Defaults;
+import fr.pilato.elasticsearch.tools.util.SettingsFinder.Defaults;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -115,12 +110,28 @@ public class IndexerFactory {
 		if (!templatesInitialized) {
 			synchronized (this) {
 				if (!templatesInitialized) {
+					RestClient restClient = elasticsearchClient.getLowLevelClient();
+
 					try {
-						ElasticsearchBeyonder.start(elasticsearchClient.getLowLevelClient(), Defaults.ConfigDir, Defaults.MergeMappings, true);
+						ElasticsearchBeyonder.start(restClient, Defaults.ConfigDir, true);
 						templatesInitialized = true;
 					}
 					catch (Exception e) {
 						log.error("failed to initialize templates!", e);
+					}
+
+					// check for old legacy templates
+					if (templatesInitialized) {
+						try {
+							Request getOldIndexTemplReq = new Request("GET", "_template/*structured_search");
+							Response getOldIndexTemplResp = restClient.performRequest(getOldIndexTemplReq);
+							if (getOldIndexTemplResp.getStatusLine().getStatusCode() == 200) {
+								log.warn("Old deprecated template(s) '*structured_search' found. Consider deleting them or migrate to new composable index template format.");
+							}
+						}
+						catch (Exception e) {
+							// all OK: old templates are already deleted/migrated
+						}
 					}
 				}
 			}

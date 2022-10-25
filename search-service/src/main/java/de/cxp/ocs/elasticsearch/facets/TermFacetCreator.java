@@ -1,12 +1,6 @@
 package de.cxp.ocs.elasticsearch.facets;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -32,10 +26,12 @@ import lombok.extern.slf4j.Slf4j;
 public class TermFacetCreator extends NestedFacetCreator {
 
 	@Setter
-	private int maxFacetValues = 100;
+	private int				maxFacetValues	= 100;
+	private final Locale	locale;
 
-	public TermFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider) {
+	public TermFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider, Locale l) {
 		super(facetConfigs, defaultFacetConfigProvider);
+		this.locale = l;
 	}
 
 	@Override
@@ -132,15 +128,20 @@ public class TermFacetCreator extends NestedFacetCreator {
 	private void fillFacet(Facet facet, Bucket facetNameBucket, TermResultFilter facetFilter, FacetConfig facetConfig, SearchQueryBuilder linkBuilder) {
 		Terms facetValues = ((Terms) facetNameBucket.getAggregations().get(FACET_VALUES_AGG));
 		Set<String> filterValues = facetFilter == null ? Collections.emptySet() : asSet(facetFilter.getValues());
+		Map<String, FacetEntry> facetEntriesByNormalizedValue = new LinkedHashMap<>();
 		long absDocCount = 0;
 		for (Bucket valueBucket : facetValues.getBuckets()) {
 
 			String facetValue = valueBucket.getKeyAsString();
+			String normalizedValue = facetValue.toLowerCase(locale);
 
-			String facetValueId = null;
+			final String facetValueId;
 			Terms facetValueAgg = (Terms) valueBucket.getAggregations().get(FACET_IDS_AGG);
 			if (facetValueAgg != null && facetValueAgg.getBuckets().size() > 0) {
 				facetValueId = facetValueAgg.getBuckets().get(0).getKeyAsString();
+			}
+			else {
+				facetValueId = null;
 			}
 
 			boolean isSelected = false;
@@ -149,7 +150,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 					isSelected = filterValues.contains(facetValueId);
 				}
 				else {
-					isSelected = filterValues.contains(facetValue);
+					isSelected = filterValues.contains(normalizedValue);
 				}
 
 				if (!facetConfig.isMultiSelect() && !facetConfig.isShowUnselectedOptions() && !isSelected) {
@@ -157,31 +158,46 @@ public class TermFacetCreator extends NestedFacetCreator {
 				}
 			}
 
+			// the link builder uses the normalized values from the TermResultFilter, so we must also use the normalized
+			// value here to avoid wrong selection links.
+			String link = createFacetLink(facetFilter, facetConfig, linkBuilder, normalizedValue, facetValueId, isSelected);
+
+			FacetEntry facetEntry = facetEntriesByNormalizedValue.get(normalizedValue);
+			if (facetEntry == null) {
+				facetEntry = new FacetEntry(facetValue, facetValueId, 0, link, isSelected);
+				facetEntriesByNormalizedValue.put(normalizedValue, facetEntry);
+			}
+
 			long docCount = getDocumentCount(valueBucket);
-
-			String link;
-			if (isSelected) {
-				if (facetFilter.isFilterOnId()) {
-					link = linkBuilder.withoutFilterAsLink(facetConfig, facetValueId);
-				}
-				else {
-					link = linkBuilder.withoutFilterAsLink(facetConfig, facetValue);
-				}
-			}
-			else {
-				if (facetFilter != null && facetFilter.isFilterOnId()) {
-					// as soon as we have a single ID filter and we're
-					link = linkBuilder.withFilterAsLink(facetConfig, facetValueId);
-				}
-				else {
-					link = linkBuilder.withFilterAsLink(facetConfig, facetValue);
-				}
-			}
-
-			facet.addEntry(new FacetEntry(facetValue, facetValueId, docCount, link, isSelected));
+			facetEntry.docCount += docCount;
 			absDocCount += docCount;
 		}
+
+		facetEntriesByNormalizedValue.values().forEach(facet::addEntry);
 		facet.setAbsoluteFacetCoverage(absDocCount);
+	}
+
+	public String createFacetLink(TermResultFilter facetFilter, FacetConfig facetConfig, SearchQueryBuilder linkBuilder, String facetValue, String facetValueId,
+			boolean isSelected) {
+		String link;
+		if (isSelected) {
+			if (facetFilter.isFilterOnId()) {
+				link = linkBuilder.withoutFilterAsLink(facetConfig, facetValueId);
+			}
+			else {
+				link = linkBuilder.withoutFilterAsLink(facetConfig, facetValue);
+			}
+		}
+		else {
+			if (facetFilter != null && facetFilter.isFilterOnId()) {
+				// as soon as we have a single ID filter and we're
+				link = linkBuilder.withFilterAsLink(facetConfig, facetValueId);
+			}
+			else {
+				link = linkBuilder.withFilterAsLink(facetConfig, facetValue);
+			}
+		}
+		return link;
 	}
 
 	private Set<String> asSet(String[] values) {

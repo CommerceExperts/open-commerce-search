@@ -1,9 +1,6 @@
 package de.cxp.ocs.config;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
@@ -16,6 +13,8 @@ public class ApplicationSearchProperties {
 
 	@NestedConfigurationProperty
 	private String indexName;
+
+	Locale locale = Locale.ROOT;
 
 	/**
 	 * can be used by the tenant specific configuration to fallback to default

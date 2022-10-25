@@ -1,0 +1,38 @@
+{
+  "index_patterns": "ocs-*-fr",
+  "priority": 200,
+  "composed_of": [
+    "ocs_default"
+  ],
+  "template": {
+    "settings": {
+      "analysis": {
+        "filter": {
+          "custom_stemmer": {
+            "type": "stemmer",
+            "language": "light_french"
+          },
+          "custom_stop_filter": {
+            "type": "stop",
+            "stopwords": "_french_"
+          }
+        },
+        "analyzer": {
+          "standard": {
+            "filter": [
+              "lowercase",
+              "custom_stop_filter",
+              "custom_stemmer"
+            ],
+            "char_filter": [
+              "html",
+              "irrelevant_chars"
+            ],
+            "type": "custom",
+            "tokenizer": "standard"
+          }
+        }
+      }
+    }
+  }
+}

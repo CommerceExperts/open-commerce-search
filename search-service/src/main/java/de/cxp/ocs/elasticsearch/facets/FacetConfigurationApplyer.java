@@ -2,16 +2,7 @@ package de.cxp.ocs.elasticsearch.facets;
 
 import static de.cxp.ocs.elasticsearch.facets.FacetFactory.getLabel;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -172,7 +163,8 @@ public class FacetConfigurationApplyer {
 		facetCreators.add(categoryFacetCreator);
 		facetCreatorsByTypes.put(FacetCreatorClassifier.hierarchicalFacet, categoryFacetCreator);
 
-		NestedFacetCreator masterTermFacetCreator = new TermFacetCreator(termFacets, FacetType.TERM.name().equals(defaultFacetType) ? defaultFacetConfigProvider : null)
+		Locale locale = context.config.getLocale();
+		NestedFacetCreator masterTermFacetCreator = new TermFacetCreator(termFacets, FacetType.TERM.name().equals(defaultFacetType) ? defaultFacetConfigProvider : null, locale)
 				.setMaxFacets(maxFacets);
 		masterTermFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(ignoredFields, FieldType.STRING));
 		facetCreators.add(masterTermFacetCreator);
@@ -205,7 +197,7 @@ public class FacetConfigurationApplyer {
 		facetCreatorsByTypes.put(FacetCreatorClassifier.masterIntervalFacet, intervalFacetCreator);
 
 		List<FacetCreator> variantFacetCreators = new ArrayList<>();
-		NestedFacetCreator variantTermFacetCreator = new TermFacetCreator(variantTermFacets, FacetType.TERM.name().equals(defaultFacetType) ? defaultFacetConfigProvider : null)
+		NestedFacetCreator variantTermFacetCreator = new TermFacetCreator(variantTermFacets, FacetType.TERM.name().equals(defaultFacetType) ? defaultFacetConfigProvider : null, locale)
 				.setMaxFacets(maxFacets);
 		variantTermFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(ignoredFields, FieldType.STRING));
 		variantFacetCreators.add(variantTermFacetCreator);

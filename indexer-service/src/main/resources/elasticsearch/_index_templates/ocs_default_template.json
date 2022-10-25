@@ -1,0 +1,7 @@
+{
+  "index_patterns": "ocs-*",
+  "priority": 110,
+  "composed_of": [
+    "ocs_default"
+  ]
+}

@@ -7,12 +7,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.31.4</version>
+		<version>0.36.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>ocs-commons</artifactId>
-	<version>0.14.2</version>
+	<version>0.15.0</version>
 	<packaging>jar</packaging>
 
 	<description>Library that contains common models and utility for the open-commerce-search stack</description>
@@ -39,8 +39,18 @@
 		<dependency>
 			<groupId>fr.pilato.elasticsearch</groupId>
 			<artifactId>elasticsearch-beyonder</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.apache.commons</groupId>
+					<artifactId>commons-text</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>

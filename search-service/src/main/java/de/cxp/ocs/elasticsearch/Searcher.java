@@ -352,7 +352,7 @@ public class Searcher {
 	private List<InternalResultFilter> convertFiltersMapToInternalResultFilters(Map<String, String> additionalFilters) {
 		List<InternalResultFilter> convertedFilters = new ArrayList<>();
 		for (String key : additionalFilters.keySet()) {
-			convertedFilters = parseFilters(Collections.singletonMap(key, additionalFilters.get(key)), fieldIndex);
+			convertedFilters = parseFilters(Collections.singletonMap(key, additionalFilters.get(key)), fieldIndex, config.getLocale());
 		}
 		return convertedFilters;
 	}
