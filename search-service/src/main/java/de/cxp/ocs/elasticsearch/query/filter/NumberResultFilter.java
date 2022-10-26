@@ -42,4 +42,10 @@ public class NumberResultFilter implements InternalResultFilter {
 	public boolean isNestedFilter() {
 		return true;
 	}
+
+	@Override
+	public boolean isFilterOnId() {
+		// no "ID" implementation for numbers available
+		return false;
+	}
 }

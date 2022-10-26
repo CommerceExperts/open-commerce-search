@@ -130,14 +130,18 @@ public class ESQueryFactoryBuilder {
 	private Map<String, Float> loadFields(Map<String, Float> weightedFields) {
 		Map<String, Float> validatedFields = new HashMap<>();
 		FieldConfigIndex fieldConfig = context.getFieldConfigIndex();
+		Set<String> ignoredFields = new HashSet<>();
 		weightedFields.forEach((fieldNamePattern, weight) -> {
 			if (isSearchableField(fieldConfig, fieldNamePattern)) {
 				validatedFields.put(fieldNamePattern, weight);
 			}
 			else {
-				log.info("ignored field {} for query builder, because its not configured for search", fieldNamePattern);
+				ignoredFields.add(fieldNamePattern);
 			}
 		});
+		if (ignoredFields.size() > 0) {
+			log.info("Ignored unavailable fields for search: " + ignoredFields.toString());
+		}
 		return validatedFields;
 	}
 

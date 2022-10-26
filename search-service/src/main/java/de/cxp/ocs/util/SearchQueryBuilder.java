@@ -18,7 +18,6 @@ import com.google.common.collect.Sets;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
-import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.result.SortOrder;
 import de.cxp.ocs.model.result.Sorting;
 
@@ -59,7 +58,7 @@ public class SearchQueryBuilder {
 		if (!params.filters.isEmpty()) {
 			for (InternalResultFilter filter : params.filters) {
 				String paramName = filter.getField().getName();
-				if (filter instanceof TermResultFilter && ((TermResultFilter) filter).isFilterOnId()) {
+				if (filter.isFilterOnId()) {
 					paramName += SearchParamsParser.ID_FILTER_SUFFIX;
 				}
 				urlParams.put(paramName, joinParameterValues(filter.getValues()));
@@ -208,7 +207,7 @@ public class SearchQueryBuilder {
 	private String getFilterName(FacetConfig facetConfig) {
 		String filterName = facetConfig.getSourceField();
 		InternalResultFilter filter = filters.get(filterName);
-		if (filter != null && filter instanceof TermResultFilter && ((TermResultFilter) filter).isFilterOnId()) {
+		if (filter != null && filter.isFilterOnId()) {
 			filterName += SearchParamsParser.ID_FILTER_SUFFIX;
 		}
 		return filterName;
