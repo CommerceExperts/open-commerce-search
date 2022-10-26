@@ -6,6 +6,8 @@ public interface InternalResultFilter {
 
 	Field getField();
 
+	boolean isFilterOnId();
+
 	String getFieldPrefix();
 
 	boolean isNestedFilter();
