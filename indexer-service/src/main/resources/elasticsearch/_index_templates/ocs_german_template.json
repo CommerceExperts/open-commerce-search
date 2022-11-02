@@ -46,11 +46,22 @@
             ],
             "char_filter": [
               "html",
-              "german_special_letters",
               "irrelevant_chars"
             ],
             "type": "custom",
             "tokenizer": "standard"
+          },
+          "minimal": {
+            "filter": [
+              "lowercase"
+            ],
+            "char_filter": [
+              "html",
+              "irrelevant_chars",
+              "german_special_letters"
+            ],
+            "type": "custom",
+            "tokenizer": "whitespace"
           }
         }
       }
