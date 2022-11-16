@@ -273,7 +273,7 @@ public class FacetConfigurationApplyer {
 	 * This method uses the initialized FacetCreators to build the right
 	 * aggregations in respect of the active post filters.
 	 * </p>
-	 * 
+	 *
 	 * <strong>Background / Details:</strong>
 	 * <p>
 	 * For facets that should stay the same, even if one of its filters was
@@ -306,8 +306,8 @@ public class FacetConfigurationApplyer {
 	 * <p>
 	 * More details at http://stackoverflow.com/questions/41369749
 	 * </p>
-	 * 
-	 * 
+	 *
+	 *
 	 * @param filterContext
 	 *        context that holds the filter queries
 	 * @return
@@ -392,6 +392,20 @@ public class FacetConfigurationApplyer {
 		}
 		else {
 			facets = facetsFromFilteredAggregations(aggregations, filterContext, linkBuilder);
+		}
+
+		Iterator<Facet> facetIterator = facets.iterator();
+		while (facetIterator.hasNext()) {
+			Facet facet = facetIterator.next();
+			if (facet.isFiltered) continue;
+
+			FacetConfig facetConfig = facetsBySourceField.get(facet.getFieldName());
+			double facetCoverage = (double) facet.absoluteFacetCoverage / matchCount;
+			if (facetConfig != null && facetCoverage < facetConfig.getMinFacetCoverage()) {
+				log.debug("removing facet {} because facet coverage of {} is lower than minFacetCoverage {}",
+						  facet.getFieldName(), facetCoverage, facetConfig.getMinFacetCoverage());
+				facetIterator.remove();
+			}
 		}
 
 		// sort by order and facet coverage

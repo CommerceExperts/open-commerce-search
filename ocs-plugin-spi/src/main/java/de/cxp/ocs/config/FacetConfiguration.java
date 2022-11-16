@@ -82,6 +82,8 @@ public class FacetConfiguration {
 
 		private boolean preferVariantOnFilter = false;
 
+		private double minFacetCoverage = 0.2;
+
 		/**
 		 * Label of that facet
 		 * 
