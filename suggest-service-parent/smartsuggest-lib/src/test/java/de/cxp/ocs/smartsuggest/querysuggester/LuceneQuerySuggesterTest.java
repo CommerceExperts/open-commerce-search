@@ -20,21 +20,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.WordlistLoader;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
 import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester;
@@ -280,10 +271,11 @@ class LuceneQuerySuggesterTest {
 		List<Suggestion> results = underTest.suggest("beige men's shirts");
 		assertSuggestion(results.get(0), BeigeMensShirts, BEST_MATCHES_GROUP_NAME);
 
-		assertSuggestion(results.get(1), WomensShirts, SHINGLE_MATCHES_GROUP_NAME);
-		assertSuggestion(results.get(2), MensShirts, SHINGLE_MATCHES_GROUP_NAME);
-		assertSuggestion(results.get(3), Shirts, SHINGLE_MATCHES_GROUP_NAME);
-		assertSuggestion(results.get(4), WorkShirts, SHINGLE_MATCHES_GROUP_NAME);
+		// expect results in the order of the assigned weights
+		assertSuggestion(results.get(1), Shirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(2), WorkShirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(3), WomensShirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results.get(4), MensShirts, SHINGLE_MATCHES_GROUP_NAME);
 
 	}
 
@@ -323,8 +315,8 @@ class LuceneQuerySuggesterTest {
 		assertSuggestion(results2.get(2), BeigeMensShirts, BEST_MATCHES_GROUP_NAME);
 				
 		assertSuggestion(results2.get(3), Shirts, SHINGLE_MATCHES_GROUP_NAME);
-		assertSuggestion(results2.get(4), WomensShirts, SHINGLE_MATCHES_GROUP_NAME);
-		assertSuggestion(results2.get(5), WorkShirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results2.get(4), WorkShirts, SHINGLE_MATCHES_GROUP_NAME);
+		assertSuggestion(results2.get(5), WomensShirts, SHINGLE_MATCHES_GROUP_NAME);
 	}
 
 	@DisplayName("Search for 'schuhe'")

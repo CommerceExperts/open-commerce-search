@@ -1,14 +1,20 @@
 package de.cxp.ocs.elasticsearch;
 
-import static de.cxp.ocs.config.FieldConstants.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static de.cxp.ocs.config.FieldConstants.NUMBER_FACET_DATA;
+import static de.cxp.ocs.config.FieldConstants.PATH_FACET_DATA;
+import static de.cxp.ocs.config.FieldConstants.RESULT_DATA;
+import static de.cxp.ocs.config.FieldConstants.SCORES;
+import static de.cxp.ocs.config.FieldConstants.SEARCH_DATA;
+import static de.cxp.ocs.config.FieldConstants.SORT_DATA;
+import static de.cxp.ocs.config.FieldConstants.TERM_FACET_DATA;
+import static de.cxp.ocs.config.FieldConstants.VARIANTS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.Version;
@@ -44,11 +50,7 @@ import de.cxp.ocs.conf.ApplicationProperties;
 import de.cxp.ocs.controller.IndexerCache;
 import de.cxp.ocs.controller.UpdateIndexController;
 import de.cxp.ocs.indexer.IndexerFactory;
-import de.cxp.ocs.indexer.model.DataItem;
-import de.cxp.ocs.indexer.model.FacetEntry;
-import de.cxp.ocs.indexer.model.IndexableItem;
-import de.cxp.ocs.indexer.model.MasterItem;
-import de.cxp.ocs.indexer.model.VariantItem;
+import de.cxp.ocs.indexer.model.*;
 import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
@@ -90,8 +92,8 @@ public class ElasticsearchCRUDTest {
 		System.out.println("starting es container");
 		container = new ElasticsearchContainer(
 				DockerImageName
-						.parse("docker.elastic.co/elasticsearch/elasticsearch-oss")
-						.withTag(Version.V_7_10_2.toString()));
+						.parse("docker.elastic.co/elasticsearch/elasticsearch")
+						.withTag(Version.V_7_17_1.toString()));
 		container.setWaitStrategy(new HttpWaitStrategy().forPort(9200));
 		container.start();
 		HTTP_TEST_PORT = container.getMappedPort(9200);
@@ -110,7 +112,7 @@ public class ElasticsearchCRUDTest {
 				.patch("/indexer-api/v1/update/nonexisting")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content("{}"))
-				.andExpect(MockMvcResultMatchers.status().is(404));
+				.andExpect(MockMvcResultMatchers.status().is(400));
 
 		mockMvc.perform(MockMvcRequestBuilders
 				.delete("/indexer-api/v1/update/nonexisting?id=123")
@@ -305,13 +307,14 @@ public class ElasticsearchCRUDTest {
 	}
 
 	void putDocument(String indexName, Document doc, int expectedStatus, Result expectedResult) throws Exception {
-		String docBody = objectMapper.writeValueAsString(doc);
+		String docBody = objectMapper.writeValueAsString(Collections.singletonList(doc));
 		mockMvc.perform(MockMvcRequestBuilders
 				.put("/indexer-api/v1/update/" + indexName)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(docBody))
 				.andExpect(MockMvcResultMatchers.status().is(expectedStatus))
-				.andExpect(MockMvcResultMatchers.content().string(objectMapper.writeValueAsString(expectedResult)));
+				.andExpect(MockMvcResultMatchers.content()
+						.string(objectMapper.writeValueAsString(Collections.singletonMap(doc.id, expectedResult))));
 	}
 
 	private void patchDocument(String indexName, Document doc) throws Exception {
@@ -319,13 +322,14 @@ public class ElasticsearchCRUDTest {
 	}
 
 	void patchDocument(String indexName, Document doc, int expectedStatus, Result expectedResult) throws Exception {
-		String docBody = objectMapper.writeValueAsString(doc);
+		String docBody = objectMapper.writeValueAsString(Collections.singletonList(doc));
 		mockMvc.perform(MockMvcRequestBuilders
 				.patch("/indexer-api/v1/update/" + indexName)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(docBody))
 				.andExpect(MockMvcResultMatchers.status().is(expectedStatus))
-				.andExpect(MockMvcResultMatchers.content().string(objectMapper.writeValueAsString(expectedResult)));
+				.andExpect(MockMvcResultMatchers.content()
+						.string(objectMapper.writeValueAsString(Collections.singletonMap(doc.id, expectedResult))));
 	}
 
 	void deleteDocument(String indexName, String id) throws JsonProcessingException, Exception {
@@ -337,7 +341,8 @@ public class ElasticsearchCRUDTest {
 				.delete("/indexer-api/v1/update/" + indexName + "?id=" + id)
 				.contentType(MediaType.APPLICATION_JSON))
 				.andExpect(MockMvcResultMatchers.status().is(expectedStatus))
-				.andExpect(MockMvcResultMatchers.content().string(objectMapper.writeValueAsString(expectedResult)));
+				.andExpect(MockMvcResultMatchers.content()
+						.string(objectMapper.writeValueAsString(Collections.singletonMap(id, expectedResult))));
 	}
 
 	IndexableItem getIndexedDocument(String indexName, String id) throws IOException {
