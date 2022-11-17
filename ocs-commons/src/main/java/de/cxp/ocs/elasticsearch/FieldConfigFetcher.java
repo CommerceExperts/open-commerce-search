@@ -1,6 +1,9 @@
 package de.cxp.ocs.elasticsearch;
 
-import static de.cxp.ocs.config.FieldConstants.*;
+import static de.cxp.ocs.config.FieldConstants.NUMBER_FACET_DATA;
+import static de.cxp.ocs.config.FieldConstants.PATH_FACET_DATA;
+import static de.cxp.ocs.config.FieldConstants.TERM_FACET_DATA;
+import static de.cxp.ocs.config.FieldConstants.VARIANTS;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -17,17 +20,18 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetMappingsRequest;
 import org.elasticsearch.client.indices.GetMappingsResponse;
 import org.elasticsearch.cluster.metadata.MappingMetadata;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.nested.Nested;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
+import org.elasticsearch.search.aggregations.metrics.Cardinality;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
-import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldConfiguration;
-import de.cxp.ocs.config.FieldLevel;
-import de.cxp.ocs.config.FieldType;
-import de.cxp.ocs.config.FieldUsage;
+import de.cxp.ocs.config.*;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -46,30 +50,35 @@ public class FieldConfigFetcher {
 
 		@SuppressWarnings("unchecked")
 		Map<String, Object> mappings = (Map<String, Object>) mappingsData.getSourceAsMap().get("properties");
-		modifyFields(resultFields, getProperties(mappings, "searchData").keySet(), f -> f.setUsage(FieldUsage.SEARCH));
-		modifyFields(resultFields, getProperties(mappings, "resultData").keySet(), f -> f.setUsage(FieldUsage.RESULT));
-		modifyFields(resultFields, getProperties(mappings, "sortData").keySet(), f -> f.setUsage(FieldUsage.SORT));
-		modifyFields(resultFields, getProperties(mappings, "scores").keySet(), f -> f.setUsage(FieldUsage.SCORE).setType(FieldType.NUMBER));
+		modifyFields(resultFields, getPropertyBasedFields(mappings, "searchData"), f -> f.setUsage(FieldUsage.SEARCH));
+		modifyFields(resultFields, getPropertyBasedFields(mappings, "resultData"), f -> f.setUsage(FieldUsage.RESULT));
+		modifyFields(resultFields, getPropertyBasedFields(mappings, "sortData"), f -> f.setUsage(FieldUsage.SORT));
+		modifyFields(resultFields, getPropertyBasedFields(mappings, "scores"), f -> f.setUsage(FieldUsage.SCORE).setType(FieldType.NUMBER));
 
 		Map<String, Object> variantMappings = getProperties(mappings, "variants");
-		modifyVariantFields(resultFields, getProperties(variantMappings, "searchData").keySet(), f -> f.setUsage(FieldUsage.SEARCH));
-		modifyVariantFields(resultFields, getProperties(variantMappings, "resultData").keySet(), f -> f.setUsage(FieldUsage.RESULT));
-		modifyVariantFields(resultFields, getProperties(variantMappings, "sortData").keySet(), f -> f.setUsage(FieldUsage.SORT));
-		modifyVariantFields(resultFields, getProperties(variantMappings, "scores").keySet(), f -> f.setUsage(FieldUsage.SCORE).setType(FieldType.NUMBER));
+		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, "searchData"), f -> f.setUsage(FieldUsage.SEARCH));
+		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, "resultData"), f -> f.setUsage(FieldUsage.RESULT));
+		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, "sortData"), f -> f.setUsage(FieldUsage.SORT));
+		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, "scores"), f -> f.setUsage(FieldUsage.SCORE).setType(FieldType.NUMBER));
 
 		// get facet fields
 		SearchSourceBuilder sourceBuilder = SearchSourceBuilder.searchSource()
 				.size(0)
 				.aggregation(AggregationBuilders.nested("_master_term_facets", TERM_FACET_DATA)
-						.subAggregation(AggregationBuilders.terms("_names").field(TERM_FACET_DATA + ".name").size(1000)))
+						.subAggregation(namesAggregation(TERM_FACET_DATA)
+								.subAggregation(valueEstimationAgg(TERM_FACET_DATA))))
 				.aggregation(AggregationBuilders.nested("_master_path_facets", PATH_FACET_DATA)
-						.subAggregation(AggregationBuilders.terms("_names").field(PATH_FACET_DATA + ".name").size(1000)))
+						.subAggregation(namesAggregation(PATH_FACET_DATA)
+								.subAggregation(valueEstimationAgg(PATH_FACET_DATA))))
 				.aggregation(AggregationBuilders.nested("_master_number_facets", NUMBER_FACET_DATA)
-						.subAggregation(AggregationBuilders.terms("_names").field(NUMBER_FACET_DATA + ".name").size(1000)))
+						.subAggregation(namesAggregation(NUMBER_FACET_DATA)))
+								// no need to check cardinality for number facet
 				.aggregation(AggregationBuilders.nested("_variant_term_facets", VARIANTS + "." + TERM_FACET_DATA)
-						.subAggregation(AggregationBuilders.terms("_names").field(VARIANTS + "." + TERM_FACET_DATA + ".name").size(1000)))
+						.subAggregation(namesAggregation(VARIANTS + "." + TERM_FACET_DATA)
+								.subAggregation(valueEstimationAgg(VARIANTS + "." + TERM_FACET_DATA))))
 				.aggregation(AggregationBuilders.nested("_variant_number_facets", VARIANTS + "." + NUMBER_FACET_DATA)
-						.subAggregation(AggregationBuilders.terms("_names").field(VARIANTS + "." + NUMBER_FACET_DATA + ".name").size(1000)));
+						.subAggregation(namesAggregation(VARIANTS + "." + NUMBER_FACET_DATA)));
+								// no need to check cardinality for number facet
 
 		SearchRequest searchRequest = new SearchRequest(searchIndex).source(sourceBuilder);
 		SearchResponse searchResponse = restHLClient.search(searchRequest, RequestOptions.DEFAULT);
@@ -92,22 +101,56 @@ public class FieldConfigFetcher {
 		return result;
 	}
 
-	private Set<String> extractFacetFields(SearchResponse searchResponse, String nestedFacetName) {
-		Terms aggregation = (Terms) ((Nested) searchResponse.getAggregations().get(nestedFacetName)).getAggregations().get("_names");
-		return aggregation.getBuckets().stream().map(Bucket::getKeyAsString).collect(Collectors.toSet());
+	private final static String VALUE_ESTIMATE_AGG_NAME = "_value_estimate";
+	private final static String FACET_NAME_AGG_NAME = "_names";
+
+	public TermsAggregationBuilder namesAggregation(String fieldPath) {
+		return AggregationBuilders.terms(FACET_NAME_AGG_NAME).field(fieldPath + ".name").size(1000);
 	}
 
-	private void modifyFields(Map<String, Field> resultFields, Set<String> fieldNames, Consumer<Field> fieldModifier) {
-		for (String fieldName : fieldNames) {
-			fieldModifier.accept(resultFields.computeIfAbsent(fieldName, Field::new));
+
+	private AggregationBuilder valueEstimationAgg(String fieldPath) {
+		return AggregationBuilders.cardinality(VALUE_ESTIMATE_AGG_NAME).field(fieldPath + ".value");
+	}
+
+	private Set<FacetFetchData> extractFacetFields(SearchResponse searchResponse, String nestedFacetName) {
+		Terms aggregation = (Terms) ((Nested) searchResponse.getAggregations().get(nestedFacetName)).getAggregations()
+				.get(FACET_NAME_AGG_NAME);
+		return aggregation.getBuckets().stream()
+				.map(bucket -> new FacetFetchData(bucket.getKeyAsString(), getValueCardinality(bucket)))
+				.collect(Collectors.toSet());
+	}
+
+	private long getValueCardinality(Bucket bucket) {
+		Aggregations subAggs = bucket.getAggregations();
+		if (subAggs != null && subAggs.get(VALUE_ESTIMATE_AGG_NAME) != null) {
+			Cardinality valueEstimate = (Cardinality) subAggs.get(VALUE_ESTIMATE_AGG_NAME);
+			return valueEstimate.getValue();
+		}
+		return -1L;
+	}
+
+	private void modifyFields(Map<String, Field> resultFields, Set<FacetFetchData> fieldsData,
+			Consumer<Field> fieldModifier) {
+		for (FacetFetchData fieldData : fieldsData) {
+			IndexedField field = (IndexedField) resultFields.computeIfAbsent(fieldData.name, IndexedField::new);
+			if (fieldData.cardinality > 0) {
+				field.setValueCardinality((int) fieldData.cardinality);
+			}
+			fieldModifier.accept(field);
 		}
 	}
 
-	private void modifyVariantFields(Map<String, Field> resultFields, Set<String> fieldNames, Consumer<Field> fieldModifier) {
-		for (String fieldName : fieldNames) {
-			Field field = resultFields.computeIfAbsent(fieldName, n -> new Field(n).setFieldLevel(FieldLevel.VARIANT));
+	private void modifyVariantFields(Map<String, Field> resultFields, Set<FacetFetchData> fieldsData,
+			Consumer<Field> fieldModifier) {
+		for (FacetFetchData fieldData : fieldsData) {
+			IndexedField field = (IndexedField) resultFields.computeIfAbsent(fieldData.name,
+					n -> new IndexedField(n).setFieldLevel(FieldLevel.VARIANT));
 			if (field.isMasterLevel()) {
 				field.setFieldLevel(FieldLevel.BOTH);
+			}
+			if (fieldData.cardinality > 0) {
+				field.setValueCardinality((int) fieldData.cardinality);
 			}
 			fieldModifier.accept(field);
 		}
@@ -117,13 +160,39 @@ public class FieldConfigFetcher {
 	private Map<String, Object> getProperties(Map<String, Object> mappings, String superFieldName) {
 		Object superField = mappings.get(superFieldName);
 		Object props = null;
-		if (superField != null && superField instanceof Map)
+		if (superField != null && superField instanceof Map) {
 			props = ((Map<String, Object>) superField).get("properties");
-		if (props != null && props instanceof Map)
-			return (Map<String, Object>) props;
-		else
+		}
+		if (props != null && props instanceof Map) {
+			return ((Map<String, Object>) props);
+		} else {
 			return Collections.emptyMap();
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private Set<FacetFetchData> getPropertyBasedFields(Map<String, Object> mappings, String superFieldName) {
+		Object superField = mappings.get(superFieldName);
+		Object props = null;
+		if (superField != null && superField instanceof Map) {
+			props = ((Map<String, Object>) superField).get("properties");
+		}
+		if (props != null && props instanceof Map) {
+			return ((Map<String, Object>) props).keySet().stream().map(FacetFetchData::new).collect(Collectors.toSet());
+		} else {
+			return Collections.emptySet();
+		}
 	}
 
+	@AllArgsConstructor
+	private class FacetFetchData {
+		String name;
+		long cardinality;
+
+		FacetFetchData(String name) {
+			this.name = name;
+			cardinality = -1;
+		}
+	}
 
 }

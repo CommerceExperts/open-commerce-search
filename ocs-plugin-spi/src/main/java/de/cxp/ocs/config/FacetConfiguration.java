@@ -82,7 +82,9 @@ public class FacetConfiguration {
 
 		private boolean preferVariantOnFilter = false;
 
-		private double minFacetCoverage = 0.2;
+		private double minFacetCoverage = 0.1;
+
+		private int minValueCount = 2;
 
 		/**
 		 * Label of that facet
@@ -258,6 +260,53 @@ public class FacetConfiguration {
 		 */
 		public FacetConfig setValueOrder(ValueOrder valueOrder) {
 			this.valueOrder = valueOrder;
+			return this;
+		}
+
+		/**
+		 * <p>
+		 * Set the minimum ratio of the result a facet has to cover in order to be
+		 * displayed.
+		 * </p>
+		 * <p>
+		 * For example with a value of 0.2 for a "color" facet, it will only be shown,
+		 * if at least 20% of the products in a result have a "color" attribute (even if
+		 * all have the same color).
+		 * </p>
+		 * <p>
+		 * Per default that value is set to 0.1.
+		 * </p>
+		 * 
+		 * @param minFacetCoverage
+		 * @return
+		 */
+		public FacetConfig setMinFacetCoverage(double minFacetCoverage) {
+			this.minFacetCoverage = minFacetCoverage;
+			return this;
+		}
+
+		/**
+		 * <p>
+		 * Set the minimum amount of values a facet must have in order to be displayed.
+		 * </p>
+		 * <p>
+		 * For example with a value of 2 for a "color" facet, that facet will only be
+		 * shown, if the result contains matches with at least 2 different colors, e.g.
+		 * "black" and "red".
+		 * </p>
+		 * <p>
+		 * Per default the value is 2.
+		 * </p>
+		 * <p>
+		 * For facets with a total value count lower than this setting, this setting is
+		 * automatically reduced to exactly that determined total value count.
+		 * </p>
+		 * 
+		 * @param minValueCount
+		 * @return
+		 */
+		public FacetConfig setMinValueCount(int minValueCount) {
+			this.minValueCount = minValueCount;
 			return this;
 		}
 
