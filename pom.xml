@@ -7,7 +7,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.36.1</version>
+	<version>0.37.0</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -22,7 +22,7 @@
 	</modules>
 
 	<properties>
-		<java.version>1.8</java.version>
+		<java.version>11</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<docker.repository>commerceexperts</docker.repository>
@@ -48,29 +48,29 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-plugin-spi</artifactId>
-				<version>0.21.0</version>
+				<version>0.22.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-commons</artifactId>
-				<version>0.15.0</version>
+				<version>0.16.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>indexer-service</artifactId>
-				<version>0.21.0</version>
+				<version>0.22.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>search-service</artifactId>
-				<version>0.33.1</version>
+				<version>0.34.0</version>
 			</dependency>
 			<!-- only including the suggest-service directly, because it depends on 
 				the other suggest modules -->
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>suggest-service</artifactId>
-				<version>0.14.0</version>
+				<version>0.15.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
@@ -147,7 +147,7 @@
 				<groupId>org.projectlombok</groupId>
 				<artifactId>lombok</artifactId>
 				<scope>provided</scope>
-				<version>1.18.12</version>
+				<version>1.18.24</version>
 			</dependency>
 
 			<dependency>
