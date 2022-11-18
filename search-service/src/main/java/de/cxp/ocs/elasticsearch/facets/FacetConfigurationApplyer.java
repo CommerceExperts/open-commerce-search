@@ -23,8 +23,6 @@ import de.cxp.ocs.config.IndexedField;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.model.result.Facet;
-import de.cxp.ocs.model.result.FacetEntry;
-import de.cxp.ocs.model.result.HierarchialFacetEntry;
 import de.cxp.ocs.util.SearchQueryBuilder;
 import lombok.Data;
 import lombok.NonNull;
@@ -45,11 +43,12 @@ public class FacetConfigurationApplyer {
 	static final String IS_MANDATORY_META_KEY = "isMandatory";
 
 	private final Map<String, FacetConfig> facetsBySourceField = new HashMap<>();
-
 	private final List<FacetCreator>						facetCreators			= new ArrayList<>();
 	private final Map<FacetCreatorClassifier, FacetCreator>	facetCreatorsByTypes	= new HashMap<>();
 
 	private int maxFacets;
+
+	private final List<FacetFilter> facetFilters = new ArrayList<>();
 
 	@Data
 	@RequiredArgsConstructor
@@ -79,9 +78,18 @@ public class FacetConfigurationApplyer {
 
 	public FacetConfigurationApplyer(SearchContext context) {
 		Function<String, FacetConfig> defaultFacetConfigProvider = getDefaultFacetConfigProvider(context);
-		String defaultFacetType = defaultFacetConfigProvider.apply("").getType();
 
 		maxFacets = context.config.getFacetConfiguration().getMaxFacets();
+
+		loadFacetConfig(defaultFacetConfigProvider, context);
+
+		facetFilters.add(new FacetCoverageFilter());
+		facetFilters.add(new FacetSizeFilter());
+		facetFilters.add(new FacetDependencyFilter(facetsBySourceField));
+	}
+
+	public void loadFacetConfig(Function<String, FacetConfig> defaultFacetConfigProvider, SearchContext context) {
+		String defaultFacetType = defaultFacetConfigProvider.apply("").getType();
 
 		// I tried to do this whole method in a more generic way, but such code
 		// is less readable even if shorter
@@ -408,7 +416,7 @@ public class FacetConfigurationApplyer {
 			facets = facetsFromFilteredAggregations(aggregations, filterContext, linkBuilder);
 		}
 
-		filterFacetsByConfiguredThresholds(matchCount, facets);
+		filterFacets(facets, filterContext, matchCount);
 
 		// sort by order and facet coverage
 		facets.sort(new Comparator<Facet>() {
@@ -437,66 +445,27 @@ public class FacetConfigurationApplyer {
 		return facets.size() > actualMaxFacets ? facets.subList(0, actualMaxFacets) : facets;
 	}
 
-	private void filterFacetsByConfiguredThresholds(long matchCount, List<Facet> facets) {
+	private void filterFacets(List<Facet> facets, FilterContext filterContext, long matchCount) {
 		Iterator<Facet> facetIterator = facets.iterator();
 		while (facetIterator.hasNext()) {
 			Facet facet = facetIterator.next();
-			if (facet.isFiltered) continue;
+			if (facet.isFiltered)
+				continue;
 
 			FacetConfig facetConfig = facetsBySourceField.get(facet.getFieldName());
-			if (facetConfig != null) {
-				double facetCoverage = (double) facet.absoluteFacetCoverage / matchCount;
-				if (facetCoverage < facetConfig.getMinFacetCoverage()) {
-					log.debug("removing facet '{}' because facet coverage of {} is lower than minFacetCoverage {}",
-							facetConfig.getLabel(), facetCoverage, facetConfig.getMinFacetCoverage());
-					facetIterator.remove();
-				} else if (!hasEnoughElements(facet, facetConfig.getMinValueCount())) {
-					log.debug("removing facet '{}' because it has less elements {} than the configured minValueCount {}",
-							facetConfig.getLabel(), facet.getEntries().size(), facetConfig.getMinValueCount());
-					facetIterator.remove();
+			if (facetConfig != null ) {
+				for (FacetFilter facetFilter : facetFilters) {
+					if (!facetFilter.isVisibleFacet(facet, facetConfig, filterContext, maxFacets)) {
+						log.debug("removing facet {} because of filter {}", facetConfig.getLabel(),
+								facetFilter.getClass().getSimpleName());
+						facetIterator.remove();
+						break;
+					}
 				}
 			}
 		}
 	}
 
-	private boolean hasEnoughElements(Facet facet, int minCount) {
-		if (FacetType.RANGE.name().equalsIgnoreCase(facet.getType()) && facet.getEntries().size() >= 1) {
-			return true;
-		}
-		if (FacetType.HIERARCHICAL.name().equalsIgnoreCase(facet.getType())) {
-			if (facet.getEntries().size() >= minCount)
-				return true;
-
-			int allChildCount = 0;
-			for (FacetEntry e : facet.getEntries()) {
-				if (e instanceof HierarchialFacetEntry) {
-					allChildCount += countLeafChildEntries((HierarchialFacetEntry) e);
-				} else {
-					allChildCount++;
-				}
-
-				// break fast
-				if (allChildCount >= minCount)
-					break;
-			}
-			return allChildCount >= minCount;
-		}
-		return facet.getEntries().size() >= minCount;
-	}
-
-	private int countLeafChildEntries(HierarchialFacetEntry parentEntry) {
-		if (parentEntry.children.size() == 0)
-			return 1;
-		else {
-			int leafChildCount = 0;
-			for (FacetEntry child : parentEntry.getChildren()) {
-				if (child instanceof HierarchialFacetEntry) {
-					leafChildCount += countLeafChildEntries((HierarchialFacetEntry) child);
-				}
-			}
-			return leafChildCount;
-		}
-	}
 	
 	private List<Facet> facetsFromFilteredAggregations(Aggregations aggregations, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
 		Map<String, Facet> facets = new HashMap<>();
