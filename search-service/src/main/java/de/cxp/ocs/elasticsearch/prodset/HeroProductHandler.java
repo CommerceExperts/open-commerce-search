@@ -5,6 +5,7 @@ import java.util.*;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.Operator;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 
@@ -12,7 +13,6 @@ import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.elasticsearch.Searcher;
 import de.cxp.ocs.elasticsearch.mapper.ResultMapper;
 import de.cxp.ocs.elasticsearch.mapper.VariantPickingStrategy;
-import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.model.params.DynamicProductSet;
 import de.cxp.ocs.model.params.ProductSet;
 import de.cxp.ocs.model.params.StaticProductSet;
@@ -48,6 +48,8 @@ import lombok.extern.slf4j.Slf4j;
 public class HeroProductHandler {
 
 	private static int MAX_IDS_ORDERED_BOOSTING = 1000;
+	// used to identify products boosted by the hero-products query
+	public static String QUERY_NAME_PREFIX = "hero-product-set-";
 
 	@NonNull
 	private final static Map<String, ProductSetResolver> resolvers = new HashMap<>(2);
@@ -96,10 +98,14 @@ public class HeroProductHandler {
 		return resolvedSets;
 	}
 
-	public static Optional<BoolQueryBuilder> getHeroQuery(InternalSearchParams internalParams) {
+	public static Optional<QueryBuilder> getHeroQuery(InternalSearchParams internalParams) {
 		StaticProductSet[] productSets = internalParams.heroProductSets;
-		if (productSets.length > 0) {
-			BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+		QueryBuilder heroQuery = null;
+		if (productSets != null && productSets.length > 0) {
+			// we will join several product sets with boolean should
+			if (productSets.length > 1) {
+				heroQuery = QueryBuilders.boolQuery();
+			}
 			/**
 			 * assume 3 sets, each with 1000/max ids
 			 * boost-ranges should be:
@@ -120,48 +126,28 @@ public class HeroProductHandler {
 					// guarantee the order of the IDs, but that's limited to
 					// 1024 clauses. So in case we have more IDs, we have to
 					// switch to the normal ids query
+					QueryBuilder productSetQuery;
 					if (productSets[i].ids.length > MAX_IDS_ORDERED_BOOSTING) {
 						log.warn("Cannot guarantee the order of the provided IDs for a product set with more than 1024 IDs (for request with user query = {})",
 								internalParams.getUserQuery());
-						boolQuery.should(QueryBuilders.idsQuery().addIds(productSets[i].ids).boost(boost));
+						productSetQuery = QueryBuilders.idsQuery()
+								.addIds(productSets[i].ids)
+								.boost(boost)
+								.queryName(QUERY_NAME_PREFIX + i);
 					}
 					else {
-						// since this is "just" another should clause, the
-						// product
-						// sets are still influenced by the matches of the
-						// generic
-						// user query.
-						boolQuery.should(
-								QueryBuilders.queryStringQuery(idsAsOrderedBoostQuery(productSets[i].ids))
-										.boost(boost)
-										.defaultField("_id")
-										.defaultOperator(Operator.OR));
+						productSetQuery = QueryBuilders.queryStringQuery(idsAsOrderedBoostQuery(productSets[i].ids))
+								.boost(boost)
+								.defaultField("_id")
+								.defaultOperator(Operator.OR)
+								.queryName(QUERY_NAME_PREFIX + i);
 					}
+					heroQuery = heroQuery == null ? productSetQuery : ((BoolQueryBuilder) heroQuery).should(productSetQuery);
 				}
 				boost /= MAX_IDS_ORDERED_BOOSTING;
 			}
-			return Optional.of(boolQuery);
 		}
-		return Optional.empty();
-	}
-
-	/**
-	 * Extend MasterVariantQuery to inject the hero products and boost them to
-	 * the top.
-	 * 
-	 * @param searchQuery
-	 *        main and variant Elasticsearch queries
-	 * @param internalParams
-	 *        internal parameters
-	 */
-	public static void extendQuery(MasterVariantQuery searchQuery, InternalSearchParams internalParams) {
-		getHeroQuery(internalParams)
-				.ifPresent(bq -> {
-					if (searchQuery.getMasterLevelQuery() != null) {
-						bq = bq.should(searchQuery.getMasterLevelQuery());
-					}
-					searchQuery.setMasterLevelQuery(bq);
-				});
+		return Optional.ofNullable(heroQuery);
 	}
 
 	private static String idsAsOrderedBoostQuery(@NonNull String[] ids) {
@@ -177,21 +163,6 @@ public class HeroProductHandler {
 			boost -= 1;
 		}
 		return idsOrderedBoostQuery.toString();
-	}
-
-	/**
-	 * <p>
-	 * Get minimum hitCount to accept the natural search to have matched
-	 * anything. This is necessary to follow the query-relaxation chain until we
-	 * have the original result, as if there wouldn't be any hero products.
-	 * </p>
-	 * 
-	 * @param internalParams
-	 *        with hero product sets
-	 * @return the expected minimum hit count
-	 */
-	public static int getCorrectedMinHitCount(InternalSearchParams internalParams) {
-		return internalParams.heroProductSets.length == 0 ? 0 : Arrays.stream(internalParams.heroProductSets).mapToInt(ProductSet::getSize).sum();
 	}
 
 	/**
