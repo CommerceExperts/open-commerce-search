@@ -324,15 +324,23 @@ public class FacetConfiguration {
 		 * dependency.
 		 * </p>
 		 * <p>
-		 * Examples for a facet 'size':
+		 * If a facet should just generally depend on a filter, a wildcard can be used
+		 * to denote that, for example "category=*" as dependency would make a facet be
+		 * displayed as soon as any category filter is selected.<br>
+		 * (However the wildcard is not some kind of regular expression, so it can NOT
+		 * be used to express some partial matching! For example "category=F*" would be
+		 * considered as dependency on exactly that filter value.)
+		 * </p>
+		 * <p>
+		 * More examples:
 		 * <ul>
 		 * <li>Multiple filter dependencies:
 		 * <p>
 		 * <code>filterDependencies: [ "category=furniture", "category=apparel" ]</code>
 		 * </p>
 		 * <p>
-		 * With this setting, the size facet is only shown, if the category "furniture"
-		 * OR "apparel" is selected.
+		 * With this setting, a facet is only shown, if the category "furniture" OR
+		 * "apparel" is selected.
 		 * </p>
 		 * </li>
 		 * <li>Combined filter dependency:
@@ -340,8 +348,8 @@ public class FacetConfiguration {
 		 * <code>filterDependencies: [ "category=furniture&amp;brand=mybrand" ]</code>
 		 * </p>
 		 * <p>
-		 * With this setting, the size facet is only shown, if the category "furniture"
-		 * AND the brand "mybrand" are selected.
+		 * With this setting, a facet is only shown, if the category "furniture" AND the
+		 * brand "mybrand" are selected.
 		 * </p>
 		 * </li>
 		 * <li>Multivalue filter dependency:
@@ -349,8 +357,8 @@ public class FacetConfiguration {
 		 * <code>filterDependencies: [ "color=red,black" ]</code>
 		 * </p>
 		 * <p>
-		 * With this setting, the size facet is only shown, if the colors "red" AND
-		 * "black" are selected. More selected colors
+		 * With this setting, a facet is only shown, if the colors "red" AND "black" are
+		 * selected. More selected colors would not have an impact.
 		 * </p>
 		 * </li>
 		 * <li>Dependency on path filter:

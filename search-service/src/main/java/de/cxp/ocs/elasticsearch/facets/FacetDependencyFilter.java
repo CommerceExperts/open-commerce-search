@@ -12,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.util.SearchQueryBuilder;
 import lombok.AllArgsConstructor;
@@ -80,6 +81,12 @@ public class FacetDependencyFilter implements FacetFilter {
 					if (filterCondition.values.contains(activeFilter)) {
 						expectedValuesMatches--;
 					}
+					// if we match to a path, a prefix path also has to match
+					else if (internalResultFilter instanceof PathResultFilter
+							&& filterCondition.values.stream().anyMatch(val -> activeFilter.startsWith(val)
+									&& activeFilter.charAt(val.length()) == PathResultFilter.PATH_SEPARATOR)) {
+						expectedValuesMatches--;
+					}
 					if (expectedValuesMatches == 0) {
 						break;
 					}
@@ -95,9 +102,9 @@ public class FacetDependencyFilter implements FacetFilter {
 		}
 
 		public FiltersMatchCondition(Map<String, Set<String>> parsedFilters) {
-			allMustMatch = (Filter[]) parsedFilters.entrySet().stream()
+			allMustMatch = parsedFilters.entrySet().stream()
 					.map(entry -> new Filter(entry.getKey(), entry.getValue()))
-					.toArray();
+					.toArray(Filter[]::new);
 		}
 	}
 	
@@ -131,7 +138,9 @@ public class FacetDependencyFilter implements FacetFilter {
 			parsedFilters.keySet().forEach(filterName -> filterConditionCounts
 					.computeIfAbsent(filterName, f -> new AtomicInteger()).incrementAndGet());
 
-			anyMustMatch.add(new FiltersMatchCondition(parsedFilters));
+			if (!parsedFilters.isEmpty()) {
+				anyMustMatch.add(new FiltersMatchCondition(parsedFilters));
+			}
 		}
 
 		if (!anyMustMatch.isEmpty()) {
@@ -159,7 +168,7 @@ public class FacetDependencyFilter implements FacetFilter {
 			String[] filterValueSplit = StringUtils.split(filterPair[1], SearchQueryBuilder.VALUE_DELIMITER);
 			Set<String> filterValues = new HashSet<String>(filterValueSplit.length);
 			for (String filterValueRaw : filterValueSplit) {
-				filterValues.add(decode(filterValueRaw));
+				filterValues.add(decode(filterValueRaw).toLowerCase(Locale.ROOT));
 			}
 			uniqueFilters.put(decode(filterPair[0]), filterValues);
 		}
