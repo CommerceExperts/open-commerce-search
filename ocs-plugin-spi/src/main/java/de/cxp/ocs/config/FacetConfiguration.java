@@ -374,7 +374,6 @@ public class FacetConfiguration {
 		 * </p>
 		 * </li>
 		 * </ul>
-		 * </p>
 		 * <p>
 		 * It is only possible to defined filter parameters, not "limit", "offset", "q"
 		 * or any other reserved parameter. Those will make a facet disappear completely
