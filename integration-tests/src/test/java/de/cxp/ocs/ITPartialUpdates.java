@@ -1,14 +1,19 @@
 package de.cxp.ocs;
 
-import static de.cxp.ocs.OCSStack.*;
+import static de.cxp.ocs.OCSStack.getElasticsearchClient;
+import static de.cxp.ocs.OCSStack.getImportClient;
+import static de.cxp.ocs.OCSStack.getSearchClient;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assume.assumeTrue;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.elasticsearch.client.Request;
 import org.junit.jupiter.api.BeforeAll;
@@ -19,6 +24,8 @@ import org.rnorth.ducttape.unreliables.Unreliables;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
 import de.cxp.ocs.model.params.SearchQuery;
+import de.cxp.ocs.model.result.Facet;
+import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.model.result.SearchResultSlice;
 import lombok.extern.slf4j.Slf4j;
@@ -58,8 +65,11 @@ public class ITPartialUpdates {
 		assumeTrue(searchResultSlice.matchCount == 0 || searchResultSlice.matchCount > 1);
 
 		getImportClient()
-				.patchDocuments(indexName, Collections.singletonList(
-						new Document("001").set("brand", newBrandName)));
+				.patchDocuments(indexName, Arrays.asList(
+						new Document("001").set("brand", newBrandName),
+						// modify another document's title from another brand to get the brand facet
+						// with 2 items from which 1 must be the new one
+						new Document("003").set("title", "bike light compatible with " + newBrandName)));
 
 		flushIndex();
 		
@@ -67,18 +77,19 @@ public class ITPartialUpdates {
 		assertThat(getSearchClient().getDocument(indexName, "001").data.get("brand")).isEqualTo(newBrandName);
 
 		Unreliables.retryUntilTrue(10, TimeUnit.SECONDS, () -> searchCall.get().slices.get(0).matchCount > 0);
-		searchResultSlice = searchCall.get().slices.get(0);
+		SearchResultSlice searchResultSlice2 = searchCall.get().slices.get(0);
 
-		assertThat(searchResultSlice.matchCount).isEqualTo(1);
+		assertThat(searchResultSlice2.matchCount).isEqualTo(2);
 
 		// since brand is also a field used for facets, check that as well
-		assertTrue(
-				searchResultSlice.facets.stream()
-				.filter(facet -> facet.fieldName.equals("brand"))
-				.findFirst()
-				.map(brandFacet -> brandFacet.entries.stream()
-								.anyMatch(entry -> newBrandName.equals(entry.getKey())))
-						.orElse(false));
+		Optional<Facet> brandFacet = searchResultSlice2.facets.stream().filter(facet -> facet.fieldName.equals("brand"))
+				.findFirst();
+		assertTrue(brandFacet.isPresent(),
+				() -> "expecting brand facet present, but was not part of facets: "+
+						searchResultSlice2.facets.stream().map(Facet::getFieldName).collect(Collectors.joining(" ")));
+		assertTrue(brandFacet.get().entries.stream().anyMatch(entry -> newBrandName.equals(entry.getKey())),
+				() -> "expecting brand facet to contain '" + newBrandName + "' but was not part of entries:"
+						+ brandFacet.get().entries.stream().map(FacetEntry::getKey).collect(Collectors.joining(" ")));
 	}
 
 	@Test
