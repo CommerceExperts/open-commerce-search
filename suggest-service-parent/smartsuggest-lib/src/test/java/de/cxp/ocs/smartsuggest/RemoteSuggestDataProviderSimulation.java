@@ -34,8 +34,9 @@ public class RemoteSuggestDataProviderSimulation implements SuggestDataProvider 
 			throw new IllegalStateException("Service is not available at the moment");
 		}
 
-		loadedSuggestions.put(indexName, new SuggestData("", Locale.ROOT, Collections.emptySet(), suggestions, Instant.now().toEpochMilli()));
-		loadedSuggestionTimes.put(indexName, System.currentTimeMillis());
+		long timestamp = Instant.now().toEpochMilli();
+		loadedSuggestions.put(indexName, new SuggestData("", Locale.ROOT, Collections.emptySet(), suggestions, timestamp));
+		loadedSuggestionTimes.put(indexName, timestamp);
 	}
 
 	@Override
