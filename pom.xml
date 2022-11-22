@@ -220,11 +220,10 @@
 				<plugin>
 					<groupId>com.google.cloud.tools</groupId>
 					<artifactId>jib-maven-plugin</artifactId>
-					<version>3.1.4</version>
+					<version>3.3.1</version>
 					<configuration>
 						<from>
-							<!-- better for debugging -->
-							<image>openjdk:8-jdk-alpine</image>
+							<image>eclipse-temurin:11-alpine</image>
 						</from>
 						<to>
 							<image>${docker.repository}/${docker.prefix}${project.artifactId}:${project.version}</image>
@@ -235,6 +234,7 @@
 						<container>
 							<jvmFlags>
 								<jvmFlag>-server</jvmFlag>
+								<jvmFlag>-XX:+UseContainerSupport</jvmFlag>
 							</jvmFlags>
 							<entrypoint>
 							</entrypoint>

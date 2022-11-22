@@ -23,9 +23,8 @@ management:
       application: "${spring.application.name}"
 
 spring:
-  jackson:
-    deserialization:
-      fail_on_unknown_properties: false
+  cloud.config.enabled: false
+  jackson.deserialization.fail_on_unknown_properties: false
 
 ocs:
   connection-configuration:
