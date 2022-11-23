@@ -1,16 +1,13 @@
 package de.cxp.ocs.indexer;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 
-import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldConfigIndex;
-import de.cxp.ocs.config.FieldConfiguration;
-import de.cxp.ocs.config.FieldType;
-import de.cxp.ocs.config.FieldUsage;
+import de.cxp.ocs.config.*;
 import de.cxp.ocs.indexer.model.FacetEntry;
 import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.model.index.Attribute;
@@ -95,9 +92,11 @@ public class IndexItemConverterTest {
 		assertTrue(result.getTermFacetData().isEmpty());
 		assertTrue(result.getSortData().isEmpty());
 
-		assertThrows(Exception.class,
-				() -> underTest.toIndexableItem(new Document("2").set("rating", "invalid content")),
-				"document with invalid rating field should cause exception");
+		// not true anymore, since a date-string is also accepted as scoring value
+		// TODO: test date string for scoring
+//		assertThrows(Exception.class,
+//				() -> underTest.toIndexableItem(new Document("2").set("rating", "invalid content")),
+//				"document with invalid rating field should cause exception");
 	}
 
 	@SuppressWarnings("unchecked")

@@ -97,8 +97,10 @@ public class SearchController implements SearchService {
 	@Scheduled(fixedDelayString = "${ocs.scheduler.refresh-config-delay-ms:60000}")
 	public void refreshAllConfigs() {
 		Set<String> configuredTenants = plugins.getConfigurationProvider().getConfiguredTenants();
-		log.info("SearchController {} configured tenants {}", searchClientCache.size() == 0 ? "initializing" : "reloading", configuredTenants);
-		configuredTenants.forEach(this::flushConfig);
+		if (configuredTenants.size() > 0) {
+			log.info("SearchController {} configured tenants {}", searchClientCache.size() == 0 ? "initializing" : "reloading", configuredTenants);
+			configuredTenants.forEach(this::flushConfig);
+		}
 	}
 
 	@GetMapping("/flushConfig/{tenant}")

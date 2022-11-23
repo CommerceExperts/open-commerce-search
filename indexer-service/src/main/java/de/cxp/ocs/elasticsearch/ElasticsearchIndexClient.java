@@ -1,15 +1,10 @@
 package de.cxp.ocs.elasticsearch;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.DocWriteRequest.OpType;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
@@ -42,6 +37,7 @@ import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.rest.RestStatus;
 import org.elasticsearch.xcontent.XContentType;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -357,7 +353,14 @@ class ElasticsearchIndexClient {
 
 		List<DeleteResponse> responses = new ArrayList<>();
 		for (BulkItemResponse item : bulkResponse.getItems()) {
-			responses.add((DeleteResponse) item.getResponse());
+			if (item.isFailed()) {
+				if (RestStatus.NOT_FOUND.equals(item.getFailure().getStatus())) {
+					throw new ElasticsearchStatusException(item.getFailureMessage(), item.getFailure().getStatus(),
+							item.getFailure().getCause());
+				}
+			} else {
+				responses.add((DeleteResponse) item.getResponse());
+			}
 		}
 		return responses;
 	}

@@ -1,3 +1,5 @@
+spring.cloud.config.enabled: false
+
 ocs:
   default-index-config:
     field-configuration:

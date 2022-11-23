@@ -19,6 +19,7 @@ import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldType;
+import de.cxp.ocs.config.IndexedField;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.model.result.Facet;
@@ -42,11 +43,12 @@ public class FacetConfigurationApplyer {
 	static final String IS_MANDATORY_META_KEY = "isMandatory";
 
 	private final Map<String, FacetConfig> facetsBySourceField = new HashMap<>();
-
 	private final List<FacetCreator>						facetCreators			= new ArrayList<>();
 	private final Map<FacetCreatorClassifier, FacetCreator>	facetCreatorsByTypes	= new HashMap<>();
 
 	private int maxFacets;
+
+	private final List<FacetFilter> facetFilters = new ArrayList<>();
 
 	@Data
 	@RequiredArgsConstructor
@@ -76,9 +78,18 @@ public class FacetConfigurationApplyer {
 
 	public FacetConfigurationApplyer(SearchContext context) {
 		Function<String, FacetConfig> defaultFacetConfigProvider = getDefaultFacetConfigProvider(context);
-		String defaultFacetType = defaultFacetConfigProvider.apply("").getType();
 
 		maxFacets = context.config.getFacetConfiguration().getMaxFacets();
+
+		loadFacetConfig(defaultFacetConfigProvider, context);
+
+		facetFilters.add(new FacetCoverageFilter());
+		facetFilters.add(new FacetSizeFilter());
+		facetFilters.add(new FacetDependencyFilter(facetsBySourceField));
+	}
+
+	public void loadFacetConfig(Function<String, FacetConfig> defaultFacetConfigProvider, SearchContext context) {
+		String defaultFacetType = defaultFacetConfigProvider.apply("").getType();
 
 		// I tried to do this whole method in a more generic way, but such code
 		// is less readable even if shorter
@@ -115,6 +126,17 @@ public class FacetConfigurationApplyer {
 			else if ("ignore".equalsIgnoreCase(facetConfig.getType())) {
 				ignoredFields.add(facetField);
 				continue;
+			}
+
+			if (facetField instanceof IndexedField) {
+				int valueCardinality = ((IndexedField) facetField).getValueCardinality();
+				if (valueCardinality > 0 && valueCardinality < facetConfig.getMinValueCount()) {
+					log.warn(
+							"facet {} on field {} has minValueCount={}, but there are only {} values indexed at all. Setting minValueCount accordingly.",
+							facetConfig.getLabel(), facetConfig.getSourceField(), facetConfig.getMinValueCount(),
+							valueCardinality);
+					facetConfig.setMinValueCount(valueCardinality);
+				}
 			}
 
 			if (FieldType.CATEGORY.equals(facetField.getType())) {
@@ -273,7 +295,7 @@ public class FacetConfigurationApplyer {
 	 * This method uses the initialized FacetCreators to build the right
 	 * aggregations in respect of the active post filters.
 	 * </p>
-	 * 
+	 *
 	 * <strong>Background / Details:</strong>
 	 * <p>
 	 * For facets that should stay the same, even if one of its filters was
@@ -306,8 +328,8 @@ public class FacetConfigurationApplyer {
 	 * <p>
 	 * More details at http://stackoverflow.com/questions/41369749
 	 * </p>
-	 * 
-	 * 
+	 *
+	 *
 	 * @param filterContext
 	 *        context that holds the filter queries
 	 * @return
@@ -394,6 +416,8 @@ public class FacetConfigurationApplyer {
 			facets = facetsFromFilteredAggregations(aggregations, filterContext, linkBuilder);
 		}
 
+		filterFacets(facets, filterContext, matchCount);
+
 		// sort by order and facet coverage
 		facets.sort(new Comparator<Facet>() {
 
@@ -421,6 +445,28 @@ public class FacetConfigurationApplyer {
 		return facets.size() > actualMaxFacets ? facets.subList(0, actualMaxFacets) : facets;
 	}
 
+	private void filterFacets(List<Facet> facets, FilterContext filterContext, long matchCount) {
+		Iterator<Facet> facetIterator = facets.iterator();
+		while (facetIterator.hasNext()) {
+			Facet facet = facetIterator.next();
+			if (facet.isFiltered)
+				continue;
+
+			FacetConfig facetConfig = facetsBySourceField.get(facet.getFieldName());
+			if (facetConfig != null ) {
+				for (FacetFilter facetFilter : facetFilters) {
+					if (!facetFilter.isVisibleFacet(facet, facetConfig, filterContext, maxFacets)) {
+						log.debug("removing facet {} because of filter {}", facetConfig.getLabel(),
+								facetFilter.getClass().getSimpleName());
+						facetIterator.remove();
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	
 	private List<Facet> facetsFromFilteredAggregations(Aggregations aggregations, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
 		Map<String, Facet> facets = new HashMap<>();
 

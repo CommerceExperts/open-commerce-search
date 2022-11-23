@@ -82,6 +82,12 @@ public class FacetConfiguration {
 
 		private boolean preferVariantOnFilter = false;
 
+		private double minFacetCoverage = 0.1;
+
+		private int minValueCount = 2;
+
+		private String[] filterDependencies = new String[0];
+
 		/**
 		 * Label of that facet
 		 * 
@@ -256,6 +262,135 @@ public class FacetConfiguration {
 		 */
 		public FacetConfig setValueOrder(ValueOrder valueOrder) {
 			this.valueOrder = valueOrder;
+			return this;
+		}
+
+		/**
+		 * <p>
+		 * Set the minimum ratio of the result a facet has to cover in order to be
+		 * displayed.
+		 * </p>
+		 * <p>
+		 * For example with a value of 0.2 for a "color" facet, it will only be shown,
+		 * if at least 20% of the products in a result have a "color" attribute (even if
+		 * all have the same color).
+		 * </p>
+		 * <p>
+		 * Per default that value is set to 0.1.
+		 * </p>
+		 * 
+		 * @param minFacetCoverage value between 0 and 1, defining the ratio of a
+		 *                         facet's result coverate.
+		 * @return self
+		 */
+		public FacetConfig setMinFacetCoverage(double minFacetCoverage) {
+			this.minFacetCoverage = minFacetCoverage;
+			return this;
+		}
+
+		/**
+		 * <p>
+		 * Set the minimum amount of values a facet must have in order to be displayed.
+		 * </p>
+		 * <p>
+		 * For example with a value of 2 for a "color" facet, that facet will only be
+		 * shown, if the result contains matches with at least 2 different colors, e.g.
+		 * "black" and "red".
+		 * </p>
+		 * <p>
+		 * Per default the value is 2.
+		 * </p>
+		 * <p>
+		 * For facets with a total value count lower than this setting, this setting is
+		 * automatically reduced to exactly that determined total value count.
+		 * </p>
+		 * 
+		 * @param minValueCount value equals or greater than 0
+		 * @return self
+		 */
+		public FacetConfig setMinValueCount(int minValueCount) {
+			this.minValueCount = minValueCount;
+			return this;
+		}
+
+		/**
+		 * <p>
+		 * Set one or more URL-style filters of other facets that are required to make
+		 * this facet visible.
+		 * </p>
+		 * <p>
+		 * The facet with such dependencies will only be displayed if one of those
+		 * filters is present. A filter-definition can also contain more than one filter
+		 * dependency.
+		 * </p>
+		 * <p>
+		 * If a facet should just generally depend on a filter, a wildcard can be used
+		 * to denote that, for example "category=*" as dependency would make a facet be
+		 * displayed as soon as any category filter is selected.<br>
+		 * (However the wildcard is not some kind of regular expression, so it can NOT
+		 * be used to express some partial matching! For example "category=F*" would be
+		 * considered as dependency on exactly that filter value.)
+		 * </p>
+		 * <p>
+		 * More examples:
+		 * <ul>
+		 * <li>Multiple filter dependencies:
+		 * <p>
+		 * <code>filterDependencies: [ "category=furniture", "category=apparel" ]</code>
+		 * </p>
+		 * <p>
+		 * With this setting, a facet is only shown, if the category "furniture" OR
+		 * "apparel" is selected.
+		 * </p>
+		 * </li>
+		 * <li>Combined filter dependency:
+		 * <p>
+		 * <code>filterDependencies: [ "category=furniture&amp;brand=mybrand" ]</code>
+		 * </p>
+		 * <p>
+		 * With this setting, a facet is only shown, if the category "furniture" AND the
+		 * brand "mybrand" are selected.
+		 * </p>
+		 * </li>
+		 * <li>Multivalue filter dependency:
+		 * <p>
+		 * <code>filterDependencies: [ "color=red,black" ]</code>
+		 * </p>
+		 * <p>
+		 * With this setting, a facet is only shown, if the colors "red" AND "black" are
+		 * selected. More selected colors would not have an impact.
+		 * </p>
+		 * </li>
+		 * <li>Dependency on path filter:
+		 * <p>
+		 * <code>filterDependencies: [ "category=furniture/closets" ]</code>
+		 * <p>
+		 * With this setting, the size facet is only shown, if the full category path
+		 * "furniture/closets" is selected.
+		 * </p>
+		 * <p>
+		 * <strong>Please note</strong> that if those categories are filtered by their
+		 * ID, this dependency won't match. In such a case the IDs must be defined here.
+		 * </p>
+		 * </li>
+		 * </ul>
+		 * <p>
+		 * It is only possible to defined filter parameters, not "limit", "offset", "q"
+		 * or any other reserved parameter. Those will make a facet disappear completely
+		 * because such filter will never be set.
+		 * </p>
+		 * <p>
+		 * Also keep in mind, that the filters from this setting are parsed as URL query
+		 * parameters, so values like '%25' are decoded accordingly. It is not required
+		 * to encode everything, however it is necessary for reserved characters
+		 * [<code>/,=&amp;%</code>] that appear inside values.
+		 * </p>
+		 * 
+		 * @param filterDependencies list of filter dependencies
+		 * @return self
+		 */
+		public FacetConfig setFilterDependencies(String... filterDependencies) {
+			this.filterDependencies = filterDependencies;
 			return this;
 		}
 

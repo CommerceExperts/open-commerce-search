@@ -7,7 +7,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.36.1</version>
+	<version>0.37.0</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -22,7 +22,7 @@
 	</modules>
 
 	<properties>
-		<java.version>1.8</java.version>
+		<java.version>11</java.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<docker.repository>commerceexperts</docker.repository>
@@ -43,34 +43,34 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>open-commerce-search-api</artifactId>
-				<version>0.16.0</version>
+				<version>0.17.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-plugin-spi</artifactId>
-				<version>0.21.0</version>
+				<version>0.22.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-commons</artifactId>
-				<version>0.15.0</version>
+				<version>0.16.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>indexer-service</artifactId>
-				<version>0.21.0</version>
+				<version>0.22.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>search-service</artifactId>
-				<version>0.33.1</version>
+				<version>0.34.0</version>
 			</dependency>
 			<!-- only including the suggest-service directly, because it depends on 
 				the other suggest modules -->
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>suggest-service</artifactId>
-				<version>0.14.0</version>
+				<version>0.15.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
@@ -147,7 +147,7 @@
 				<groupId>org.projectlombok</groupId>
 				<artifactId>lombok</artifactId>
 				<scope>provided</scope>
-				<version>1.18.12</version>
+				<version>1.18.24</version>
 			</dependency>
 
 			<dependency>
@@ -220,11 +220,10 @@
 				<plugin>
 					<groupId>com.google.cloud.tools</groupId>
 					<artifactId>jib-maven-plugin</artifactId>
-					<version>3.1.4</version>
+					<version>3.3.1</version>
 					<configuration>
 						<from>
-							<!-- better for debugging -->
-							<image>openjdk:8-jdk-alpine</image>
+							<image>eclipse-temurin:11-alpine</image>
 						</from>
 						<to>
 							<image>${docker.repository}/${docker.prefix}${project.artifactId}:${project.version}</image>
@@ -235,6 +234,7 @@
 						<container>
 							<jvmFlags>
 								<jvmFlag>-server</jvmFlag>
+								<jvmFlag>-XX:+UseContainerSupport</jvmFlag>
 							</jvmFlags>
 							<entrypoint>
 							</entrypoint>
@@ -330,7 +330,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.20.1</version>
+				<version>2.22.1</version>
 				<configuration>
 					<workingDirectory>${project.build.directory}</workingDirectory>
 					<argLine>-Dfile.encoding=UTF-8</argLine>

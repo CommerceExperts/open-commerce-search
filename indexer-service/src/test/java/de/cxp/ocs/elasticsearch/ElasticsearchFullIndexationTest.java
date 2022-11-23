@@ -7,7 +7,6 @@ import static de.cxp.ocs.config.FieldUsage.FACET;
 import static de.cxp.ocs.config.FieldUsage.RESULT;
 import static de.cxp.ocs.config.FieldUsage.SEARCH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -21,6 +20,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.internal.matchers.Equals;
 
 import de.cxp.ocs.api.indexer.ImportSession;
@@ -64,15 +64,18 @@ public class ElasticsearchFullIndexationTest {
 		underTest.add(data);
 		verify(mockedIndexClient).indexRecords((String) argThat(new Equals(importSession.temporaryIndexName)), any());
 
+		when(mockedIndexClient.getDocCount(importSession.temporaryIndexName)).thenReturn(2L);
 		underTest.done(importSession);
 		verify(mockedIndexClient).updateAlias(importSession.finalIndexName, null, importSession.temporaryIndexName);
 	}
 
 
 	@Test
-	public void testImportSessionNeverFinished() {
-		when(mockedIndexClient.getAliases("ocs-*-test*")).thenReturn(Collections.singletonMap("ocs-1-test-de", Collections.emptySet()));
-		assertThrows(IllegalStateException.class, () -> underTest.startImport("test", "de"));
+	public void testImportSessionStartsWhileOtherNotFinished() {
+		when(mockedIndexClient.getAliases(ArgumentMatchers.startsWith("ocs-*-test")))
+				.thenReturn(Collections.singletonMap("ocs-1-test-de", Collections.emptySet()));
+		ImportSession importSession = underTest.startImport("test", "de");
+		assertEquals("ocs-2-test-de", importSession.temporaryIndexName);
 	}
 
 	private IndexConfiguration getIndexConf() {
