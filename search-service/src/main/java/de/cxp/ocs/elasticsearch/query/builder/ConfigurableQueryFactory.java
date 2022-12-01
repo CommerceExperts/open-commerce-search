@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.elasticsearch.common.unit.Fuzziness;
@@ -156,7 +157,7 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 				.append(" OR ")
 				.append('(')
 				.append('"')
-				.append(ESQueryUtils.buildQueryString(includeTerms, " "))
+				.append(getOriginalQuery(includeTerms))
 				.append('"')
 				.append(")^1.5");
 
@@ -172,6 +173,10 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 		}
 
 		return queryStringBuilder.toString();
+	}
+
+	private String getOriginalQuery(List<QueryStringTerm> includeTerms) {
+		return includeTerms.stream().map(QueryStringTerm::getWord).collect(Collectors.joining(" "));
 	}
 
 	private void attachQueryTermsAsShingles(List<QueryStringTerm> includeTerms, StringBuilder queryStringBuilder) {
