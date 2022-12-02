@@ -12,16 +12,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -515,6 +506,8 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		};
 	}
 
+	private int deserializationFailLogCount = 0;
+
 	/**
 	 * @see SuggestionIterator#payload()
 	 */
@@ -529,7 +522,10 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 					.setContext(result.contexts);
 		}
 		catch (Exception e) {
-			log.error("failed to deserialize LookupResult for key {}", result.key);
+			if (deserializationFailLogCount % 100 == 0) {
+				log.error("failed to deserialize LookupResult for key {} ({}th time)", result.key, deserializationFailLogCount, e);
+			}
+			deserializationFailLogCount++;
 			return null;
 		}
 	}
