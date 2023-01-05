@@ -1,15 +1,7 @@
 package de.cxp.ocs.config;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -84,6 +76,64 @@ public final class FieldConfigIndex implements FieldConfigAccess {
 			}
 		}
 
+		processDynamicFieldConfig(fieldConfiguration);
+
+		primaryCategoryField = determineDefaultCategoryField(categoryFields);
+	}
+
+	/**
+	 * Add field configuration from another index so that both indexes can be
+	 * searched simultaneously.
+	 * 
+	 * @param fieldConfig additional field config
+	 * @throws FieldConfigIncompatibilityException in case the field-config "schema"
+	 *                                             has conflicts with the existing
+	 *                                             field config
+	 */
+	public void addFieldConfig(FieldConfiguration fieldConfig) throws FieldConfigIncompatibilityException {
+		for (Field newField : fieldConfig.getFields().values()) {
+
+			String fieldName = newField.getName();
+			Field existingField = fields.get(fieldName);
+
+			if (existingField == null) {
+				if (newField.getUsage().contains(FieldUsage.SORT)) {
+					throw new FieldConfigIncompatibilityException(
+							"Field " + fieldName + " is used for sorting in only one index.");
+				}
+
+				fields.put(fieldName, newField);
+			} else {
+				if (!existingField.getType().equals(newField.getType())) {
+					if (existingField.getUsage().contains(FieldUsage.FACET)
+							&& newField.getUsage().contains(FieldUsage.FACET)) {
+						throw new FieldConfigIncompatibilityException(
+								"Fields with name " + fieldName + " have different types and are used for facetting.");
+					}
+					if (existingField.getUsage().contains(FieldUsage.SCORE)
+							&& newField.getUsage().contains(FieldUsage.SCORE)) {
+						throw new FieldConfigIncompatibilityException(
+								"Fields with name " + fieldName + " have different types and are used for scoring.");
+					}
+				}
+				if (existingField.getUsage().contains(FieldUsage.SORT) != newField.getUsage()
+						.contains(FieldUsage.SORT)) {
+					throw new FieldConfigIncompatibilityException(
+							"Fields with name " + fieldName + " are used for sorting in only one index.");
+				}
+			}
+
+			updateFieldIndexes(newField);
+
+			for (String sourceName : newField.getSourceNames()) {
+				fieldsBySource.computeIfAbsent(sourceName, n -> new ArrayList<Field>(1)).add(newField);
+			}
+		}
+
+		processDynamicFieldConfig(fieldConfig);
+	}
+
+	public void processDynamicFieldConfig(FieldConfiguration fieldConfiguration) {
 		// create index for dynamic fields.
 		for (Field dynamicField : fieldConfiguration.getDynamicFields()) {
 
@@ -125,8 +175,6 @@ public final class FieldConfigIndex implements FieldConfigAccess {
 								dynamicField));
 			}
 		}
-
-		primaryCategoryField = determineDefaultCategoryField(categoryFields);
 	}
 
 	private void updateFieldIndexes(Field f) {
@@ -154,6 +202,10 @@ public final class FieldConfigIndex implements FieldConfigAccess {
 		return fields;
 	}
 
+	// TODO: move logic to indexer
+	// => since it is only necessary at the indexer to determine into which field we
+	// want to put the document.categories, we should move that logic into the
+	// indexer.
 	private Optional<Field> determineDefaultCategoryField(Map<String, Field> categoryFields) {
 		// if there are several fields of type category, try to determine which
 		// one is the most suitable for Document::categories

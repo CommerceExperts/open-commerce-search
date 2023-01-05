@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
 import org.elasticsearch.action.get.GetRequest;
@@ -30,6 +31,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 import de.cxp.ocs.api.searcher.SearchService;
+import de.cxp.ocs.config.FieldConfigIncompatibilityException;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.config.SearchConfiguration;
@@ -280,16 +282,43 @@ public class SearchController implements SearchService {
 
 	private SearchContext loadContext(String tenant) {
 		SearchConfiguration searchConfig = plugins.getConfigurationProvider().getTenantSearchConfiguration(tenant);
-		FieldConfigIndex fieldConfigAccess = loadFieldConfiguration(searchConfig.getIndexName());
+
+
+		FieldConfigIndex fieldConfigIndex = loadFieldConfigIndex(searchConfig);
+
 		List<UserQueryPreprocessor> userQueryPreprocessors = SearchPlugins.initialize(
 				searchConfig.getQueryProcessing().getUserQueryPreprocessors(),
 				plugins.getUserQueryPreprocessors(),
 				searchConfig.getPluginConfiguration());
-		log.info("Using index {} for tenant {}", searchConfig.getIndexName(), tenant);
-		return new SearchContext(fieldConfigAccess, searchConfig, userQueryPreprocessors);
+		log.info("Using index(es) {} for tenant {}", searchConfig.getIndexName(), tenant);
+		return new SearchContext(fieldConfigIndex, searchConfig, userQueryPreprocessors);
 	}
 
-	private FieldConfigIndex loadFieldConfiguration(String indexName) {
+	public FieldConfigIndex loadFieldConfigIndex(SearchConfiguration searchConfig) {
+		String[] tenantIndexes = StringUtils.split(searchConfig.getIndexName(), ',');
+		FieldConfigIndex fieldConfigIndex = null;
+		Set<String> validIndexNames = new HashSet<>();
+		for (String indexName : tenantIndexes) {
+			FieldConfiguration fieldConfig = loadFieldConfiguration(searchConfig.getIndexName());
+			if (fieldConfigIndex == null) {
+				fieldConfigIndex = new FieldConfigIndex(fieldConfig);
+				continue;
+			}
+			try {
+				fieldConfigIndex.addFieldConfig(fieldConfig);
+				validIndexNames.add(indexName);
+			} catch (FieldConfigIncompatibilityException e) {
+				log.error("field-configuration of indexes {} are not compatible! Will omit usage of {}.",
+						searchConfig.getIndexName(), indexName, e);
+			}
+		}
+		if (tenantIndexes.length > validIndexNames.size()) {
+			searchConfig.setIndexName(StringUtils.join(validIndexNames, ','));
+		}
+		return fieldConfigIndex;
+	}
+
+	private FieldConfiguration loadFieldConfiguration(String indexName) {
 		FieldConfiguration fieldConfig;
 		try {
 			fieldConfig = new FieldConfigFetcher(esBuilder.getRestHLClient()).fetchConfig(indexName);
@@ -298,7 +327,7 @@ public class SearchController implements SearchService {
 			log.error("couldn't fetch field configuration from index {}", indexName);
 			throw new UncheckedIOException(e);
 		}
-		return new FieldConfigIndex(fieldConfig);
+		return fieldConfig;
 	}
 
 	@ExceptionHandler({ NotFoundException.class })
