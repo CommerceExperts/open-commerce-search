@@ -26,11 +26,6 @@ public class SearchQuery {
 	 */
 	public String q;
 
-	public SearchQuery setUserQuery(String userQuery) {
-		q = userQuery;
-		return this;
-	}
-
 	/**
 	 * <p>
 	 * Full sorting parameter value. This is the name of the sorting and

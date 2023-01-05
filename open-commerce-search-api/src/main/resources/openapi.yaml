@@ -338,11 +338,11 @@ paths:
         schema:
           $ref: '#/components/schemas/SearchQuery'
         style: form
-      - description: "Any other parameters are used as filters. They are validated\
+      - description: "Any other parameter is considered as filter. Each one is validated\
           \ according to the actual data and configuration. Each filter can have multiple\
           \ values, separated by comma. Commas inside the values have to be double-URL\
-          \ encoded. Depending on the configured backend type these values are used\
-          \ differently."
+          \ encoded. Depending on the configured filter type these values are used\
+          \ differently (see examples)."
         examples:
           hierarchical_filter:
             description: "if category would be configured as path, these values are\
@@ -494,8 +494,6 @@ components:
           type: string
         sort:
           type: string
-        userQuery:
-          $ref: '#/components/schemas/SearchQuery'
         withFacets:
           type: boolean
     Attribute:
@@ -857,8 +855,6 @@ components:
           type: string
         sort:
           type: string
-        userQuery:
-          $ref: '#/components/schemas/SearchQuery'
         withFacets:
           type: boolean
     SearchResult:

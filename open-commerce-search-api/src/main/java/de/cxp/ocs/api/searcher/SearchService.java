@@ -128,9 +128,9 @@ public interface SearchService {
 			@Parameter(
 					in = ParameterIn.QUERY,
 					name = "filters",
-					description = "Any other parameters are used as filters. They are validated according to the actual data and configuration. " +
+					description = "Any other parameter is considered as filter. Each one is validated according to the actual data and configuration. " +
 							"Each filter can have multiple values, separated by comma. Commas inside the values have to be double-URL encoded. " +
-							"Depending on the configured backend type these values are used differently.",
+							"Depending on the configured filter type these values are used differently (see examples).",
 					examples = {
 							@ExampleObject(
 									name = "simple_filter",
