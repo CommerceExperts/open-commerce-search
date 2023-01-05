@@ -4,11 +4,7 @@ import static de.cxp.ocs.util.SearchParamsParser.extractInternalParams;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -28,15 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -59,6 +47,8 @@ import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.NotFoundException;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -103,6 +93,10 @@ public class SearchController implements SearchService {
 		}
 	}
 
+	@Operation(summary = "Reload configuration for specified tenant.", responses = {
+			@ApiResponse(responseCode = "200", description = "successful reloaded configuration for tenant"),
+			@ApiResponse(responseCode = "201", description = "Config was loaded first time for tenant"),
+			@ApiResponse(responseCode = "304", description = "No config changes detected. Nothing to reload.") })
 	@GetMapping("/flushConfig/{tenant}")
 	public ResponseEntity<HttpStatus> flushConfig(@PathVariable("tenant") String tenant) {
 		HttpStatus status;
