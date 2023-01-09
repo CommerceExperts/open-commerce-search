@@ -26,12 +26,10 @@ import de.cxp.ocs.model.params.ProductSet;
 import de.cxp.ocs.model.params.StaticProductSet;
 import de.cxp.ocs.plugin.PluginManager;
 import de.cxp.ocs.spi.search.SearchConfigurationProvider;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @SpringBootApplication
 @RefreshScope
 @Configuration
-@EnableSwagger2
 public class Application {
 
 	public static void main(String[] args) {

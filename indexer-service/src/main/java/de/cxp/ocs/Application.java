@@ -62,14 +62,6 @@ public class Application {
 		return indexerConfigurationProvider.orElse(defaultConfigProvider);
 	}
 
-	// @Bean
-	// public MeterRegistryCustomizer<MeterRegistry> metricsCommonTags(
-	// @Value("${spring.application.name}") String applicationName) {
-	// return registry -> {
-	// registry.config().commonTags("application", applicationName);
-	// };
-	// }
-
 	/**
 	 * Customization for ObjectMapper that's used for rest requests.
 	 * 

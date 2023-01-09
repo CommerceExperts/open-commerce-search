@@ -1,13 +1,11 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
 							 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.37.2</version>
+	<version>0.37.3</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -34,12 +32,14 @@
 		<spring.version>5.3.18</spring.version>
 		<spring-boot.version>2.5.12</spring-boot.version>
 		<spring-cloud.version>2020.0.5</spring-cloud.version>
+		<springdoc.version>1.5.9</springdoc.version>
 		<jackson.version>2.14.1</jackson.version>
 		<junit.jupiter.version>5.7.0</junit.jupiter.version>
 	</properties>
 
 	<dependencyManagement>
 		<dependencies>
+			<!-- modules -->
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>open-commerce-search-api</artifactId>
@@ -78,6 +78,7 @@
 				<version>0.13.0</version>
 			</dependency>
 
+			<!-- serialization -->
 			<dependency>
 				<groupId>com.fasterxml.jackson.core</groupId>
 				<artifactId>jackson-core</artifactId>
@@ -99,6 +100,7 @@
 				<version>${jackson.version}</version>
 			</dependency>
 
+			<!-- elasticsearch dependencies -->
 			<dependency>
 				<groupId>org.elasticsearch</groupId>
 				<artifactId>elasticsearch</artifactId>
@@ -121,6 +123,7 @@
 				<version>2.10.0</version>
 			</dependency>
 
+			<!-- data structure libraries -->
 			<dependency>
 				<groupId>com.google.guava</groupId>
 				<artifactId>guava</artifactId>
@@ -132,6 +135,25 @@
 				<version>3.9</version>
 			</dependency>
 
+			<!-- swagger -->
+			<dependency>
+				<groupId>org.springdoc</groupId>
+				<artifactId>springdoc-openapi-ui</artifactId>
+				<version>${springdoc.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springdoc</groupId>
+				<artifactId>springdoc-openapi-webmvc-core</artifactId>
+				<version>${springdoc.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.springframework</groupId>
+						<artifactId>spring-webmvc</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+
+			<!-- logging -->
 			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-api</artifactId>
@@ -143,6 +165,7 @@
 				<version>1.2.3</version>
 			</dependency>
 
+			<!-- dev tooling -->
 			<dependency>
 				<groupId>org.projectlombok</groupId>
 				<artifactId>lombok</artifactId>
@@ -150,6 +173,7 @@
 				<version>1.18.24</version>
 			</dependency>
 
+			<!-- testing -->
 			<dependency>
 				<groupId>org.junit.jupiter</groupId>
 				<artifactId>junit-jupiter</artifactId>
@@ -236,8 +260,7 @@
 								<jvmFlag>-server</jvmFlag>
 								<jvmFlag>-XX:+UseContainerSupport</jvmFlag>
 							</jvmFlags>
-							<entrypoint>
-							</entrypoint>
+							<entrypoint></entrypoint>
 						</container>
 					</configuration>
 					<executions>
