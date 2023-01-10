@@ -69,7 +69,9 @@ public class ESQueryFactoryBuilder {
 			ConditionalQuery queryBuilder = new ConditionalQuery();
 			queryBuilder.predicate = createPredicate(queryConf.getCondition());
 			queryBuilder.queryBuilder = createQueryFactory(queryConf);
-			predicatesAndBuilders.add(queryBuilder);
+			if (queryBuilder.queryBuilder != null) {
+				predicatesAndBuilders.add(queryBuilder);
+			}
 		}
 		return new ConditionalQueries(predicatesAndBuilders);
 	}
