@@ -1,20 +1,13 @@
 package de.cxp.ocs.conf;
 
 import static de.cxp.ocs.util.Util.collectObjects;
-import static de.cxp.ocs.util.Util.ensureNumberIsFloat;
 import static de.cxp.ocs.util.Util.ensureSameType;
 import static de.cxp.ocs.util.Util.isEmpty;
 import static de.cxp.ocs.util.Util.toNumberCollection;
 import static de.cxp.ocs.util.Util.toStringCollection;
 import static de.cxp.ocs.util.Util.tryToParseAsNumber;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -23,11 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.FieldUsage;
-import de.cxp.ocs.indexer.model.DataItem;
-import de.cxp.ocs.indexer.model.FacetEntry;
-import de.cxp.ocs.indexer.model.IndexableItem;
-import de.cxp.ocs.indexer.model.MasterItem;
-import de.cxp.ocs.indexer.model.VariantItem;
+import de.cxp.ocs.indexer.model.*;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.util.MinMaxSet;
@@ -150,19 +139,31 @@ public class FieldUsageApplier {
 
 		value = ensureCorrectValueType(field, value);
 
-		Object previousValue = record.getSortData().putIfAbsent(fieldName, MinMaxSet.of(ensureNumberIsFloat(value)));
-		if (previousValue != null) {
-			Number existingValue = ((MinMaxSet<Number>) previousValue).iterator().next();
-			record.getSortData().compute(fieldName, joinDataValueFunction(ensureSameType(existingValue, value)));
+		Object previousValue = record.getSortData().putIfAbsent(fieldName, MinMaxSet.of(value));
+		if (previousValue != null && previousValue instanceof MinMaxSet<?>) {
+			addValuesToMinMaxSet((MinMaxSet<Object>) previousValue, value);
 		}
 
 		if (record instanceof VariantItem) {
-			previousValue = ((VariantItem) record).getMaster().getSortData()
-					.putIfAbsent(fieldName, MinMaxSet.of(ensureNumberIsFloat(value)));
+			previousValue = ((VariantItem) record).getMaster().getSortData().putIfAbsent(fieldName, MinMaxSet.of(value));
 			if (previousValue != null) {
-				Number existingValue = ((MinMaxSet<Number>) previousValue).iterator().next();
-				((VariantItem) record).getMaster().getSortData().compute(fieldName, joinDataValueFunction(ensureSameType(existingValue, value)));
+				addValuesToMinMaxSet((MinMaxSet<Object>) previousValue, value);
 			}
+		}
+	}
+
+	private static void addValuesToMinMaxSet(MinMaxSet<Object> previousValue, Object value) {
+		Object referenceValue = ((MinMaxSet<Object>) previousValue).min();
+		if (value.getClass().isArray()) {
+			for (Object val : (Object[]) value) {
+				value = ensureSameType(referenceValue, val);
+				((MinMaxSet<Object>) previousValue).add(value);
+			}
+		} else if (value instanceof Collection<?>) {
+			((MinMaxSet<Object>) previousValue).addAll((Collection<Object>) value);
+		} else {
+			value = ensureSameType(referenceValue, value);
+			((MinMaxSet<Object>) previousValue).add(value);
 		}
 	}
 
