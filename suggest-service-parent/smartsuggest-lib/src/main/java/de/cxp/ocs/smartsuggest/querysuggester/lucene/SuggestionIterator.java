@@ -2,12 +2,7 @@ package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.lucene.search.suggest.InputIterator;
@@ -78,16 +73,14 @@ abstract class SuggestionIterator implements InputIterator {
 			payload = Collections.singletonMap(CommonPayloadFields.PAYLOAD_LABEL_KEY, currentSuggestion.getPrimaryText());
 		}
 		else if (!payload.containsKey(CommonPayloadFields.PAYLOAD_LABEL_KEY)) {
-			if (!(payload instanceof HashMap<?, ?>)) {
-				payload = new HashMap<>(payload);
-			}
+			// don't modify the original payload, create a copy instead
+			payload = new HashMap<>(payload);
 			payload.put(CommonPayloadFields.PAYLOAD_LABEL_KEY, currentSuggestion.getPrimaryText());
 		}
-		if (!(payload instanceof Serializable)) {
+		else if (!(payload instanceof Serializable)) {
 			payload = new HashMap<>(payload);
 		}
-		byte[] serialize = SerializationUtils.serialize((Serializable) payload);
-		return new BytesRef(serialize);
+		return new BytesRef(SerializationUtils.serialize((Serializable) payload));
 	}
 
 	// This method returns the contexts for the record, which we can
