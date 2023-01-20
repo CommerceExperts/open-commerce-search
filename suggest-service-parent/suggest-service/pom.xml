@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>suggest-service-parent</artifactId>
-		<version>0.37.6</version>
+		<version>0.37.7</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>suggest-service</artifactId>
-	<version>0.15.2</version>
+	<version>0.15.3</version>
 	<packaging>jar</packaging>
 	<name>smartSuggest RESTful Service</name>
 
@@ -96,11 +96,14 @@
 	<profiles>
 		<profile>
 			<id>searchhub</id>
+			<properties>
+				<docker.tag>searchhub-latest</docker.tag>
+			</properties>
 			<dependencies>
 				<dependency>
 					<groupId>io.searchhub</groupId>
 					<artifactId>searchhub-suggest-data-provider</artifactId>
-					<version>0.9.0</version>
+					<version>0.14.0</version>
 				</dependency>
 			</dependencies>
 			<repositories>
