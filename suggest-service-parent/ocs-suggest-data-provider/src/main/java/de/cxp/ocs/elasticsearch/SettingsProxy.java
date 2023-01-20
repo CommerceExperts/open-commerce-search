@@ -3,11 +3,7 @@ package de.cxp.ocs.elasticsearch;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 
 import org.elasticsearch.client.RestHighLevelClient;
 
@@ -20,16 +16,16 @@ import lombok.extern.slf4j.Slf4j;
 public class SettingsProxy {
 
 
-	private final Properties properties;
+	private final Properties defaultProperties;
 
 	private ConnectionConfiguration connectionConf;
 
 	public SettingsProxy() {
-		properties = loadPropertiesResource("ocs-suggest.default.properties")
+		defaultProperties = loadPropertiesResource("ocs-suggest.default.properties")
 				.map(defaultProps -> new Properties(defaultProps))
 				.orElseGet(() -> new Properties());
 
-		loadPropertiesResource("ocs-suggest.properties").ifPresent(p -> properties.putAll(p));
+		loadPropertiesResource("ocs-suggest.properties").ifPresent(p -> defaultProperties.putAll(p));
 	}
 
 	private Optional<Properties> loadPropertiesResource(String resourceName) {
@@ -47,12 +43,26 @@ public class SettingsProxy {
 		}
 	}
 
+	/**
+	 * Get property from the different "layers" in the following order:
+	 * - system-properties
+	 * - environment variable (using property-name in uppercase and dots replaced by _)
+	 * - properties file
+	 * - default properties
+	 * 
+	 * @param propertyName
+	 * @return
+	 */
 	public String get(String propertyName) {
-		String property = System.getProperty(propertyName);
-		if (property == null) {
-			property = properties.getProperty(propertyName);
+		String value = System.getProperty(propertyName);
+		if (value == null) {
+			String envVarName = propertyName.toUpperCase().replace('.', '_');
+			value = System.getenv(envVarName);
 		}
-		return property;
+		if (value == null) {
+			value = defaultProperties.getProperty(propertyName);
+		}
+		return value;
 	}
 
 	public String get(String propertyName, String defaultValue) {
