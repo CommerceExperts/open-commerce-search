@@ -31,6 +31,16 @@ services:
     networks:
       - ocs
 
+  suggest:
+    container_name: ocs_suggest
+    image: commerceexperts/ocs-suggest-service:searchhub-latest
+    ports:
+      - 8081:8081
+    depends_on:
+      - elasticsearch
+    networks:
+      - ocs
+
   elasticsearch:
     container_name: ocs_elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch:7.9.2
