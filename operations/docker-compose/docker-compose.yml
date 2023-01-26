@@ -52,6 +52,18 @@ services:
       - "http.cors.allow-origin=/https?:\/\/localhost(:[0-9]+)?/"
     networks:
       - ocs
+
+  kibana:
+    container_name: ocs_kibana
+    image: docker.elastic.co/kibana/kibana:7.17.0
+    ports:
+      - 5601:5601
+    environment:
+      - "ELASTICSEARCH_HOST=http://elasticsearch:9200/"
+    links:
+      - elasticsearch
+    networks:
+      - ocs
   
 networks:
   ocs:
