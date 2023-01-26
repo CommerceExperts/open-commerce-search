@@ -43,13 +43,18 @@ services:
 
   elasticsearch:
     container_name: ocs_elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
     ports:
       - 9200:9200
     environment:
       - "discovery.type=single-node"
       - "http.cors.enabled=true"
       - "http.cors.allow-origin=/https?:\/\/localhost(:[0-9]+)?/"
+      - "ES_JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,address=*:8000,suspend=n -Xms1024m -Xmx1024m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     networks:
       - ocs
 
