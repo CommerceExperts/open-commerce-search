@@ -455,7 +455,7 @@ public class FacetConfigurationApplyer {
 			FacetConfig facetConfig = facetsBySourceField.get(facet.getFieldName());
 			if (facetConfig != null ) {
 				for (FacetFilter facetFilter : facetFilters) {
-					if (!facetFilter.isVisibleFacet(facet, facetConfig, filterContext, maxFacets)) {
+					if (!facetFilter.isVisibleFacet(facet, facetConfig, filterContext, (int) matchCount)) {
 						log.debug("removing facet {} because of filter {}", facetConfig.getLabel(),
 								facetFilter.getClass().getSimpleName());
 						facetIterator.remove();
