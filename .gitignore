@@ -43,7 +43,7 @@ application-*properties
 application-*yml
 application-*yaml
 rules
-indexer-service/src/main/resources/elasticsearch/_template/custom*
+indexer-service/src/main/resources/elasticsearch/_index_templates/custom*
 
 #kubernetes ops custom files
 operations/k8s/custom/

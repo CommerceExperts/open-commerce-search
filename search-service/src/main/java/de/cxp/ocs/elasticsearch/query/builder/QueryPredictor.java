@@ -79,10 +79,7 @@ class QueryPredictor {
 				predictionWords,
 				corrector);
 
-		final Map<String, WordAssociation> correctedWords = corrector.extractRelatedWords(actualSearchTerms,
-				searchResponse
-						.getSuggest());
-
+		final Map<String, WordAssociation> correctedWords = corrector.extractRelatedWords(actualSearchTerms, searchResponse.getSuggest());
 		final Map<String, PredictedQuery> predictedQueries = new HashMap<>();
 		final Set<String> redundantQueries = new HashSet<>();
 		boolean hasFoundQueryWithAllTermsMatching = false;
@@ -113,9 +110,9 @@ class QueryPredictor {
 				String matchedTerm = predictedQuery.getTermsUnique().keySet().iterator().next();
 				correctedWords.computeIfPresent(matchedTerm, (k, v) -> {
 					if (v instanceof WordAssociation) {
-						Iterator<WeightedWord> relatedWordIterator = v.getRelatedWords().values().iterator();
+						Iterator<QueryStringTerm> relatedWordIterator = v.getRelatedWords().values().iterator();
 						while (relatedWordIterator.hasNext()) {
-							WeightedWord relWord = relatedWordIterator.next();
+							WeightedWord relWord = (WeightedWord) relatedWordIterator.next();
 							if (relWord.getTermFrequency() < predictedQuery.matchCount) {
 								relatedWordIterator.remove();
 							}
@@ -171,7 +168,7 @@ class QueryPredictor {
 				predictedQuery.termsUnique.put(correctedWord.getOriginalWord(), correctedWord);
 				// sum the term frequencies of all corrected words
 				predictedQuery.matchCount = correctedWord.getRelatedWords().values().stream()
-						.mapToLong(ww -> ww.getTermFrequency()).sum();
+						.mapToLong(ww -> ((WeightedWord) ww).getTermFrequency()).sum();
 
 				applyTermMatches(searchWordsCleaned, shingleSources, predictedQuery, correctedWords);
 				predictedQueries.put(getQueryKey(predictedQuery), predictedQuery);

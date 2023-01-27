@@ -6,11 +6,7 @@ import java.util.Map;
 
 import org.apache.lucene.search.BooleanClause.Occur;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 /**
  * A term that is associated with other terms (e.g. synonyms). They all will be
@@ -23,25 +19,29 @@ import lombok.RequiredArgsConstructor;
 public class WordAssociation implements QueryStringTerm {
 
 	@NonNull
-	private String originalWord;
+	private String	originalWord;
 	private Occur	occur	= Occur.MUST;
 
-	private Map<String, WeightedWord> relatedWords = new HashMap<>();
+	private Map<String, QueryStringTerm> relatedWords = new HashMap<>();
 
 	public WordAssociation(String word, Collection<WeightedWord> values) {
 		originalWord = word;
 		values.forEach(v -> relatedWords.put(v.getWord(), v));
 	}
 
-	public void putOrUpdate(WeightedWord newWord) {
+	public void putOrUpdate(QueryStringTerm newWord) {
 		relatedWords.compute(newWord.getWord(),
-				(k, correctedWord) -> {
-					if (correctedWord == null)
+				(k, existingWord) -> {
+					if (existingWord == null)
 						return newWord;
-					else if (correctedWord.getWeight() < newWord.getWeight())
-						return newWord;
+					else if (newWord instanceof WeightedWord) {
+						if (existingWord instanceof WeightedWord)
+							return ((WeightedWord) existingWord).getWeight() < ((WeightedWord) newWord).getWeight() ? newWord : existingWord;
+						else
+							return (((WeightedWord) newWord).getWeight() > 1f) ? newWord : existingWord;
+					}
 					else
-						return correctedWord;
+						return existingWord;
 				});
 	}
 
@@ -60,13 +60,16 @@ public class WordAssociation implements QueryStringTerm {
 		StringBuilder queryString = new StringBuilder(occur.toString())
 				.append("(")
 				.append(EscapeUtil.escapeReservedESCharacters(originalWord));
-		for (WeightedWord relatedWord : relatedWords.values()) {
-			queryString.append(" OR ").append(relatedWord.getWord());
-			if (relatedWord.isFuzzy()) {
-				queryString.append('~');
+		for (QueryStringTerm relatedWord : relatedWords.values()) {
+			queryString.append(" OR ");
+
+			String relatedQuery = relatedWord.toQueryString();
+			// only put brakets around it if is a multi-term query
+			if (relatedQuery.indexOf(' ') > 0) {
+				queryString.append('(').append(relatedQuery).append(')');
 			}
-			if (relatedWord.getWeight() != 1f) {
-				queryString.append('^').append(relatedWord.getWeight());
+			else {
+				queryString.append(relatedQuery);
 			}
 		}
 		return queryString.append(")").toString();
