@@ -44,6 +44,10 @@ services:
   elasticsearch:
     container_name: ocs_elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    volumes:
+      - ./elasticsearch:/mnt
+    entrypoint: 
+      - /mnt/docker-entrypoint-es.sh
     ports:
       - 9200:9200
     environment:
