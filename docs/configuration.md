@@ -98,7 +98,7 @@ With the `data-processor-configuration` you can list the data-processors that sh
 These can be standard processors shipped with OCSS or custom data-processors.
 
 For data-processors that expect some configuration, it can be specified as key-value map below a key with the processor's classname.
-Check the [java-doc of the data-processors](javadoc.html#de/cxp/ocs/preprocessor/impl/package-summary.html) about the configuration details.
+Check the [java-doc of the data-processors](javadoc.html#apidocs/de/cxp/ocs/preprocessor/impl/package-summary.html) about the configuration details.
 
 ```yaml
     data-processor-configuration:
