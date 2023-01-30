@@ -1,12 +1,9 @@
 package de.cxp.ocs.elasticsearch.query.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.lucene.search.BooleanClause.Occur;
+
+import lombok.*;
 
 @Data
 @AllArgsConstructor

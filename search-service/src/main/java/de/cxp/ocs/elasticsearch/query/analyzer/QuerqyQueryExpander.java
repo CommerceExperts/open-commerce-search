@@ -244,8 +244,9 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			String value = rawQuerySplit[1];
 
 			org.apache.lucene.search.BooleanClause.Occur occur;
-			if(Occur.MUST_NOT.equals(this.occur)) {
+			if (fieldName.startsWith(Occur.MUST_NOT.toString())) {
 				occur = org.apache.lucene.search.BooleanClause.Occur.MUST_NOT;
+				fieldName = fieldName.substring(1);
 			} else {
 				occur = org.apache.lucene.search.BooleanClause.Occur.MUST;
 			}

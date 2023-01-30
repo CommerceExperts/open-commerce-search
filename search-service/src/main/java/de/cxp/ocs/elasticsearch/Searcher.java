@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -59,6 +60,7 @@ import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.InternalSearchParams;
+import de.cxp.ocs.util.SearchParamsParser;
 import de.cxp.ocs.util.SearchQueryBuilder;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.DistributionSummary;
@@ -387,11 +389,20 @@ public class Searcher {
 			// Generate the filters and add them
 			.map(term -> (QueryFilterTerm) term)
 			// TODO: support exclude filters
-			.collect(Collectors.toMap(QueryFilterTerm::getField, QueryFilterTerm::getWord, (word1, word2) -> word1));
+				.collect(Collectors.toMap(QueryFilterTerm::getField, qf -> toParameterStyle(qf), (word1, word2) -> word1 + SearchQueryBuilder.VALUE_DELIMITER + word2));
 
 		parameters.querqyFilters = convertFiltersMapToInternalResultFilters(filtersAsMap);
 
 		return remainingSearchWords;
+	}
+
+	private String toParameterStyle(QueryFilterTerm queryFilter) {
+		if (Occur.MUST_NOT.equals(queryFilter.getOccur())) {
+			return SearchParamsParser.NEGATE_FILTER_PREFIX + queryFilter.getWord();
+		}
+		else {
+			return queryFilter.getWord();
+		}
 	}
 
 	private List<InternalResultFilter> convertFiltersMapToInternalResultFilters(Map<String, String> additionalFilters) {
