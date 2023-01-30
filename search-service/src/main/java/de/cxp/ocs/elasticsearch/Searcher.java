@@ -203,7 +203,7 @@ public class Searcher {
 
 		setFetchSources(searchSourceBuilder, variantSortings, parameters.withResultData);
 
-		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters, parameters.querqyFilters);
+		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters, parameters.querqyFilters, parameters.withFacets);
 
 		QueryBuilder postFilter = filterContext.getJoinedPostFilters();
 		if (postFilter != null) {

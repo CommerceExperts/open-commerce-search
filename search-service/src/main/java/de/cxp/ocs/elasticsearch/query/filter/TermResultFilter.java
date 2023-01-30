@@ -18,7 +18,9 @@ public class TermResultFilter implements InternalResultFilter {
 
 	private final String[] values;
 
-	private boolean filterOnId = false;
+	private boolean isFilterOnId = false;
+
+	private boolean isNegated = false;
 
 	private String fieldPrefix = FieldConstants.TERM_FACET_DATA;
 

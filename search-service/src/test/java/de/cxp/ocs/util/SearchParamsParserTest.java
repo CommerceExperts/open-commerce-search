@@ -3,6 +3,7 @@ package de.cxp.ocs.util;
 import static de.cxp.ocs.util.SearchParamsParser.parseFilters;
 import static de.cxp.ocs.util.SearchParamsParser.parseSortings;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
@@ -49,13 +50,37 @@ public class SearchParamsParserTest {
 	}
 
 	@Test
-	public void parseTextFilter() {
+	public void parseNegatedFallbackNumericRangeFilter() {
+		List<InternalResultFilter> parsedFilters = parseFilters(Collections.singletonMap("price", "!12 - 34"), fieldConfIndex, Locale.ROOT);
+		assertEquals(1, parsedFilters.size());
+		assertTrue(parsedFilters.get(0) instanceof NumberResultFilter);
+		NumberResultFilter priceFilter = (NumberResultFilter) parsedFilters.get(0);
+		assertEquals(2, priceFilter.getValues().length);
+		assertEquals(12, priceFilter.getLowerBound());
+		assertEquals(34, priceFilter.getUpperBound());
+		assertTrue(priceFilter.isNegated());
+	}
+
+	@Test
+	public void parseTermFilter() {
 		List<InternalResultFilter> parsedFilters = parseFilters(Collections.singletonMap("brand", "foo,bar,pum"), fieldConfIndex, Locale.ROOT);
 		assertEquals(1, parsedFilters.size());
 
 		assertTrue(parsedFilters.get(0) instanceof TermResultFilter);
 		TermResultFilter brand = (TermResultFilter) parsedFilters.get(0);
 		assertEquals(3, brand.getValues().length);
+		assertFalse(brand.isNegated());
+	}
+
+	@Test
+	public void parseNegatedTermFilter() {
+		List<InternalResultFilter> parsedFilters = parseFilters(Collections.singletonMap("brand", "!foo,bar,pum"), fieldConfIndex, Locale.ROOT);
+		assertEquals(1, parsedFilters.size());
+
+		assertTrue(parsedFilters.get(0) instanceof TermResultFilter);
+		TermResultFilter brand = (TermResultFilter) parsedFilters.get(0);
+		assertEquals(3, brand.getValues().length);
+		assertTrue(brand.isNegated());
 	}
 
 	@Test

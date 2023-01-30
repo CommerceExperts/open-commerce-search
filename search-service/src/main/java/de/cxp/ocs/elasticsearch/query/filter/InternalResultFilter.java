@@ -8,6 +8,8 @@ public interface InternalResultFilter {
 
 	boolean isFilterOnId();
 
+	boolean isNegated();
+
 	String getFieldPrefix();
 
 	boolean isNestedFilter();

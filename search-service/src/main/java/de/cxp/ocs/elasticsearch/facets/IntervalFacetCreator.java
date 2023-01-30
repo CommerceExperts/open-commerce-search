@@ -73,7 +73,7 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 	protected Optional<Facet> createFacet(Terms.Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter,
 			SearchQueryBuilder linkBuilder) {
 		Facet facet = FacetFactory.create(facetConfig, FacetType.INTERVAL);
-		if (facetFilter != null && facetFilter instanceof NumberResultFilter) {
+		if (facetFilter != null && !facetFilter.isNegated() && facetFilter instanceof NumberResultFilter) {
 			if (!facetConfig.isMultiSelect() && !facetConfig.isShowUnselectedOptions()) {
 				// filtered single select facet
 				long docCount = getDocCount(facetNameBucket);

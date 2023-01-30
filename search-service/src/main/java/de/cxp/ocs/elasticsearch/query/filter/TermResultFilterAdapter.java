@@ -1,5 +1,6 @@
 package de.cxp.ocs.elasticsearch.query.filter;
 
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 
@@ -10,9 +11,10 @@ public class TermResultFilterAdapter implements InternalResultFilterAdapter<Term
 
 	@Override
 	public QueryBuilder getAsQuery(String fieldPrefix, TermResultFilter filter) {
-		return QueryBuilders.boolQuery()
+		BoolQueryBuilder termFilterQuery = QueryBuilders.boolQuery()
 				.must(QueryBuilders.termQuery(fieldPrefix + "name", filter.getField().getName()))
 				.must(QueryBuilders.termsQuery(fieldPrefix + (filter.isFilterOnId() ? "id" : "value.normalized"), filter.getValues()));
+		return termFilterQuery;
 	}
 
 

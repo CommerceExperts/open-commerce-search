@@ -75,7 +75,7 @@ public class RangeFacetCreator extends NestedFacetCreator {
 		}
 		else {
 			RangeFacetEntry rangeFacetEntry = new RangeFacetEntry(stats.getMin(), stats.getMax(), stats.getCount(), linkBuilder.toString(), facetFilter != null);
-			if (facetFilter != null && facetFilter instanceof NumberResultFilter) {
+			if (facetFilter != null && !facetFilter.isNegated() && facetFilter instanceof NumberResultFilter) {
 				rangeFacetEntry.setSelectedMin(((NumberResultFilter) facetFilter).getLowerBound());
 				rangeFacetEntry.setSelectedMax(((NumberResultFilter) facetFilter).getUpperBound());
 			}

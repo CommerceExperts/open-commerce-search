@@ -3,7 +3,11 @@ package de.cxp.ocs.elasticsearch.query.filter;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
+@Accessors(chain = true)
 @Data
 public class NumberResultFilter implements InternalResultFilter {
 
@@ -12,6 +16,10 @@ public class NumberResultFilter implements InternalResultFilter {
 	private final Number lowerBound;
 
 	private final Number upperBound;
+
+	@Getter
+	@Setter
+	private boolean isNegated = false;
 
 	public NumberResultFilter(Field field, Number lowerBound, Number upperBound) {
 		if (lowerBound == null && upperBound == null) {

@@ -38,7 +38,7 @@ public class FiltersBuilder {
 		indexedFieldConfig = context.getFieldConfigIndex();
 	}
 
-	public FilterContext buildFilterContext(List<InternalResultFilter> filters, List<InternalResultFilter> querqyFilters) {
+	public FilterContext buildFilterContext(List<InternalResultFilter> filters, List<InternalResultFilter> querqyFilters, boolean withFacets) {
 		Map<String, InternalResultFilter> filtersByName = filters.stream().collect(Collectors.toMap(f -> f.getField().getName(), Functions.identity()));
 
 		if (filters.isEmpty() && querqyFilters.isEmpty()) return new FilterContext(filtersByName);
@@ -47,7 +47,7 @@ public class FiltersBuilder {
 		Map<String, QueryBuilder> postFilterQueries = new HashMap<>();
 
 		// collect filter queries on master and variant level
-		buildFilterQueries(filters, basicFilterQueries, postFilterQueries, false);
+		buildFilterQueries(filters, basicFilterQueries, postFilterQueries, withFacets ? false : true);
 		buildFilterQueries(querqyFilters, basicFilterQueries, postFilterQueries, true);
 
 		MasterVariantQuery postFilterQuery = buildFilters(postFilterQueries);
@@ -78,6 +78,7 @@ public class FiltersBuilder {
 					.get(filter.getClass());
 			String fieldPrefix = filter.getFieldPrefix();
 
+			boolean negationHandeled = false;
 			QueryBuilder filterQuery = null;
 			if (filter.getField().isMasterLevel()) {
 				filterQuery = toFilterQuery(filter, fieldPrefix, filterAdapter);
@@ -90,14 +91,28 @@ public class FiltersBuilder {
 				}
 				else {
 					// if a filter applies to both levels, then build a
-					// boolean-should query (both field matches are wanted)
-					filterQuery = QueryBuilders.boolQuery()
+					// SHOULD query (both field matches are wanted) for "include" filters
+					// and a MUST_NOT query for negated/exclude filters.
+					if (filter.isNegated()) {
+						filterQuery = QueryBuilders.boolQuery()
+								.mustNot(filterQuery)
+								.mustNot(toFilterQuery(filter, fieldPrefix, filterAdapter));
+						negationHandeled = true;
+					}
+					else {
+						filterQuery = QueryBuilders.boolQuery()
 							.should(filterQuery)
 							.should(toFilterQuery(filter, fieldPrefix, filterAdapter));
+					}
 				}
 			}
 
-			if (isBasicQuery(filter.getField().getName()) || addAllFiltersAsBasicFilters) {
+			if (filter.isNegated() && !negationHandeled) {
+				filterQuery = QueryBuilders.boolQuery().mustNot(filterQuery);
+				negationHandeled = true;
+			}
+
+			if (filter.isNegated() || addAllFiltersAsBasicFilters || isBasicQuery(filter.getField().getName())) {
 				QueryBuilder conflictingFilter = basicFilterQueries.put(filter.getField().getName(), filterQuery);
 				if (conflictingFilter != null) {
 					basicFilterQueries.put(filter.getField().getName(), mergeQueries(conflictingFilter, filterQuery));
@@ -129,15 +144,17 @@ public class FiltersBuilder {
 	}
 
 	private QueryBuilder toFilterQuery(InternalResultFilter filter, String fieldPrefix, InternalResultFilterAdapter<? super InternalResultFilter> filterAdapter) {
+		QueryBuilder filterQuery;
 		if (filter.isNestedFilter()) {
-			return QueryBuilders.nestedQuery(
+			filterQuery = QueryBuilders.nestedQuery(
 					fieldPrefix,
 					filterAdapter.getAsQuery(fieldPrefix + ".", filter),
 					ScoreMode.None);
 		}
 		else {
-			return filterAdapter.getAsQuery(fieldPrefix, filter);
+			filterQuery = filterAdapter.getAsQuery(fieldPrefix, filter);
 		}
+		return filterQuery;
 	}
 
 	private boolean isVariantField(String field) {
