@@ -2,6 +2,7 @@ package de.cxp.ocs.util;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.function.Function;
 
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -57,12 +58,31 @@ public class ESQueryUtils {
 		return fuzzyTermNotation.toString();
 	}
 
+	/**
+	 * If the inserted query is a BoolQueryBuilder, the queryBuilder is just returned. If not, it is wrapped in a
+	 * Boolean Query with the query at the MUST clause.
+	 * 
+	 * @param query
+	 * @return
+	 */
 	public static BoolQueryBuilder mapToBoolQueryBuilder(QueryBuilder query) {
+		return mapToBoolQueryBuilder(query, q -> QueryBuilders.boolQuery().must(q));
+	}
+
+	/**
+	 * If the inserted query is a BoolQueryBuilder, the queryBuilder is just returned. If not, the provided function is
+	 * called to wrap the query into a BoolQueryBuilder.
+	 * 
+	 * @param query
+	 * @param boolClauseFunction
+	 * @return
+	 */
+	public static BoolQueryBuilder mapToBoolQueryBuilder(QueryBuilder query, Function<QueryBuilder, BoolQueryBuilder> boolClauseFunction) {
 		if (query instanceof BoolQueryBuilder) {
 			return (BoolQueryBuilder) query;
 		}
 		else {
-			return QueryBuilders.boolQuery().must(query);
+			return boolClauseFunction.apply(query);
 		}
 	}
 

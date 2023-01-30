@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -59,6 +60,7 @@ import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.InternalSearchParams;
+import de.cxp.ocs.util.SearchParamsParser;
 import de.cxp.ocs.util.SearchQueryBuilder;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.DistributionSummary;
@@ -192,30 +194,10 @@ public class Searcher {
 			searchWords = Collections.emptyList();
 		}
 
-		SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource().size(parameters.limit)
-				.from(parameters.offset);
+		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters, parameters.querqyFilters, parameters.withFacets);
+		List<SortBuilder<?>> variantSortings = sortingHandler.getVariantSortings(parameters.sortings);
 
-		List<SortBuilder<?>> variantSortings = sortingHandler.applySorting(parameters.sortings, searchSourceBuilder);
-
-		if (searchSourceBuilder.sorts() == null || searchSourceBuilder.sorts().isEmpty()) {
-			addRescorersFailsafe(parameters, searchSourceBuilder);
-		}
-
-		setFetchSources(searchSourceBuilder, variantSortings, parameters.withResultData);
-
-		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters, parameters.querqyFilters);
-
-		QueryBuilder postFilter = filterContext.getJoinedPostFilters();
-		if (postFilter != null) {
-			searchSourceBuilder.postFilter(postFilter);
-		}
-
-		if (parameters.isWithFacets()) {
-			List<AggregationBuilder> aggregators = facetApplier.buildAggregators(filterContext);
-			if (aggregators != null && aggregators.size() > 0) {
-				aggregators.forEach(searchSourceBuilder::aggregation);
-			}
-		}
+		SearchSourceBuilder searchSourceBuilder = buildBasicSearchSourceBuilder(parameters, filterContext, variantSortings);
 
 		// TODO: add a cache to pick the correct query for known search terms
 
@@ -319,6 +301,31 @@ public class Searcher {
 		return searchResult;
 	}
 
+	private SearchSourceBuilder buildBasicSearchSourceBuilder(InternalSearchParams parameters, FilterContext filterContext, List<SortBuilder<?>> variantSortings) {
+		SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource().size(parameters.limit)
+				.from(parameters.offset);
+		sortingHandler.applySorting(parameters.sortings, searchSourceBuilder);
+
+		if (searchSourceBuilder.sorts() == null || searchSourceBuilder.sorts().isEmpty()) {
+			addRescorersFailsafe(parameters, searchSourceBuilder);
+		}
+
+		setFetchSources(searchSourceBuilder, variantSortings, parameters.withResultData);
+
+		QueryBuilder postFilter = filterContext.getJoinedPostFilters();
+		if (postFilter != null) {
+			searchSourceBuilder.postFilter(postFilter);
+		}
+
+		if (parameters.isWithFacets()) {
+			List<AggregationBuilder> aggregators = facetApplier.buildAggregators(filterContext);
+			if (aggregators != null && aggregators.size() > 0) {
+				aggregators.forEach(searchSourceBuilder::aggregation);
+			}
+		}
+		return searchSourceBuilder;
+	}
+
 	private boolean isResultSufficient(SearchResponse searchResponse, InternalSearchParams parameters) {
 		if (!parameters.includeMainResult)
 			return true;
@@ -382,11 +389,20 @@ public class Searcher {
 			// Generate the filters and add them
 			.map(term -> (QueryFilterTerm) term)
 			// TODO: support exclude filters
-			.collect(Collectors.toMap(QueryFilterTerm::getField, QueryFilterTerm::getWord, (word1, word2) -> word1));
+				.collect(Collectors.toMap(QueryFilterTerm::getField, qf -> toParameterStyle(qf), (word1, word2) -> word1 + SearchQueryBuilder.VALUE_DELIMITER + word2));
 
 		parameters.querqyFilters = convertFiltersMapToInternalResultFilters(filtersAsMap);
 
 		return remainingSearchWords;
+	}
+
+	private String toParameterStyle(QueryFilterTerm queryFilter) {
+		if (Occur.MUST_NOT.equals(queryFilter.getOccur())) {
+			return SearchParamsParser.NEGATE_FILTER_PREFIX + queryFilter.getWord();
+		}
+		else {
+			return queryFilter.getWord();
+		}
 	}
 
 	private List<InternalResultFilter> convertFiltersMapToInternalResultFilters(Map<String, String> additionalFilters) {
@@ -516,8 +532,7 @@ public class Searcher {
 	}
 
 	private QueryBuilder buildFinalQuery(MasterVariantQuery searchQuery, Optional<QueryBuilder> heroProductsQuery,
-			FilterContext filterContext,
-			List<SortBuilder<?>> variantSortings) {
+			FilterContext filterContext, List<SortBuilder<?>> variantSortings) {
 		QueryBuilder masterLevelQuery = searchQuery.getMasterLevelQuery(); // ESQueryUtils.mergeQueries(,
 
 		FilterFunctionBuilder[] masterScoringFunctions = scoringCreator.getScoringFunctions(false);

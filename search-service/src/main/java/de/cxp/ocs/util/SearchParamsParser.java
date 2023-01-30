@@ -31,7 +31,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SearchParamsParser {
 
-	public final static String ID_FILTER_SUFFIX = ".id";
+	public final static String	ID_FILTER_SUFFIX		= ".id";
+	public final static String	NEGATE_FILTER_PREFIX	= "!";
 
 	public static InternalSearchParams extractInternalParams(SearchQuery searchQuery, Map<String, String> filters, SearchContext searchContext) {
 		final InternalSearchParams parameters = new InternalSearchParams();
@@ -107,36 +108,53 @@ public class SearchParamsParser {
 	}
 
 	private static InternalResultFilter toInternalFilter(Field field, String paramValue, boolean isIdFilter, Locale locale) {
+		boolean negate = paramValue.startsWith(NEGATE_FILTER_PREFIX);
+		if (negate) {
+			paramValue = paramValue.substring(NEGATE_FILTER_PREFIX.length());
+		}
+
+		InternalResultFilter internalFilter;
 		String[] paramValues = decodeValueDelimiter(split(paramValue, VALUE_DELIMITER));
 		switch (field.getType()) {
 			case CATEGORY:
-				return new PathResultFilter(field, paramValues)
+				internalFilter = new PathResultFilter(field, paramValues)
 						.setFieldPrefix(FieldConstants.PATH_FACET_DATA)
-						.setFilterOnId(isIdFilter);
+						.setFilterOnId(isIdFilter)
+						.setNegated(negate);
+				break;
 			case NUMBER:
-				paramValues = splitPreserveAllTokens(paramValue, VALUE_DELIMITER);
-				if (paramValues.length != 2) {
-					// Fallback logic to allow numeric filter values
-					// separated by dash, e.g. "50 - 100"
-					// however this is error prone, because dash is
-					// also used as minus for negative values. In
-					// such
-					// case this will simply fail
-					paramValues = splitPreserveAllTokens(paramValue, '-');
-					if (paramValues.length != 2) {
-						throw new IllegalArgumentException("unexpected numeric filter value: " + paramValue);
-					}
-				}
-				paramValues[0] = paramValues[0].trim();
-				paramValues[1] = paramValues[1].trim();
-				return new NumberResultFilter(
-						field,
-						paramValues[0].isEmpty() ? null : Util.tryToParseAsNumber(paramValues[0]).orElseThrow(IllegalArgumentException::new),
-						paramValues[1].isEmpty() ? null : Util.tryToParseAsNumber(paramValues[1]).orElseThrow(IllegalArgumentException::new));
+				internalFilter = parseNumberFilter(field, paramValue)
+						.setNegated(negate);
+				break;
 			default:
-				return new TermResultFilter(locale, field, paramValues)
-						.setFilterOnId(isIdFilter);
+				internalFilter = new TermResultFilter(locale, field, paramValues)
+						.setFilterOnId(isIdFilter)
+						.setNegated(negate);
 		}
+		return internalFilter;
+	}
+
+	private static NumberResultFilter parseNumberFilter(Field field, String paramValue) {
+		String[] paramValues;
+		paramValues = splitPreserveAllTokens(paramValue, VALUE_DELIMITER);
+		if (paramValues.length != 2) {
+			// Fallback logic to allow numeric filter values
+			// separated by dash, e.g. "50 - 100"
+			// however this is error prone, because dash is
+			// also used as minus for negative values. In
+			// such
+			// case this will simply fail
+			paramValues = splitPreserveAllTokens(paramValue, '-');
+			if (paramValues.length != 2) {
+				throw new IllegalArgumentException("unexpected numeric filter value: " + paramValue);
+			}
+		}
+		paramValues[0] = paramValues[0].trim();
+		paramValues[1] = paramValues[1].trim();
+		return new NumberResultFilter(
+				field,
+				paramValues[0].isEmpty() ? null : Util.tryToParseAsNumber(paramValues[0]).orElseThrow(IllegalArgumentException::new),
+				paramValues[1].isEmpty() ? null : Util.tryToParseAsNumber(paramValues[1]).orElseThrow(IllegalArgumentException::new));
 	}
 
 	private static String[] decodeValueDelimiter(String[] split) {

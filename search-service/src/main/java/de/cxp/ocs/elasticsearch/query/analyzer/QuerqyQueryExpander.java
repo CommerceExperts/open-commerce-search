@@ -25,6 +25,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 
 	private final QuerqyParser	parser			= new WhiteSpaceQuerqyParser();
 	private RewriteChain		rewriteChain	= null;
+	private boolean				loggedMissingRewriter	= false;
 
 	@Override
 	public void initialize(Map<String, String> settings) {
@@ -88,6 +89,10 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 		if (rewriteChain != null) {
 			rewriteChain.rewrite(expandedQuery, new LocalSearchEngineRequestAdapter(rewriteChain, Collections.emptyMap()));
 		}
+		else if (!loggedMissingRewriter) {
+			log.info("No rewriter initialized, will just analyze/expand but not enrich query.");
+			loggedMissingRewriter = true;
+		}
 		return getQueryTerms(expandedQuery);
 	}
 
@@ -119,7 +124,6 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 					terms.add(new WordAssociation(fetchedWords.get(0).getWord(), convertedList));
 				}
 				termFetcher.getWords().clear();
-
 			}
 		}
 		else if (expandedQuery.getUserQuery() != null) {
@@ -240,8 +244,9 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			String value = rawQuerySplit[1];
 
 			org.apache.lucene.search.BooleanClause.Occur occur;
-			if(Occur.MUST_NOT.equals(this.occur)) {
+			if (fieldName.startsWith(Occur.MUST_NOT.toString())) {
 				occur = org.apache.lucene.search.BooleanClause.Occur.MUST_NOT;
+				fieldName = fieldName.substring(1);
 			} else {
 				occur = org.apache.lucene.search.BooleanClause.Occur.MUST;
 			}

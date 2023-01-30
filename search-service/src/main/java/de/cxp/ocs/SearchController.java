@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 
 import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
+import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -253,15 +253,15 @@ public class SearchController implements SearchService {
 		return foundDoc;
 	}
 
+	@SuppressWarnings("deprecation")
 	@GetMapping("/tenants")
 	@Override
 	public String[] getTenants() {
 		Set<String> tenants = new HashSet<>();
 		try {
 			esBuilder.getRestHLClient().indices()
-					.getAlias(new GetAliasesRequest().aliases("ocs-"), RequestOptions.DEFAULT)
+					.get(new GetIndexRequest().indices("ocs-*"), RequestOptions.DEFAULT)
 					.getAliases()
-					.entrySet()
 					.stream()
 					.map(aliasEntry -> aliasEntry.getValue().iterator().next().alias())
 					.forEach(tenants::add);

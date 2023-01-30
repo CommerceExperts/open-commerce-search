@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
@@ -95,6 +96,7 @@ public class ElasticsearchCRUDTest {
 						.parse("docker.elastic.co/elasticsearch/elasticsearch")
 						.withTag(Version.V_7_17_1.toString()));
 		container.setWaitStrategy(new HttpWaitStrategy().forPort(9200));
+		container.withStartupTimeout(Duration.ofSeconds(60));
 		container.start();
 		HTTP_TEST_PORT = container.getMappedPort(9200);
 	}

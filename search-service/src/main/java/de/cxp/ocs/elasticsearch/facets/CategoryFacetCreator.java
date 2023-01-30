@@ -76,7 +76,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		if (catBuckets.size() == 0) return Optional.empty();
 
 		// let it crash if it's from the wrong type
-		PathResultFilter facetFilter = (PathResultFilter) intFacetFilter;
+		PathResultFilter facetFilter = intFacetFilter != null && intFacetFilter.isNegated() ? null : (PathResultFilter) intFacetFilter;
 		Facet facet = FacetFactory.create(facetConfig, FacetType.HIERARCHICAL);
 
 		// map of every path to its full id-path

@@ -58,10 +58,14 @@ public class SearchQueryBuilder {
 		if (!params.filters.isEmpty()) {
 			for (InternalResultFilter filter : params.filters) {
 				String paramName = filter.getField().getName();
+				String paramValue = joinParameterValues(filter.getValues());
 				if (filter.isFilterOnId()) {
 					paramName += SearchParamsParser.ID_FILTER_SUFFIX;
 				}
-				urlParams.put(paramName, joinParameterValues(filter.getValues()));
+				if (filter.isNegated()) {
+					paramValue = SearchParamsParser.NEGATE_FILTER_PREFIX + paramValue;
+				}
+				urlParams.put(paramName, paramValue);
 			}
 		}
 		if (!params.sortings.isEmpty()) {

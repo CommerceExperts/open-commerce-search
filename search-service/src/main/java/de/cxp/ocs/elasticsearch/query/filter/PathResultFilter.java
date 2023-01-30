@@ -30,7 +30,11 @@ public class PathResultFilter implements InternalResultFilter {
 
 	@Getter
 	@Setter
-	private boolean filterOnId = false;
+	private boolean isFilterOnId = false;
+
+	@Getter
+	@Setter
+	private boolean isNegated = false;
 
 	@Getter
 	@Setter
