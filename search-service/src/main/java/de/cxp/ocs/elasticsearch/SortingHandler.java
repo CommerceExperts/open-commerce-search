@@ -2,11 +2,7 @@ package de.cxp.ocs.elasticsearch;
 
 import static de.cxp.ocs.util.SearchQueryBuilder.sortStringRepresentation;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -14,12 +10,7 @@ import org.elasticsearch.search.sort.SortBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 
-import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldConfigIndex;
-import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.config.FieldType;
-import de.cxp.ocs.config.FieldUsage;
-import de.cxp.ocs.config.SortOptionConfiguration;
+import de.cxp.ocs.config.*;
 import de.cxp.ocs.model.result.Sorting;
 import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.SearchQueryBuilder;
@@ -79,8 +70,7 @@ public class SortingHandler {
 	 * @param searchSourceBuilder
 	 * @return a list of potential variant sorts
 	 */
-	List<SortBuilder<?>> applySorting(List<Sorting> sortings, SearchSourceBuilder searchSourceBuilder) {
-		List<SortBuilder<?>> variantSortings = new ArrayList<>();
+	void applySorting(List<Sorting> sortings, SearchSourceBuilder searchSourceBuilder) {
 		for (Sorting sorting : sortings) {
 			SortOptionConfiguration sortConf = sortConfigIndex.get(sortStringRepresentation(sorting.field, sorting.sortOrder));
 			Field sortField = sortFields.get(sorting.field);
@@ -90,17 +80,32 @@ public class SortingHandler {
 				searchSourceBuilder.sort(SortBuilders.fieldSort(FieldConstants.SORT_DATA + "." + sorting.field)
 						.order(sorting.sortOrder == null ? SortOrder.ASC : SortOrder.fromString(sorting.sortOrder.name()))
 						.missing(missingParam));
-
-				if (sortField.isVariantLevel()) {
-					variantSortings.add(
-							SortBuilders
-									.fieldSort(FieldConstants.VARIANTS + "." + FieldConstants.SORT_DATA + "." + sorting.field)
-									.order(sorting.sortOrder == null ? SortOrder.ASC : SortOrder.fromString(sorting.sortOrder.name()))
-									.missing(missingParam));
-				}
 			}
 			else {
 				log.debug("tried to sort by an unsortable field {}", sorting.field);
+			}
+		}
+	}
+
+	/**
+	 * Extract variant sort definitions and return them as list.
+	 * 
+	 * @param parameters
+	 * @param searchSourceBuilder
+	 * @return a list of potential variant sorts
+	 */
+	List<SortBuilder<?>> getVariantSortings(List<Sorting> sortings) {
+		List<SortBuilder<?>> variantSortings = sortings.isEmpty() ? Collections.emptyList() : new ArrayList<>(sortings.size());
+		for (Sorting sorting : sortings) {
+			SortOptionConfiguration sortConf = sortConfigIndex.get(sortStringRepresentation(sorting.field, sorting.sortOrder));
+			Field sortField = sortFields.get(sorting.field);
+			if (sortField != null && sortField.isVariantLevel()) {
+				String missingParam = sortConf != null ? sortConf.getMissing() : null;
+				variantSortings.add(
+						SortBuilders
+								.fieldSort(FieldConstants.VARIANTS + "." + FieldConstants.SORT_DATA + "." + sorting.field)
+								.order(sorting.sortOrder == null ? SortOrder.ASC : SortOrder.fromString(sorting.sortOrder.name()))
+								.missing(missingParam));
 			}
 		}
 		return variantSortings;

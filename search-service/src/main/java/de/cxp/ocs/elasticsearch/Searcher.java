@@ -192,30 +192,10 @@ public class Searcher {
 			searchWords = Collections.emptyList();
 		}
 
-		SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource().size(parameters.limit)
-				.from(parameters.offset);
-
-		List<SortBuilder<?>> variantSortings = sortingHandler.applySorting(parameters.sortings, searchSourceBuilder);
-
-		if (searchSourceBuilder.sorts() == null || searchSourceBuilder.sorts().isEmpty()) {
-			addRescorersFailsafe(parameters, searchSourceBuilder);
-		}
-
-		setFetchSources(searchSourceBuilder, variantSortings, parameters.withResultData);
-
 		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters, parameters.querqyFilters, parameters.withFacets);
+		List<SortBuilder<?>> variantSortings = sortingHandler.getVariantSortings(parameters.sortings);
 
-		QueryBuilder postFilter = filterContext.getJoinedPostFilters();
-		if (postFilter != null) {
-			searchSourceBuilder.postFilter(postFilter);
-		}
-
-		if (parameters.isWithFacets()) {
-			List<AggregationBuilder> aggregators = facetApplier.buildAggregators(filterContext);
-			if (aggregators != null && aggregators.size() > 0) {
-				aggregators.forEach(searchSourceBuilder::aggregation);
-			}
-		}
+		SearchSourceBuilder searchSourceBuilder = buildBasicSearchSourceBuilder(parameters, filterContext, variantSortings);
 
 		// TODO: add a cache to pick the correct query for known search terms
 
@@ -317,6 +297,31 @@ public class Searcher {
 		findTimerSample.stop(findTimer);
 
 		return searchResult;
+	}
+
+	private SearchSourceBuilder buildBasicSearchSourceBuilder(InternalSearchParams parameters, FilterContext filterContext, List<SortBuilder<?>> variantSortings) {
+		SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource().size(parameters.limit)
+				.from(parameters.offset);
+		sortingHandler.applySorting(parameters.sortings, searchSourceBuilder);
+
+		if (searchSourceBuilder.sorts() == null || searchSourceBuilder.sorts().isEmpty()) {
+			addRescorersFailsafe(parameters, searchSourceBuilder);
+		}
+
+		setFetchSources(searchSourceBuilder, variantSortings, parameters.withResultData);
+
+		QueryBuilder postFilter = filterContext.getJoinedPostFilters();
+		if (postFilter != null) {
+			searchSourceBuilder.postFilter(postFilter);
+		}
+
+		if (parameters.isWithFacets()) {
+			List<AggregationBuilder> aggregators = facetApplier.buildAggregators(filterContext);
+			if (aggregators != null && aggregators.size() > 0) {
+				aggregators.forEach(searchSourceBuilder::aggregation);
+			}
+		}
+		return searchSourceBuilder;
 	}
 
 	private boolean isResultSufficient(SearchResponse searchResponse, InternalSearchParams parameters) {
@@ -516,8 +521,7 @@ public class Searcher {
 	}
 
 	private QueryBuilder buildFinalQuery(MasterVariantQuery searchQuery, Optional<QueryBuilder> heroProductsQuery,
-			FilterContext filterContext,
-			List<SortBuilder<?>> variantSortings) {
+			FilterContext filterContext, List<SortBuilder<?>> variantSortings) {
 		QueryBuilder masterLevelQuery = searchQuery.getMasterLevelQuery(); // ESQueryUtils.mergeQueries(,
 
 		FilterFunctionBuilder[] masterScoringFunctions = scoringCreator.getScoringFunctions(false);
