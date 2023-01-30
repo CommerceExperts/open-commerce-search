@@ -158,7 +158,7 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 		else {
 			suggestService = new GenericContainer<>("commerceexperts/ocs-suggest-service:latest");
 			suggestService.addExposedPort(SUGGEST_DEFAULT_PORT);
-			searchService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m");
+			suggestService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m");
 
 			String esAddr;
 			if (elasticsearch != null) {
