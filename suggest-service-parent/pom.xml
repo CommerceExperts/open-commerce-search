@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.37.8</version>
+		<version>0.39.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
@@ -25,12 +25,12 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>smartsuggest-lib</artifactId>
-				<version>0.11.2</version>
+				<version>0.11.3</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-suggest-data-provider</artifactId>
-				<version>0.10.0</version>
+				<version>0.11.0</version>
 			</dependency>
 			
 			<dependency>

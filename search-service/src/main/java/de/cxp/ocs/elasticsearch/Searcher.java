@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.join.ScoreMode;
@@ -170,28 +169,18 @@ public class Searcher {
 
 	public SearchResult find(InternalSearchParams parameters) throws IOException {
 		Sample findTimerSample = Timer.start(Clock.SYSTEM);
-		Iterator<ESQueryFactory> stagedQueryBuilders;
+
 		List<QueryStringTerm> searchWords;
+		Map<String, Object> searchMetaData = new HashMap<>();
 
-		String preprocessedQuery = null;
-		if (!parameters.includeMainResult) {
+		searchWords = preprocessQuery(parameters, searchMetaData);
+
+		Iterator<ESQueryFactory> stagedQueryBuilders;
+		if (searchWords.isEmpty()) {
 			stagedQueryBuilders = Collections.<ESQueryFactory> singletonList(new MatchAllQueryFactory()).iterator();
-			searchWords = Collections.emptyList();
-		}
-		else if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
-			preprocessedQuery = parameters.userQuery;
-			for (UserQueryPreprocessor preprocessor : userQueryPreprocessors) {
-				preprocessedQuery = preprocessor.preProcess(preprocessedQuery);
-			}
-
-			searchWords = userQueryAnalyzer.analyze(preprocessedQuery);
-			searchWords = handleFiltersOnFields(parameters, searchWords);
-
-			stagedQueryBuilders = queryBuilder.getMatchingFactories(searchWords);
 		}
 		else {
-			stagedQueryBuilders = Collections.<ESQueryFactory> singletonList(new MatchAllQueryFactory()).iterator();
-			searchWords = Collections.emptyList();
+			stagedQueryBuilders = queryBuilder.getMatchingFactories(searchWords);
 		}
 
 		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters, parameters.querqyFilters, parameters.withFacets);
@@ -290,15 +279,35 @@ public class Searcher {
 
 		SearchResult searchResult = buildResult(parameters, filterContext, searchResponse);
 
-		if (preprocessedQuery != null) {
-			searchResult.meta.put("preprocessedQuery", preprocessedQuery);
-			searchResult.meta.put("analyzedQuery", StringUtils.join(searchWords));
-		}
-
 		summary.record(i);
 		findTimerSample.stop(findTimer);
 
 		return searchResult;
+	}
+
+	private List<QueryStringTerm> preprocessQuery(InternalSearchParams parameters, Map<String, Object> searchMetaData) {
+		List<QueryStringTerm> searchWords;
+		if (!parameters.includeMainResult) {
+			searchWords = Collections.emptyList();
+			searchMetaData.put("includeMainResult", "false");
+		}
+		else if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
+			String preprocessedQuery = parameters.userQuery;
+			for (UserQueryPreprocessor preprocessor : userQueryPreprocessors) {
+				preprocessedQuery = preprocessor.preProcess(preprocessedQuery);
+			}
+			searchMetaData.put("preprocessedQuery", preprocessedQuery);
+
+			searchWords = userQueryAnalyzer.analyze(preprocessedQuery);
+			searchWords = handleFiltersOnFields(parameters, searchWords);
+			searchMetaData.put("analyzedQuery", searchWords);
+			searchMetaData.put("analyzerFilters", parameters.querqyFilters);
+		}
+		else {
+			searchWords = Collections.emptyList();
+			searchMetaData.put("noQuery", true);
+		}
+		return searchWords;
 	}
 
 	private SearchSourceBuilder buildBasicSearchSourceBuilder(InternalSearchParams parameters, FilterContext filterContext, List<SortBuilder<?>> variantSortings) {

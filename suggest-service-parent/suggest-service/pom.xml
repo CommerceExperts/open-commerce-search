@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>suggest-service-parent</artifactId>
-		<version>0.37.8</version>
+		<version>0.39.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>suggest-service</artifactId>
-	<version>0.16.0</version>
+	<version>0.17.0</version>
 	<packaging>jar</packaging>
 	<name>smartSuggest RESTful Service</name>
 

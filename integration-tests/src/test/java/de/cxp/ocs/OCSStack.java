@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.http.HttpHost;
+import org.elasticsearch.Version;
 import org.elasticsearch.client.RestClient;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -68,7 +69,7 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 				}
 			}
 			else {
-				elasticsearch = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:7.17.0");
+				elasticsearch = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:" + Version.CURRENT.toString());
 				elasticsearch.addEnv("discovery.type", "single-node");
 				elasticsearch.setExposedPorts(Collections.singletonList(ES_DEFAULT_PORT));
 				elasticsearch.withNetwork(Network.newNetwork());
