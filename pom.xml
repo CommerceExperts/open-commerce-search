@@ -28,7 +28,7 @@
 		<docker.tag>latest</docker.tag>
 		<dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
 
-		<elasticsearch.version>7.17.1</elasticsearch.version>
+		<elasticsearch.version>7.17.8</elasticsearch.version>
 		<spring.version>5.3.18</spring.version>
 		<spring-boot.version>2.5.12</spring-boot.version>
 		<spring-cloud.version>2020.0.5</spring-cloud.version>
