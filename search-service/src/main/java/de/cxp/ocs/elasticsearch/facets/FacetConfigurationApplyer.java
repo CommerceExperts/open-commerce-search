@@ -42,6 +42,7 @@ public class FacetConfigurationApplyer {
 	 */
 	static final String IS_MANDATORY_META_KEY = "isMandatory";
 
+	private final Function<String, FacetConfig>				defaultFacetConfigProvider;
 	private final Map<String, FacetConfig> facetsBySourceField = new HashMap<>();
 	private final List<FacetCreator>						facetCreators			= new ArrayList<>();
 	private final Map<FacetCreatorClassifier, FacetCreator>	facetCreatorsByTypes	= new HashMap<>();
@@ -77,18 +78,18 @@ public class FacetConfigurationApplyer {
 	private Set<String> excludeFields = Collections.emptySet();
 
 	public FacetConfigurationApplyer(SearchContext context) {
-		Function<String, FacetConfig> defaultFacetConfigProvider = getDefaultFacetConfigProvider(context);
+		defaultFacetConfigProvider = getDefaultFacetConfigProvider(context);
 
 		maxFacets = context.config.getFacetConfiguration().getMaxFacets();
 
-		loadFacetConfig(defaultFacetConfigProvider, context);
+		loadFacetConfig(context);
 
 		facetFilters.add(new FacetCoverageFilter());
 		facetFilters.add(new FacetSizeFilter());
 		facetFilters.add(new FacetDependencyFilter(facetsBySourceField));
 	}
 
-	public void loadFacetConfig(Function<String, FacetConfig> defaultFacetConfigProvider, SearchContext context) {
+	public void loadFacetConfig(SearchContext context) {
 		String defaultFacetType = defaultFacetConfigProvider.apply("").getType();
 
 		// I tried to do this whole method in a more generic way, but such code
@@ -453,6 +454,9 @@ public class FacetConfigurationApplyer {
 				continue;
 
 			FacetConfig facetConfig = facetsBySourceField.get(facet.getFieldName());
+			if (facetConfig == null) {
+				facetConfig = defaultFacetConfigProvider.apply(facet.getFieldName());
+			}
 			if (facetConfig != null ) {
 				for (FacetFilter facetFilter : facetFilters) {
 					if (!facetFilter.isVisibleFacet(facet, facetConfig, filterContext, (int) matchCount)) {
