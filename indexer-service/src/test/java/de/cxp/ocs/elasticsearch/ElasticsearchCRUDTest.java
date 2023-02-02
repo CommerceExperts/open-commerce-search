@@ -80,8 +80,7 @@ public class ElasticsearchCRUDTest {
 		@Bean
 		public RestHighLevelClient getElasticsearchClient(ApplicationProperties properties) throws Exception {
 			System.out.println("initializing ES client");
-			properties.getConnectionConfiguration().setHosts("127.0.0.1:" +
-					HTTP_TEST_PORT);
+			properties.getConnectionConfiguration().setHosts("127.0.0.1:" + HTTP_TEST_PORT);
 			RestClientBuilder restClientBuilder = RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
 			return new RestHighLevelClient(restClientBuilder);
 		}
@@ -95,6 +94,8 @@ public class ElasticsearchCRUDTest {
 				DockerImageName
 						.parse("docker.elastic.co/elasticsearch/elasticsearch")
 						.withTag(Version.CURRENT.toString()));
+		container.addEnv("discovery.type", "single-node");
+		container.addEnv("ES_JAVA_OPTS", "-Xms1024m -Xmx1024m");
 		container.setWaitStrategy(new HttpWaitStrategy().forPort(9200));
 		container.withStartupTimeout(Duration.ofSeconds(60));
 		container.start();
