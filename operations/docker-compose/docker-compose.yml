@@ -43,7 +43,8 @@ services:
 
   elasticsearch:
     container_name: ocs_elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.0
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.8
+    # make sure the ./elasticsearch/docker-entrypoint-es.s file is executable
     volumes:
       - ./elasticsearch:/mnt
     entrypoint: 

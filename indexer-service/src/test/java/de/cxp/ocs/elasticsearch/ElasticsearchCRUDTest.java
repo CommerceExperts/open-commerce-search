@@ -94,7 +94,7 @@ public class ElasticsearchCRUDTest {
 		container = new ElasticsearchContainer(
 				DockerImageName
 						.parse("docker.elastic.co/elasticsearch/elasticsearch")
-						.withTag(Version.V_7_17_8.toString()));
+						.withTag(Version.CURRENT.toString()));
 		container.setWaitStrategy(new HttpWaitStrategy().forPort(9200));
 		container.withStartupTimeout(Duration.ofSeconds(60));
 		container.start();
