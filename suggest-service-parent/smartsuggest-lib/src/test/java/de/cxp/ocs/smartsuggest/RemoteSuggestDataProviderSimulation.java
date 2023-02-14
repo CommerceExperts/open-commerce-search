@@ -1,10 +1,8 @@
 package de.cxp.ocs.smartsuggest;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
@@ -35,7 +33,7 @@ public class RemoteSuggestDataProviderSimulation implements SuggestDataProvider 
 		}
 
 		long timestamp = Instant.now().toEpochMilli();
-		loadedSuggestions.put(indexName, new SuggestData("", Locale.ROOT, Collections.emptySet(), suggestions, timestamp));
+		loadedSuggestions.put(indexName, SuggestData.builder().suggestRecords(suggestions).modificationTime(timestamp).build());
 		loadedSuggestionTimes.put(indexName, timestamp);
 	}
 

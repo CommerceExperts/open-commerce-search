@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +26,7 @@ public class CompoundQuerySuggesterTest {
 
 	private CompoundQuerySuggester underTest;
 
-	private static Limiter limiter = (list, limit) -> list;
+	private static Limiter					limiter			= (list, limit) -> list;
 	private static SuggestConfigProvider	configProvider	= new DefaultSuggestConfigProvider();
 
 	@Test
@@ -63,6 +62,9 @@ public class CompoundQuerySuggesterTest {
 	}
 
 	private SuggestData getSuggestData(String type, SuggestRecord... records) {
-		return new SuggestData(type, Locale.ROOT, emptySet(), Arrays.asList(records), System.currentTimeMillis());
+		return SuggestData.builder().type(type)
+				.suggestRecords(Arrays.asList(records))
+				.modificationTime(System.currentTimeMillis())
+				.build();
 	}
 }

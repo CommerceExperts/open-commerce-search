@@ -1,16 +1,16 @@
 package de.cxp.ocs.smartsuggest.spi;
 
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class SuggestData {
 
 	/**
@@ -20,13 +20,16 @@ public class SuggestData {
 	 */
 	String type;
 
-	Locale locale;
+	@Builder.Default
+	Locale locale = Locale.ROOT;
 
 	/**
 	 * aka stopwords =)
 	 */
-	Set<String> wordsToIgnore;
+	@Builder.Default
+	Set<String> wordsToIgnore = Collections.emptySet();
 
+	@Builder.Default
 	Iterable<SuggestRecord> suggestRecords = new ArrayList<>();
 
 	/**
@@ -41,4 +44,15 @@ public class SuggestData {
 	 * </p>
 	 */
 	long modificationTime;
+
+	/**
+	 * Queries that are suggested prior to all other queries, as soon as the complete input query is typed. i.e. for the
+	 * input "shoes" it may show "sneakers".
+	 */
+	Map<String, List<String>> sharpenedQueries;
+
+	/**
+	 * Queries that are suggested in case the complete input does not yield enough results.
+	 */
+	Map<String, List<String>> relaxedQueries;
 }
