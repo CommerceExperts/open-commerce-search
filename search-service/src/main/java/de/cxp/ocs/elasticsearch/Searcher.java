@@ -256,6 +256,7 @@ public class Searcher {
 				correctedWords = spellCorrector.extractRelatedWords(searchWords, searchResponse.getSuggest());
 				if (correctedWords.size() > 0) {
 					searchWords = SpellCorrector.toListWithAllTerms(searchWords, correctedWords);
+					searchMetaData.put("query_corrected", searchWords);
 				}
 
 				// if the current query builder didn't take corrected words into
@@ -265,9 +266,12 @@ public class Searcher {
 					searchSourceBuilder
 							.query(buildFinalQuery(searchQuery, heroProductsQuery, filterContext, variantSortings));
 					searchResponse = executeSearchRequest(searchSourceBuilder);
+					searchMetaData.put("query_correction", correctedWordsSample);
 				}
 				correctedWordsSample.stop(correctedWordsTimer);
 			}
+			searchMetaData.put("query_executed", searchQuery.getMasterLevelQuery().queryName());
+			searchMetaData.put("query_stage", i);
 
 			if (!isResultSufficient && searchQuery.isAcceptNoResult()) {
 				break;
@@ -278,6 +282,7 @@ public class Searcher {
 		sqbSample.stop(sqbTimer);
 
 		SearchResult searchResult = buildResult(parameters, filterContext, searchResponse);
+		searchResult.getMeta().putAll(searchMetaData);
 
 		summary.record(i);
 		findTimerSample.stop(findTimer);
@@ -300,7 +305,7 @@ public class Searcher {
 
 			searchWords = userQueryAnalyzer.analyze(preprocessedQuery);
 			searchWords = handleFiltersOnFields(parameters, searchWords);
-			searchMetaData.put("analyzedQuery", searchWords);
+			searchMetaData.put("analyzedQuery", searchWords.toString());
 			searchMetaData.put("analyzerFilters", parameters.querqyFilters);
 		}
 		else {
