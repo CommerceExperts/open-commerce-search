@@ -306,7 +306,8 @@ public class Searcher {
 			searchWords = userQueryAnalyzer.analyze(preprocessedQuery);
 			searchWords = handleFiltersOnFields(parameters, searchWords);
 			searchMetaData.put("analyzedQuery", searchWords.toString());
-			searchMetaData.put("analyzerFilters", parameters.querqyFilters);
+			searchMetaData.put("analyzedFilters", parameters.querqyFilters.stream()
+					.map(f -> f.getField().getName() + "=" + f.toString()).toArray());
 		}
 		else {
 			searchWords = Collections.emptyList();
@@ -403,7 +404,7 @@ public class Searcher {
 			// Generate the filters and add them
 			.map(term -> (QueryFilterTerm) term)
 			// TODO: support exclude filters
-				.collect(Collectors.toMap(QueryFilterTerm::getField, qf -> toParameterStyle(qf), (word1, word2) -> word1 + SearchQueryBuilder.VALUE_DELIMITER + word2));
+			.collect(Collectors.toMap(QueryFilterTerm::getField, qf -> toParameterStyle(qf), (word1, word2) -> word1 + SearchQueryBuilder.VALUE_DELIMITER + word2));
 
 		parameters.querqyFilters = convertFiltersMapToInternalResultFilters(filtersAsMap);
 
@@ -419,12 +420,8 @@ public class Searcher {
 		}
 	}
 
-	private List<InternalResultFilter> convertFiltersMapToInternalResultFilters(Map<String, String> additionalFilters) {
-		List<InternalResultFilter> convertedFilters = new ArrayList<>();
-		for (String key : additionalFilters.keySet()) {
-			convertedFilters = parseFilters(Collections.singletonMap(key, additionalFilters.get(key)), fieldIndex, config.getLocale());
-		}
-		return convertedFilters;
+	private List<InternalResultFilter> convertFiltersMapToInternalResultFilters(Map<String, String> filters) {
+		return parseFilters(filters, fieldIndex, config.getLocale());
 	}
 
 	private void addRescorersFailsafe(InternalSearchParams parameters, SearchSourceBuilder searchSourceBuilder) {
