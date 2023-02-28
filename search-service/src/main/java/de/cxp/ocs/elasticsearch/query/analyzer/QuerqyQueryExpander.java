@@ -3,6 +3,8 @@ package de.cxp.ocs.elasticsearch.query.analyzer;
 import java.io.*;
 import java.net.URL;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import de.cxp.ocs.elasticsearch.query.model.*;
 import de.cxp.ocs.spi.search.ConfigurableExtension;
@@ -212,22 +214,18 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			this.occur = rawQuery.occur;
 			String rawQueryString = ((StringRawQuery) rawQuery).getQueryString();
 
-			if (rawQueryString.indexOf(':') > 0) {
-
-				if(rawQueryString.indexOf(' ') > 0) {
-					String[] rawFiltersSplit = rawQueryString.split(" ");
-					for(String rawFilter: rawFiltersSplit) {
-						if(rawFilter.indexOf(':') > 0) {
-							QueryFilterTerm queryFilterTerm = getQueryFilterTerm(rawFilter);
-							words.add(queryFilterTerm);
-						} else {
-							words.add(new RawQueryString(rawQueryString));
-						}
-					}
-				} else {
-					QueryFilterTerm queryFilterTerm = getQueryFilterTerm(rawQueryString);
+			if (rawQueryString.indexOf(':') < rawQueryString.lastIndexOf(':')) {
+				// multiple colons => multiple filters
+				
+				Matcher filterMatcher = Pattern.compile("-?\\w+\\:[^:]+(\\s|$)").matcher(rawQueryString);
+				while (filterMatcher.find()) {
+					QueryFilterTerm queryFilterTerm = getQueryFilterTerm(filterMatcher.group().trim());
 					words.add(queryFilterTerm);
 				}
+			}
+			else if (rawQueryString.indexOf(':') > 0) {
+				QueryFilterTerm queryFilterTerm = getQueryFilterTerm(rawQueryString);
+				words.add(queryFilterTerm);
 			}
 			else {
 				words.add(new RawQueryString(rawQueryString));
@@ -249,6 +247,12 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 				fieldName = fieldName.substring(1);
 			} else {
 				occur = org.apache.lucene.search.BooleanClause.Occur.MUST;
+			}
+
+			// quotes are part of the valid Lucene syntax, but since we use the filter values as a whole anyways for a
+			// term query, we trim them here
+			if (value.charAt(0) == '"' && value.charAt(value.length() - 1) == '"') {
+				value = value.substring(1, value.length() - 1);
 			}
 
 			QueryFilterTerm queryFilterTerm = new QueryFilterTerm(fieldName, value);
