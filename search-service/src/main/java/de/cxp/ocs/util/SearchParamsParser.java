@@ -107,7 +107,7 @@ public class SearchParamsParser {
 		return filters;
 	}
 
-	private static InternalResultFilter toInternalFilter(Field field, String paramValue, boolean isIdFilter, Locale locale) {
+	public static InternalResultFilter toInternalFilter(Field field, String paramValue, boolean isIdFilter, Locale locale) {
 		boolean negate = paramValue.startsWith(NEGATE_FILTER_PREFIX);
 		if (negate) {
 			paramValue = paramValue.substring(NEGATE_FILTER_PREFIX.length());
@@ -115,6 +115,10 @@ public class SearchParamsParser {
 
 		InternalResultFilter internalFilter;
 		String[] paramValues = decodeValueDelimiter(split(paramValue, VALUE_DELIMITER));
+
+		// if there are single values with the negate-filter-prefix, we handle them here
+		paramValues = fixMultiNegationPrefixes(paramValues, negate);
+
 		switch (field.getType()) {
 			case CATEGORY:
 				internalFilter = new PathResultFilter(field, paramValues)
@@ -132,6 +136,42 @@ public class SearchParamsParser {
 						.setNegated(negate);
 		}
 		return internalFilter;
+	}
+
+	private static String[] fixMultiNegationPrefixes(String[] paramValues, boolean negatedFilter) {
+		int fixParamValues = 0;
+		for (int i = 0; i < paramValues.length; i++) {
+			if (!paramValues[i].startsWith(NEGATE_FILTER_PREFIX)) continue;
+
+			if (negatedFilter) {
+				// everything is negated, no need to negate the single value
+				paramValues[i] = paramValues[i].substring(NEGATE_FILTER_PREFIX.length());
+			}
+			else {
+				// since at least the first value is an include filter, everything is considered as excluded
+				// anyways, however for multi-value fields that would semanticaly make sense (i.e. get all
+				// products that are available in "red" but not in "black", but it's not supported unless there
+				// is a valid usecase for that)
+				paramValues[i] = null;
+				fixParamValues++;
+			}
+		}
+
+		// performance optimized version of the one in PR #74
+		// Arrays.stream(paramValues).filter(Objects::nonNull).toArray(String[]::new);
+		if (fixParamValues > 0) {
+			String[] fixedValues = new String[paramValues.length - fixParamValues];
+			int insertIndex = 0;
+			for (int i = 0; i < paramValues.length; i++) {
+				if (paramValues[i] != null) {
+					fixedValues[insertIndex++] = paramValues[i];
+				}
+			}
+			return fixedValues;
+		}
+		else {
+			return paramValues;
+		}
 	}
 
 	private static NumberResultFilter parseNumberFilter(Field field, String paramValue) {

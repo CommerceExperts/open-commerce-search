@@ -1,5 +1,6 @@
 package de.cxp.ocs.elasticsearch.query.analyzer;
 
+import static de.cxp.ocs.util.TestUtils.assertAndCastInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -194,6 +195,26 @@ public class QuerqyQueryExpanderTest {
 	}
 
 	@Test
+	public void testSameFieldTwoFilter() {
+		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: * -field:removeA -field:removeB");
+		List<QueryStringTerm> result = analyze(underTest, "input");
+
+		assertEquals(3, result.size(), () -> result.toString());
+		WeightedWord term1 = assertAndCastInstanceOf(result.get(0), WeightedWord.class);
+		assertEquals("input", term1.getWord());
+
+		QueryFilterTerm term2 = assertAndCastInstanceOf(result.get(1), QueryFilterTerm.class);
+		assertEquals("field", term2.getField());
+		assertEquals("removeA", term2.getWord());
+		assertEquals(Occur.MUST_NOT, term2.getOccur());
+
+		QueryFilterTerm term3 = assertAndCastInstanceOf(result.get(2), QueryFilterTerm.class);
+		assertEquals("field", term3.getField());
+		assertEquals("removeB", term3.getWord());
+		assertEquals(Occur.MUST_NOT, term3.getOccur());
+	}
+
+	@Test
 	public void testExcludeFieldIDFilter() {
 		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: * -category.id:111222000");
 		List<QueryStringTerm> result = analyze(underTest, "input");
@@ -313,10 +334,5 @@ public class QuerqyQueryExpanderTest {
 		List<QueryStringTerm> result = underTest.analyze(query);
 		log.info("query '{}' returned result {}", query, result);
 		return result;
-	}
-
-	private <T> T assertAndCastInstanceOf(QueryStringTerm term, Class<T> clazz) {
-		assertTrue(clazz.isAssignableFrom(term.getClass()), "expected object of type " + clazz + " but was " + term.getClass());
-		return clazz.cast(term);
 	}
 }
