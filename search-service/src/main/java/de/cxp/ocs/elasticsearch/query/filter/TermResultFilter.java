@@ -22,6 +22,7 @@ public class TermResultFilter implements InternalResultFilter {
 
 	private boolean isNegated = false;
 
+
 	private String fieldPrefix = FieldConstants.TERM_FACET_DATA;
 
 	public TermResultFilter(Field field, String... inputValues) {

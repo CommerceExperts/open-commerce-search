@@ -1,20 +1,18 @@
 package de.cxp.ocs.elasticsearch;
 
-import static de.cxp.ocs.util.SearchParamsParser.parseFilters;
-
 import java.util.*;
 import java.util.stream.Collectors;
 
 import org.apache.lucene.search.BooleanClause.Occur;
 
 import de.cxp.ocs.config.FieldConfigIndex;
+import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.model.QueryFilterTerm;
 import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.SearchParamsParser;
-import de.cxp.ocs.util.SearchQueryBuilder;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -48,7 +46,7 @@ public class QueryStringParser {
 			searchWords = userQueryAnalyzer.analyze(preprocessedQuery);
 			searchWords = handleFiltersOnFields(parameters, searchWords);
 			searchMetaData.put("analyzedQuery", searchWords);
-			searchMetaData.put("analyzerFilters", parameters.querqyFilters);
+			searchMetaData.put("analyzerFilters", parameters.inducedFilters);
 		}
 		else {
 			searchWords = Collections.emptyList();
@@ -69,24 +67,35 @@ public class QueryStringParser {
 		// Pull all QueryFilterTerm items into a list of its own
 		List<QueryStringTerm> remainingSearchWords = new ArrayList<>();
 
-		Map<String, String> filtersAsMap = searchWords.stream()
+		Map<String, InternalResultFilter> filtersAsMap = searchWords.stream()
 				.filter(searchWord -> searchWord instanceof QueryFilterTerm || !remainingSearchWords.add(searchWord))
 				// Generate the filters and add them
 				.map(term -> (QueryFilterTerm) term)
-				.collect(Collectors.toMap(QueryFilterTerm::getField, qf -> toParameterStyle(qf), (word1, word2) -> word1 + SearchQueryBuilder.VALUE_DELIMITER + word2));
+				.collect(Collectors.toMap(QueryFilterTerm::getField, this::toInternalResultFilter, this::combineInternalFilter));
 
-		parameters.querqyFilters = parseFilters(filtersAsMap, fieldIndex, locale);
+		parameters.inducedFilters = new ArrayList<>(filtersAsMap.values());
 
 		return remainingSearchWords;
 	}
 
-	private String toParameterStyle(QueryFilterTerm queryFilter) {
-		if (Occur.MUST_NOT.equals(queryFilter.getOccur())) {
-			return SearchParamsParser.NEGATE_FILTER_PREFIX + queryFilter.getWord();
-		}
-		else {
-			return queryFilter.getWord();
-		}
+
+	private InternalResultFilter toInternalResultFilter(QueryFilterTerm queryFilter) {
+		String paramValue = Occur.MUST_NOT.equals(queryFilter.getOccur()) ? SearchParamsParser.NEGATE_FILTER_PREFIX + queryFilter.getWord() : queryFilter.getWord();
+		return SearchParamsParser.parseSingleFilter(queryFilter.getField(), paramValue, fieldIndex, locale).orElse(null);
+	}
+
+	private InternalResultFilter combineInternalFilter(InternalResultFilter f1, InternalResultFilter f2) {
+		if (f1 == null) return f2;
+		if (f2 == null) return f1;
+		// if one filter is negated but the other is not, only keep the including filter
+		if (f1.isNegated() && !f2.isNegated()) return f2;
+		if (!f1.isNegated() && f2.isNegated()) return f1;
+
+		Set<String> values = new HashSet<>(f1.getValues().length + f2.getValues().length);
+		values.addAll(Arrays.asList(f1.getValues()));
+		values.addAll(Arrays.asList(f2.getValues()));
+
+		return SearchParamsParser.toInternalFilter(f1.getField(), values.toArray(new String[0]), locale, f1.isFilterOnId(), f1.isNegated());
 	}
 
 }

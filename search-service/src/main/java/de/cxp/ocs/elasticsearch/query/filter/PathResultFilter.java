@@ -20,7 +20,7 @@ public class PathResultFilter implements InternalResultFilter {
 	private final Field field;
 
 	@Getter
-	private String[] values;
+	private final String[] values;
 
 	@Getter
 	private List<String[]> filterPaths;

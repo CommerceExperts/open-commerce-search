@@ -61,9 +61,9 @@ public class QueryStringParserTest {
 		WeightedWord term1 = assertAndCastInstanceOf(queryTerms.get(0), WeightedWord.class);
 		assertEquals("input", term1.getWord());
 
-		assertEquals(1, internalParams.querqyFilters.size());
-		InternalResultFilter brandFilter = assertAndCastInstanceOf(internalParams.querqyFilters.get(0), InternalResultFilter.class);
-		assertArrayEquals(new String[] { "b1", "b2" }, brandFilter.getValues());
+		assertEquals(1, internalParams.inducedFilters.size());
+		InternalResultFilter brandFilter = assertAndCastInstanceOf(internalParams.inducedFilters.get(0), InternalResultFilter.class);
+		assertArrayEquals(new String[] { "b2", "b1" }, brandFilter.getValues());
 		assertTrue(brandFilter.isNegated());
 	}
 
@@ -88,9 +88,37 @@ public class QueryStringParserTest {
 		WeightedWord term1 = assertAndCastInstanceOf(queryTerms.get(0), WeightedWord.class);
 		assertEquals("input", term1.getWord());
 
-		assertEquals(1, internalParams.querqyFilters.size());
-		InternalResultFilter brandFilter = assertAndCastInstanceOf(internalParams.querqyFilters.get(0), InternalResultFilter.class);
+		assertEquals(1, internalParams.inducedFilters.size());
+		InternalResultFilter brandFilter = assertAndCastInstanceOf(internalParams.inducedFilters.get(0), InternalResultFilter.class);
 		assertArrayEquals(new String[] { "b1" }, brandFilter.getValues());
+		assertFalse(brandFilter.isNegated());
+	}
+
+	// inverted version to combinedIncludeAndExcludeFiltersOnSameField
+	@Test
+	public void combinedExcludeAndIncludeFiltersOnSameField() {
+		UserQueryAnalyzer analyzerMock = new UserQueryAnalyzer() {
+
+			@Override
+			public List<QueryStringTerm> analyze(String userQuery) {
+				return Arrays.asList(new WeightedWord("input"),
+						new QueryFilterTerm("brand", "b1", Occur.MUST_NOT),
+						// expect to be ignored:
+						new QueryFilterTerm("brand", "b2", Occur.MUST));
+			}
+		};
+
+		QueryStringParser underTest = new QueryStringParser(analyzerMock, new FieldConfigIndex(new FieldConfiguration().addField(new Field("brand").setUsage(FieldUsage.FACET))), Locale.ROOT);
+		InternalSearchParams internalParams = paramsWithQuery("input");
+		List<QueryStringTerm> queryTerms = underTest.preprocessQuery(internalParams, new HashMap<>());
+
+		assertEquals(1, queryTerms.size());
+		WeightedWord term1 = assertAndCastInstanceOf(queryTerms.get(0), WeightedWord.class);
+		assertEquals("input", term1.getWord());
+
+		assertEquals(1, internalParams.inducedFilters.size());
+		InternalResultFilter brandFilter = assertAndCastInstanceOf(internalParams.inducedFilters.get(0), InternalResultFilter.class);
+		assertArrayEquals(new String[] { "b2" }, brandFilter.getValues());
 		assertFalse(brandFilter.isNegated());
 	}
 

@@ -84,41 +84,44 @@ public class SearchParamsParser {
 				String paramName = p.getKey();
 				String paramValue = p.getValue();
 
-				boolean isIdFilter = false;
-				if (paramName.endsWith(ID_FILTER_SUFFIX)) {
-					isIdFilter = true;
-					paramName = paramName.substring(0, paramName.length() - 3);
-				}
-
-				Optional<Field> matchingField = fieldConfig.getMatchingField(paramName, paramValue, FieldUsage.FACET);
-
-				if (matchingField.isPresent()) {
-					Field field = matchingField.get();
-					try {
-						filters.add(toInternalFilter(field, paramValue, isIdFilter, locale));
-					}
-					catch (IllegalArgumentException iae) {
-						log.error("Ignoring invalid filter parameter {}={}", paramName, paramValue);
-					}
-				}
+				parseSingleFilter(paramName, paramValue, fieldConfig, locale).ifPresent(filters::add);
 			}
 		}
 
 		return filters;
 	}
 
-	public static InternalResultFilter toInternalFilter(Field field, String paramValue, boolean isIdFilter, Locale locale) {
+	public static Optional<InternalResultFilter> parseSingleFilter(final String paramName, final String paramValue, FieldConfigIndex fieldConfig, Locale locale) {
+		final boolean isIdFilter = paramName.endsWith(ID_FILTER_SUFFIX);
+		final String fieldName = isIdFilter ? paramName.substring(0, paramName.length() - 3) : paramName;
+		return fieldConfig.getMatchingField(fieldName, paramValue, FieldUsage.FACET)
+				.map(f -> {
+					try {
+						return toInternalFilter(f, paramValue, locale, isIdFilter);
+					}
+					catch (IllegalArgumentException iae) {
+						log.error("Ignoring invalid filter parameter {}={}", paramName, paramValue);
+						return null;
+					}
+				});
+	}
+
+	public static InternalResultFilter toInternalFilter(Field field, String paramValue, Locale locale, boolean isIdFilter) {
 		boolean negate = paramValue.startsWith(NEGATE_FILTER_PREFIX);
 		if (negate) {
 			paramValue = paramValue.substring(NEGATE_FILTER_PREFIX.length());
 		}
 
-		InternalResultFilter internalFilter;
 		String[] paramValues = decodeValueDelimiter(split(paramValue, VALUE_DELIMITER));
 
 		// if there are single values with the negate-filter-prefix, we handle them here
 		paramValues = fixMultiNegationPrefixes(paramValues, negate);
 
+		return toInternalFilter(field, paramValues, locale, isIdFilter, negate);
+	}
+
+	public static InternalResultFilter toInternalFilter(Field field, String[] paramValues, Locale locale, boolean isIdFilter, boolean negate) {
+		InternalResultFilter internalFilter;
 		switch (field.getType()) {
 			case CATEGORY:
 				internalFilter = new PathResultFilter(field, paramValues)
@@ -127,7 +130,7 @@ public class SearchParamsParser {
 						.setNegated(negate);
 				break;
 			case NUMBER:
-				internalFilter = parseNumberFilter(field, paramValue)
+				internalFilter = parseNumberFilter(field, paramValues)
 						.setNegated(negate);
 				break;
 			default:
@@ -174,27 +177,35 @@ public class SearchParamsParser {
 		}
 	}
 
-	private static NumberResultFilter parseNumberFilter(Field field, String paramValue) {
-		String[] paramValues;
-		paramValues = splitPreserveAllTokens(paramValue, VALUE_DELIMITER);
-		if (paramValues.length != 2) {
+	private static NumberResultFilter parseNumberFilter(Field field, String[] paramValues) {
+		if (paramValues.length == 1) {
+
 			// Fallback logic to allow numeric filter values
 			// separated by dash, e.g. "50 - 100"
 			// however this is error prone, because dash is
 			// also used as minus for negative values. In
 			// such
 			// case this will simply fail
-			paramValues = splitPreserveAllTokens(paramValue, '-');
+			paramValues = splitPreserveAllTokens(paramValues[0], '-');
 			if (paramValues.length != 2) {
-				throw new IllegalArgumentException("unexpected numeric filter value: " + paramValue);
+				throw new IllegalArgumentException("unexpected numeric filter value: " + paramValues[0]);
 			}
 		}
-		paramValues[0] = paramValues[0].trim();
-		paramValues[1] = paramValues[1].trim();
-		return new NumberResultFilter(
-				field,
-				paramValues[0].isEmpty() ? null : Util.tryToParseAsNumber(paramValues[0]).orElseThrow(IllegalArgumentException::new),
-				paramValues[1].isEmpty() ? null : Util.tryToParseAsNumber(paramValues[1]).orElseThrow(IllegalArgumentException::new));
+		Number min = 0;
+		Number max = 0;
+		for (String value : paramValues) {
+			value = value.trim();
+			if (value.isEmpty()) continue;
+
+			Number numValue = Util.tryToParseAsNumber(value).orElseThrow(IllegalArgumentException::new);
+			if (numValue.doubleValue() < min.doubleValue()) {
+				min = numValue;
+			}
+			if (numValue.doubleValue() > max.doubleValue()) {
+				max = numValue;
+			}
+		}
+		return new NumberResultFilter(field, min, max);
 	}
 
 	private static String[] decodeValueDelimiter(String[] split) {

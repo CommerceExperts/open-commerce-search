@@ -174,7 +174,7 @@ public class Searcher {
 			stagedQueryBuilders = queryBuilder.getMatchingFactories(searchWords);
 		}
 
-		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters, parameters.querqyFilters, parameters.withFacets);
+		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters, parameters.inducedFilters, parameters.withFacets);
 		List<SortBuilder<?>> variantSortings = sortingHandler.getVariantSortings(parameters.sortings);
 
 		SearchSourceBuilder searchSourceBuilder = buildBasicSearchSourceBuilder(parameters, filterContext, variantSortings);
