@@ -109,12 +109,16 @@ public class SearchParamsParser {
 
 	private static InternalResultFilter toInternalFilter(Field field, String paramValue, boolean isIdFilter, Locale locale) {
 		boolean negate = paramValue.startsWith(NEGATE_FILTER_PREFIX);
-		if (negate) {
-			paramValue = paramValue.substring(NEGATE_FILTER_PREFIX.length());
-		}
 
 		InternalResultFilter internalFilter;
 		String[] paramValues = decodeValueDelimiter(split(paramValue, VALUE_DELIMITER));
+
+		if(negate) {
+			paramValue = paramValue.substring(NEGATE_FILTER_PREFIX.length());
+			paramValues = Arrays.stream(paramValues).map(value -> value.substring(NEGATE_FILTER_PREFIX.length()))
+					.toArray(String[]::new);
+		}
+
 		switch (field.getType()) {
 			case CATEGORY:
 				internalFilter = new PathResultFilter(field, paramValues)
