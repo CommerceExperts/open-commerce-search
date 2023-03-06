@@ -1,7 +1,7 @@
 package de.cxp.ocs.elasticsearch.query.model;
 
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.lucene.search.BooleanClause.Occur;
@@ -22,11 +22,16 @@ public class WordAssociation implements QueryStringTerm {
 	private String	originalWord;
 	private Occur	occur	= Occur.MUST;
 
-	private Map<String, QueryStringTerm> relatedWords = new HashMap<>();
+	private Map<String, QueryStringTerm> relatedWords = new LinkedHashMap<>();
 
 	public WordAssociation(String word, Collection<WeightedWord> values) {
 		originalWord = word;
 		values.forEach(v -> relatedWords.put(v.getWord(), v));
+	}
+
+	public WordAssociation(String word, Occur occur, Collection<WeightedWord> values) {
+		this(word, values);
+		this.occur = occur;
 	}
 
 	public void putOrUpdate(QueryStringTerm newWord) {
@@ -57,15 +62,21 @@ public class WordAssociation implements QueryStringTerm {
 	 */
 	@Override
 	public String toQueryString() {
+		boolean multiTermWord = originalWord.indexOf(' ') >= 0;
+
 		StringBuilder queryString = new StringBuilder(occur.toString())
-				.append("(")
-				.append(EscapeUtil.escapeReservedESCharacters(originalWord));
+				.append("(");
+
+		if (multiTermWord) queryString.append("(");
+		queryString.append(EscapeUtil.escapeReservedESCharacters(originalWord));
+		if (multiTermWord) queryString.append(")");
+
 		for (QueryStringTerm relatedWord : relatedWords.values()) {
 			queryString.append(" OR ");
 
 			String relatedQuery = relatedWord.toQueryString();
-			// only put brakets around it if is a multi-term query
-			if (relatedQuery.indexOf(' ') > 0) {
+			// only put brakets around it if is a non-quoted multi-term query
+			if (relatedQuery.indexOf(' ') > 0 && !isQuoted(relatedWord)) {
 				queryString.append('(').append(relatedQuery).append(')');
 			}
 			else {
@@ -73,6 +84,15 @@ public class WordAssociation implements QueryStringTerm {
 			}
 		}
 		return queryString.append(")").toString();
+	}
+
+	private boolean isQuoted(QueryStringTerm relatedWord) {
+		return relatedWord instanceof WeightedWord && ((WeightedWord) relatedWord).isQuoted()
+				|| isQuoted(relatedWord.toQueryString());
+	}
+
+	private boolean isQuoted(String queryString) {
+		return queryString.length() >= 2 && queryString.indexOf(0) == '"' && queryString.indexOf(queryString.length() - 1) == '"';
 	}
 
 	@Override

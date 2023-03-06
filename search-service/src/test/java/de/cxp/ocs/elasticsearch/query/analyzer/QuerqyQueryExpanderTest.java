@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.opentest4j.TestAbortedException;
 
 import de.cxp.ocs.elasticsearch.query.model.*;
+import de.cxp.ocs.util.ESQueryUtils;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -59,8 +60,55 @@ public class QuerqyQueryExpanderTest {
 	}
 
 	@Test
-	public void testTwoWordSynonym() {
-		QuerqyQueryExpander underTest = loadRule("input =>", "  SYNONYM(0.2): two words");
+	public void testTwoSynonymsInOneRule() {
+		QuerqyQueryExpander underTest = loadRule("input =>", "  SYNONYM: word1 word2");
+		List<QueryStringTerm> result = analyze(underTest, "input more");
+		assertEquals(2, result.size());
+		WordAssociation term = assertAndCastInstanceOf(result.get(0), WordAssociation.class);
+		assertEquals("input", term.getOriginalWord());
+
+		assertEquals(1, term.getRelatedWords().size(), term.getRelatedWords()::toString);
+		assertTrue(term.getRelatedWords().keySet().contains("word1 word2"));
+
+		WeightedWord relatedWords = assertAndCastInstanceOf(term.getRelatedWords().get("word1 word2"), WeightedWord.class);
+		assertEquals(new WeightedWord("word1 word2", 1f, false, true, Occur.SHOULD), relatedWords);
+
+		// expect multi-term synonym in quotes to consider them as a phrase
+		assertEquals("(input OR \"word1 word2\") more", ESQueryUtils.buildQueryString(result, " "));
+	}
+
+	@Test
+	public void testTwoSynonymsInTwoRule() {
+		QuerqyQueryExpander underTest = loadRule("input =>", "  SYNONYM: word1", "  SYNONYM: word2");
+		List<QueryStringTerm> result = analyze(underTest, "input more");
+		assertEquals(2, result.size(), result::toString);
+		WordAssociation term1 = assertAndCastInstanceOf(result.get(0), WordAssociation.class);
+		assertEquals("input", term1.getOriginalWord());
+
+		WeightedWord term2 = assertAndCastInstanceOf(result.get(1), WeightedWord.class);
+		assertEquals("more", term2.getWord());
+
+		assertEquals(2, term1.getRelatedWords().size(), term1.getRelatedWords()::toString);
+		assertTrue(term1.getRelatedWords().keySet().contains("word1"));
+		assertTrue(term1.getRelatedWords().keySet().contains("word2"));
+
+		WeightedWord relatedWord1 = assertAndCastInstanceOf(term1.getRelatedWords().get("word1"), WeightedWord.class);
+		assertEquals(new WeightedWord("word1", 1f, Occur.SHOULD), relatedWord1);
+
+		WeightedWord relatedWord2 = assertAndCastInstanceOf(term1.getRelatedWords().get("word2"), WeightedWord.class);
+		assertEquals(new WeightedWord("word2", 1f, Occur.SHOULD), relatedWord2);
+
+		// unfortunately the order of the terms is not very predictable
+		assertEquals("(input OR word2 OR word1) more", ESQueryUtils.buildQueryString(result, " "));
+	}
+
+	/**
+	 * for some time we used brackets to ensure two words are used together.
+	 * so make sure this still works but with the brackets ignored.
+	 */
+	@Test
+	public void testMultiTermSynonymInBrackets() {
+		QuerqyQueryExpander underTest = loadRule("input =>", "  SYNONYM(0.2): (two words)");
 		List<QueryStringTerm> result = analyze(underTest, "input");
 		assertEquals(1, result.size());
 		WordAssociation term = assertAndCastInstanceOf(result.get(0), WordAssociation.class);
@@ -69,8 +117,33 @@ public class QuerqyQueryExpanderTest {
 		assertEquals(1, term.getRelatedWords().size(), term.getRelatedWords()::toString);
 		assertTrue(term.getRelatedWords().keySet().contains("two words"));
 
-		WeightedWord relatedWords = assertAndCastInstanceOf(term.getRelatedWords().get("two words"), WeightedWord.class);
-		assertEquals(0.2f, relatedWords.getWeight());
+		WeightedWord relatedPhrase = assertAndCastInstanceOf(term.getRelatedWords().get("two words"), WeightedWord.class);
+		assertEquals(new WeightedWord("two words", 0.2f, false, true, Occur.SHOULD), relatedPhrase);
+		assertEquals("(input OR \"two words\"^0.2)", ESQueryUtils.buildQueryString(result, " "));
+	}
+
+	@Test
+	public void testMultiTermSynonymForMultiTermInput() {
+		QuerqyQueryExpander underTest = loadRule("fer à repasser =>", "  SYNONYM(0.7): centrale vapeur");
+		List<QueryStringTerm> result = analyze(underTest, "fer à repasser philips");
+		assertEquals(2, result.size(), result::toString);
+
+		AlternativeTerm term = assertAndCastInstanceOf(result.get(0), AlternativeTerm.class);
+		assertEquals("fer à repasser", term.getAlternatives().get(0).getWord());
+		assertEquals("centrale vapeur", term.getAlternatives().get(1).getWord());
+
+		assertEquals("((fer à repasser) OR \"centrale vapeur\"^0.7) philips", ESQueryUtils.buildQueryString(result, " "));
+	}
+
+	@Test
+	public void testMultipleSynonymsForMultiTermInput() {
+		QuerqyQueryExpander underTest = loadRule(
+				"fer à repasser =>",
+				"  SYNONYM: centrale vapeur",
+				"fer =>",
+				"  SYNONYM: metal");
+		List<QueryStringTerm> result = analyze(underTest, "fer à repasser philips");
+		assertEquals("(((fer OR metal) à repasser) OR \"centrale vapeur\") philips", ESQueryUtils.buildQueryString(result, " "));
 	}
 
 	@Test

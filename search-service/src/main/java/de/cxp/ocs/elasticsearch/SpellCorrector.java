@@ -1,10 +1,6 @@
 package de.cxp.ocs.elasticsearch;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.search.suggest.Suggest.Suggestion;
@@ -58,9 +54,9 @@ public class SpellCorrector {
 						wordCorrections.putOrUpdate(
 								new WeightedWord(
 										spellCorrectOption.getText().string(),
-										spellCorrectOption.getScore(),
-										((org.elasticsearch.search.suggest.term.TermSuggestion.Entry.Option) spellCorrectOption)
-												.getFreq()));
+										spellCorrectOption.getScore()));
+						// XXX was this used before?
+						//((org.elasticsearch.search.suggest.term.TermSuggestion.Entry.Option) spellCorrectOption).getFreq())
 					}
 				}
 			}

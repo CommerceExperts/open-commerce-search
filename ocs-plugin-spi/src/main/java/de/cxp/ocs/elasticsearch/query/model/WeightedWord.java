@@ -19,21 +19,30 @@ public class WeightedWord implements QueryStringTerm {
 	@NonNull
 	private String	word;
 	private float	weight			= 1f;
-	// TODO: remove because unused?
-	private int		termFrequency	= -1;
 	private boolean	isFuzzy			= false;
 	private boolean	isQuoted		= false;
 	private Occur	occur			= Occur.SHOULD;
+
+	@Deprecated(forRemoval = true)
+	private int		termFrequency	= 0;
 
 	public WeightedWord(String word, float weight) {
 		this.word = word;
 		this.weight = weight;
 	}
 
-	public WeightedWord(String word, float weight, int freq) {
+	public WeightedWord(String word, float weight, Occur occur) {
 		this.word = word;
 		this.weight = weight;
-		termFrequency = freq;
+		this.occur = occur;
+	}
+
+	public WeightedWord(String word, float weight, boolean isFuzzy, boolean isQuoted, Occur occur) {
+		this.word = word;
+		this.weight = weight;
+		this.occur = occur;
+		this.isFuzzy = isFuzzy;
+		this.isQuoted = isQuoted;
 	}
 
 	@Override
