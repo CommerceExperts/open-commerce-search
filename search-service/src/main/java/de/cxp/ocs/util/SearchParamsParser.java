@@ -191,8 +191,8 @@ public class SearchParamsParser {
 				throw new IllegalArgumentException("unexpected numeric filter value: " + paramValues[0]);
 			}
 		}
-		Number min = 0;
-		Number max = 0;
+		Number min = Integer.MAX_VALUE;
+		Number max = Integer.MIN_VALUE;
 		for (String value : paramValues) {
 			value = value.trim();
 			if (value.isEmpty()) continue;
