@@ -9,11 +9,11 @@ import org.elasticsearch.client.RestHighLevelClient;
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.config.*;
 import de.cxp.ocs.config.QueryConfiguration.QueryCondition;
+import de.cxp.ocs.elasticsearch.model.query.AnalyzedQuery;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.ComposedPredicate;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.ConditionalQuery;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.PatternCondition;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.TermCountCondition;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.plugin.ExtensionSupplierRegistry;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import lombok.NonNull;
@@ -76,8 +76,8 @@ public class ESQueryFactoryBuilder {
 		return new ConditionalQueries(predicatesAndBuilders);
 	}
 
-	private Predicate<List<QueryStringTerm>> createPredicate(QueryCondition condition) {
-		List<Predicate<List<QueryStringTerm>>> collectedPredicates = new ArrayList<>();
+	private Predicate<AnalyzedQuery> createPredicate(QueryCondition condition) {
+		List<Predicate<AnalyzedQuery>> collectedPredicates = new ArrayList<>();
 		if (condition.getMatchingRegex() != null) {
 			collectedPredicates.add(new PatternCondition(condition.getMatchingRegex()));
 		}

@@ -1,10 +1,12 @@
-package de.cxp.ocs.elasticsearch.query.model;
+package de.cxp.ocs.elasticsearch.model.util;
 
-import static de.cxp.ocs.elasticsearch.query.model.EscapeUtil.escapeReservedESCharacters;
+import static de.cxp.ocs.elasticsearch.model.util.EscapeUtil.escapeReservedESCharacters;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
+
+import de.cxp.ocs.elasticsearch.model.util.EscapeUtil;
 
 public class EscapeUtilTest {
 

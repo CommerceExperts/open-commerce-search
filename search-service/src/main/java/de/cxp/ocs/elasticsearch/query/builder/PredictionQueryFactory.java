@@ -15,10 +15,11 @@ import org.elasticsearch.index.query.MultiMatchQueryBuilder.Type;
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.QueryBuildingSetting;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
+import de.cxp.ocs.elasticsearch.model.query.MultiTermQuery;
+import de.cxp.ocs.elasticsearch.model.term.AssociatedTerm;
+import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
-import de.cxp.ocs.elasticsearch.query.model.WeightedWord;
-import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import de.cxp.ocs.util.ESQueryUtils;
 import lombok.Getter;
@@ -73,15 +74,15 @@ public class PredictionQueryFactory implements ESQueryFactory {
 	}
 
 	@Override
-	public MasterVariantQuery createQuery(final List<QueryStringTerm> searchWords) {
-		final List<PredictedQuery> predictedQueries = predictQueries(searchWords);
+	public MasterVariantQuery createQuery(ExtendedQuery parsedQuery) {
+		final List<PredictedQuery> predictedQueries = predictQueries(parsedQuery);
 
 		if (predictedQueries == null || predictedQueries.isEmpty()) {
 			if (fallbackQueryBuilder == null) {
 				return null;
 			}
 			else {
-				return fallbackQueryBuilder.createQuery(searchWords);
+				return fallbackQueryBuilder.createQuery(parsedQuery);
 			}
 		}
 
@@ -110,19 +111,19 @@ public class PredictionQueryFactory implements ESQueryFactory {
 					final QueryStringTerm unknownTerm = unknownTermIterator.next();
 					if (termHasMatches(unknownTerm)) {
 						queryStrings.add(unknownTerm.toQueryString());
-						pQuery.termsUnique.put(unknownTerm.getWord(), unknownTerm);
+						pQuery.termsUnique.put(unknownTerm.getRawTerm(), unknownTerm);
 
 						// ..and increment the matching term count
 						matchingTermCount++;
 						unknownTermIterator.remove();
 					}
 					else if (i == 0) {
-						unmatchedTerms.put(unknownTerm.getWord(), unknownTerm);
+						unmatchedTerms.put(unknownTerm.getRawTerm(), unknownTerm);
 					}
 				}
 			}
 			else if (i == 0) {
-				pQuery.unknownTerms.forEach(term -> unmatchedTerms.put(term.getWord(), term));
+				pQuery.unknownTerms.forEach(term -> unmatchedTerms.put(term.getRawTerm(), term));
 			}
 
 			String queryLabel = ESQueryUtils.getQueryLabel(pQuery.getTermsUnique().values());
@@ -149,7 +150,7 @@ public class PredictionQueryFactory implements ESQueryFactory {
 			}
 
 			// Use the query if it requires all terms to match
-			if (matchingTermCount == searchWords.size()
+			if (matchingTermCount == parsedQuery.getTermCount()
 					// ..OR..
 					// use the query if it contains any of the unmatched terms
 					// => TODO: put and use QueryMetaFetcher.containsAny method
@@ -175,16 +176,16 @@ public class PredictionQueryFactory implements ESQueryFactory {
 		// in case we have some terms that are not matched by any query, use
 		// them with the fallback query builder to boost matching records.
 		if (unmatchedTerms.size() > 0 && fallbackQueryBuilder != null) {
-			MasterVariantQuery boostQuery = fallbackQueryBuilder.createQuery(new ArrayList<>(unmatchedTerms.values()));
+			MasterVariantQuery boostQuery = fallbackQueryBuilder.createQuery(new ExtendedQuery(new MultiTermQuery(unmatchedTerms.values())));
 			mainQuery = QueryBuilders.boolQuery()
 					.must(mainQuery)
 					.should(boostQuery.getMasterLevelQuery())
 					.queryName("boost(" + ESQueryUtils.getQueryLabel(unmatchedTerms.values()) + ")");
 		}
 
-		for (QueryStringTerm term : searchWords) {
+		for (QueryStringTerm term : parsedQuery.getFilters()) {
 			if (term.getOccur().equals(Occur.MUST_NOT)) {
-				mainQuery = ESQueryUtils.mapToBoolQueryBuilder(mainQuery).mustNot(exactMatchQuery(term.getWord()));
+				mainQuery = ESQueryUtils.mapToBoolQueryBuilder(mainQuery).mustNot(exactMatchQuery(term.getRawTerm()));
 			}
 		}
 
@@ -194,22 +195,22 @@ public class PredictionQueryFactory implements ESQueryFactory {
 		 *
 		 * Now prefer variants with more matching terms
 		 */
-		QueryBuilder variantScoreQuery = variantQueryFactory.createMatchAnyTermQuery(searchWords);
+		QueryBuilder variantScoreQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery);
 
 		return new MasterVariantQuery(mainQuery, variantScoreQuery, true, unmatchedTerms.size() == 0);
 	}
 
 	private boolean termHasMatches(QueryStringTerm unknownTerm) {
-		if (unknownTerm instanceof WordAssociation) return ((WordAssociation) unknownTerm).getRelatedWords().size() > 0;
-		if (unknownTerm instanceof WeightedWord) return ((WeightedWord) unknownTerm).getTermFrequency() > 0;
+		if (unknownTerm instanceof AssociatedTerm) return ((AssociatedTerm) unknownTerm).getRelatedTerms().size() > 0;
+		if (unknownTerm instanceof CountedTerm) return ((CountedTerm) unknownTerm).getTermFrequency() > 0;
 		else return false;
 	}
 
-	private List<PredictedQuery> predictQueries(final List<QueryStringTerm> searchWords) {
+	private List<PredictedQuery> predictQueries(final @NonNull ExtendedQuery analyzedQuery) {
 		List<PredictedQuery> queryMetaData = null;
 
 		try {
-			queryMetaData = metaFetcher.getQueryMetaData(searchWords, fieldWeights);
+			queryMetaData = metaFetcher.getQueryMetaData(analyzedQuery, fieldWeights);
 		}
 		catch (final IOException ioe) {
 			log.error("can't build search query, because meta fetch phase failed", ioe);

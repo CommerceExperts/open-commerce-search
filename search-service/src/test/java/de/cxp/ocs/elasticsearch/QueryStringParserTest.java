@@ -18,11 +18,14 @@ import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.config.FieldUsage;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
+import de.cxp.ocs.elasticsearch.model.query.SingleTermQuery;
+import de.cxp.ocs.elasticsearch.model.term.QueryFilterTerm;
+import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
+import de.cxp.ocs.elasticsearch.model.term.WeightedTerm;
+import de.cxp.ocs.elasticsearch.query.analyzer.AnalyzerUtil;
 import de.cxp.ocs.elasticsearch.query.analyzer.WhitespaceAnalyzer;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
-import de.cxp.ocs.elasticsearch.query.model.QueryFilterTerm;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
-import de.cxp.ocs.elasticsearch.query.model.WeightedWord;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.util.InternalSearchParams;
 
@@ -31,14 +34,15 @@ public class QueryStringParserTest {
 	@Test
 	public void simpleWhitespaceParsing() {
 		QueryStringParser underTest = new QueryStringParser(new WhitespaceAnalyzer(), new FieldConfigIndex(new FieldConfiguration()), Locale.ROOT);
-		List<QueryStringTerm> queryTerms = underTest.preprocessQuery(paramsWithQuery("foo bar"), new HashMap<>());
+		ExtendedQuery parsedQuery = underTest.preprocessQuery(paramsWithQuery("foo bar"), new HashMap<>());
+		List<QueryStringTerm> queryTerms = AnalyzerUtil.extractTerms(parsedQuery);
 
 		assertEquals(2, queryTerms.size());
-		WeightedWord term1 = assertAndCastInstanceOf(queryTerms.get(0), WeightedWord.class);
-		assertEquals("foo", term1.getWord());
+		WeightedTerm term1 = assertAndCastInstanceOf(queryTerms.get(0), WeightedTerm.class);
+		assertEquals("foo", term1.getRawTerm());
 
-		WeightedWord term2 = assertAndCastInstanceOf(queryTerms.get(1), WeightedWord.class);
-		assertEquals("bar", term2.getWord());
+		WeightedTerm term2 = assertAndCastInstanceOf(queryTerms.get(1), WeightedTerm.class);
+		assertEquals("bar", term2.getRawTerm());
 	}
 
 	@Test
@@ -46,20 +50,22 @@ public class QueryStringParserTest {
 		UserQueryAnalyzer analyzerMock = new UserQueryAnalyzer() {
 
 			@Override
-			public List<QueryStringTerm> analyze(String userQuery) {
-				return Arrays.asList(new WeightedWord("input"),
-						new QueryFilterTerm("brand", "b1", Occur.MUST_NOT),
-						new QueryFilterTerm("brand", "b2", Occur.MUST_NOT));
+			public ExtendedQuery analyze(String userQuery) {
+				return new ExtendedQuery(
+						new SingleTermQuery(new WeightedTerm("input")),
+						// expect to be ignored:
+						Arrays.asList(new QueryFilterTerm("brand", "b1", Occur.MUST_NOT), new QueryFilterTerm("brand", "b2", Occur.MUST_NOT)));
 			}
 		};
 
 		QueryStringParser underTest = new QueryStringParser(analyzerMock, new FieldConfigIndex(new FieldConfiguration().addField(new Field("brand").setUsage(FieldUsage.FACET))), Locale.ROOT);
 		InternalSearchParams internalParams = paramsWithQuery("input");
-		List<QueryStringTerm> queryTerms = underTest.preprocessQuery(internalParams, new HashMap<>());
+		ExtendedQuery parsedQuery = underTest.preprocessQuery(internalParams, new HashMap<>());
+		List<QueryStringTerm> queryTerms = AnalyzerUtil.extractTerms(parsedQuery);
 
 		assertEquals(1, queryTerms.size());
-		WeightedWord term1 = assertAndCastInstanceOf(queryTerms.get(0), WeightedWord.class);
-		assertEquals("input", term1.getWord());
+		WeightedTerm term1 = assertAndCastInstanceOf(queryTerms.get(0), WeightedTerm.class);
+		assertEquals("input", term1.getRawTerm());
 
 		assertEquals(1, internalParams.inducedFilters.size());
 		InternalResultFilter brandFilter = assertAndCastInstanceOf(internalParams.inducedFilters.get(0), InternalResultFilter.class);
@@ -72,21 +78,24 @@ public class QueryStringParserTest {
 		UserQueryAnalyzer analyzerMock = new UserQueryAnalyzer() {
 
 			@Override
-			public List<QueryStringTerm> analyze(String userQuery) {
-				return Arrays.asList(new WeightedWord("input"),
-						new QueryFilterTerm("brand", "b1", Occur.MUST),
-						// expect to be ignored:
-						new QueryFilterTerm("brand", "b2", Occur.MUST_NOT));
+			public ExtendedQuery analyze(String userQuery) {
+				return new ExtendedQuery(
+						new SingleTermQuery(new WeightedTerm("input")),
+						Arrays.asList(
+								new QueryFilterTerm("brand", "b1", Occur.MUST),
+								// expect to be ignored:
+								new QueryFilterTerm("brand", "b2", Occur.MUST_NOT)));
 			}
 		};
 
 		QueryStringParser underTest = new QueryStringParser(analyzerMock, new FieldConfigIndex(new FieldConfiguration().addField(new Field("brand").setUsage(FieldUsage.FACET))), Locale.ROOT);
 		InternalSearchParams internalParams = paramsWithQuery("input");
-		List<QueryStringTerm> queryTerms = underTest.preprocessQuery(internalParams, new HashMap<>());
+		ExtendedQuery parsedQuery = underTest.preprocessQuery(internalParams, new HashMap<>());
+		List<QueryStringTerm> queryTerms = AnalyzerUtil.extractTerms(parsedQuery);
 
 		assertEquals(1, queryTerms.size());
-		WeightedWord term1 = assertAndCastInstanceOf(queryTerms.get(0), WeightedWord.class);
-		assertEquals("input", term1.getWord());
+		WeightedTerm term1 = assertAndCastInstanceOf(queryTerms.get(0), WeightedTerm.class);
+		assertEquals("input", term1.getRawTerm());
 
 		assertEquals(1, internalParams.inducedFilters.size());
 		InternalResultFilter brandFilter = assertAndCastInstanceOf(internalParams.inducedFilters.get(0), InternalResultFilter.class);
@@ -100,21 +109,24 @@ public class QueryStringParserTest {
 		UserQueryAnalyzer analyzerMock = new UserQueryAnalyzer() {
 
 			@Override
-			public List<QueryStringTerm> analyze(String userQuery) {
-				return Arrays.asList(new WeightedWord("input"),
-						new QueryFilterTerm("brand", "b1", Occur.MUST_NOT),
-						// expect to be ignored:
-						new QueryFilterTerm("brand", "b2", Occur.MUST));
+			public ExtendedQuery analyze(String userQuery) {
+				return new ExtendedQuery(
+						new SingleTermQuery(new WeightedTerm("input")),
+						Arrays.asList(
+								// expect to be ignored:
+								new QueryFilterTerm("brand", "b1", Occur.MUST_NOT),
+								new QueryFilterTerm("brand", "b2", Occur.MUST)));
 			}
 		};
 
 		QueryStringParser underTest = new QueryStringParser(analyzerMock, new FieldConfigIndex(new FieldConfiguration().addField(new Field("brand").setUsage(FieldUsage.FACET))), Locale.ROOT);
 		InternalSearchParams internalParams = paramsWithQuery("input");
-		List<QueryStringTerm> queryTerms = underTest.preprocessQuery(internalParams, new HashMap<>());
+		ExtendedQuery parsedQuery = underTest.preprocessQuery(internalParams, new HashMap<>());
+		List<QueryStringTerm> queryTerms = AnalyzerUtil.extractTerms(parsedQuery);
 
 		assertEquals(1, queryTerms.size());
-		WeightedWord term1 = assertAndCastInstanceOf(queryTerms.get(0), WeightedWord.class);
-		assertEquals("input", term1.getWord());
+		WeightedTerm term1 = assertAndCastInstanceOf(queryTerms.get(0), WeightedTerm.class);
+		assertEquals("input", term1.getRawTerm());
 
 		assertEquals(1, internalParams.inducedFilters.size());
 		InternalResultFilter brandFilter = assertAndCastInstanceOf(internalParams.inducedFilters.get(0), InternalResultFilter.class);

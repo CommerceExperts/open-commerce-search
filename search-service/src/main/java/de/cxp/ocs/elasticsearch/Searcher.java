@@ -35,6 +35,9 @@ import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.elasticsearch.facets.FacetConfigurationApplyer;
 import de.cxp.ocs.elasticsearch.mapper.ResultMapper;
 import de.cxp.ocs.elasticsearch.mapper.VariantPickingStrategy;
+import de.cxp.ocs.elasticsearch.model.query.AnalyzedQuery;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
+import de.cxp.ocs.elasticsearch.model.term.AssociatedTerm;
 import de.cxp.ocs.elasticsearch.prodset.HeroProductHandler;
 import de.cxp.ocs.elasticsearch.query.FiltersBuilder;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
@@ -43,8 +46,6 @@ import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries;
 import de.cxp.ocs.elasticsearch.query.builder.ESQueryFactoryBuilder;
 import de.cxp.ocs.elasticsearch.query.builder.MatchAllQueryFactory;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
-import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
 import de.cxp.ocs.model.params.ProductSet;
 import de.cxp.ocs.model.result.ResultHit;
 import de.cxp.ocs.model.result.SearchResult;
@@ -164,14 +165,14 @@ public class Searcher {
 		Sample findTimerSample = Timer.start(Clock.SYSTEM);
 		Map<String, Object> searchMetaData = new HashMap<>();
 
-		List<QueryStringTerm> searchWords = queryParser.preprocessQuery(parameters, searchMetaData);
+		ExtendedQuery parsedQuery = queryParser.preprocessQuery(parameters, searchMetaData);
 
 		Iterator<ESQueryFactory> stagedQueryBuilders;
-		if (searchWords.isEmpty()) {
+		if (parsedQuery.isEmpty()) {
 			stagedQueryBuilders = Collections.<ESQueryFactory> singletonList(new MatchAllQueryFactory()).iterator();
 		}
 		else {
-			stagedQueryBuilders = queryBuilder.getMatchingFactories(searchWords);
+			stagedQueryBuilders = queryBuilder.getMatchingFactories(parsedQuery);
 		}
 
 		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters, parameters.inducedFilters, parameters.withFacets);
@@ -185,7 +186,7 @@ public class Searcher {
 		// + try and use spell correction with first query
 		int i = 0;
 		SearchResponse searchResponse = null;
-		Map<String, WordAssociation> correctedWords = null;
+		Map<String, AssociatedTerm> correctedWords = null;
 		Sample sqbSample = Timer.start(registry);
 
 		Optional<QueryBuilder> heroProductsQuery = HeroProductHandler.getHeroQuery(parameters);
@@ -196,7 +197,7 @@ public class Searcher {
 			Sample inputWordsSample = Timer.start(registry);
 			ESQueryFactory stagedQueryBuilder = stagedQueryBuilders.next();
 
-			MasterVariantQuery searchQuery = stagedQueryBuilder.createQuery(searchWords);
+			MasterVariantQuery searchQuery = stagedQueryBuilder.createQuery(parsedQuery);
 			if (log.isTraceEnabled()) {
 				log.trace("query nr {}: {}: match query = {}", i, stagedQueryBuilder.getName(),
 						searchQuery == null ? "NULL"
@@ -244,18 +245,18 @@ public class Searcher {
 			// words, then enrich the search words with the corrected words
 			if (!isResultSufficient && correctedWords == null && spellCorrector != null && searchResponse.getSuggest() != null) {
 				Sample correctedWordsSample = Timer.start(registry);
-				correctedWords = spellCorrector.extractRelatedWords(searchWords, searchResponse.getSuggest());
+				correctedWords = spellCorrector.extractRelatedWords(searchResponse.getSuggest());
 				if (correctedWords.size() > 0) {
-					searchWords = SpellCorrector.toListWithAllTerms(searchWords, correctedWords);
-					searchMetaData.put("query_corrected", searchWords);
+					AnalyzedQuery queryWithCorrections = SpellCorrector.toListWithAllTerms(parsedQuery.getSearchQuery(), correctedWords);
+					parsedQuery = new ExtendedQuery(queryWithCorrections, parsedQuery.getFilters());
+					searchMetaData.put("query_corrected", parsedQuery.getSearchQuery().toQueryString());
 				}
 
 				// if the current query builder didn't take corrected words into
 				// account, then try again with corrected words
 				if (correctedWords.size() > 0 && !searchQuery.isWithSpellCorrection()) {
-					searchQuery = stagedQueryBuilder.createQuery(searchWords);
-					searchSourceBuilder
-							.query(buildFinalQuery(searchQuery, heroProductsQuery, filterContext, variantSortings));
+					searchQuery = stagedQueryBuilder.createQuery(parsedQuery);
+					searchSourceBuilder.query(buildFinalQuery(searchQuery, heroProductsQuery, filterContext, variantSortings));
 					searchResponse = executeSearchRequest(searchSourceBuilder);
 					searchMetaData.put("query_correction", correctedWordsSample);
 				}

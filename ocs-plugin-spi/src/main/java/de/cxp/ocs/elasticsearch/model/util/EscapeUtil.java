@@ -1,4 +1,4 @@
-package de.cxp.ocs.elasticsearch.query.model;
+package de.cxp.ocs.elasticsearch.model.util;
 
 import java.util.Arrays;
 import java.util.HashSet;

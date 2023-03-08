@@ -10,9 +10,14 @@ import org.elasticsearch.search.suggest.SuggestBuilder;
 import org.elasticsearch.search.suggest.SuggestBuilders;
 
 import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
-import de.cxp.ocs.elasticsearch.query.model.WeightedWord;
-import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
+import de.cxp.ocs.elasticsearch.model.query.AnalyzedQuery;
+import de.cxp.ocs.elasticsearch.model.query.MultiTermQuery;
+import de.cxp.ocs.elasticsearch.model.query.MultiVariantQuery;
+import de.cxp.ocs.elasticsearch.model.query.SingleTermQuery;
+import de.cxp.ocs.elasticsearch.model.term.AssociatedTerm;
+import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
+import de.cxp.ocs.elasticsearch.model.term.WeightedTerm;
+import de.cxp.ocs.elasticsearch.query.builder.CountedTerm;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -32,31 +37,31 @@ public class SpellCorrector {
 		return suggestBuilder;
 	}
 
-	public Map<String, WordAssociation> extractRelatedWords(Collection<QueryStringTerm> searchWords, Suggest suggest) {
-		Map<String, WordAssociation> correctedWords = new HashMap<>();
+	public Map<String, AssociatedTerm> extractRelatedWords(Suggest suggest) {
+		Map<String, AssociatedTerm> correctedWords = new HashMap<>();
 		Map<String, Float> bestScores = new HashMap<>();
 
 		for (Suggestion<? extends Entry<? extends Option>> correction : suggest) {
 			for (Entry<? extends Option> perWordCorrection : correction.getEntries()) {
 				for (Option spellCorrectOption : perWordCorrection.getOptions()) {
-					float bestScore = bestScores.getOrDefault(perWordCorrection.getText().string(), 0f);
+					String inputTerm = perWordCorrection.getText().string();
+					float bestScore = bestScores.getOrDefault(inputTerm, 0f);
 					if (spellCorrectOption.getScore() >= minScore && spellCorrectOption.getScore() >= bestScore) {
-						WordAssociation wordCorrections = correctedWords
-								.computeIfAbsent(perWordCorrection.getText().string(), WordAssociation::new);
+						AssociatedTerm wordCorrections = correctedWords.computeIfAbsent(inputTerm, t -> new AssociatedTerm(new WeightedTerm(t)));
 
 						if (spellCorrectOption.getScore() > bestScore) {
 							bestScores.put(perWordCorrection.getText().string(), spellCorrectOption.getScore());
-							if (wordCorrections.getRelatedWords().size() > 0) {
-								wordCorrections.getRelatedWords().clear();
+							if (wordCorrections.getRelatedTerms().size() > 0) {
+								wordCorrections.getRelatedTerms().clear();
 							}
 						}
 
 						wordCorrections.putOrUpdate(
-								new WeightedWord(
-										spellCorrectOption.getText().string(),
-										spellCorrectOption.getScore()));
-						// XXX was this used before?
-						//((org.elasticsearch.search.suggest.term.TermSuggestion.Entry.Option) spellCorrectOption).getFreq())
+								new CountedTerm(
+										new WeightedTerm(
+												spellCorrectOption.getText().string(),
+												spellCorrectOption.getScore()),
+										((org.elasticsearch.search.suggest.term.TermSuggestion.Entry.Option) spellCorrectOption).getFreq()));
 					}
 				}
 			}
@@ -65,18 +70,21 @@ public class SpellCorrector {
 		return correctedWords;
 	}
 
-	public static List<QueryStringTerm> toListWithAllTerms(Collection<QueryStringTerm> searchWords,
-			Map<String, WordAssociation> correctedWords) {
+	public static AnalyzedQuery toListWithAllTerms(AnalyzedQuery analyzedQuery, Map<String, AssociatedTerm> correctedWords) {
+		if (correctedWords.isEmpty()) return analyzedQuery;
+
 		List<QueryStringTerm> relatedWords = new ArrayList<>();
-		for (QueryStringTerm searchWord : searchWords) {
-			WordAssociation correctedWord = correctedWords.get(searchWord.getWord());
+		for (String inputTerm : analyzedQuery.getInputTerms()) {
+			AssociatedTerm correctedWord = correctedWords.get(inputTerm);
 			if (correctedWord == null) {
-				relatedWords.add(searchWord);
+				relatedWords.add(new WeightedTerm(inputTerm));
 			}
 			else {
 				relatedWords.add(correctedWord);
 			}
 		}
-		return relatedWords;
+
+		AnalyzedQuery alternativeQuery = relatedWords.size() == 1 ? new SingleTermQuery(relatedWords.get(0)) : new MultiTermQuery(relatedWords);
+		return new MultiVariantQuery(analyzedQuery.getInputTerms(), Arrays.asList(analyzedQuery, alternativeQuery));
 	}
 }

@@ -1,14 +1,13 @@
 package de.cxp.ocs.elasticsearch.query.builder;
 
-import java.util.List;
-
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder.Type;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 
 import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
+import de.cxp.ocs.elasticsearch.model.visitor.AbstractTermVisitor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
@@ -24,17 +23,18 @@ public class VariantQueryFactory {
 
 	private float tieBreaker = 0.2f;
 
-	public QueryBuilder createMatchAnyTermQuery(List<QueryStringTerm> searchTerms) {
+	public QueryBuilder createMatchAnyTermQuery(ExtendedQuery searchTerms) {
 		BoolQueryBuilder variantQuery = QueryBuilders.boolQuery();
-		for (QueryStringTerm term : searchTerms) {
-			variantQuery.should(
-					QueryBuilders.queryStringQuery(term.toQueryString())
-							.analyzer(analyzer)
-							.defaultField(defaultSearchField)
-							.type(type)
-							.tieBreaker(tieBreaker)
-							.boost(0.1f));
-		}
+		searchTerms.getSearchQuery().accept(
+				AbstractTermVisitor.forEachTerm(
+						term -> variantQuery.should(
+								QueryBuilders.queryStringQuery(term.toQueryString())
+										.analyzer(analyzer)
+										.defaultField(defaultSearchField)
+										.type(type)
+										.tieBreaker(tieBreaker)
+										.boost(0.1f))));
+
 		return variantQuery;
 	}
 

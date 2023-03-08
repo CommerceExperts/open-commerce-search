@@ -6,7 +6,6 @@ import static de.cxp.ocs.config.QueryBuildingSetting.multimatch_type;
 import static de.cxp.ocs.config.QueryBuildingSetting.tieBreaker;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
@@ -19,11 +18,11 @@ import org.elasticsearch.index.query.QueryBuilders;
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.QueryBuildingSetting;
+import de.cxp.ocs.elasticsearch.model.query.AnalyzedQuery;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
+import de.cxp.ocs.elasticsearch.model.util.EscapeUtil;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
-import de.cxp.ocs.elasticsearch.query.model.EscapeUtil;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.spi.search.ESQueryFactory;
-import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.Util;
 import lombok.Getter;
 import lombok.Setter;
@@ -81,14 +80,13 @@ public class NgramQueryFactory implements ESQueryFactory {
 	}
 
 	@Override
-	public MasterVariantQuery createQuery(List<QueryStringTerm> searchTerms) {
+	public MasterVariantQuery createQuery(ExtendedQuery parsedQuery) {
 		// TODO: do a ngram tokenization on each term separately and search each
 		// "ngramed word" separately combined with boolean-should-clauses but
 		// each using "best-field" match strategy.
 		// minShouldMatch setting is then used twice: per splitted field and for
 		// the words itself (the should clauses)
-		String searchPhrase = searchTerms.stream()
-				.map(QueryStringTerm::getWord)
+		String searchPhrase = parsedQuery.getSearchQuery().getInputTerms().stream()
 				.map(EscapeUtil::escapeReservedESCharacters)
 				.collect(Collectors.joining(" "));
 
@@ -96,7 +94,7 @@ public class NgramQueryFactory implements ESQueryFactory {
 		if (masterFields.size() > 0) {
 			mainQuery.fields(masterFields);
 		}
-		String queryName = getLabel(searchTerms);
+		String queryName = getLabel(parsedQuery.getSearchQuery());
 		mainQuery.queryName(queryName);
 
 		MultiMatchQueryBuilder variantQuery = buildEsQuery(searchPhrase);
@@ -110,11 +108,11 @@ public class NgramQueryFactory implements ESQueryFactory {
 				Boolean.parseBoolean(querySettings.getOrDefault(acceptNoResult, "true")));
 	}
 
-	private String getLabel(List<QueryStringTerm> searchTerms) {
+	private String getLabel(AnalyzedQuery analyzedQuery) {
 		if (name == null) {
 			name = "ngram-" + getMinShouldMatch();
 		}
-		return name + "(" + ESQueryUtils.getQueryLabel(searchTerms) + ")";
+		return name + analyzedQuery.getInputTerms().toString();
 	}
 
 	private MultiMatchQueryBuilder buildEsQuery(String ngramPhrase) {

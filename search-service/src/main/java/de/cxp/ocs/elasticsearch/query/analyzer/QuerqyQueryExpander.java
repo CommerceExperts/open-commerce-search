@@ -7,10 +7,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import de.cxp.ocs.elasticsearch.query.model.*;
+import de.cxp.ocs.elasticsearch.model.query.*;
+import de.cxp.ocs.elasticsearch.model.term.*;
+import de.cxp.ocs.elasticsearch.model.util.QueryStringUtil;
 import de.cxp.ocs.spi.search.ConfigurableExtension;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
-import de.cxp.ocs.util.ESQueryUtils;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import querqy.model.*;
 import querqy.model.Clause.Occur;
@@ -84,7 +86,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 	}
 
 	@Override
-	public List<QueryStringTerm> analyze(String userQuery) {
+	public ExtendedQuery analyze(String userQuery) {
 		// TODO: add extension point for "QueryExpander" and to be like that
 		// if a different analyzer is used, it should also be possible to
 		// construct an expanded query from a list of QueryStringTerm-s
@@ -96,12 +98,11 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			log.info("No rewriter initialized, will just analyze/expand but not enrich query.");
 			loggedMissingRewriter = true;
 		}
-		return getQueryTerms(expandedQuery);
+		return extractQueryString(expandedQuery);
 	}
 
-	private static List<QueryStringTerm> getQueryTerms(ExpandedQuery expandedQuery) {
-		List<QueryStringTerm> terms = new ArrayList<>();
-
+	private static ExtendedQuery extractQueryString(ExpandedQuery expandedQuery) {
+		AnalyzedQuery searchQuery;
 		if (expandedQuery.getUserQuery() instanceof querqy.model.Query) {
 			TermFetcher termFetcher = new TermFetcher();
 			querqy.model.Query userQuery = (querqy.model.Query) expandedQuery.getUserQuery();
@@ -109,71 +110,60 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 				clause.accept(termFetcher);
 				termFetcher.reset();
 			}
-			terms.addAll(termFetcher.getExtractedWords());
+			searchQuery = termFetcher.getExtractedWords();
 		}
 		else if (expandedQuery.getUserQuery() != null) {
 			log.error("not expected userquery of type" + expandedQuery.getUserQuery().getClass().getCanonicalName());
+			TermFetcher termFetcher = new TermFetcher();
+			expandedQuery.getUserQuery().accept(termFetcher);
+			searchQuery = termFetcher.getExtractedWords();
+		}
+		else {
+			searchQuery = null;
 		}
 
+		List<QueryStringTerm> filters;
 		if (expandedQuery.getFilterQueries() != null) {
 			Collection<QuerqyQuery<?>> filterQueries = expandedQuery.getFilterQueries();
 			FilterFetcher filterFetcher = new FilterFetcher();
+			filters = new ArrayList<>();
 			for (QuerqyQuery<?> qq : filterQueries) {
 				qq.accept(filterFetcher);
-				terms.addAll(filterFetcher.extractedWords);
+				filters.addAll(filterFetcher.extractedWords);
 				filterFetcher.extractedWords.clear();
 			}
 		}
+		else {
+			filters = Collections.emptyList();
+		}
 
-		return terms;
+		return new ExtendedQuery(searchQuery, filters);
 	}
 
-	/**
-	 * a concept is one or more words/terms that describe a single thing.
-	 * In languages that don't have compound words, several words are used sometimes to name a thing,
-	 * e.g. "flat iron" = "bügeleisen" = "fer à repasser".
-	 * 
-	 * This builder is made to group those terms into a single "ConceptTerm".
-	 * (Class does not exist yet)
-	 */
-	static class ConceptTermBuilder implements QueryStringTerm {
+	@NoArgsConstructor
+	static class TermCollector {
 
 		private List<QueryStringTerm> inputTerms = new ArrayList<>();
 
-		private Set<WeightedWord> associations = new LinkedHashSet<>();
+		private Set<QueryStringTerm> associations = new LinkedHashSet<>();
+
+		public TermCollector(QueryStringTerm inpuTerm) {
+			addInputTerm(inpuTerm);
+		}
 
 		void addInputTerm(QueryStringTerm term) {
 			inputTerms.add(term);
 		}
 
-		void addAssociation(WeightedWord term) {
+		void addAssociation(QueryStringTerm term) {
 			associations.add(term);
 		}
 
-		// List<QueryStringTerm> build() {
-		// List<QueryStringTerm> allTerms = new ArrayList<>(associations.size() + 1);
-		//
-		// for (QueryStringTerm term : inputTerms) {
-		// allTerms.add(extractInputTerm(term));
-		// }
-		//
-		// allTerms.addAll(associations);
-		// return allTerms;
-		// }
-		//
-
 		List<QueryStringTerm> build() {
 			if (associations.size() > 0) {
-				if (inputTerms.size() == 1) {
-					return Collections.singletonList(new WordAssociation(inputTerms.get(0).getWord(), inputTerms.get(0).getOccur(), associations));
-				}
-				else {
-					List<QueryStringTerm> allTerms = new ArrayList<>(associations.size() + 1);
-					List<QueryStringTerm> inputQueryTerms = inputTerms.stream().map(input -> extractTermInput(input)).collect(Collectors.toList());
-					allTerms.add(new MultiTermsTerm(inputQueryTerms));
-					allTerms.addAll(associations);
-					return Collections.singletonList(new AlternativeTerm(allTerms));
-				}
+				List<QueryStringTerm> inputQueryTerms = inputTerms.stream().map(input -> extractTermInput(input)).collect(Collectors.toList());
+				QueryStringTerm inputQuery = inputQueryTerms.size() == 1 ? inputQueryTerms.get(0) : new ConceptTerm(inputTerms);
+				return Collections.singletonList(new AssociatedTerm(inputQuery, associations));
 			}
 			else {
 				if (inputTerms.size() == 1) {
@@ -186,96 +176,109 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 				}
 			}
 		}
-		//
-		// private QueryStringTerm extractMultiTermInput() {
-		// List<WeightedWord> alternativeWords = new ArrayList<>(inputTerms.size() - 1);
-		// List<QueryStringTerm> alternativeTerms = new ArrayList<>(inputTerms.size() - 1);
-		//
-		// Iterator<QueryStringTerm> inputTermIterator = inputTerms.iterator();
-		// QueryStringTerm first = extractTermInput(inputTermIterator.next());
-		// while (inputTermIterator.hasNext()) {
-		// QueryStringTerm alternative = extractTermInput(inputTermIterator.next());
-		//
-		// if (alternative instanceof WeightedWord) {
-		// alternativeWords.add((WeightedWord) alternative);
-		// }
-		// alternativeTerms.add(alternative);
-		// }
-		//
-		// // unfortunately Java-Generics don't work here to collect a single list and decide its usage afterwards
-		// // if all words are "simple words" ( = WeightedWord), then create WordAssociation
-		// if (alternativeWords.size() == alternativeTerms.size()) {
-		// return new WordAssociation(first.getWord(), first.getOccur(), alternativeWords);
-		// }
-		// else {
-		// alternativeTerms.add(0, first);
-		// return new AlternativeTerm(alternativeTerms);
-		// }
-		// }
 
 		private static QueryStringTerm extractTermInput(QueryStringTerm term) {
-			if (term instanceof ConceptTermBuilder) {
-				List<QueryStringTerm> buildQuery = ((ConceptTermBuilder) term).build();
+			if (term instanceof TermCollector) {
+				List<QueryStringTerm> buildQuery = ((TermCollector) term).build();
 				return buildQuery.size() == 1 ? buildQuery.get(0) : term;
 			}
 			return term;
 		}
 
-		@Override
-		public String toQueryString() {
+		public String toString() {
 			List<QueryStringTerm> build = build();
-			return build.size() == 1 ? build.get(0).toQueryString() : ESQueryUtils.buildQueryString(build, " ");
+			return build.size() == 1 ? build.get(0).toQueryString() : QueryStringUtil.buildQueryString(build, " ");
 		}
 
-		@Override
-		public String getWord() {
-			if (inputTerms.size() == 1) {
-				return inputTerms.get(0).getWord();
+		public void replaceInputTerm(String termKey, QueryStringTerm term) {
+			for (int i = 0; i < inputTerms.size(); i++) {
+				QueryStringTerm prevInputTerm = inputTerms.get(i);
+				if (termKey.equals(prevInputTerm.getRawTerm())) {
+					inputTerms.set(i, term);
+					break;
+				}
 			}
-			else {
-				return inputTerms.stream().map(QueryStringTerm::getWord).collect(Collectors.joining(" "));
-			}
-		}
-
-		@Override
-		public org.apache.lucene.search.BooleanClause.Occur getOccur() {
-			var SHOULD = org.apache.lucene.search.BooleanClause.Occur.SHOULD;
-			return inputTerms.stream().map(QueryStringTerm::getOccur).reduce((o1, o2) -> o1.equals(o2) ? o1 : SHOULD).orElse(SHOULD);
 		}
 	}
 
 	static class TermFetcher extends AbstractNodeVisitor<Node> {
 
 		private QueryStringTerm initialTerm;
-		private boolean			isInputTermInConcept	= false;
 
-		Map<String, ConceptTermBuilder> queryConcepts = new LinkedHashMap<>();
+		Map<String, TermCollector>		termAssociationCollectors	= new LinkedHashMap<>();
+		Map<String, List<String>>		inputTermCollectorRelations	= new HashMap<>();
+		Map<String, QueryStringTerm>	inputTerms					= new LinkedHashMap<>();
 
 		private Occur occur;
 
-		public void reset() {
-			if (isInputTermInConcept) {
-				queryConcepts.remove(initialTerm.getWord());
-				isInputTermInConcept = false;
+		public AnalyzedQuery getExtractedWords() {
+			List<AnalyzedQuery> queryVariants = new ArrayList<>();
+			Map<String, TermCollector> joinedTermAssociations = joinTermAssociations();
+			extractQueryVariants(joinedTermAssociations, queryVariants);
+
+			if (joinedTermAssociations.isEmpty()) {
+				queryVariants.add(toAnalyzedQuery(inputTerms.values()));
 			}
-			initialTerm = null;
+
+			return queryVariants.size() == 1 ? queryVariants.get(0) : new MultiVariantQuery(inputTerms.values(), queryVariants);
 		}
 
-		public List<QueryStringTerm> getExtractedWords() {
-			List<QueryStringTerm> extracted = new ArrayList<>();
-			queryConcepts.values().forEach(concept -> extracted.addAll(concept.build()));
-			return extracted;
+		private Map<String, TermCollector> joinTermAssociations() {
+			Map<String, TermCollector> joinedCollectors = new LinkedHashMap<>();
+			for (TermCollector collector : termAssociationCollectors.values()) {
+				String collectorKey = collector.inputTerms.toString();
+				TermCollector joinedCollector = joinedCollectors.get(collectorKey);
+				if (joinedCollector == null) {
+					joinedCollectors.put(collectorKey, collector);
+				}
+				else {
+					collector.associations.forEach(joinedCollector::addAssociation);
+				}
+			}
+			return joinedCollectors;
+		}
+
+		private void extractQueryVariants(Map<String, TermCollector> joinedConcepts, List<AnalyzedQuery> queryVariants) {
+			for (TermCollector joinedConcept : joinedConcepts.values()) {
+				List<QueryStringTerm> queryVariant = buildQueryWithConcept(joinedConcept);
+				queryVariants.add(toAnalyzedQuery(queryVariant));
+			}
+		}
+
+		private List<QueryStringTerm> buildQueryWithConcept(TermCollector joinedConcept) {
+			List<QueryStringTerm> queryVariant = new ArrayList<>();
+			boolean conceptAdded = false;
+			for (QueryStringTerm inputTerm : inputTerms.values()) {
+				if (!joinedConcept.inputTerms.contains(inputTerm)) {
+					queryVariant.add(inputTerm);
+				}
+				else if (!conceptAdded) {
+					queryVariant.addAll(joinedConcept.build());
+					conceptAdded = true;
+				}
+			}
+			return queryVariant;
+		}
+
+		private AnalyzedQuery toAnalyzedQuery(Collection<QueryStringTerm> terms) {
+			return terms.size() == 1 ? new SingleTermQuery(terms.iterator().next()) : new MultiTermQuery(terms);
+		}
+
+		public void reset() {
+			initialTerm = null;
 		}
 
 		@Override
 		public Node visit(Term term) {
-			WeightedWord weightedWord;
+			WeightedTerm weightedWord;
 			if (term instanceof BoostedTerm) {
-				weightedWord = new WeightedWord(term.getValue().toString(), ((BoostedTerm) term).getBoost());
+				weightedWord = new WeightedTerm(term.getValue().toString(), ((BoostedTerm) term).getBoost());
 			}
 			else {
-				weightedWord = new WeightedWord(term.toString());
+				weightedWord = new WeightedTerm(term.toString());
 			}
+
+			// XXX might always be SHOULD - if so, this block can be removed cause useless
 			if (occur != null) {
 				weightedWord.setOccur(org.apache.lucene.search.BooleanClause.Occur.valueOf(occur.name()));
 
@@ -288,12 +291,21 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 
 			if (initialTerm == null) {
 				initialTerm = weightedWord;
-				ConceptTermBuilder conceptBuilder = queryConcepts.computeIfAbsent(weightedWord.getWord(), w -> new ConceptTermBuilder());
-				conceptBuilder.addInputTerm(weightedWord);
+				inputTerms.put(weightedWord.getRawTerm(), weightedWord);
 			}
 			else {
-				ConceptTermBuilder conceptBuilder = queryConcepts.get(initialTerm.getWord());
-				conceptBuilder.addAssociation(weightedWord);
+				String termKey = initialTerm.getRawTerm();
+				QueryStringTerm inputTerm = inputTerms.get(termKey);
+				AssociatedTerm termAssociation = inputTerm instanceof AssociatedTerm ? (AssociatedTerm) inputTerm : new AssociatedTerm(inputTerm);
+				termAssociation.putOrUpdate(weightedWord);
+				inputTerms.put(initialTerm.getRawTerm(), termAssociation);
+
+				if (inputTermCollectorRelations.containsKey(termKey)) {
+					for (String conceptKey : inputTermCollectorRelations.get(termKey)) {
+						TermCollector conceptBuilder = termAssociationCollectors.get(conceptKey);
+						conceptBuilder.replaceInputTerm(initialTerm.getRawTerm(), termAssociation);
+					}
+				}
 			}
 
 			return super.visit(term);
@@ -307,50 +319,59 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			// that can be considered as phrase
 			if (booleanQuery.getClauses() != null && booleanQuery.getClauses().size() > 1) {
 
-				float weight = 1f;
-				StringBuilder text = new StringBuilder();
-				boolean isPhrase = false;
-				for (BooleanClause clause : booleanQuery.getClauses()) {
-					Optional<WeightedWord> weightedWord = extractSingleTerm(clause).map(this::toWeightedWord);
-					if (weightedWord.isPresent()) {
-						if (text.length() > 0) {
-							text.append(' ');
-							isPhrase = true;
-						}
-						text.append(weightedWord.get().getWord());
-						weight = weightedWord.get().getWeight();
-					}
-				}
-
-				if (text.charAt(0) == '(') {
-					text.deleteCharAt(0);
-				}
-				if (text.charAt(text.length() - 1) == ')') {
-					text.deleteCharAt(text.length() - 1);
-				}
-
-				WeightedWord word = new WeightedWord(text.toString(), weight);
-				if (isPhrase) word.setQuoted(true);
+				WeightedTerm term = extractTerm(booleanQuery);
 
 				// remember concept via the synonym phrase..
-				ConceptTermBuilder conceptBuilder = queryConcepts.computeIfAbsent(text.toString(), (x) -> new ConceptTermBuilder());
-				conceptBuilder.addAssociation(word);
+				String conceptKey = term.getRawTerm();
+				TermCollector termCollector = termAssociationCollectors.computeIfAbsent(conceptKey, (x) -> new TermCollector());
+				termCollector.addAssociation(term);
 
 				// ..and link it via the input term, so that term synonyms can be attached to
 				if (initialTerm != null) {
-					var inputConceptBuilder = queryConcepts.get(initialTerm.getWord());
-					conceptBuilder.addInputTerm(inputConceptBuilder);
-					isInputTermInConcept = true;
+					String inputTermKey = initialTerm.getRawTerm();
+					var inputTerm = inputTerms.get(inputTermKey);
+					termCollector.addInputTerm(inputTerm);
+					// memorize relation that is used in case the input term is later updated with an association
+					inputTermCollectorRelations.computeIfAbsent(inputTermKey, w -> new ArrayList<>(1)).add(conceptKey);
 				}
 
 				// end visitor calls
 				return null;
-
 			}
 			else {
 				// this is an outer boolean query - go on visiting the inner nodes
 				return super.visit(booleanQuery);
 			}
+		}
+
+		private WeightedTerm extractTerm(BooleanQuery booleanQuery) {
+			float weight = 1f;
+			StringBuilder text = new StringBuilder();
+			boolean isPhrase = false;
+			for (BooleanClause clause : booleanQuery.getClauses()) {
+				Optional<WeightedTerm> weightedWord = extractSingleTerm(clause).map(this::toWeightedWord);
+				if (weightedWord.isPresent()) {
+					if (text.length() > 0) {
+						text.append(' ');
+						isPhrase = true;
+					}
+					text.append(weightedWord.get().getRawTerm());
+					weight = weightedWord.get().getWeight();
+				}
+			}
+
+			// for some time we encouraged rules to multi-term queries to be enclosed in brackets. Remove them here,
+			// since they have no value.
+			if (text.charAt(0) == '(') {
+				text.deleteCharAt(0);
+			}
+			if (text.charAt(text.length() - 1) == ')') {
+				text.deleteCharAt(text.length() - 1);
+			}
+
+			WeightedTerm term = new WeightedTerm(text.toString(), weight);
+			if (isPhrase) term.setQuoted(true);
+			return term;
 		}
 
 		private Optional<Term> extractSingleTerm(BooleanClause clause) {
@@ -370,7 +391,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			}
 		}
 
-		private WeightedWord toWeightedWord(Term term) {
+		private WeightedTerm toWeightedWord(Term term) {
 			float weight = 1f;
 			if (term instanceof BoostedTerm) {
 				weight = ((BoostedTerm) term).getBoost();
@@ -378,13 +399,13 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			return toWeightedWord(term.getValue().toString(), weight);
 		}
 
-		private WeightedWord toWeightedWord(String term, float boost) {
-			WeightedWord weightedWord;
+		private WeightedTerm toWeightedWord(String term, float boost) {
+			WeightedTerm weightedWord;
 			if (boost != 0f && boost != 1f) {
-				weightedWord = new WeightedWord(term, boost);
+				weightedWord = new WeightedTerm(term, boost);
 			}
 			else {
-				weightedWord = new WeightedWord(term);
+				weightedWord = new WeightedTerm(term);
 			}
 
 			// guard MUST and MUST_NOT terms from analyzer
@@ -399,7 +420,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 
 	static class FilterFetcher extends AbstractNodeVisitor<Node> {
 
-		List<QueryStringTerm> extractedWords = new ArrayList<>();
+		List<QueryStringTerm>									extractedWords	= new ArrayList<>();
 		private org.apache.lucene.search.BooleanClause.Occur	occur;
 
 		@Override
@@ -410,12 +431,12 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 
 		@Override
 		public Node visit(Term term) {
-			WeightedWord weightedWord;
+			WeightedTerm weightedWord;
 			if (term instanceof BoostedTerm) {
-				weightedWord = new WeightedWord(term.getValue().toString(), ((BoostedTerm) term).getBoost());
+				weightedWord = new WeightedTerm(term.getValue().toString(), ((BoostedTerm) term).getBoost());
 			}
 			else {
-				weightedWord = new WeightedWord(term.toString());
+				weightedWord = new WeightedTerm(term.toString());
 			}
 			weightedWord.setOccur(occur);
 			extractedWords.add(weightedWord);
@@ -440,7 +461,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 				extractedWords.add(queryFilterTerm);
 			}
 			else {
-				extractedWords.add(new RawQueryString(rawQueryString));
+				extractedWords.add(new RawTerm(rawQueryString));
 			}
 			return super.visit(rawQuery);
 		}

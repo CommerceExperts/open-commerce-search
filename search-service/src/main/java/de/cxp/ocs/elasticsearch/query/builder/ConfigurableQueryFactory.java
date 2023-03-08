@@ -17,7 +17,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder.Type;
 import org.elasticsearch.index.query.Operator;
@@ -27,12 +27,13 @@ import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.QueryBuildingSetting;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
+import de.cxp.ocs.elasticsearch.model.term.WeightedTerm;
+import de.cxp.ocs.elasticsearch.model.util.EscapeUtil;
+import de.cxp.ocs.elasticsearch.model.util.QueryStringUtil;
+import de.cxp.ocs.elasticsearch.model.visitor.AbstractTermVisitor;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
-import de.cxp.ocs.elasticsearch.query.model.EscapeUtil;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
-import de.cxp.ocs.elasticsearch.query.model.WeightedWord;
 import de.cxp.ocs.spi.search.ESQueryFactory;
-import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.Util;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -77,7 +78,7 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 	}
 
 	@Override
-	public MasterVariantQuery createQuery(List<QueryStringTerm> searchTerms) {
+	public MasterVariantQuery createQuery(ExtendedQuery parsedQuery) {
 		// set fuzziness
 		String fuzzySetting = querySettings.get(fuzziness);
 		Fuzziness fuzziness = Fuzziness.AUTO;
@@ -88,15 +89,15 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 			}
 			// if fuzziness is set explicitly, append fuzzy operator (~) to each
 			// term
-			searchTerms.forEach(word -> {
-				if (word instanceof WeightedWord) {
-					((WeightedWord) word).setFuzzy(true);
+			parsedQuery.getSearchQuery().accept(AbstractTermVisitor.forEachTerm(word -> {
+				if (word instanceof WeightedTerm) {
+					((WeightedTerm) word).setFuzzy(true);
 				}
-			});
+			}));
 		}
 
 		String defaultOperator = querySettings.getOrDefault(operator, "OR");
-		String queryString = buildQueryString(searchTerms, defaultOperator);
+		String queryString = buildQueryString(parsedQuery);
 		QueryStringQueryBuilder esQuery = QueryBuilders.queryStringQuery(queryString)
 				.minimumShouldMatch(querySettings.getOrDefault(minShouldMatch, null))
 				.analyzer(querySettings.getOrDefault(analyzer, null))
@@ -123,80 +124,61 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 		}
 
 		return new MasterVariantQuery(esQuery,
-				new VariantQueryFactory().createMatchAnyTermQuery(searchTerms),
+				new VariantQueryFactory().createMatchAnyTermQuery(parsedQuery),
 				!"0".equals(fuzzySetting),
 				Boolean.parseBoolean(querySettings.getOrDefault(acceptNoResult, "false")));
 	}
 
-	private String buildQueryString(List<QueryStringTerm> searchTerms, String operator) {
-		List<QueryStringTerm> excludeTerms = new ArrayList<>();
-		List<QueryStringTerm> includeTerms = new ArrayList<>();
-		for (QueryStringTerm term : searchTerms) {
-			if (Occur.MUST_NOT.equals(term.getOccur())) {
-				excludeTerms.add(term);
-			}
-			else {
-				includeTerms.add(term);
-			}
-		}
-
+	private String buildQueryString(ExtendedQuery parsedQuery) {
 		StringBuilder queryStringBuilder = new StringBuilder();
-		if ("OR".equals(operator)) {
-			queryStringBuilder
-					.append(ESQueryUtils.buildQueryString(includeTerms, " OR "));
-		}
-		else {
-			queryStringBuilder
+		queryStringBuilder
 				.append('(')
-					.append(ESQueryUtils.buildQueryString(includeTerms, " "))
+				.append(parsedQuery.toQueryString())
 				.append(')');
-		}
 
 		// search for all terms quoted with higher weight,
 		// in order to prefer phrase matches generally
 		queryStringBuilder
 				.append(" OR ")
-				.append('(')
 				.append('"')
-				.append(getOriginalTermQuery(includeTerms))
+				.append(getOriginalTermQuery(parsedQuery.getInputTerms()))
 				.append('"')
-				.append(")^1.5");
+				.append("^1.5");
 
 		// build shingle variants if enabled
 		if (querySettings.getOrDefault(isQueryWithShingles, "false").equalsIgnoreCase("true")) {
-			attachQueryTermsAsShingles(includeTerms, queryStringBuilder);
+			attachQueryTermsAsShingles(parsedQuery.getInputTerms(), queryStringBuilder);
 		}
 
-		if (excludeTerms.size() > 0) {
+		if (parsedQuery.getFilters().size() > 0) {
 			queryStringBuilder
 					.append(' ')
-					.append(ESQueryUtils.buildQueryString(excludeTerms, " "));
+					.append(QueryStringUtil.buildQueryString(parsedQuery.getFilters(), " "));
 		}
 
 		return queryStringBuilder.toString();
 	}
 
-	private String getOriginalTermQuery(List<QueryStringTerm> includeTerms) {
-		return includeTerms.stream()
-				.map(QueryStringTerm::getWord)
+	private String getOriginalTermQuery(List<String> inputTerms) {
+		return inputTerms.stream()
 				.map(EscapeUtil::escapeReservedESCharacters)
 				.collect(Collectors.joining(" "));
 	}
 
-	private void attachQueryTermsAsShingles(List<QueryStringTerm> includeTerms, StringBuilder queryStringBuilder) {
-		for (int i = 0; i < includeTerms.size() - 1; i++) {
-			List<QueryStringTerm> shingledSearchTerms = new ArrayList<>(includeTerms);
+	private void attachQueryTermsAsShingles(List<String> inputTerms, StringBuilder queryStringBuilder) {
+		for (int i = 0; i < inputTerms.size() - 1; i++) {
+			List<String> shingledSearchTerms = new ArrayList<>(inputTerms.size());
+			inputTerms.forEach(term -> shingledSearchTerms.add(EscapeUtil.escapeReservedESCharacters(term)));
 
-			QueryStringTerm wordA = shingledSearchTerms.remove(i);
+			String wordA = shingledSearchTerms.remove(i);
 			// shingled word has double weight, since it practically matches
 			// two input tokens
-			WeightedWord shingleWord = new WeightedWord(wordA.getWord() + includeTerms.get(i + 1).getWord(), 2f);
-			shingleWord.setFuzzy(wordA instanceof WeightedWord && ((WeightedWord) wordA).isFuzzy());
-			shingledSearchTerms.set(i, shingleWord);
+			WeightedTerm shingleWord = new WeightedTerm(wordA + inputTerms.get(i + 1), 2f);
+			shingledSearchTerms.set(i, shingleWord.toQueryString());
+
 			queryStringBuilder.append(" OR ")
 					.append('(')
-					.append(ESQueryUtils.buildQueryString(shingledSearchTerms, " "));
-
+					.append(StringUtils.join(shingledSearchTerms, ' '));
 
 			// the whole variant with shingles has a lower weight
 			// than the original terms

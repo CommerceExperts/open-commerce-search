@@ -6,9 +6,10 @@ import java.util.stream.Collectors;
 import org.apache.lucene.search.BooleanClause.Occur;
 
 import de.cxp.ocs.config.FieldConfigIndex;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
+import de.cxp.ocs.elasticsearch.model.term.QueryFilterTerm;
+import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
-import de.cxp.ocs.elasticsearch.query.model.QueryFilterTerm;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import de.cxp.ocs.util.InternalSearchParams;
@@ -30,10 +31,10 @@ public class QueryStringParser {
 		this(Collections.emptyList(), userQueryAnalyzer, fieldIndex, l);
 	}
 
-	public List<QueryStringTerm> preprocessQuery(InternalSearchParams parameters, Map<String, Object> searchMetaData) {
-		List<QueryStringTerm> searchWords;
+	public ExtendedQuery preprocessQuery(InternalSearchParams parameters, Map<String, Object> searchMetaData) {
+		ExtendedQuery parsedQuery;
 		if (!parameters.includeMainResult) {
-			searchWords = Collections.emptyList();
+			parsedQuery = ExtendedQuery.MATCH_ALL;
 			searchMetaData.put("includeMainResult", "false");
 		}
 		else if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
@@ -43,16 +44,16 @@ public class QueryStringParser {
 			}
 			searchMetaData.put("preprocessedQuery", preprocessedQuery);
 
-			searchWords = userQueryAnalyzer.analyze(preprocessedQuery);
-			searchWords = handleFiltersOnFields(parameters, searchWords);
-			searchMetaData.put("analyzedQuery", searchWords);
+			parsedQuery = userQueryAnalyzer.analyze(preprocessedQuery);
+			parsedQuery = handleFiltersOnFields(parameters, parsedQuery);
+			searchMetaData.put("analyzedQuery", parsedQuery.getSearchQuery().toQueryString() + " " + parsedQuery.getFilters());
 			searchMetaData.put("analyzerFilters", parameters.inducedFilters);
 		}
 		else {
-			searchWords = Collections.emptyList();
+			parsedQuery = ExtendedQuery.MATCH_ALL;
 			searchMetaData.put("noQuery", true);
 		}
-		return searchWords;
+		return parsedQuery;
 	}
 
 	/**
@@ -60,27 +61,32 @@ public class QueryStringParser {
 	 * For any special Querqy style filtering they are put into the parameters object
 	 * 
 	 * @param parameters
-	 * @param searchWords
+	 * @param parsedQuery
 	 * @return
 	 */
-	private List<QueryStringTerm> handleFiltersOnFields(InternalSearchParams parameters, List<QueryStringTerm> searchWords) {
-		// Pull all QueryFilterTerm items into a list of its own
-		List<QueryStringTerm> remainingSearchWords = new ArrayList<>();
+	private ExtendedQuery handleFiltersOnFields(InternalSearchParams parameters, ExtendedQuery parsedQuery) {
+		if (parsedQuery.getFilters().isEmpty()) return parsedQuery;
 
-		Map<String, InternalResultFilter> filtersAsMap = searchWords.stream()
-				.filter(searchWord -> searchWord instanceof QueryFilterTerm || !remainingSearchWords.add(searchWord))
+		// Pull all QueryFilterTerm items into a list of its own
+		List<QueryStringTerm> remainingFilters = new ArrayList<>();
+
+		Map<String, InternalResultFilter> filtersAsMap = parsedQuery.getFilters().stream()
+				.filter(searchWord -> searchWord instanceof QueryFilterTerm || !remainingFilters.add(searchWord))
 				// Generate the filters and add them
 				.map(term -> (QueryFilterTerm) term)
 				.collect(Collectors.toMap(QueryFilterTerm::getField, this::toInternalResultFilter, this::combineInternalFilter));
 
-		parameters.inducedFilters = new ArrayList<>(filtersAsMap.values());
-
-		return remainingSearchWords;
+		if (filtersAsMap.isEmpty()) {
+			return parsedQuery;
+		} else {
+			parameters.inducedFilters = new ArrayList<>(filtersAsMap.values());
+			return new ExtendedQuery(parsedQuery.getSearchQuery(), remainingFilters);
+		}
 	}
 
 
 	private InternalResultFilter toInternalResultFilter(QueryFilterTerm queryFilter) {
-		String paramValue = Occur.MUST_NOT.equals(queryFilter.getOccur()) ? SearchParamsParser.NEGATE_FILTER_PREFIX + queryFilter.getWord() : queryFilter.getWord();
+		String paramValue = Occur.MUST_NOT.equals(queryFilter.getOccur()) ? SearchParamsParser.NEGATE_FILTER_PREFIX + queryFilter.getRawTerm() : queryFilter.getRawTerm();
 		return SearchParamsParser.parseSingleFilter(queryFilter.getField(), paramValue, fieldIndex, locale).orElse(null);
 	}
 
