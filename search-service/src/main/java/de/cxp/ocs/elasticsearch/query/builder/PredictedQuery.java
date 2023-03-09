@@ -5,9 +5,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
-import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
-import de.cxp.ocs.util.ESQueryUtils;
+import de.cxp.ocs.elasticsearch.model.term.AssociatedTerm;
+import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
+import de.cxp.ocs.elasticsearch.model.util.QueryStringUtil;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -25,7 +25,7 @@ class PredictedQuery {
 
 	public String getQueryString() {
 		if (queryString == null) {
-			queryString = ESQueryUtils.buildQueryString(termsUnique.values(), " ");
+			queryString = QueryStringUtil.buildQueryString(termsUnique.values(), " ");
 		}
 		return queryString;
 	}
@@ -42,8 +42,8 @@ class PredictedQuery {
 
 	public int getCorrectedTermCount() {
 		if (correctedTermCount == -1) {
-			correctedTermCount = (int) unknownTerms.stream().filter(q -> (q instanceof WordAssociation)).count();
-			correctedTermCount += (int) termsUnique.values().stream().filter(q -> (q instanceof WordAssociation))
+			correctedTermCount = (int) unknownTerms.stream().filter(q -> (q instanceof AssociatedTerm)).count();
+			correctedTermCount += (int) termsUnique.values().stream().filter(q -> (q instanceof AssociatedTerm))
 					.count();
 		}
 		return correctedTermCount;

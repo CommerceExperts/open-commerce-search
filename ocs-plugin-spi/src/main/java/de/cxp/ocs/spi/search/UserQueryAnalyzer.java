@@ -1,11 +1,9 @@
 package de.cxp.ocs.spi.search;
 
-import java.util.List;
-
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 
 public interface UserQueryAnalyzer extends ConfigurableExtension {
 
-	List<QueryStringTerm> analyze(String userQuery);
+	ExtendedQuery analyze(String userQuery);
 
 }

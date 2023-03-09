@@ -16,7 +16,11 @@ import org.apache.lucene.search.BooleanClause.Occur;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import de.cxp.ocs.elasticsearch.query.model.*;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
+import de.cxp.ocs.elasticsearch.model.term.AssociatedTerm;
+import de.cxp.ocs.elasticsearch.model.term.QueryFilterTerm;
+import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
+import de.cxp.ocs.elasticsearch.model.term.WeightedTerm;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -60,143 +64,124 @@ public class AsciifyQuerqyQueryAnalyzerTest {
 
 	@Test
 	public void testIfQuerqyIsUsed() {
-		List<QueryStringTerm> result = analyze("dzieci");
-		assertEquals(1, result.size());
-		WordAssociation term = assertAndCastInstanceOf(result.get(0), WordAssociation.class);
-		assertEquals("dzieci", term.getOriginalWord());
+		ExtendedQuery analyzedQuery = analyze("dzieci");
+		List<QueryStringTerm> result = AnalyzerUtil.extractTerms(analyzedQuery);
 
-		assertTrue(term.getRelatedWords().keySet().contains("dzieciece"));
-		assertEquals(1, term.getRelatedWords().size(), term.getRelatedWords()::toString);
+		assertEquals(1, result.size());
+		AssociatedTerm term = assertAndCastInstanceOf(result.get(0), AssociatedTerm.class);
+		assertEquals("dzieci", term.getRawTerm());
+
+		assertTrue(term.getRelatedTerms().keySet().contains("dzieciece"));
+		assertEquals(1, term.getRelatedTerms().size(), term.getRelatedTerms()::toString);
 	}
 
 	@Test
 	public void testIfAsciifiedRuleIsUsedForNonAsciiTerm() {
-		List<QueryStringTerm> result = analyze("dzięci");
-		assertEquals(1, result.size());
-
-		WordAssociation term = assertAndCastInstanceOf(result.get(0), WordAssociation.class);
-		assertEquals("dzieci", term.getOriginalWord());
-
-		assertTrue(term.getRelatedWords().keySet().contains("dzięci"));
-		assertTrue(term.getRelatedWords().keySet().contains("dzieciece"));
-		assertEquals(2, term.getRelatedWords().size(), term.getRelatedWords()::toString);
+		ExtendedQuery analyzedQuery = analyze("dzięci");
+		assertEquals("(dzięci) OR (dzieci OR dzieciece)", analyzedQuery.toQueryString());
 	}
 
 	@Test
 	public void testAsciifiedAndDiacriticTermsWithoutRulesAreCombined() {
-		List<QueryStringTerm> result = analyze("chłopięce");
-		assertEquals(1, result.size());
+		ExtendedQuery analyzedQuery = analyze("chłopięce");
+		List<QueryStringTerm> result = AnalyzerUtil.extractTerms(analyzedQuery);
 
-		AlternativeTerm term = assertAndCastInstanceOf(result.get(0), AlternativeTerm.class);
-		assertEquals("chłopięce", term.getAlternatives().get(0).getWord());
-		assertEquals("chlopiece", term.getAlternatives().get(1).getWord());
+		assertEquals(2, result.size(), result::toString);
+
+		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
+		assertEquals("chłopięce", term1.getRawTerm());
+
+		WeightedTerm term2 = assertAndCastInstanceOf(result.get(1), WeightedTerm.class);
+		assertEquals("chlopiece", term2.getRawTerm());
 	}
 
 	@Test
 	public void testDiacriticCharQueryMatchesBothRule() {
-		List<QueryStringTerm> result = analyze("dziecięce");
-		assertEquals(1, result.size());
-		assertWordAssociation_dziecięce(result.get(0), "dziecięce");
+		var analyzedQuery = analyze("dziecięce");
+		assertEquals("(dziecięce OR dziewczęce^0.5) OR (dzieciece OR chłopięce^0.5 OR dzieci)", analyzedQuery.toQueryString());
 	}
 
 	@Test
 	public void testAsciifiedQueryMatchesOnlyAsciifiedRule() {
-		List<QueryStringTerm> result = analyze("dzieciece");
+		ExtendedQuery analyzedQuery = analyze("dzieciece");
+		List<QueryStringTerm> result = AnalyzerUtil.extractTerms(analyzedQuery);
+
 		assertEquals(1, result.size());
 		assertWordAssociation_dziecięce(result.get(0), "dzieciece");
 	}
 
 	private void assertWordAssociation_dziecięce(QueryStringTerm term, String userSpelling) {
-		WordAssociation wordAssoc = assertAndCastInstanceOf(term, WordAssociation.class);
-		assertEquals(userSpelling, wordAssoc.getOriginalWord());
+		AssociatedTerm wordAssoc = assertAndCastInstanceOf(term, AssociatedTerm.class);
+		assertEquals(userSpelling, wordAssoc.getRawTerm());
 
 		// ASCIIfying just works one-directional. If the ASCIIfyied term was searched by the user, the rule for the
 		// DiacriticChar term is not expected to match. That works only if the DiacriticChar term was used by the user
 		int expectedRelatedWordCount = 2;
 		if ("dziecięce".equals(userSpelling)) {
-			assertTrue(wordAssoc.getRelatedWords().keySet().contains("dzieciece"));
-			assertTrue(wordAssoc.getRelatedWords().keySet().contains("dziewczęce"));
+			assertTrue(wordAssoc.getRelatedTerms().keySet().contains("dzieciece"));
+			assertTrue(wordAssoc.getRelatedTerms().keySet().contains("dziewczęce"));
 			expectedRelatedWordCount += 2;
 		}
 
-		assertTrue(wordAssoc.getRelatedWords().keySet().contains("dzieci"));
-		assertTrue(wordAssoc.getRelatedWords().keySet().contains("chłopięce"));
-		assertEquals(expectedRelatedWordCount, wordAssoc.getRelatedWords().size()); // expect no more
+		assertTrue(wordAssoc.getRelatedTerms().keySet().contains("dzieci"));
+		assertTrue(wordAssoc.getRelatedTerms().keySet().contains("chłopięce"));
+		assertEquals(expectedRelatedWordCount, wordAssoc.getRelatedTerms().size()); // expect no more
 	}
 
 	@Test
 	public void testMultiTermQueryMatchesDifferentRule() {
-		List<QueryStringTerm> result = analyze("dziecięce zimowe");
-		assertEquals(2, result.size());
-		assertWordAssociation_dziecięce(result.get(0), "dziecięce");
-		assertWordAssociation_zimowe(result.get(1));
+		ExtendedQuery analyzedQuery = analyze("dziecięce zimowe");
+		assertEquals("((dziecięce OR dziewczęce^0.5) (zimowe OR śnieg)) OR ((dzieciece OR chłopięce^0.5 OR dzieci) (zimowe OR śnieg))", analyzedQuery.toQueryString());
 	}
 
 	private void assertWordAssociation_zimowe(QueryStringTerm term) {
-		WordAssociation wordAssoc = assertAndCastInstanceOf(term, WordAssociation.class);
-		assertEquals("zimowe", wordAssoc.getOriginalWord());
-		assertTrue(wordAssoc.getRelatedWords().keySet().contains("śnieg"));
-		assertEquals(1, wordAssoc.getRelatedWords().size()); // expect no more
+		AssociatedTerm wordAssoc = assertAndCastInstanceOf(term, AssociatedTerm.class);
+		assertEquals("zimowe", wordAssoc.getRawTerm());
+		assertTrue(wordAssoc.getRelatedTerms().keySet().contains("śnieg"));
+		assertEquals(1, wordAssoc.getRelatedTerms().size()); // expect no more
 	}
 
 	@Test
 	public void testMultiTermMatchesButOneWithoutRule() {
-		List<QueryStringTerm> result = analyze("dzieciece zimowe obuwie");
+		ExtendedQuery analyzedQuery = analyze("dzieciece zimowe obuwie");
+		List<QueryStringTerm> result = AnalyzerUtil.extractTerms(analyzedQuery);
+
 		assertEquals(3, result.size());
 		assertWordAssociation_dziecięce(result.get(0), "dzieciece");
 		assertWordAssociation_zimowe(result.get(1));
-		assertEquals("obuwie", result.get(2).getWord());
+		assertEquals("obuwie", result.get(2).getRawTerm());
 	}
 
 	@Test
 	public void testDiacriticCharTermMatchesAsciifiedFilterRule() throws InterruptedException, ExecutionException {
-		List<QueryStringTerm> result = analyze("bùty");
-		assertEquals(2, result.size());
-		assertWordAssociation_bùty(result.get(0));
-		testFilter_obuwie(result.get(1));
-	}
-
-	private void testFilter_obuwie(QueryStringTerm term) {
-		WeightedWord filterTerm = assertAndCastInstanceOf(term, WeightedWord.class);
-		assertEquals("obuwie", filterTerm.getWord());
-		assertEquals(Occur.MUST_NOT, filterTerm.getOccur());
-	}
-
-	private void assertWordAssociation_bùty(QueryStringTerm term) {
-		WordAssociation wordAssoc = assertAndCastInstanceOf(term, WordAssociation.class);
-		assertEquals("bùty", wordAssoc.getOriginalWord());
-		assertTrue(wordAssoc.getRelatedWords().keySet().contains("buty"));
-		assertTrue(wordAssoc.getRelatedWords().keySet().contains("booty"));
-		assertEquals(2, wordAssoc.getRelatedWords().size()); // expect no more
+		var analyzedQuery = analyze("bùty");
+		assertEquals("(bùty OR booty) OR (buty) -obuwie", analyzedQuery.toQueryString());
 	}
 
 	@Test
 	public void testMultipleTermsMatchesAllKindOfRule() throws InterruptedException, ExecutionException {
-		List<QueryStringTerm> result = analyze("dziecięce zimowe bùty");
-		assertEquals(3 + 1, result.size());
-
-		assertWordAssociation_dziecięce(result.get(0), "dziecięce");
-		assertWordAssociation_zimowe(result.get(1));
-		assertWordAssociation_bùty(result.get(2));
-		testFilter_obuwie(result.get(3));
+		var analyzedQuery = analyze("dziecięce zimowe bùty");
+		assertEquals("((dziecięce OR dziewczęce^0.5) (zimowe OR śnieg) (bùty OR booty)) OR ((dzieciece OR chłopięce^0.5 OR dzieci) (zimowe OR śnieg) buty) -obuwie", analyzedQuery.toQueryString());
 	}
 
 	@Test
 	public void testRawFilterRule() throws InterruptedException, ExecutionException {
-		List<QueryStringTerm> result = analyze("any booty");
+		ExtendedQuery analyzedQuery = analyze("any booty");
+		List<QueryStringTerm> result = AnalyzerUtil.extractTerms(analyzedQuery);
+
 		assertEquals(3, result.size());
 
-		WeightedWord anyTerm = assertAndCastInstanceOf(result.get(0), WeightedWord.class);
-		assertEquals("any", anyTerm.getWord());
+		WeightedTerm anyTerm = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
+		assertEquals("any", anyTerm.getRawTerm());
 		assertEquals(1f, anyTerm.getWeight());
 
-		WeightedWord bootyTerm = assertAndCastInstanceOf(result.get(1), WeightedWord.class);
-		assertEquals("booty", bootyTerm.getWord());
+		WeightedTerm bootyTerm = assertAndCastInstanceOf(result.get(1), WeightedTerm.class);
+		assertEquals("booty", bootyTerm.getRawTerm());
 		assertEquals(1f, bootyTerm.getWeight());
 
 		QueryFilterTerm filterTerm = assertAndCastInstanceOf(result.get(2), QueryFilterTerm.class);
 		assertEquals("category", filterTerm.getField());
-		assertEquals("footy", filterTerm.getWord());
+		assertEquals("footy", filterTerm.getRawTerm());
 		assertEquals(Occur.MUST, filterTerm.getOccur());
 	}
 
@@ -206,9 +191,9 @@ public class AsciifyQuerqyQueryAnalyzerTest {
 	 * @param query
 	 * @return
 	 */
-	private List<QueryStringTerm> analyze(String query) {
-		List<QueryStringTerm> result = underTest.analyze(query);
-		log.info("query '{}' returned result {}", query, result);
+	private ExtendedQuery analyze(String query) {
+		ExtendedQuery result = underTest.analyze(query);
+		log.info("query '{}' returned result {}", query, result.toQueryString());
 		return result;
 	}
 

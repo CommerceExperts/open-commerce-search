@@ -1,14 +1,11 @@
 package de.cxp.ocs.elasticsearch.query.analyzer;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import de.cxp.ocs.elasticsearch.query.model.AlternativeTerm;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
-import de.cxp.ocs.elasticsearch.query.model.WeightedWord;
-import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
+import de.cxp.ocs.elasticsearch.model.query.MultiVariantQuery;
+import de.cxp.ocs.elasticsearch.model.query.AnalyzedQuery;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
+import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
 import de.cxp.ocs.spi.search.ConfigurableExtension;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.util.StringUtils;
@@ -32,61 +29,48 @@ public class AsciifyQuerqyQueryAnalyzer implements UserQueryAnalyzer, Configurab
 	}
 
 	@Override
-	public List<QueryStringTerm> analyze(String userQuery) {
-		List<QueryStringTerm> finalAnalyzedTerms;
-		List<QueryStringTerm> analyzedTerms = querqy.analyze(userQuery);
+	public ExtendedQuery analyze(String userQuery) {
+		ExtendedQuery finalAnalyzedTerms;
+		ExtendedQuery querqyResult1 = querqy.analyze(userQuery);
 		String asciifiedQuery = StringUtils.asciify(userQuery);
 
 		if (!asciifiedQuery.equals(userQuery)) {
-			finalAnalyzedTerms = getCombinedAnalyzedTerms(analyzedTerms, asciifiedQuery);
+			ExtendedQuery querqyResult2 = querqy.analyze(asciifiedQuery);
+			finalAnalyzedTerms = getCombinedQueries(querqyResult1, querqyResult2);
 		}
 		else {
-			finalAnalyzedTerms = analyzedTerms;
+			finalAnalyzedTerms = querqyResult1;
 		}
 
 		return finalAnalyzedTerms;
 	}
 
-	private List<QueryStringTerm> getCombinedAnalyzedTerms(List<QueryStringTerm> analyzedTerms, String asciifiedQuery) {
-		List<QueryStringTerm> finalAnalyzedTerms;
-		finalAnalyzedTerms = new ArrayList<>();
+	private ExtendedQuery getCombinedQueries(ExtendedQuery querqyResult1, ExtendedQuery querqyResult2) {
+		List<QueryStringTerm> filters;
+		if (querqyResult1.getFilters().size() == 0) {
+			filters = querqyResult2.getFilters();
+		}
+		else if (querqyResult2.getFilters().size() == 0) {
+			filters = querqyResult1.getFilters();
+		}
+		else {
+			Set<QueryStringTerm> deduplicatedFilters = new LinkedHashSet<>();
+			deduplicatedFilters.addAll(querqyResult1.getFilters());
+			deduplicatedFilters.addAll(querqyResult2.getFilters());
+			filters = new ArrayList<>(deduplicatedFilters);
+		}
 
-		Map<String, QueryStringTerm> analyzedTermIndex = new LinkedHashMap<>();
-		analyzedTerms.forEach(qterm -> analyzedTermIndex.put(StringUtils.asciify(qterm.getWord()), qterm));
+		AnalyzedQuery combinedQuery;
+		AnalyzedQuery searchQuery1 = querqyResult1.getSearchQuery();
+		AnalyzedQuery searchQuery2 = querqyResult2.getSearchQuery();
+		if (searchQuery1.equals(searchQuery2)) {
+			combinedQuery = searchQuery1;
+		}
+		else {
+			combinedQuery = new MultiVariantQuery(searchQuery1.getInputTerms(), Arrays.asList(searchQuery1, searchQuery2));
+		}
 
-		List<QueryStringTerm> analyzedAsciiTerms = querqy.analyze(asciifiedQuery);
-		for (QueryStringTerm asciiTerm : analyzedAsciiTerms) {
-			QueryStringTerm origAnalyzedTerm = analyzedTermIndex.remove(asciiTerm.getWord());
-			if (origAnalyzedTerm != null) {
-				finalAnalyzedTerms.add(mergeTerms(origAnalyzedTerm, asciiTerm));
-			}
-			else {
-				finalAnalyzedTerms.add(asciiTerm);
-			}
-		}
-		return finalAnalyzedTerms;
-	}
-
-	private QueryStringTerm mergeTerms(QueryStringTerm term1, QueryStringTerm term2) {
-		if (term1.equals(term2)) {
-			return term1;
-		}
-		if (term1 instanceof WordAssociation && term2 instanceof WordAssociation) {
-			WordAssociation targetTerm = ((WordAssociation) term1);
-			targetTerm.putOrUpdate(new WeightedWord(((WordAssociation) term2).getWord()));
-			((WordAssociation) term2).getRelatedWords().values().forEach(targetTerm::putOrUpdate);
-			return targetTerm;
-		}
-		if (term1 instanceof WordAssociation) {
-			((WordAssociation) term1).putOrUpdate(term2);
-			return term1;
-		}
-		if (term2 instanceof WordAssociation) {
-			((WordAssociation) term2).putOrUpdate(term1);
-			return term2;
-		}
-		
-		return new AlternativeTerm(term1, term2);
+		return new ExtendedQuery(combinedQuery, filters);
 	}
 
 }

@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
+import de.cxp.ocs.elasticsearch.model.query.AnalyzedQuery;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import lombok.RequiredArgsConstructor;
 
@@ -26,26 +27,26 @@ public class ConditionalQueries {
 
 	static class ConditionalQuery {
 
-		Predicate<List<QueryStringTerm>>	predicate;
-		ESQueryFactory						queryBuilder;
+		Predicate<AnalyzedQuery>	predicate;
+		ESQueryFactory				queryBuilder;
 	}
 
 	@RequiredArgsConstructor
-	public static class TermCountCondition implements Predicate<List<QueryStringTerm>> {
+	public static class TermCountCondition implements Predicate<AnalyzedQuery> {
 
 		private final int minTermCount;
 
 		private final int maxTermCount;
 
 		@Override
-		public boolean test(List<QueryStringTerm> words) {
-			return minTermCount <= words.size() && words.size() <= maxTermCount;
+		public boolean test(AnalyzedQuery q) {
+			return minTermCount <= q.getTermCount() && q.getTermCount() <= maxTermCount;
 		}
 
 	}
 
 	@RequiredArgsConstructor
-	public static class PatternCondition implements Predicate<List<QueryStringTerm>> {
+	public static class PatternCondition implements Predicate<AnalyzedQuery> {
 
 		private final Pattern matchPattern;
 
@@ -54,9 +55,9 @@ public class ConditionalQueries {
 		}
 
 		@Override
-		public boolean test(List<QueryStringTerm> words) {
+		public boolean test(AnalyzedQuery words) {
 			StringBuilder wholeWordString = new StringBuilder();
-			Iterator<QueryStringTerm> wordIter = words.iterator();
+			Iterator<String> wordIter = words.getInputTerms().iterator();
 			while (wordIter.hasNext()) {
 				wholeWordString.append(wordIter.next());
 				if (wordIter.hasNext()) wholeWordString.append(" ");
@@ -69,26 +70,26 @@ public class ConditionalQueries {
 	}
 
 	@RequiredArgsConstructor
-	public static class ComposedPredicate implements Predicate<List<QueryStringTerm>> {
+	public static class ComposedPredicate implements Predicate<AnalyzedQuery> {
 
-		private final List<Predicate<List<QueryStringTerm>>> collectedPredicates;
+		private final List<Predicate<AnalyzedQuery>> collectedPredicates;
 
 		@Override
-		public boolean test(List<QueryStringTerm> t) {
-			for (Predicate<List<QueryStringTerm>> p : collectedPredicates) {
-				if (!p.test(t)) return false;
+		public boolean test(AnalyzedQuery query) {
+			for (Predicate<AnalyzedQuery> p : collectedPredicates) {
+				if (!p.test(query)) return false;
 			}
 			return true;
 		}
 
 	}
 
-	public Iterator<ESQueryFactory> getMatchingFactories(final List<QueryStringTerm> searchWords) {
-		if (searchWords == null || searchWords.size() == 0) return null;
+	public Iterator<ESQueryFactory> getMatchingFactories(final ExtendedQuery parsedQuery) {
+		if (parsedQuery.getSearchQuery() == null || parsedQuery.getSearchQuery().getTermCount() == 0) return null;
 
 		final List<ESQueryFactory> matchingQueryFactories = new ArrayList<>();
 		for (ConditionalQuery condAndQueryFactory : conditionalQueryBuilders) {
-			if (condAndQueryFactory.predicate.test(searchWords)) {
+			if (condAndQueryFactory.predicate.test(parsedQuery.getSearchQuery())) {
 				matchingQueryFactories.add(condAndQueryFactory.queryBuilder);
 			}
 		}

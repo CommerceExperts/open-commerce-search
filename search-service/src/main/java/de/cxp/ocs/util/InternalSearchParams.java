@@ -45,7 +45,10 @@ public class InternalSearchParams {
 
 	public List<InternalResultFilter> filters = new ArrayList<>();
 
-	public List<InternalResultFilter> querqyFilters = new ArrayList<>();
+	/**
+	 * Optional filters added by the analyzer that should only be applied internally but not exposed in the result.
+	 */
+	public List<InternalResultFilter> inducedFilters = new ArrayList<>();
 
 	public Map<String, String> customParams;
 

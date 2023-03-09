@@ -28,9 +28,13 @@ import org.elasticsearch.search.suggest.SuggestBuilder;
 
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.SpellCorrector;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
-import de.cxp.ocs.elasticsearch.query.model.WeightedWord;
-import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
+import de.cxp.ocs.elasticsearch.model.query.AnalyzedQuery;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
+import de.cxp.ocs.elasticsearch.model.term.AssociatedTerm;
+import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
+import de.cxp.ocs.elasticsearch.model.term.WeightedTerm;
+import de.cxp.ocs.elasticsearch.model.visitor.QueryTermVisitor;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
@@ -47,39 +51,50 @@ class QueryPredictor {
 	@Setter
 	private String analyzer;
 
-	protected List<PredictedQuery> getQueryMetaData(final List<QueryStringTerm> searchTerms,
-			final Map<String, Float> fieldWeights)
+	protected List<PredictedQuery> getQueryMetaData(final @NonNull ExtendedQuery parsedQuery, final Map<String, Float> fieldWeights)
 			throws IOException {
 		// put "must-not" terms into separate list
-		List<QueryStringTerm> searchWordsCleaned = new ArrayList<>(searchTerms.size());
-		List<QueryStringTerm> filterWords = new ArrayList<>(0);
-		for (QueryStringTerm term : searchTerms) {
-			if (term.getOccur().equals(Occur.MUST_NOT)) {
-				filterWords.add(term);
+		List<QueryStringTerm> searchWordsCleaned = new ArrayList<>(parsedQuery.getInputTerms().size());
+		List<QueryStringTerm> excludeFilters = new ArrayList<>(parsedQuery.getFilters().size());
+		parsedQuery.accept(new QueryTermVisitor() {
+
+			@Override
+			public void visitTerm(QueryStringTerm term) {
+				if (term.getOccur().equals(Occur.MUST_NOT)) {
+					excludeFilters.add(term);
+				}
+				else {
+					searchWordsCleaned.add(term);
+				}
 			}
-			else {
-				searchWordsCleaned.add(term);
+
+			@Override
+			public void visitSubQuery(AnalyzedQuery query) {
+				// only collect terms from the root query or first sub query
+				if (searchWordsCleaned.isEmpty() && excludeFilters.isEmpty()) {
+					query.accept(this);
+				}
 			}
-		}
+		});
 
 		// create ordered shingles from the original words
-		final Map<String, Set<String>> shingles = createOrderedShingles(searchWordsCleaned);
+		final Map<String, Set<String>> shingles = createOrderedShingles(parsedQuery.getInputTerms());
 		final Map<String, Set<String>> shingleSources = invertedIndex(shingles);
 
 		// ..and add them to the list of searched terms
 		final Set<QueryStringTerm> actualSearchTerms = new HashSet<>(searchWordsCleaned);
-		shingles.keySet().forEach(shingleWord -> actualSearchTerms.add(new WeightedWord(shingleWord)));
+		shingles.keySet().forEach(shingleWord -> actualSearchTerms.add(new WeightedTerm(shingleWord)));
 
 		final SpellCorrector corrector = getSpellCorrector(fieldWeights.keySet());
-		final Map<Float, WeightedWord> predictionWords = new LinkedHashMap<>();
+		final Map<Float, CountedTerm> predictionWords = new LinkedHashMap<>();
 		final SearchResponse searchResponse = runTermAnalysis(
 				fieldWeights.keySet(),
 				actualSearchTerms,
-				filterWords,
+				excludeFilters,
 				predictionWords,
 				corrector);
 
-		final Map<String, WordAssociation> correctedWords = corrector.extractRelatedWords(actualSearchTerms, searchResponse.getSuggest());
+		final Map<String, AssociatedTerm> correctedWords = corrector.extractRelatedWords(searchResponse.getSuggest());
 		final Map<String, PredictedQuery> predictedQueries = new HashMap<>();
 		final Set<String> redundantQueries = new HashSet<>();
 		boolean hasFoundQueryWithAllTermsMatching = false;
@@ -91,7 +106,7 @@ class QueryPredictor {
 			if (matchingTerms.size() == 1) {
 				String matchedTerm = matchingTerms.keySet().iterator().next();
 				predictionWords.values().stream()
-						.filter(term -> term.getWord().equals(matchedTerm))
+						.filter(term -> term.getRawTerm().equals(matchedTerm))
 						.findFirst()
 						.ifPresent(term -> term.setTermFrequency((int) scoreBucket.getDocCount()));
 			}
@@ -109,10 +124,10 @@ class QueryPredictor {
 			if (predictedQuery.originalTermCount == 1) {
 				String matchedTerm = predictedQuery.getTermsUnique().keySet().iterator().next();
 				correctedWords.computeIfPresent(matchedTerm, (k, v) -> {
-					if (v instanceof WordAssociation) {
-						Iterator<QueryStringTerm> relatedWordIterator = v.getRelatedWords().values().iterator();
+					if (v instanceof AssociatedTerm) {
+						Iterator<QueryStringTerm> relatedWordIterator = v.getRelatedTerms().values().iterator();
 						while (relatedWordIterator.hasNext()) {
-							WeightedWord relWord = (WeightedWord) relatedWordIterator.next();
+							CountedTerm relWord = (CountedTerm) relatedWordIterator.next();
 							if (relWord.getTermFrequency() < predictedQuery.matchCount) {
 								relatedWordIterator.remove();
 							}
@@ -161,14 +176,14 @@ class QueryPredictor {
 		}
 
 		if (!hasFoundQueryWithAllTermsMatching) {
-			for (final WordAssociation correctedWord : correctedWords.values()) {
-				if (predictedQueries.containsKey(correctedWord.getOriginalWord())) continue;
+			for (final AssociatedTerm correctedWord : correctedWords.values()) {
+				if (predictedQueries.containsKey(correctedWord.getMainTerm().getRawTerm())) continue;
 
 				final PredictedQuery predictedQuery = new PredictedQuery();
-				predictedQuery.termsUnique.put(correctedWord.getOriginalWord(), correctedWord);
+				predictedQuery.termsUnique.put(correctedWord.getMainTerm().getRawTerm(), correctedWord);
 				// sum the term frequencies of all corrected words
-				predictedQuery.matchCount = correctedWord.getRelatedWords().values().stream()
-						.mapToLong(ww -> ((WeightedWord) ww).getTermFrequency()).sum();
+				predictedQuery.matchCount = correctedWord.getRelatedTerms().values().stream()
+						.mapToLong(ww -> ((CountedTerm) ww).getTermFrequency()).sum();
 
 				applyTermMatches(searchWordsCleaned, shingleSources, predictedQuery, correctedWords);
 				predictedQueries.put(getQueryKey(predictedQuery), predictedQuery);
@@ -202,7 +217,7 @@ class QueryPredictor {
 	 * @param fieldWeights
 	 *        fields to search
 	 * @param terms
-	 * @param filterWords
+	 * @param excludeFilters
 	 * @param predictionWords
 	 *        empty map that will be filled with the exponential boost values of
 	 *        each term
@@ -210,13 +225,15 @@ class QueryPredictor {
 	 * @return
 	 * @throws IOException
 	 */
+	@SuppressWarnings("deprecation")
 	private SearchResponse runTermAnalysis(final Collection<String> searchFields, final Set<QueryStringTerm> terms,
-			List<QueryStringTerm> filterWords, final Map<Float, WeightedWord> predictionWords, final SpellCorrector corrector) throws IOException {
+			List<QueryStringTerm> excludeFilters, final Map<Float, CountedTerm> predictionWords, final SpellCorrector corrector) throws IOException {
 		final SuggestBuilder spellCheckQuery = corrector.buildSpellCorrectionQuery(
-				terms.stream().map(qst -> qst.getWord()).collect(Collectors.joining(" ")));
+				terms.stream().map(qst -> qst.getRawTerm()).collect(Collectors.joining(" ")));
 
 		final BoolQueryBuilder metaFetchQuery = QueryBuilders.boolQuery();
-		filterWords.forEach(term -> metaFetchQuery.filter(buildTermQuery(term, searchFields)));
+		// FIXME: i guess this is wrong: adding exclude filters as boolean-filter clause
+		excludeFilters.forEach(term -> metaFetchQuery.filter(buildTermQuery(term, searchFields)));
 
 		// build boolean-should query with exponential boost values
 		float queryWeight = (float) Math.pow(2, terms.size() - 1);
@@ -224,8 +241,7 @@ class QueryPredictor {
 			metaFetchQuery.should(QueryBuilders
 					.constantScoreQuery(buildTermQuery(term, searchFields))
 					.boost(queryWeight));
-			predictionWords.put(queryWeight, term instanceof WeightedWord ? (WeightedWord) term
-					: new WeightedWord(term.getWord()));
+			predictionWords.put(queryWeight, new CountedTerm(term));
 			queryWeight = queryWeight / 2;
 		}
 
@@ -294,14 +310,14 @@ class QueryPredictor {
 	 * @param scoreBucket
 	 * @return
 	 */
-	private LinkedHashMap<String, QueryStringTerm> getMatchingTerms(final Map<Float, WeightedWord> weightsPerTerm,
+	private LinkedHashMap<String, QueryStringTerm> getMatchingTerms(final Map<Float, CountedTerm> weightsPerTerm,
 			final Bucket scoreBucket) {
 		final LinkedHashMap<String, QueryStringTerm> termsOrdered = new LinkedHashMap<>();
 		float additiveWeight = Float.parseFloat(scoreBucket.getKeyAsString());
-		for (final Entry<Float, WeightedWord> weightPerTerm : weightsPerTerm.entrySet()) {
+		for (final Entry<Float, CountedTerm> weightPerTerm : weightsPerTerm.entrySet()) {
 			if (weightPerTerm.getKey() <= additiveWeight) {
 				additiveWeight -= weightPerTerm.getKey();
-				termsOrdered.put(weightPerTerm.getValue().getWord(), weightPerTerm.getValue());
+				termsOrdered.put(weightPerTerm.getValue().getRawTerm(), weightPerTerm.getValue());
 				if (additiveWeight == 0) {
 					break;
 				}
@@ -312,20 +328,20 @@ class QueryPredictor {
 
 	private void applyTermMatches(final List<QueryStringTerm> searchTerms,
 			final Map<String, Set<String>> shingleSources,
-			final PredictedQuery predictedQuery, final Map<String, WordAssociation> correctedWords) {
+			final PredictedQuery predictedQuery, final Map<String, AssociatedTerm> correctedWords) {
 		int originalTermCount = 0;
 		for (final QueryStringTerm term : searchTerms) {
-			if (predictedQuery.termsUnique.containsKey(term.getWord())) {
+			if (predictedQuery.termsUnique.containsKey(term.getRawTerm())) {
 				originalTermCount++;
 				continue;
 			}
 
-			final Set<String> shinglesWithTerm = shingleSources.get(term.getWord());
+			final Set<String> shinglesWithTerm = shingleSources.get(term.getRawTerm());
 			if (shingleSources != null && containsAny(predictedQuery.termsUnique.keySet(), shinglesWithTerm)) {
 				originalTermCount++;
 			}
 			else {
-				final WordAssociation correctedWord = correctedWords.get(term.getWord());
+				final AssociatedTerm correctedWord = correctedWords.get(term.getRawTerm());
 				predictedQuery.unknownTerms.add(correctedWord != null ? correctedWord : term);
 			}
 		}
@@ -333,12 +349,12 @@ class QueryPredictor {
 		predictedQuery.originalTermCount = originalTermCount;
 	}
 
-	private Map<String, Set<String>> createOrderedShingles(final List<QueryStringTerm> searchWords) {
+	private Map<String, Set<String>> createOrderedShingles(final List<String> searchWords) {
 		final Map<String, Set<String>> shingles = new HashMap<>();
 
 		for (int i = 0; i < searchWords.size() - 1; i++) {
-			shingles.put(searchWords.get(i).getWord() + searchWords.get(i + 1).getWord(),
-					Sets.newHashSet(searchWords.get(i).getWord(), searchWords.get(i + 1).getWord()));
+			shingles.put(searchWords.get(i) + searchWords.get(i + 1),
+					Sets.newHashSet(searchWords.get(i), searchWords.get(i + 1)));
 		}
 		return shingles;
 	}

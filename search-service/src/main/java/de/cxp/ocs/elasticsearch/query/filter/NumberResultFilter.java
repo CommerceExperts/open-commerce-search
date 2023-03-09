@@ -13,9 +13,9 @@ public class NumberResultFilter implements InternalResultFilter {
 
 	private final Field field;
 
-	private final Number lowerBound;
+	private Number lowerBound;
 
-	private final Number upperBound;
+	private Number upperBound;
 
 	@Getter
 	@Setter
@@ -56,4 +56,5 @@ public class NumberResultFilter implements InternalResultFilter {
 		// no "ID" implementation for numbers available
 		return false;
 	}
+
 }

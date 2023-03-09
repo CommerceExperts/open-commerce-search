@@ -1,4 +1,4 @@
-package de.cxp.ocs.elasticsearch.query.model;
+package de.cxp.ocs.elasticsearch.model.term;
 
 import org.apache.lucene.search.BooleanClause.Occur;
 
@@ -15,10 +15,15 @@ public interface QueryStringTerm {
 	String toQueryString();
 
 	/**
-	 * @return the single original word without the additional noise.
+	 * @return the single original unescaped term.
 	 */
-	String getWord();
+	String getRawTerm();
 
 	Occur getOccur();
+	
+	/**
+	 * @return if that query is already enclosed in quotes or brackets.
+	 */
+	boolean isEnclosed();
 
 }

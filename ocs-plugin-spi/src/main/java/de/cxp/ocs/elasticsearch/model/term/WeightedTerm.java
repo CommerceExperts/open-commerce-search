@@ -1,7 +1,8 @@
-package de.cxp.ocs.elasticsearch.query.model;
+package de.cxp.ocs.elasticsearch.model.term;
 
 import org.apache.lucene.search.BooleanClause.Occur;
 
+import de.cxp.ocs.elasticsearch.model.util.EscapeUtil;
 import lombok.*;
 
 /**
@@ -11,29 +12,27 @@ import lombok.*;
 @AllArgsConstructor
 @RequiredArgsConstructor
 @NoArgsConstructor
-public class WeightedWord implements QueryStringTerm {
+public class WeightedTerm implements QueryStringTerm {
 
 	private final String	QUOTE	= "\"";
 	private final String	EMPTY	= "";
 
 	@NonNull
-	private String	word;
-	private float	weight			= 1f;
-	// TODO: remove because unused?
-	private int		termFrequency	= -1;
-	private boolean	isFuzzy			= false;
-	private boolean	isQuoted		= false;
-	private Occur	occur			= Occur.SHOULD;
+	private String	rawTerm;
+	private float	weight		= 1f;
+	private boolean	isFuzzy		= false;
+	private boolean	isQuoted	= false;
+	private Occur	occur		= Occur.SHOULD;
 
-	public WeightedWord(String word, float weight) {
-		this.word = word;
+	public WeightedTerm(String term, float weight) {
+		this.rawTerm = term;
 		this.weight = weight;
 	}
 
-	public WeightedWord(String word, float weight, int freq) {
-		this.word = word;
+	public WeightedTerm(String term, float weight, Occur occur) {
+		this.rawTerm = term;
 		this.weight = weight;
-		termFrequency = freq;
+		this.occur = occur;
 	}
 
 	@Override
@@ -41,10 +40,15 @@ public class WeightedWord implements QueryStringTerm {
 		String optionalQuote = isQuoted ? QUOTE : EMPTY;
 		return occur.toString()
 				+ optionalQuote
-				+ EscapeUtil.escapeReservedESCharacters(word)
+				+ EscapeUtil.escapeReservedESCharacters(rawTerm)
 				+ optionalQuote
 				+ (isFuzzy ? "~" : "")
 				+ (weight != 1f ? "^" + weight : "");
+	}
+
+	@Override
+	public boolean isEnclosed() {
+		return isQuoted;
 	}
 
 	@Override
