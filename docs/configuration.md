@@ -454,7 +454,7 @@ It contains the following properties:
         optimal-value-count: <int>
         exclude-from-facet-limit: <boolean>
         show-unselected-options: <boolean>
-        is-multi-select: <boolean>
+        multi-select: <boolean>
         prefer-variant-on-filter: <boolean>
         min-facet-coverage: <double>
         min-value-count: <int>
@@ -469,7 +469,7 @@ It contains the following properties:
         optimal-value-count: <int>
         exclude-from-facet-limit: <boolean>
         show-unselected-options: <boolean>
-        is-multi-select: <boolean>
+        multi-select: <boolean>
         prefer-variant-on-filter: <boolean>
         min-facet-coverage: <double>
         min-value-count: <int>
@@ -489,9 +489,9 @@ Each individual facet config may contain the following properties:
 - `value-order`: Set the order of the facet values. Defaults to COUNT which means, the value with the highest result coverage will be listed first. Other possible values are 'ALPHANUM_ASC' or 'ALPHANUM_DESC'. This setting is only used for term-facets and category-facets. Category facet will be sorted recursively.
   If the order of two facets is the same, the one that's filtered will be preferd. If both have the same filter-status, the one with the higher result-coverage will be prefered.
 - `optimal-value-count`: (default = 5) Only used for "interval" facets to specify how many interval-filter-options should be generated at the maximum (if there enough results).
-- `explude-from-facet-limit`: (default = false) See `max-facets` description above
+- `exclude-from-facet-limit`: (default = false) See `max-facets` description above
 - `show-unselected-options`: (default = false) If set to "true" all possible facet values will be returned, even if one of them is used as filter. Choosing another filter-option will then toggle the selected filter.
-- `is-multi-select`: (default = false) If set to "true" the behaviour is similar to `show-unselected-options` and additionally choosing another filter-option will filter the result for both of them inclusively (e.g. "blue" or "red").
+- `multi-select`: (default = false) If set to "true" the behaviour is similar to `show-unselected-options` and additionally choosing another filter-option will filter the result for both of them inclusively (e.g. "blue" or "red").
 - `prefer-variant-on-filter`: (default = false) Set to true, if variant documents should be preferred in the result in case a filter of that facet/field is used. This can only be used for facets/fields, that exist on variant level, otherwise it is ignored. If several facets have this flag activated, one of them must be filtered to prefer a variant. E.g. if you have different variants per "color" and "material", and you set this flag for both facets, variants will be shown if there is either a color or a material filter. This setting is ignored if the "variant-picking-strategy" is set to "pickAlways".
 - `min-facet-coverage`: (default: 0.1) Must be a floating value between 0 and 1. It defines the share of hits in the result that a facet with its elements should relate to, in order to show that facet. For example the color facet with a min-facet-coverage of 0.2 will only be shown, if 20% of the hits have a color attribute.
 - `min-value-count`: (default: 2) An absolute number greater than 0. It defines the minimum amount of filter-elements that facet must have in order to be displayed. For example a facet with 3 filter-elements won't be shown if its `min-value-count` is set to 5. This value is reduced if the whole search-index contains less values for that particular facet field. For example if the "sale" field only contains the value "true", then the `min-value-count` is always set to 1, no matter what is set in the configuration.
