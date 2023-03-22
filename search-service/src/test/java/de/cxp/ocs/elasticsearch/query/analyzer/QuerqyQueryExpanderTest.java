@@ -3,6 +3,7 @@ package de.cxp.ocs.elasticsearch.query.analyzer;
 import static de.cxp.ocs.elasticsearch.query.analyzer.AnalyzerUtil.extractTerms;
 import static de.cxp.ocs.util.TestUtils.assertAndCastInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -77,6 +78,17 @@ public class QuerqyQueryExpanderTest {
 		// so that a ascii input triggers them
 		var analyzedQuery = analyze(underTest, "dzieciece");
 		assertEquals("(dzieciece OR dziewczece^0.5)", analyzedQuery.toQueryString());
+	}
+
+	@Test
+	public void testNonWordInputQuery() {
+		QuerqyQueryExpander underTest = loadRule("input =>", "  SYNONYM: synonym");
+		var analyzedQuery = analyze(underTest, "<");
+		assertTrue(analyzedQuery.isEmpty());
+
+		analyzedQuery = analyze(underTest, "< input > input2<");
+		assertFalse(analyzedQuery.isEmpty());
+		assertEquals("(input OR synonym) input2", analyzedQuery.toQueryString());
 	}
 
 	@Test

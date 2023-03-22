@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import de.cxp.ocs.elasticsearch.model.query.*;
 import de.cxp.ocs.elasticsearch.model.term.*;
+import de.cxp.ocs.elasticsearch.model.util.EscapeUtil;
 import de.cxp.ocs.elasticsearch.model.util.QueryStringUtil;
 import de.cxp.ocs.spi.search.ConfigurableExtension;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
@@ -280,12 +281,17 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 
 		@Override
 		public Node visit(Term term) {
+			String termString = term.getValue().toString();
+			if (EscapeUtil.escapeReservedESCharacters(termString).isBlank()) {
+				return null;
+			}
+
 			WeightedTerm weightedWord;
 			if (term instanceof BoostedTerm) {
-				weightedWord = new WeightedTerm(term.getValue().toString(), ((BoostedTerm) term).getBoost());
+				weightedWord = new WeightedTerm(termString, ((BoostedTerm) term).getBoost());
 			}
 			else {
-				weightedWord = new WeightedTerm(term.toString());
+				weightedWord = new WeightedTerm(termString);
 			}
 
 			// XXX might always be SHOULD - if so, this block can be removed cause useless
