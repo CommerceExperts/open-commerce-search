@@ -12,6 +12,7 @@ import de.cxp.ocs.elasticsearch.model.term.*;
 import de.cxp.ocs.elasticsearch.model.util.QueryStringUtil;
 import de.cxp.ocs.spi.search.ConfigurableExtension;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
+import de.cxp.ocs.util.StringUtils;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import querqy.model.*;
@@ -28,13 +29,17 @@ import querqy.rewrite.experimental.LocalSearchEngineRequestAdapter;
 @Slf4j
 public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExtension {
 
+	public final static String	RULES_URL_PROPERTY_NAME			= "common_rules_url";
+	public final static String	DO_ASCIIFY_RULES_PROPERTY_NAME	= "do_asciiy_rules";
+
 	private final QuerqyParser	parser					= new WhiteSpaceQuerqyParser();
 	private RewriteChain		rewriteChain			= null;
 	private boolean				loggedMissingRewriter	= false;
 
 	@Override
 	public void initialize(Map<String, String> settings) {
-		String commonRulesLocation = settings == null ? null : settings.get("common_rules_url");
+		String commonRulesLocation = settings == null ? null : settings.get(RULES_URL_PROPERTY_NAME);
+		Boolean isAsciifyRules = Boolean.parseBoolean(settings.get(DO_ASCIIFY_RULES_PROPERTY_NAME));
 		try {
 			if (commonRulesLocation == null) {
 				log.error("no 'common_rules_url' provided! Won't enrich queries with querqy.");
@@ -42,7 +47,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			else if (commonRulesLocation.startsWith("http")) {
 				URL url = new URL(commonRulesLocation);
 				BufferedInputStream resourceStream = new BufferedInputStream(url.openStream());
-				rewriteChain = initFromStream(resourceStream);
+				rewriteChain = initFromStream(resourceStream, isAsciifyRules);
 			}
 			else {
 				InputStream resourceStream;
@@ -56,7 +61,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 				}
 
 				if (resourceStream != null) {
-					rewriteChain = initFromStream(resourceStream);
+					rewriteChain = initFromStream(resourceStream, isAsciifyRules);
 				}
 				else {
 					log.error("resource '{}' not found. querqy rewriter not initialized", commonRulesLocation);
@@ -71,12 +76,17 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 		}
 	}
 
-	private RewriteChain initFromStream(InputStream resourceStream) throws IOException {
+	@SuppressWarnings("resource")
+	private RewriteChain initFromStream(InputStream resourceStream, boolean asciifyRules) throws IOException {
+		Reader inputReader = new InputStreamReader(resourceStream);
+		if (asciifyRules) {
+			inputReader = StringUtils.asAsciifyCharFilter(inputReader);
+		}
 		List<RewriterFactory> factories;
 		factories = Collections.singletonList(
 				new SimpleCommonRulesRewriterFactory(
 						"common_rules",
-						new InputStreamReader(resourceStream),
+						inputReader,
 						true,
 						new WhiteSpaceQuerqyParserFactory(),
 						true,
