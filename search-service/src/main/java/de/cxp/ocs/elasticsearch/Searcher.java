@@ -166,10 +166,16 @@ public class Searcher {
 		Map<String, Object> searchMetaData = new HashMap<>();
 
 		ExtendedQuery parsedQuery = queryParser.preprocessQuery(parameters, searchMetaData);
+		boolean isInvalidUserQuery = parsedQuery.isEmpty() && parameters.getUserQuery() != null && !parameters.getUserQuery().isBlank();
 
 		Iterator<ESQueryFactory> stagedQueryBuilders;
 		if (parsedQuery.isEmpty()) {
-			stagedQueryBuilders = Collections.<ESQueryFactory> singletonList(new MatchAllQueryFactory()).iterator();
+			if (isInvalidUserQuery && parsedQuery.getFilters().isEmpty()) {
+				stagedQueryBuilders = Collections.emptyIterator();
+			}
+			else {
+				stagedQueryBuilders = Collections.<ESQueryFactory> singletonList(new MatchAllQueryFactory()).iterator();
+			}
 		}
 		else {
 			stagedQueryBuilders = queryBuilder.getMatchingFactories(parsedQuery);
