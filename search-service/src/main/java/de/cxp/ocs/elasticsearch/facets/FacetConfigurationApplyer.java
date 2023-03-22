@@ -267,7 +267,9 @@ public class FacetConfigurationApplyer {
 					.setShowUnselectedOptions(defaultFacetConf.isShowUnselectedOptions())
 					.setSourceField(name)
 					.setType(defaultFacetConf.getType())
-					.setValueOrder(defaultFacetConf.getValueOrder());
+					.setValueOrder(defaultFacetConf.getValueOrder())
+					.setMinFacetCoverage(defaultFacetConf.getMinFacetCoverage())
+					.setMinValueCount(defaultFacetConf.getMinValueCount());
 	}
 
 	private Set<String> getNamesOfMatchingFields(Set<Field> ignoredFields, FieldType fieldType) {
