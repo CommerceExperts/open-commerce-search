@@ -21,6 +21,10 @@ public abstract class ProductSet {
 	@Setter
 	public boolean asSeparateSlice = false;
 
+	@Getter
+	@Setter
+	public String variantBoostTerms = null;
+
 	public abstract String getType();
 
 	/**

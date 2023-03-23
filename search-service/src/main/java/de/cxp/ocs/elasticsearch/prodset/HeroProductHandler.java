@@ -10,6 +10,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 
 import de.cxp.ocs.SearchContext;
+import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.Searcher;
 import de.cxp.ocs.elasticsearch.mapper.ResultMapper;
 import de.cxp.ocs.elasticsearch.mapper.VariantPickingStrategy;
@@ -98,14 +99,18 @@ public class HeroProductHandler {
 		return resolvedSets;
 	}
 
-	public static Optional<QueryBuilder> getHeroQuery(InternalSearchParams internalParams) {
+	public static Optional<HeroProductsQuery> getHeroQuery(InternalSearchParams internalParams) {
 		StaticProductSet[] productSets = internalParams.heroProductSets;
 		QueryBuilder heroQuery = null;
+		QueryBuilder variantBoostQuery = null;
 		if (productSets != null && productSets.length > 0) {
 			// we will join several product sets with boolean should
 			if (productSets.length > 1) {
 				heroQuery = QueryBuilders.boolQuery();
 			}
+
+			StringBuilder variantBoostQueryString = new StringBuilder();
+
 			/**
 			 * assume 3 sets, each with 1000/max ids
 			 * boost-ranges should be:
@@ -143,11 +148,21 @@ public class HeroProductHandler {
 								.queryName(QUERY_NAME_PREFIX + i);
 					}
 					heroQuery = heroQuery == null ? productSetQuery : ((BoolQueryBuilder) heroQuery).should(productSetQuery);
+
+					if (productSets[i].variantBoostTerms != null) {
+						variantBoostQueryString.append(productSets[i].variantBoostTerms).append(' ');
+					}
 				}
 				boost /= MAX_IDS_ORDERED_BOOSTING;
+
+				if (variantBoostQueryString.length() > 0) {
+					variantBoostQuery = QueryBuilders.queryStringQuery(variantBoostQueryString.toString())
+							.defaultField(FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + ".*")
+							.analyzer("whitespace");
+				}
 			}
 		}
-		return Optional.ofNullable(heroQuery);
+		return heroQuery == null ? Optional.empty() : Optional.of(new HeroProductsQuery(heroQuery, variantBoostQuery));
 	}
 
 	private static String idsAsOrderedBoostQuery(@NonNull String[] ids) {
