@@ -203,6 +203,7 @@ public class HeroProductHandler {
 					slice.setLabel(productSets[i].getName());
 					slice.setMatchCount(productSets[i].getSize());
 					slice.setHits(new ArrayList<>());
+					slice.nextOffset = internalParams.offset + searchResponse.getHits().getHits().length;
 					searchResult.slices.add(slice);
 				}
 				else {
