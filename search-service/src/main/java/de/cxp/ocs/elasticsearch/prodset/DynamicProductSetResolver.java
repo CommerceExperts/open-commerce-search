@@ -37,6 +37,7 @@ public class DynamicProductSetResolver implements ProductSetResolver {
 
 		// TODO: add caching
 		StaticProductSet resolved = search(dynamicProductSet, searcher, productSetParams);
+		resolved.setAsSeparateSlice(productSet.asSeparateSlice);
 		return resolved;
 	}
 

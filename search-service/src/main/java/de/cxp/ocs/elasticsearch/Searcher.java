@@ -577,7 +577,7 @@ public class Searcher {
 		// XXX think about building parameters according to the actual performed
 		// search (e.g. with relaxed query or with implicit set filters)
 		srSlice.resultLink = SearchQueryBuilder.toLink(parameters).toString();
-		srSlice.matchCount = searchHits.getTotalHits().value;
+		srSlice.matchCount = searchHits.getTotalHits().value - heroIds.size();
 
 		Map<String, SortOrder> sortedFields = sortingHandler.getSortedNumericFields(parameters);
 
