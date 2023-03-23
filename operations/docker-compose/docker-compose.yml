@@ -54,7 +54,7 @@ services:
     environment:
       - "discovery.type=single-node"
       - "http.cors.enabled=true"
-      - "http.cors.allow-origin=/https?:\/\/localhost(:[0-9]+)?/"
+      - "http.cors.allow-origin=/https?://localhost(:[0-9]+)?/"
       - "ES_JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,address=*:8000,suspend=n -Xms1024m -Xmx1024m"
     ulimits:
       memlock:

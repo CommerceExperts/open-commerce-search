@@ -3,6 +3,7 @@ package de.cxp.ocs.elasticsearch.query.analyzer;
 import static de.cxp.ocs.elasticsearch.query.analyzer.AnalyzerUtil.extractTerms;
 import static de.cxp.ocs.util.TestUtils.assertAndCastInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -11,8 +12,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.junit.jupiter.api.AfterEach;
@@ -47,18 +49,46 @@ public class QuerqyQueryExpanderTest {
 	}
 
 	public QuerqyQueryExpander loadRule(String... instructions) {
+		return this.loadRule(false, instructions);
+	}
+
+	public QuerqyQueryExpander loadRule(boolean asciifyRules, String... instructions) {
 		QuerqyQueryExpander underTest = new QuerqyQueryExpander();
 		Path querqyRulesFile;
 		try {
 			querqyRulesFile = Files.createTempFile("querqy_rules_test.", ".txt");
 			Files.write(querqyRulesFile, Arrays.asList(instructions), StandardCharsets.UTF_8);
-			underTest.initialize(Collections.singletonMap("common_rules_url", querqyRulesFile.toAbsolutePath().toString()));
+
+			Map<String, String> options = new HashMap<>();
+			options.put(QuerqyQueryExpander.RULES_URL_PROPERTY_NAME, querqyRulesFile.toAbsolutePath().toString());
+			options.put(QuerqyQueryExpander.DO_ASCIIFY_RULES_PROPERTY_NAME, Boolean.toString(asciifyRules));
+			underTest.initialize(options);
 			deleteAfterTest = querqyRulesFile.toFile();
 		}
 		catch (IOException e) {
 			throw new TestAbortedException("could not write querqy rules file", e);
 		}
 		return underTest;
+	}
+
+	@Test
+	public void testAsciifiedRule() {
+		// rules are asciified
+		QuerqyQueryExpander underTest = loadRule(true, "dziecięce =>", "  SYNONYM(0.5): dziewczęce");
+		// so that a ascii input triggers them
+		var analyzedQuery = analyze(underTest, "dzieciece");
+		assertEquals("(dzieciece OR dziewczece^0.5)", analyzedQuery.toQueryString());
+	}
+
+	@Test
+	public void testNonWordInputQuery() {
+		QuerqyQueryExpander underTest = loadRule("input =>", "  SYNONYM: synonym");
+		var analyzedQuery = analyze(underTest, "<");
+		assertTrue(analyzedQuery.isEmpty());
+
+		analyzedQuery = analyze(underTest, "< input > input2<");
+		assertFalse(analyzedQuery.isEmpty());
+		assertEquals("(input OR synonym) input2", analyzedQuery.toQueryString());
 	}
 
 	@Test

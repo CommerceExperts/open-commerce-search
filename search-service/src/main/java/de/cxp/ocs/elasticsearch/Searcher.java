@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.search.SearchRequest;
@@ -39,6 +41,7 @@ import de.cxp.ocs.elasticsearch.model.query.AnalyzedQuery;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.elasticsearch.model.term.AssociatedTerm;
 import de.cxp.ocs.elasticsearch.prodset.HeroProductHandler;
+import de.cxp.ocs.elasticsearch.prodset.HeroProductsQuery;
 import de.cxp.ocs.elasticsearch.query.FiltersBuilder;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.elasticsearch.query.analyzer.WhitespaceAnalyzer;
@@ -166,10 +169,16 @@ public class Searcher {
 		Map<String, Object> searchMetaData = new HashMap<>();
 
 		ExtendedQuery parsedQuery = queryParser.preprocessQuery(parameters, searchMetaData);
+		boolean isInvalidUserQuery = parsedQuery.isEmpty() && parameters.getUserQuery() != null && !parameters.getUserQuery().isBlank();
 
 		Iterator<ESQueryFactory> stagedQueryBuilders;
 		if (parsedQuery.isEmpty()) {
-			stagedQueryBuilders = Collections.<ESQueryFactory> singletonList(new MatchAllQueryFactory()).iterator();
+			if (isInvalidUserQuery && parsedQuery.getFilters().isEmpty()) {
+				stagedQueryBuilders = Collections.emptyIterator();
+			}
+			else {
+				stagedQueryBuilders = Collections.<ESQueryFactory> singletonList(new MatchAllQueryFactory()).iterator();
+			}
 		}
 		else {
 			stagedQueryBuilders = queryBuilder.getMatchingFactories(parsedQuery);
@@ -189,7 +198,7 @@ public class Searcher {
 		Map<String, AssociatedTerm> correctedWords = null;
 		Sample sqbSample = Timer.start(registry);
 
-		Optional<QueryBuilder> heroProductsQuery = HeroProductHandler.getHeroQuery(parameters);
+		Optional<HeroProductsQuery> heroProductsQuery = HeroProductHandler.getHeroQuery(parameters);
 		boolean isResultSufficient = false;
 		while ((searchResponse == null || !isResultSufficient) && stagedQueryBuilders.hasNext()) {
 			StopWatch sw = new StopWatch();
@@ -225,7 +234,7 @@ public class Searcher {
 				searchQuery.setMasterLevelQuery(masterLevelQueryWithExcludes);
 			}
 
-			searchSourceBuilder.query(buildFinalQuery(searchQuery, heroProductsQuery, filterContext, variantSortings));
+			searchSourceBuilder.query(buildFinalQuery(searchQuery, heroProductsQuery.orElse(null), filterContext, variantSortings));
 
 			if (log.isTraceEnabled()) {
 				log.trace(QUERY_MARKER, "{ \"user_query\": \"{}\", \"query\": {} }", parameters.userQuery, searchSourceBuilder.toString().replaceAll("[\n\\s]+", " "));
@@ -256,7 +265,7 @@ public class Searcher {
 				// account, then try again with corrected words
 				if (correctedWords.size() > 0 && !searchQuery.isWithSpellCorrection()) {
 					searchQuery = stagedQueryBuilder.createQuery(parsedQuery);
-					searchSourceBuilder.query(buildFinalQuery(searchQuery, heroProductsQuery, filterContext, variantSortings));
+					searchSourceBuilder.query(buildFinalQuery(searchQuery, heroProductsQuery.orElse(null), filterContext, variantSortings));
 					searchResponse = executeSearchRequest(searchSourceBuilder);
 					searchMetaData.put("query_correction", correctedWordsSample);
 				}
@@ -405,7 +414,7 @@ public class Searcher {
 			int heroWindowSize = maxWindowSize;
 			HeroProductHandler.getHeroQuery(parameters)
 					.ifPresent(heroQuery -> searchSourceBuilder.addRescorer(
-							new QueryRescorerBuilder(heroQuery)
+							new QueryRescorerBuilder(heroQuery.getMainQuery())
 									.windowSize(heroWindowSize)
 									.setQueryWeight(1)
 									.setRescoreQueryWeight(heroRescoreWeight)));
@@ -472,9 +481,10 @@ public class Searcher {
 		}
 	}
 
-	private QueryBuilder buildFinalQuery(MasterVariantQuery searchQuery, Optional<QueryBuilder> heroProductsQuery,
+	private QueryBuilder buildFinalQuery(MasterVariantQuery searchQuery, @Nullable
+	HeroProductsQuery heroProductsQuery,
 			FilterContext filterContext, List<SortBuilder<?>> variantSortings) {
-		QueryBuilder masterLevelQuery = searchQuery.getMasterLevelQuery(); // ESQueryUtils.mergeQueries(,
+		QueryBuilder masterLevelQuery = searchQuery.getMasterLevelQuery();
 
 		FilterFunctionBuilder[] masterScoringFunctions = scoringCreator.getScoringFunctions(false);
 		if (masterScoringFunctions.length > 0) {
@@ -500,6 +510,13 @@ public class Searcher {
 			variantsMatchQuery = variantsMatchQuery == null ? variantPostFilters : ESQueryUtils.mapToBoolQueryBuilder(variantsMatchQuery).filter(variantPostFilters);
 			variantsOnlyFiltered = false;
 		}
+		
+		if (heroProductsQuery != null) {
+			variantsMatchQuery = heroProductsQuery.applyToVariantQuery(variantsMatchQuery);
+			if (variantsMatchQuery != null) {
+				variantsOnlyFiltered = false;
+			}
+		}
 
 		FilterFunctionBuilder[] variantScoringFunctions = variantSortings.isEmpty() ? scoringCreator.getScoringFunctions(true) : new FilterFunctionBuilder[0];
 		if (variantScoringFunctions.length > 0) {
@@ -520,12 +537,7 @@ public class Searcher {
 		}
 		
 		// add hero products without the impact of the "natural query"
-		if (heroProductsQuery.isPresent()) {
-			masterLevelQuery = QueryBuilders.disMaxQuery()
-					.add(heroProductsQuery.get())
-					.add(masterLevelQuery)
-					.tieBreaker(0f);
-		}
+		masterLevelQuery = heroProductsQuery != null ? heroProductsQuery.applyToMasterQuery(masterLevelQuery) : masterLevelQuery;
 
 		// add filters on top of main-query + hero-products
 		QueryBuilder masterFilterQuery = filterContext.getJoinedBasicFilters().getMasterLevelQuery();
@@ -571,7 +583,7 @@ public class Searcher {
 		// XXX think about building parameters according to the actual performed
 		// search (e.g. with relaxed query or with implicit set filters)
 		srSlice.resultLink = SearchQueryBuilder.toLink(parameters).toString();
-		srSlice.matchCount = searchHits.getTotalHits().value;
+		srSlice.matchCount = searchHits.getTotalHits().value - heroIds.size();
 
 		Map<String, SortOrder> sortedFields = sortingHandler.getSortedNumericFields(parameters);
 

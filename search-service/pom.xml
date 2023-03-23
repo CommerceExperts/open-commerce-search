@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.41.0</version>
+		<version>0.42.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>search-service</artifactId>
-	<version>0.37.0</version>
+	<version>0.38.0</version>
 	<packaging>jar</packaging>
 
 	<!-- Import dependency management from Spring Boot -->
@@ -29,6 +29,11 @@
 				<version>${spring-cloud.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+			<dependency>
+			    <groupId>net.minidev</groupId>
+			    <artifactId>json-smart</artifactId>
+			    <version>2.4.9</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

@@ -8,7 +8,7 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Open Commerce Search Stack API
-  version: "0.16"
+  version: 0.18.0-SNAPSHOT
 paths:
   /indexer-api/v1/full/add:
     post:
@@ -485,17 +485,30 @@ components:
         limit:
           type: integer
           format: int32
+          description: The amount of products to return in the result
           minimum: 1
         offset:
           type: integer
           format: int32
+          description: The amount of products to omit from the whole result to select
+            the returned results.
           minimum: 0
         q:
           type: string
+          description: the user query
+          example: blue shirt
         sort:
           type: string
+          description: "Full sorting parameter value. This is the name of the sorting\
+            \ and optionally a dash as prefix, thats means the sorting should be descending.\
+            \ Several sorting criterion can be defined by separating the values using\
+            \ comma."
+          example: "sort=price,-name (price asc and name descending)"
         withFacets:
           type: boolean
+          description: flag to specify if facets should be returned with the requested
+            response. Should be set to false in case only the next batch of hits is
+            requested (e.g. for endless scrolling).
     Attribute:
       type: object
       description: "Rich model that can be used to represent a document's or product's\
@@ -598,6 +611,8 @@ components:
       - $ref: '#/components/schemas/ProductSet'
       - type: object
         properties:
+          asSeparateSlice:
+            type: boolean
           filters:
             type: object
             additionalProperties:
@@ -786,6 +801,8 @@ components:
           static: '#/components/schemas/StaticProductSet'
         propertyName: type
       properties:
+        asSeparateSlice:
+          type: boolean
         name:
           type: string
         size:
@@ -846,17 +863,30 @@ components:
         limit:
           type: integer
           format: int32
+          description: The amount of products to return in the result
           minimum: 1
         offset:
           type: integer
           format: int32
+          description: The amount of products to omit from the whole result to select
+            the returned results.
           minimum: 0
         q:
           type: string
+          description: the user query
+          example: blue shirt
         sort:
           type: string
+          description: "Full sorting parameter value. This is the name of the sorting\
+            \ and optionally a dash as prefix, thats means the sorting should be descending.\
+            \ Several sorting criterion can be defined by separating the values using\
+            \ comma."
+          example: "sort=price,-name (price asc and name descending)"
         withFacets:
           type: boolean
+          description: flag to specify if facets should be returned with the requested
+            response. Should be set to false in case only the next batch of hits is
+            requested (e.g. for endless scrolling).
     SearchResult:
       type: object
       properties:
@@ -963,6 +993,8 @@ components:
       - $ref: '#/components/schemas/ProductSet'
       - type: object
         properties:
+          asSeparateSlice:
+            type: boolean
           ids:
             type: array
             items:
