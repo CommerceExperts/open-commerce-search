@@ -3,6 +3,7 @@ package de.cxp.ocs.elasticsearch.prodset;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 import de.cxp.ocs.SearchContext;
@@ -38,7 +39,7 @@ public class DynamicProductSetResolver implements ProductSetResolver {
 		// TODO: add caching
 		StaticProductSet resolvedSet = search(dynamicProductSet, searcher, productSetParams);
 		resolvedSet.setAsSeparateSlice(dynamicSet.asSeparateSlice);
-		resolvedSet.setVariantBoostTerms(dynamicSet.getVariantBoostTerms());
+		resolvedSet.setVariantBoostTerms(Optional.ofNullable(dynamicSet.getVariantBoostTerms()).orElse(dynamicSet.query));
 		return resolvedSet;
 	}
 
