@@ -192,6 +192,8 @@ public class HeroProductHandler {
 			StaticProductSet[] productSets = internalParams.heroProductSets;
 			Map<String, Integer> productSetAssignment = new HashMap<>();
 			for (int i = 0; i < productSets.length; i++) {
+				if (!productSets[i].asSeparateSlice) continue;
+
 				for (int k = 0; k < productSets[i].ids.length; k++) {
 					productSetAssignment.putIfAbsent(productSets[i].ids[k], i);
 				}
