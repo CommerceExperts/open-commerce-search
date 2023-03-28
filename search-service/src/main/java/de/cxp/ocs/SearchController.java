@@ -299,17 +299,20 @@ public class SearchController implements SearchService {
 		FieldConfigIndex fieldConfigIndex = null;
 		Set<String> validIndexNames = new HashSet<>();
 		for (String indexName : tenantIndexes) {
-			FieldConfiguration fieldConfig = loadFieldConfiguration(searchConfig.getIndexName());
+			FieldConfiguration fieldConfig = loadFieldConfiguration(indexName);
 			if (fieldConfigIndex == null) {
 				fieldConfigIndex = new FieldConfigIndex(fieldConfig);
-				continue;
-			}
-			try {
-				fieldConfigIndex.addFieldConfig(fieldConfig);
 				validIndexNames.add(indexName);
-			} catch (FieldConfigIncompatibilityException e) {
-				log.error("field-configuration of indexes {} are not compatible! Will omit usage of {}.",
-						searchConfig.getIndexName(), indexName, e);
+			}
+			else {
+				try {
+					fieldConfigIndex.addFieldConfig(fieldConfig);
+					validIndexNames.add(indexName);
+				}
+				catch (FieldConfigIncompatibilityException e) {
+					log.error("field-configuration of indexes {} are not compatible! Will omit usage of {}.",
+							searchConfig.getIndexName(), indexName, e);
+				}
 			}
 		}
 		if (tenantIndexes.length > validIndexNames.size()) {
