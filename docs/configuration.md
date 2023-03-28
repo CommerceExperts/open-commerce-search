@@ -576,6 +576,16 @@ suggest.update.rate=60
 #
 #suggest.index.folder=
 
+# If several suggest-data-providers are used, they are indexed into separate indexes by default. This option
+# activates a merging logic, so that all provided data is merged into one index.
+#
+# This could reduce load and improve performance since a single Lucene suggester is asked for results.
+# However in such a case the weights should be in a similar range to avoid a proper ranking.
+#
+# Default: false
+#
+#suggest.data.source.merger=false
+
 # If this property is set, it will be used to extract the payload value with
 # this key and group the suggestions accordingly.
 # It's recommended to specify 'suggest.group.share.conf' or
@@ -605,6 +615,14 @@ suggest.update.rate=60
 # The values are considered as absolute limites.
 #
 #suggest.group.cutoff.conf=
+
+# If grouping and limiting is configured by a key that comes from a single or merged data-provider, then this value
+# can be used to increase the internal amount of fetched suggestions.
+# This is usable to increase the likeliness to get the desired group counts.
+#
+# Default: 1
+#
+#suggest.group.prefetch.limit.factor=1
 
 # If this property is set, the returned values will be deduplicated. As a value
 # a comma separated list of the group-values can be specified. It's used as

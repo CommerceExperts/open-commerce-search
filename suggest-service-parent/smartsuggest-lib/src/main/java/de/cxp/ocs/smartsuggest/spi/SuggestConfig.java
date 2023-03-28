@@ -25,6 +25,8 @@ public class SuggestConfig {
 
 	public boolean useRelativeShareLimit = false;
 
+	public int prefetchLimitFactor = 1;
+
 	public List<GroupConfig> groupConfig = new ArrayList<>();
 
 	/**

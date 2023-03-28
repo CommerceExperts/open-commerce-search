@@ -428,40 +428,44 @@ public class QuerySuggestManager implements AutoCloseable {
 
 			return new NoopQuerySuggester(true);
 		}
-		if (actualSuggestDataProviders.size() == 1) {
-			return initializeQuerySuggester(actualSuggestDataProviders.get(0), indexName, synchronous);
-		}
 
 		SuggestConfig suggestConfig = suggestConfigProvider.getConfig(indexName);
-		if (suggestConfig.useDataSourceMerger) {
-			return initializeQuerySuggester(new MergingSuggestDataProvider(actualSuggestDataProviders), indexName, synchronous);
+		final QuerySuggester actualQuerySuggester;
+		if (actualSuggestDataProviders.size() == 1) {
+			actualQuerySuggester = initializeQuerySuggester(actualSuggestDataProviders.get(0), indexName, synchronous);
+		}
+		else if (suggestConfig.useDataSourceMerger) {
+			actualQuerySuggester = initializeQuerySuggester(new MergingSuggestDataProvider(actualSuggestDataProviders), indexName, synchronous);
 		}
 		else {
 			List<QuerySuggester> suggesters = new ArrayList<>();
 			for (SuggestDataProvider sdp : actualSuggestDataProviders) {
 				suggesters.add(initializeQuerySuggester(sdp, indexName, synchronous));
 			}
-			Limiter limiter = createLimiter(suggestConfig);
-			return new CompoundQuerySuggester(suggesters, limiter);
+			actualQuerySuggester = new CompoundQuerySuggester(suggesters);
 		}
+
+		return createLimiter(suggestConfig)
+				.map(_limiter -> (QuerySuggester) new GroupingSuggester(actualQuerySuggester, _limiter).setPrefetchLimitFactor(suggestConfig.getPrefetchLimitFactor()))
+				.orElse(actualQuerySuggester);
 	}
 
-	private Limiter createLimiter(SuggestConfig suggestConfig) {
+	private Optional<Limiter> createLimiter(SuggestConfig suggestConfig) {
 		if (suggestConfig.getGroupKey() != null) {
 			if (suggestConfig.useRelativeShareLimit) {
 				LinkedHashMap<String, Double> internalGroupConfig = new LinkedHashMap<>();
 				suggestConfig.getGroupConfig().forEach(groupConfig -> internalGroupConfig.put(groupConfig.groupName, (double) groupConfig.limit));
-				return new ConfigurableShareLimiter(suggestConfig.getGroupKey(), internalGroupConfig, suggestConfig.groupDeduplicationOrder);
+				return Optional.of(new ConfigurableShareLimiter(suggestConfig.getGroupKey(), internalGroupConfig, suggestConfig.groupDeduplicationOrder));
 			}
 			else {
 				LinkedHashMap<String, Integer> internalGroupConfig = new LinkedHashMap<>();
 				suggestConfig.getGroupConfig().forEach(groupConfig -> internalGroupConfig.put(groupConfig.groupName, groupConfig.limit));
 				Integer cutoffDefault = internalGroupConfig.getOrDefault(CommonPayloadFields.PAYLOAD_TYPE_OTHER, 5);
-				return new GroupedCutOffLimiter(suggestConfig.getGroupKey(), cutoffDefault, internalGroupConfig, suggestConfig.groupDeduplicationOrder);
+				return Optional.of(new GroupedCutOffLimiter(suggestConfig.getGroupKey(), cutoffDefault, internalGroupConfig, suggestConfig.groupDeduplicationOrder));
 			}
 		}
 		else {
-			return defaultLimiter;
+			return Optional.empty();
 		}
 	}
 
