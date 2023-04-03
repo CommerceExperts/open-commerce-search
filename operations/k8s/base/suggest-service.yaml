@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: suggest-service
+  labels:
+    role: suggest-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      role: suggest-api
+  template:
+    metadata:
+      labels:
+        role: suggest-api
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: role
+                  operator: In
+                  values:
+                  - suggest-api
+              topologyKey: kubernetes.io/hostname      
+      containers:
+      - name: suggest-service
+        image: commerceexperts/ocs-suggest-service:latest
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: 1024Mi
+          requests:
+            memory: 1024Mi
+        ports:
+        - containerPort: 8081
+          name: suggest-api
+        env:
+        - name: ES_HOSTS
+          value: "http://ocs-es-http:9200"
+        - name: ES_AUTH_PW
+          valueFrom:
+            secretKeyRef:
+              name: ocs-es-elastic-user
+              key: elastic
+        - name: ES_AUTH
+          value: "elastic:$(ES_AUTH_PW)"
+        - name: JAVA_OPTS
+          value: "-XX:MaxRAMPercentage=90.0"

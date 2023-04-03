@@ -17,7 +17,9 @@ commonLabels:
 resources:
   - indexer-service.yaml
   - search-service.yaml
+  - suggest-service.yaml
   - indexer-api.yaml
   - search-api.yaml
+  - suggest-api.yaml
   - api-ingress.yaml
   - elasticsearch.yaml

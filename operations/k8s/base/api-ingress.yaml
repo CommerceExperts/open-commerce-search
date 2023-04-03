@@ -1,4 +1,4 @@
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: api-ingress
@@ -17,10 +17,23 @@ spec:
   - http:
       paths:
       - path: /search-api
+        pathType: Prefix
         backend:
-          serviceName: search-api-service
-          servicePort: search-api
+          service:
+            name: search-api-service
+            port:
+              name: search-api
       - path: /indexer-api
+        pathType: Prefix
         backend:
-          serviceName: indexer-api-service
-          servicePort: indexer-api
+          service:
+            name: indexer-api-service
+            port:
+              name: indexer-api
+      - path: /suggest-api
+        pathType: Prefix
+        backend:
+          service:
+            name: suggest-api-service
+            port:
+              name: suggest-api
