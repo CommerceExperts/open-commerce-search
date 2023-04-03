@@ -3,13 +3,8 @@ package de.cxp.ocs.elasticsearch;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -76,6 +71,18 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		this.restClient = null;
 		this.indexSettings = new IndexSettings();
 		this.indexClient = indexClient;
+	}
+
+	@Override
+	public boolean indexExists(String indexName) {
+		if (indexName.startsWith(INDEX_PREFIX)) {
+			Optional<Settings> settings = indexClient.getSettings(indexName);
+			return settings.isPresent();
+		}
+		else {
+			Map<String, Set<AliasMetadata>> aliases = indexClient.getAliases(INDEX_PREFIX + "*" + INDEX_DELIMITER + indexName + "*");
+			return aliases.size() > 1;
+		}
 	}
 
 	@Override

@@ -7,16 +7,11 @@ import java.util.concurrent.ExecutionException;
 
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.api.indexer.UpdateIndexService;
+import de.cxp.ocs.indexer.AbstractIndexer;
 import de.cxp.ocs.model.index.Document;
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,7 +25,9 @@ public class UpdateIndexController implements UpdateIndexService {
 
 	@PatchMapping
 	@Override
-	public Map<String, Result> patchDocuments(@PathVariable("indexName") String indexName, @RequestBody List<Document> documents) {
+	public Map<String, Result> patchDocuments(@PathVariable("indexName")
+	String indexName, @RequestBody
+	List<Document> documents) {
 		MDC.put("index", indexName);
 		try {
 			Map<String, Result> response = new HashMap<>(documents.size());
@@ -52,15 +49,26 @@ public class UpdateIndexController implements UpdateIndexService {
 	@PutMapping
 	@Override
 	public Map<String, Result> putDocuments(
-			@PathVariable("indexName") String indexName,
-			@RequestParam(name = "replaceExisting", defaultValue = "true") Boolean replaceExisting,
-			@RequestBody List<Document> documents) {
+			@PathVariable("indexName")
+			String indexName,
+			@RequestParam(name = "replaceExisting", defaultValue = "true")
+			Boolean replaceExisting,
+			@RequestBody
+			List<Document> documents) {
 		MDC.put("index", indexName);
 		try {
-			return indexerManager.getIndexer(indexName)
-					.putDocuments(indexName, replaceExisting, documents);
+			AbstractIndexer indexer = indexerManager.getIndexer(indexName);
+			if (!indexer.indexExists(indexName)) {
+				return putIntoNewIndex(indexer, indexName, replaceExisting, documents);
+			}
+			else {
+				return indexer.putDocuments(indexName, replaceExisting, documents);
+			}
 		}
-		catch (ExecutionException e) {
+		catch (IllegalArgumentException e) {
+			throw e;
+		}
+		catch (Exception e) {
 			log.error("failed to get indexer", e);
 			throw new RuntimeException(e);
 		}
@@ -69,9 +77,30 @@ public class UpdateIndexController implements UpdateIndexService {
 		}
 	}
 
+	private Map<String, Result> putIntoNewIndex(AbstractIndexer indexer, String indexName, Boolean replaceExisting, List<Document> documents) throws Exception {
+		if (indexName.lastIndexOf('-') == -1) {
+			throw new IllegalArgumentException("Index " + indexName + " does not exist and not in require format <name>-<locale> to create a new one automatically.");
+		}
+
+		String locale = indexName.substring(indexName.lastIndexOf('-') + 1);
+		ImportSession importSession = indexer.startImport(indexName, locale);
+		Map<String, Result> putResult;
+		try {
+			putResult = indexer.putDocuments(importSession.getTemporaryIndexName(), replaceExisting, documents);
+			indexer.done(importSession);
+		}
+		catch (Exception e) {
+			indexer.cancel(importSession);
+			throw e;
+		}
+		return putResult;
+	}
+
 	@DeleteMapping
 	@Override
-	public Map<String, Result> deleteDocuments(@PathVariable("indexName") String indexName, @RequestParam("id") List<String> ids) {
+	public Map<String, Result> deleteDocuments(@PathVariable("indexName")
+	String indexName, @RequestParam("id")
+	List<String> ids) {
 		MDC.put("index", indexName);
 		try {
 			return indexerManager.getIndexer(indexName)
