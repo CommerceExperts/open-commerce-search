@@ -50,3 +50,7 @@ spec:
           value: "elastic:$(ES_AUTH_PW)"
         - name: JAVA_OPTS
           value: "-XX:MaxRAMPercentage=90.0"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8081
