@@ -21,5 +21,7 @@ resources:
   - indexer-api.yaml
   - search-api.yaml
   - suggest-api.yaml
-  - api-ingress.yaml
+  - search-ingress.yaml
+  - suggest-ingress.yaml
+  - indexer-ingress.yaml
   - elasticsearch.yaml

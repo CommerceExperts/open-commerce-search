@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: search-ingress
+  labels:
+    role: ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /search-api
+        pathType: Prefix
+        backend:
+          service:
+            name: search-api-service
+            port:
+              name: search-api
