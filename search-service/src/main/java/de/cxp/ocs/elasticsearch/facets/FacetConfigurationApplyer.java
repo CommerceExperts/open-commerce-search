@@ -106,6 +106,13 @@ public class FacetConfigurationApplyer {
 
 		// put facet configs into according maps
 		for (FacetConfig facetConfig : context.config.getFacetConfiguration().getFacets()) {
+			// TODO: make this general with FacetCreatorFactory
+			if ("INDEX_NAME".equals(facetConfig.getType())) {
+				facetsBySourceField.put(facetConfig.getSourceField(), facetConfig);
+				facetCreators.add(new IndexNameFacetCreator(facetConfig));
+				continue;
+			}
+
 			Optional<Field> sourceField = context.getFieldConfigIndex().getField(facetConfig.getSourceField());
 
 			if (!sourceField.isPresent()) {
