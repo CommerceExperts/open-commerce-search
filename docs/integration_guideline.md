@@ -1,17 +1,17 @@
 # Integration Guideline
 
-This guideline has the goal to give an overview about how the OCSS-Services work from an integration perspective. With this guid no deeper understanding of OCSS is required.
+This guideline has the goal to give an overview about how the OCSS-Services work from an integration perspective. With this guide no deeper understanding of OCSS is required.
 
-The Open Commerce Search Stack is build with a focus of integration simplicity. A request to the search service is as simple as entering the endpoint URL in your browser. All paramters are optional.
+The Open Commerce Search Stack is build with a focus of integration simplicity. A request to the search service is as simple as entering the endpoint URL in your browser. All parameters are optional.
 
-Also indexation is meant to be as easy as throwing a few JSON documents against the Indexer endpoint. With our script [ocs-index-data.sh](https://github.com/CommerceExperts/open-commerce-search/tree/master/operations/ocs-index-data.sh) we have a basic reference implemtation in bash.
+Also indexation is meant to be as easy as throwing a few JSON documents against the Indexer endpoint. With our script [ocs-index-data.sh](https://github.com/CommerceExperts/open-commerce-search/tree/master/operations/ocs-index-data.sh) we have a basic reference implementation in bash.
 
 **Disclaimer**: _This part of the documentation is Work-In-Progress and thus is yet incomplete and may contain spelling errors etc._
 
 
 ## Indexation
 
-Before you can search anything, you need to add data to the search. This is done by adressing the separate "indexer-service" that runs at a separate endpoint.
+Before you can search anything, you need to add data to the search. This is done by addressing the separate "indexer-service" that runs at a separate endpoint.
 The easiest way is to start with a full indexation and add at least a few documents or products. But before a brief understanding of a document is required.
 
 ### Document & Product Anatomy
@@ -33,7 +33,7 @@ This is already a full document
 
 #### Attributes
 
-Additional to the simple data map, a list of attributes can be added. They are usefull if the inserted data values also need to be addressed by a standardized "code"/"id".
+Additional to the simple data map, a list of attributes can be added. They are useful if the inserted data values also need to be addressed by a standardized "code"/"id".
 
 ```
 {
@@ -57,7 +57,7 @@ With that example you can later filter on that attribute by it's code/id:
 #### Product Variants
 
 For an e-commerce environment sometimes products come with different variants, but all should be considered as single entity and also as a single hit in the search result. 
-To achieve that, the `Document` model is extended to a `Product` which bascially is a Document with sub-documents added at the `variants` property, where each is again a simple document.
+To achieve that, the `Document` model is extended to a `Product` which basically is a Document with sub-documents added at the `variants` property, where each is again a simple document.
 
 Note:
 Although you can import categories on variant level, its not possible to use the for faceting. Categories are only used for facetting on product level.
@@ -185,7 +185,7 @@ TODO:
 ### Arranged Search
 
 In parallel to the Search GET-API there is also the POST API that comes with one more possibility: injecting explicitly defined documents into the "natural" search result.
-Therefor one or more 'product sets' are defined with the request. The products defined by those product sets are then part of the response in the specified order.
+Therefore one or more 'product sets' are defined with the request. The products defined by those product sets are then part of the response in the specified order.
 
 TODO: difference between static and dynamic product sets
 
