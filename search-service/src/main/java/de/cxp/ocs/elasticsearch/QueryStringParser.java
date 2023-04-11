@@ -40,7 +40,7 @@ public class QueryStringParser {
 		else if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
 			String preprocessedQuery = parameters.userQuery;
 			for (UserQueryPreprocessor preprocessor : userQueryPreprocessors) {
-				preprocessedQuery = preprocessor.preProcess(preprocessedQuery);
+				preprocessedQuery = preprocessor.preProcess(preprocessedQuery, searchMetaData);
 			}
 			searchMetaData.put("preprocessedQuery", preprocessedQuery);
 
