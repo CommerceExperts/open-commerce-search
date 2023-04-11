@@ -27,6 +27,8 @@ public class SuggestConfig {
 
 	public int prefetchLimitFactor = 1;
 
+	public int maxSharpenedQueries = 3;
+
 	public List<GroupConfig> groupConfig = new ArrayList<>();
 
 	/**
@@ -196,5 +198,21 @@ public class SuggestConfig {
 	 */
 	public void setGroupConfig(List<GroupConfig> groupConfig) {
 		this.groupConfig = groupConfig;
+	}
+
+	/**
+	 * Defines the limit of returned sharpened queries.
+	 * <p>
+	 * Sharpened queries are queries that are injected directly (without requesting a Lucene index) from a hash-map if
+	 * the input query matches one of the existing entries.
+	 * </p>
+	 * <p>
+	 * This limit only is considered if there are more sharpened queries than defined by that limit.
+	 * </p>
+	 * 
+	 * @param maxSharpenedQueries
+	 */
+	public void setMaxSharpenedQueries(int maxSharpenedQueries) {
+		this.maxSharpenedQueries = maxSharpenedQueries;
 	}
 }
