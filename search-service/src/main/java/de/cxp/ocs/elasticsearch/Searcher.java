@@ -30,6 +30,8 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
+import com.google.common.collect.Iterators;
+
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.SearchPlugins;
 import de.cxp.ocs.config.*;
@@ -47,6 +49,7 @@ import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.elasticsearch.query.analyzer.WhitespaceAnalyzer;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries;
 import de.cxp.ocs.elasticsearch.query.builder.ESQueryFactoryBuilder;
+import de.cxp.ocs.elasticsearch.query.builder.EnforcedSpellCorrectionQueryFactory;
 import de.cxp.ocs.elasticsearch.query.builder.MatchAllQueryFactory;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.model.params.ProductSet;
@@ -171,25 +174,12 @@ public class Searcher {
 		ExtendedQuery parsedQuery = queryParser.preprocessQuery(parameters, searchMetaData);
 		boolean isInvalidUserQuery = parsedQuery.isEmpty() && parameters.getUserQuery() != null && !parameters.getUserQuery().isBlank();
 
-		Iterator<ESQueryFactory> stagedQueryBuilders;
-		if (parsedQuery.isEmpty()) {
-			if (isInvalidUserQuery && parsedQuery.getFilters().isEmpty()) {
-				stagedQueryBuilders = Collections.emptyIterator();
-			}
-			else {
-				stagedQueryBuilders = Collections.<ESQueryFactory> singletonList(new MatchAllQueryFactory()).iterator();
-			}
-		}
-		else {
-			stagedQueryBuilders = queryBuilder.getMatchingFactories(parsedQuery);
-		}
+		Iterator<ESQueryFactory> stagedQueryBuildersIterator = initializeStageQueryBuilders(parameters, parsedQuery, isInvalidUserQuery);
 
 		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters, parameters.inducedFilters, parameters.withFacets);
 		List<SortBuilder<?>> variantSortings = sortingHandler.getVariantSortings(parameters.sortings);
 
 		SearchSourceBuilder searchSourceBuilder = buildBasicSearchSourceBuilder(parameters, filterContext, variantSortings);
-
-		// TODO: add a cache to pick the correct query for known search terms
 
 		// staged search: try each query builder until we get a result
 		// + try and use spell correction with first query
@@ -200,11 +190,11 @@ public class Searcher {
 
 		Optional<HeroProductsQuery> heroProductsQuery = HeroProductHandler.getHeroQuery(parameters);
 		boolean isResultSufficient = false;
-		while ((searchResponse == null || !isResultSufficient) && stagedQueryBuilders.hasNext()) {
+		while ((searchResponse == null || !isResultSufficient) && stagedQueryBuildersIterator.hasNext()) {
 			StopWatch sw = new StopWatch();
 			sw.start();
 			Sample inputWordsSample = Timer.start(registry);
-			ESQueryFactory stagedQueryBuilder = stagedQueryBuilders.next();
+			ESQueryFactory stagedQueryBuilder = stagedQueryBuildersIterator.next();
 
 			MasterVariantQuery searchQuery = stagedQueryBuilder.createQuery(parsedQuery);
 			if (log.isTraceEnabled()) {
@@ -221,7 +211,7 @@ public class Searcher {
 
 			if (correctedWords == null && spellCorrector != null
 					&& stagedQueryBuilder.allowParallelSpellcheckExecution()
-					&& (!searchQuery.isWithSpellCorrection() || stagedQueryBuilders.hasNext())) {
+					&& (!searchQuery.isWithSpellCorrection() || stagedQueryBuildersIterator.hasNext())) {
 				searchSourceBuilder.suggest(spellCorrector.buildSpellCorrectionQuery(parameters.userQuery));
 			}
 			else {
@@ -289,6 +279,44 @@ public class Searcher {
 		findTimerSample.stop(findTimer);
 
 		return searchResult;
+	}
+
+	private Iterator<ESQueryFactory> initializeStageQueryBuilders(InternalSearchParams parameters, ExtendedQuery parsedQuery, boolean isInvalidUserQuery) {
+		Iterator<ESQueryFactory> stagedQueryBuildersIterator;
+		if (parsedQuery.isEmpty()) {
+			if (isInvalidUserQuery && parsedQuery.getFilters().isEmpty()) {
+				stagedQueryBuildersIterator = Collections.emptyIterator();
+			}
+			else {
+				stagedQueryBuildersIterator = Collections.<ESQueryFactory> singletonList(new MatchAllQueryFactory()).iterator();
+			}
+		}
+		else {
+			List<ESQueryFactory> stagedQueryBuilders = queryBuilder.getMatchingFactories(parsedQuery);
+			// TODO: add a cache to pick the correct query for known search terms
+			int queryStage = Optional.ofNullable(parameters.customParams.get("query_stage")).map(Integer::parseInt).orElse(-1);
+			if (queryStage >= 0 && queryStage < stagedQueryBuilders.size()) {
+				ESQueryFactory singleQueryStage = stagedQueryBuilders.get(queryStage);
+
+				// if we jump to a stage > 0 it is possible that we hit a stage that used corrected queries via the
+				// spell-check request from a previous stage. This is checked here and enforced for that stage as well.
+				// FIXME: It can still happen, that the uncorrected queries have enough hits and a different result is
+				// returned than before.
+				for (int i = 0; i < queryStage; i++) {
+					if (stagedQueryBuilders.get(i).allowParallelSpellcheckExecution()) {
+						singleQueryStage = new EnforcedSpellCorrectionQueryFactory(singleQueryStage);
+						break;
+					}
+				}
+
+				log.info("Jumping to query stage {} with parallel spellcheck {}", queryStage, singleQueryStage instanceof EnforcedSpellCorrectionQueryFactory ? "enabled" : "disabled");
+				stagedQueryBuildersIterator = Iterators.singletonIterator(singleQueryStage);
+			}
+			else {
+				stagedQueryBuildersIterator = stagedQueryBuilders.iterator();
+			}
+		}
+		return stagedQueryBuildersIterator;
 	}
 
 	private SearchSourceBuilder buildBasicSearchSourceBuilder(InternalSearchParams parameters, FilterContext filterContext, List<SortBuilder<?>> variantSortings) {
@@ -510,7 +538,7 @@ public class Searcher {
 			variantsMatchQuery = variantsMatchQuery == null ? variantPostFilters : ESQueryUtils.mapToBoolQueryBuilder(variantsMatchQuery).filter(variantPostFilters);
 			variantsOnlyFiltered = false;
 		}
-		
+
 		if (heroProductsQuery != null) {
 			variantsMatchQuery = heroProductsQuery.applyToVariantQuery(variantsMatchQuery);
 			if (variantsMatchQuery != null) {
@@ -535,7 +563,7 @@ public class Searcher {
 			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).should(variantQuery);
 			isRetrieveVariantInnerHits = true;
 		}
-		
+
 		// add hero products without the impact of the "natural query"
 		masterLevelQuery = heroProductsQuery != null ? heroProductsQuery.applyToMasterQuery(masterLevelQuery) : masterLevelQuery;
 
