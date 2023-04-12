@@ -538,15 +538,22 @@ class LuceneQuerySuggesterTest {
 		List<String> sharpenedQueries = java.util.Arrays.asList(
 				"fleecejacke", "fleece jacke", "fleeceweste", "fleece overall", "fleece weste", 
 				"fleecepullover", "fleece baby", "fleece halswaermer", "fleece pullover", "fleecehose");
+
 		underTest = new LuceneQuerySuggester(indexFolder, suggestConfig,
-				new ModifiedTermsService(emptyMap(), singletonMap("fleece", sharpenedQueries)),
+				new ModifiedTermsService(emptyMap(), singletonMap("fleece", sharpenedQueries), suggestConfig),
 				getWordSet(Locale.GERMAN));
 
 		// nothing is indexed
 
+		{
+			suggestConfig.setMaxSharpenedQueries(3);
+			List<Suggestion> results = underTest.suggest("fleece");
+			assertThat(results).hasSize(suggestConfig.getMaxSharpenedQueries());
+		}
+
+		suggestConfig.setMaxSharpenedQueries(100);
 		List<Suggestion> results = underTest.suggest("fleece");
 		Set<String> expectedLabels = new HashSet<>(sharpenedQueries);
-
 		assertThat(results).hasSize(expectedLabels.size());
 
 		for (Suggestion result : results) {
@@ -559,7 +566,7 @@ class LuceneQuerySuggesterTest {
 	@Test
 	void suggest_relaxed_relaxed(@TempDir Path indexFolder) throws IOException {
 		underTest = new LuceneQuerySuggester(indexFolder, suggestConfig,
-				new ModifiedTermsService(singletonMap("fleeceanzug", singletonList("fleece")), emptyMap()),
+				new ModifiedTermsService(singletonMap("fleeceanzug", singletonList("fleece")), emptyMap(), new SuggestConfig()),
 				getWordSet(Locale.GERMAN));
 
 		// nothing is indexed

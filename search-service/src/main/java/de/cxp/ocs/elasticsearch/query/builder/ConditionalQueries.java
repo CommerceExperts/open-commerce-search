@@ -84,7 +84,7 @@ public class ConditionalQueries {
 
 	}
 
-	public Iterator<ESQueryFactory> getMatchingFactories(final ExtendedQuery parsedQuery) {
+	public List<ESQueryFactory> getMatchingFactories(final ExtendedQuery parsedQuery) {
 		if (parsedQuery.getSearchQuery() == null || parsedQuery.getSearchQuery().getTermCount() == 0) return null;
 
 		final List<ESQueryFactory> matchingQueryFactories = new ArrayList<>();
@@ -97,7 +97,7 @@ public class ConditionalQueries {
 		// XXX: improvement: if first QueryBuilder is a PerFetchQueryBuilder,
 		// start pre-fetch phase in a separate thread
 
-		return matchingQueryFactories.iterator();
+		return matchingQueryFactories;
 	}
 
 }

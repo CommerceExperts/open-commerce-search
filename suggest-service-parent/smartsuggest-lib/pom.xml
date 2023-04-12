@@ -6,12 +6,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>suggest-service-parent</artifactId>
-		<version>0.43.0</version>
+		<version>0.44.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>smartsuggest-lib</artifactId>
-	<version>0.13.0</version>
+	<version>0.14.0</version>
 	<packaging>jar</packaging>
 	<name>smartSuggest Library</name>
 

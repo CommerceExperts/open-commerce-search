@@ -37,7 +37,8 @@ public class LuceneSuggesterFactory implements SuggesterFactory {
 				suggestConfig,
 				new ModifiedTermsService(
 						suggestData.getRelaxedQueries(),
-						suggestData.getSharpenedQueries()),
+						suggestData.getSharpenedQueries(),
+						suggestConfig),
 				Optional.ofNullable(suggestData.getWordsToIgnore())
 						.map(sw -> new CharArraySet(sw, true))
 						.orElse(null));
