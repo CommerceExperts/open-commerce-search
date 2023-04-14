@@ -53,7 +53,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @RefreshScope
-@CrossOrigin(origins = "http://localhost:8081")
+@CrossOrigin("*")
 @RestController
 @RequestMapping(path = "/search-api/v1")
 @EnableScheduling
