@@ -14,6 +14,7 @@ import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.ComposedPredica
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.ConditionalQuery;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.PatternCondition;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.TermCountCondition;
+import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.QueryLengthCondition;
 import de.cxp.ocs.plugin.ExtensionSupplierRegistry;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import lombok.NonNull;
@@ -83,6 +84,9 @@ public class ESQueryFactoryBuilder {
 		}
 		if (condition.getMaxTermCount() < Integer.MAX_VALUE || condition.getMinTermCount() > 1) {
 			collectedPredicates.add(new TermCountCondition(condition.getMinTermCount(), condition.getMaxTermCount()));
+		}
+		if (condition.getMaxQueryLength() < Integer.MAX_VALUE && condition.getMaxQueryLength() > 0) {
+			collectedPredicates.add(new QueryLengthCondition(condition.getMaxQueryLength()));
 		}
 		if (collectedPredicates.size() > 0) {
 			return new ComposedPredicate(collectedPredicates);
