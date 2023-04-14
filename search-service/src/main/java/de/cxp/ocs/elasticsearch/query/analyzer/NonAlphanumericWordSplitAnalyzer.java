@@ -11,11 +11,17 @@ import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.model.term.WeightedTerm;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 
-public class WhitespaceAnalyzer implements UserQueryAnalyzer {
+/**
+ * Splits the string by every character that is not a letter, number, dash or underscore (which are considered as
+ * word-bind characters)
+ * 
+ * @author rb@commerce-experts.com
+ */
+public class NonAlphanumericWordSplitAnalyzer implements UserQueryAnalyzer {
 
 	@Override
 	public ExtendedQuery analyze(String userQuery) {
-		List<QueryStringTerm> terms = toQueryStringWordList(userQuery.toLowerCase().trim().split("\\s+"));
+		List<QueryStringTerm> terms = toQueryStringWordList(userQuery.toLowerCase().trim().split("[^\\p{L}\\p{N}-_]+"));
 		if (terms.isEmpty()) {
 			return ExtendedQuery.MATCH_ALL;
 		}

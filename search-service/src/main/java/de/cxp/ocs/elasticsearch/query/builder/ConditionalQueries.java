@@ -46,6 +46,16 @@ public class ConditionalQueries {
 	}
 
 	@RequiredArgsConstructor
+	public static class QueryLengthCondition implements Predicate<AnalyzedQuery> {
+
+		private final int maxQueryLength;
+
+		@Override
+		public boolean test(AnalyzedQuery q) { return (q.getInputTerms().stream().mapToInt(String::length).sum() + (q.getInputTerms().size() -1)) <= maxQueryLength; }
+
+	}
+
+	@RequiredArgsConstructor
 	public static class PatternCondition implements Predicate<AnalyzedQuery> {
 
 		private final Pattern matchPattern;
