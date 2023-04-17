@@ -10,7 +10,7 @@
 	</parent>
 
 	<artifactId>search-service</artifactId>
-	<version>0.40.0</version>
+	<version>0.40.1</version>
 	<packaging>jar</packaging>
 
 	<!-- Import dependency management from Spring Boot -->
@@ -255,7 +255,7 @@
 				<dependency>
 					<groupId>io.searchhub</groupId>
 					<artifactId>ocs-smartquery-plugin</artifactId>
-					<version>1.2.7</version>
+					<version>1.2.13</version>
 				</dependency>
 			</dependencies>
 		</profile>
