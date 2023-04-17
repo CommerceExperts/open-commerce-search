@@ -466,9 +466,11 @@ public class Searcher {
 		SearchResult searchResult = new SearchResult();
 		searchResult.inputURI = SearchQueryBuilder.toLink(parameters).toString();
 		searchResult.slices = new ArrayList<>(1);
+		searchResult.sortOptions = sortingHandler.buildSortOptions(linkBuilder);
+		searchResult.meta = new HashMap<>();
 
-		resultTimer.record(() -> {
-			if (searchResponse != null) {
+		if (searchResponse != null) {
+			resultTimer.record(() -> {
 				Set<String> heroIds;
 				if (parameters.heroProductSets != null) {
 					heroIds = HeroProductHandler.extractSlices(searchResponse, parameters, searchResult, variantPickingStrategy);
@@ -484,11 +486,18 @@ public class Searcher {
 					}
 					searchResultSlice.label = "main";
 					searchResult.slices.add(searchResultSlice);
-				}
-			}
-		});
-		searchResult.sortOptions = sortingHandler.buildSortOptions(linkBuilder);
-		searchResult.meta = new HashMap<>();
+					}
+			});
+		}
+		else {
+			searchResult.slices.add(new SearchResultSlice()
+					.setLabel("main")
+					.setMatchCount(0)
+					.setResultLink(SearchQueryBuilder.toLink(parameters).toString())
+					.setHits(Collections.emptyList())
+					.setFacets(Collections.emptyList()));
+			searchResult.meta.put("error", "invalid user query");
+		}
 
 		return searchResult;
 	}
