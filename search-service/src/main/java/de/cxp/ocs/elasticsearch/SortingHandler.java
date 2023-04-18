@@ -71,19 +71,27 @@ public class SortingHandler {
 	 * @return a list of potential variant sorts
 	 */
 	void applySorting(List<Sorting> sortings, SearchSourceBuilder searchSourceBuilder) {
+		boolean addedSorting = false;
 		for (Sorting sorting : sortings) {
 			SortOptionConfiguration sortConf = sortConfigIndex.get(sortStringRepresentation(sorting.field, sorting.sortOrder));
 			Field sortField = sortFields.get(sorting.field);
 			if (sortField != null) {
 				String missingParam = sortConf != null ? sortConf.getMissing() : null;
 
-				searchSourceBuilder.sort(SortBuilders.fieldSort(FieldConstants.SORT_DATA + "." + sorting.field)
-						.order(sorting.sortOrder == null ? SortOrder.ASC : SortOrder.fromString(sorting.sortOrder.name()))
-						.missing(missingParam));
+				searchSourceBuilder.sort(
+						SortBuilders.fieldSort(FieldConstants.SORT_DATA + "." + sorting.field)
+								.order(sorting.sortOrder == null ? SortOrder.ASC : SortOrder.fromString(sorting.sortOrder.name()))
+								.missing(missingParam));
+				addedSorting = true;
 			}
 			else {
 				log.debug("tried to sort by an unsortable field {}", sorting.field);
 			}
+		}
+
+		// at the last stage, always sort by score
+		if (addedSorting) {
+			searchSourceBuilder.sort(SortBuilders.scoreSort());
 		}
 	}
 
