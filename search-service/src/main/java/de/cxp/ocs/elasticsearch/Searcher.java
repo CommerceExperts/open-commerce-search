@@ -595,6 +595,11 @@ public class Searcher {
 		if (variantPickingStrategy.isAllVariantHitCountRequired() && isRetrieveVariantInnerHits) {
 			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).should(getAllVariantInnerHits());
 		}
+		else if (VariantPickingStrategy.pickAlways.equals(variantPickingStrategy) && !isRetrieveVariantInnerHits) {
+			NestedQueryBuilder variantQuery = QueryBuilders.nestedQuery(FieldConstants.VARIANTS, QueryBuilders.matchAllQuery(), ScoreMode.None)
+					.innerHit(getVariantInnerHits(variantSortings));
+			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).should(variantQuery);
+		}
 
 		return masterLevelQuery;
 	}
