@@ -14,10 +14,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.util.set.Sets;
 import org.elasticsearch.core.TimeValue;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
@@ -285,7 +282,10 @@ class QueryPredictor {
 		final QueryStringQueryBuilder wordQuery = QueryBuilders
 				.queryStringQuery(term.toQueryString())
 				.fuzziness(Fuzziness.ZERO)
-				.analyzer(analyzer);
+				.analyzer(analyzer)
+				// in case the analyzer splits the term in a different way then we have,
+				// we want to make sure all terms are matched and not just one of them
+				.defaultOperator(Operator.AND);
 
 		if (searchFields == null) {
 			wordQuery.field(FieldConstants.SEARCH_DATA + ".*");
