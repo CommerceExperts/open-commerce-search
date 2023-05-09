@@ -558,7 +558,9 @@ public class Searcher {
 		FilterFunctionBuilder[] variantScoringFunctions = variantSortings.isEmpty() ? scoringCreator.getScoringFunctions(true) : new FilterFunctionBuilder[0];
 		if (variantScoringFunctions.length > 0) {
 			if (variantsMatchQuery == null) variantsMatchQuery = QueryBuilders.matchAllQuery();
-			variantsMatchQuery = QueryBuilders.functionScoreQuery(variantsMatchQuery, variantScoringFunctions);
+			variantsMatchQuery = QueryBuilders.functionScoreQuery(variantsMatchQuery, variantScoringFunctions)
+					.boostMode(scoringCreator.getBoostMode())
+					.scoreMode(scoringCreator.getScoreMode());
 			variantsOnlyFiltered = false;
 		}
 
