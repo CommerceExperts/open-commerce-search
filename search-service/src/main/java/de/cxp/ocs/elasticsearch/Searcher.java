@@ -639,7 +639,10 @@ public class Searcher {
 		for (int i = 0; i < searchHits.getHits().length; i++) {
 			SearchHit hit = searchHits.getHits()[i];
 			if (!heroIds.contains(hit.getId())) {
-				ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields, preferVariantHit ? VariantPickingStrategy.pickAlways : variantPickingStrategy);
+				ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields, preferVariantHit ? VariantPickingStrategy.pickAlways : variantPickingStrategy)
+						.withMetaData("score", hit.getScore())
+						.withMetaData("sort_values", hit.getSortValues())
+						.withMetaData("version", hit.getVersion());
 				resultHits.add(resultHit);
 			}
 		}
