@@ -2,12 +2,8 @@ package de.cxp.ocs.elasticsearch.mapper;
 
 import static com.google.common.base.Predicates.instanceOf;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.function.Predicate;
 
 import org.elasticsearch.search.SearchHit;
@@ -76,6 +72,10 @@ public class ResultMapper {
 				.setDocument(getResultDocument(hit, variantHit))
 				.setIndex(hit.getIndex())
 				.setMatchedQueries(hit.getMatchedQueries());
+
+		if (variantHit != null) {
+			resultHit.withMetaData("variant_score", variantHit.getScore());
+		}
 
 		addSortFieldPrefix(hit, resultHit, sortedFields);
 		return resultHit;

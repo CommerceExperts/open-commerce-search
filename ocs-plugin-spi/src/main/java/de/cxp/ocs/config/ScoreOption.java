@@ -7,11 +7,13 @@ public enum ScoreOption {
 	 * Option that should be set with a boolean value (true|false).
 	 * </p>
 	 * <p>
-	 * If set to "true", that scoring option will also be used to score the
+	 * If set to "true", that scoring option will be used to score the
 	 * variant records of a master among each other.
 	 * </p>
 	 * <p>
-	 * Defaults to "false"
+	 * The default behavior depends on the scoring function:
+	 * Scoring function that are based on a variant field, then the default is "true".
+	 * All other scoring functions are not used for variant scoring unless defined explicitly.
 	 * </p>
 	 */
 	USE_FOR_VARIANTS,

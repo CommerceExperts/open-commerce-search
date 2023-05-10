@@ -1,31 +1,16 @@
 package de.cxp.ocs.elasticsearch;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.Modifier;
 import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery.ScoreMode;
-import org.elasticsearch.index.query.functionscore.DecayFunctionBuilder;
-import org.elasticsearch.index.query.functionscore.FieldValueFactorFunctionBuilder;
+import org.elasticsearch.index.query.functionscore.*;
 import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder.FilterFunctionBuilder;
-import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
-import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilder;
-import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilders;
-import org.elasticsearch.index.query.functionscore.ScriptScoreFunctionBuilder;
 import org.elasticsearch.script.Script;
 
 import de.cxp.ocs.SearchContext;
-import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.config.FieldUsage;
-import de.cxp.ocs.config.ScoreOption;
-import de.cxp.ocs.config.ScoreType;
-import de.cxp.ocs.config.ScoringConfiguration;
+import de.cxp.ocs.config.*;
 import de.cxp.ocs.config.ScoringConfiguration.ScoringFunction;
 import de.cxp.ocs.util.ConfigurationException;
 import lombok.extern.slf4j.Slf4j;
@@ -51,7 +36,11 @@ public class ScoringCreator {
 		while (scoreFunctionIterator.hasNext()) {
 			ScoringFunction scoringFunction = scoreFunctionIterator.next();
 
-			boolean useForVariants = Boolean.parseBoolean(scoringFunction.getOptions().getOrDefault(ScoreOption.USE_FOR_VARIANTS, "false"));
+			boolean isVariantScoringField = Optional.ofNullable(scoringFunction.getField()).map(scoreFields::get).map(Field::isVariantLevel).orElse(false);
+			// if this is a scoring function based on a variant field, then it should be used per default for
+			// variant-based scoring. All other scoring functions are not used for variant scoring unless defined
+			// explicitly.
+			boolean useForVariants = Boolean.parseBoolean(scoringFunction.getOptions().getOrDefault(ScoreOption.USE_FOR_VARIANTS, Boolean.toString(isVariantScoringField)));
 			if (isForVariantLevel && !useForVariants) continue;
 
 			try {

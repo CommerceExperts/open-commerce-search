@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.42.0</version>
+		<version>0.47.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
@@ -17,7 +17,7 @@
 	 first by setting the correct api version at src/main/resources/openapi-configuration.json
 	 then my running 'mvn process-sources -P sync-openapi-spec'
 	-->
-	<version>0.18.0</version>
+	<version>0.19.0</version>
 	<packaging>jar</packaging>
 
 	<description>An open and abstract search API that covers minimal search functionality</description>

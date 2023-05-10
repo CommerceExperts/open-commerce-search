@@ -558,7 +558,9 @@ public class Searcher {
 		FilterFunctionBuilder[] variantScoringFunctions = variantSortings.isEmpty() ? scoringCreator.getScoringFunctions(true) : new FilterFunctionBuilder[0];
 		if (variantScoringFunctions.length > 0) {
 			if (variantsMatchQuery == null) variantsMatchQuery = QueryBuilders.matchAllQuery();
-			variantsMatchQuery = QueryBuilders.functionScoreQuery(variantsMatchQuery, variantScoringFunctions);
+			variantsMatchQuery = QueryBuilders.functionScoreQuery(variantsMatchQuery, variantScoringFunctions)
+					.boostMode(scoringCreator.getBoostMode())
+					.scoreMode(scoringCreator.getScoreMode());
 			variantsOnlyFiltered = false;
 		}
 
@@ -637,7 +639,10 @@ public class Searcher {
 		for (int i = 0; i < searchHits.getHits().length; i++) {
 			SearchHit hit = searchHits.getHits()[i];
 			if (!heroIds.contains(hit.getId())) {
-				ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields, preferVariantHit ? VariantPickingStrategy.pickAlways : variantPickingStrategy);
+				ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields, preferVariantHit ? VariantPickingStrategy.pickAlways : variantPickingStrategy)
+						.withMetaData("score", hit.getScore())
+						.withMetaData("sort_values", hit.getSortValues())
+						.withMetaData("version", hit.getVersion());
 				resultHits.add(resultHit);
 			}
 		}
