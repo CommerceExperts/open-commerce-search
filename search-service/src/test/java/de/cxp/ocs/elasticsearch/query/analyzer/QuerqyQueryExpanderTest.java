@@ -89,10 +89,24 @@ public class QuerqyQueryExpanderTest {
 		assertEquals("(dzieci OR dziewczece^0.5)", analyzedQuery.toQueryString());
 	}
 
+	@Test
+	public void testAsciifiedAndLowercasedRulesAndInput() {
+		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.ASCIIFY, RuleLoadingFlags.LOWERCASE), "Dzięci =>", "  SYNONYM(0.5): Dziewczęce");
+		ExtendedQuery analyzedQuery = analyze(underTest, "Dzięci");
+		assertEquals("(dzieci OR dziewczece^0.5)", analyzedQuery.toQueryString());
+	}
+
 	public void testLowercasingRules() {
 		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.LOWERCASE), "Kreslo =>", "  SYNONYM(0.82): POLSTER");
 
 		ExtendedQuery analyzedQuery2 = analyze(underTest, "kreslo");
+		assertEquals("(kreslo OR polster^0.82)", analyzedQuery2.toQueryString());
+	}
+
+	public void testLowercasingRulesAndInput() {
+		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.LOWERCASE), "Kreslo =>", "  SYNONYM(0.82): POLSTER");
+
+		ExtendedQuery analyzedQuery2 = analyze(underTest, "KRESLOl");
 		assertEquals("(kreslo OR polster^0.82)", analyzedQuery2.toQueryString());
 	}
 

@@ -11,6 +11,9 @@ import de.cxp.ocs.elasticsearch.model.query.*;
 import de.cxp.ocs.elasticsearch.model.term.*;
 import de.cxp.ocs.elasticsearch.model.util.EscapeUtil;
 import de.cxp.ocs.elasticsearch.model.util.QueryStringUtil;
+import de.cxp.ocs.elasticsearch.query.analyzer.querqy.TransformingWhitespaceQuerqyParser;
+import de.cxp.ocs.elasticsearch.query.analyzer.querqy.TransformingWhitespaceQuerqyParser.TransformationFlags;
+import de.cxp.ocs.elasticsearch.query.analyzer.querqy.TransformingWhitespaceQuerqyParserFactory;
 import de.cxp.ocs.spi.search.ConfigurableExtension;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.util.StringUtils;
@@ -22,6 +25,7 @@ import querqy.parser.QuerqyParser;
 import querqy.parser.WhiteSpaceQuerqyParser;
 import querqy.rewrite.RewriteChain;
 import querqy.rewrite.RewriterFactory;
+import querqy.rewrite.commonrules.QuerqyParserFactory;
 import querqy.rewrite.commonrules.SimpleCommonRulesRewriterFactory;
 import querqy.rewrite.commonrules.WhiteSpaceQuerqyParserFactory;
 import querqy.rewrite.commonrules.select.ExpressionCriteriaSelectionStrategyFactory;
@@ -34,9 +38,9 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 	public final static String	DO_ASCIIFY_RULES_PROPERTY_NAME		= "do_asciiy_rules";
 	public final static String	DO_LOWERCASE_RULES_PROPERTY_NAME	= "do_lowercase_rules";
 
-	private final QuerqyParser	parser					= new WhiteSpaceQuerqyParser();
-	private RewriteChain		rewriteChain			= null;
-	private boolean				loggedMissingRewriter	= false;
+	private QuerqyParser	parser					= new WhiteSpaceQuerqyParser();
+	private RewriteChain	rewriteChain			= null;
+	private boolean			loggedMissingRewriter	= false;
 
 	@Override
 	public void initialize(Map<String, String> settings) {
@@ -82,19 +86,26 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 	@SuppressWarnings("resource")
 	private RewriteChain initFromStream(InputStream resourceStream, boolean asciifyRules, boolean lowercaseRules) throws IOException {
 		Reader inputReader = new InputStreamReader(resourceStream);
+
+		Collection<TransformingWhitespaceQuerqyParser.TransformationFlags> transformationFlags = new ArrayList<>(2);
 		if (asciifyRules) {
 			inputReader = StringUtils.asAsciifyCharFilter(inputReader);
+			transformationFlags.add(TransformationFlags.ASCIIFY);
 		}
 		if (lowercaseRules) {
 			inputReader = StringUtils.asLowercaseCharFilter(inputReader);
+			transformationFlags.add(TransformationFlags.LOWERCASE);
 		}
-		List<RewriterFactory> factories;
-		factories = Collections.singletonList(
+
+		QuerqyParserFactory parserFactory = transformationFlags.isEmpty() ? new WhiteSpaceQuerqyParserFactory() : new TransformingWhitespaceQuerqyParserFactory(EnumSet.copyOf(transformationFlags));
+		parser = parserFactory.createParser();
+
+		List<RewriterFactory> factories = Collections.singletonList(
 				new SimpleCommonRulesRewriterFactory(
 						"common_rules",
 						inputReader,
 						true,
-						new WhiteSpaceQuerqyParserFactory(),
+						parserFactory,
 						true,
 						Collections.emptyMap(),
 						new ExpressionCriteriaSelectionStrategyFactory(), false));
