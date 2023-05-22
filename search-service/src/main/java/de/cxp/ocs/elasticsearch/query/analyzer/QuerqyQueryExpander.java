@@ -30,8 +30,9 @@ import querqy.rewrite.experimental.LocalSearchEngineRequestAdapter;
 @Slf4j
 public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExtension {
 
-	public final static String	RULES_URL_PROPERTY_NAME			= "common_rules_url";
-	public final static String	DO_ASCIIFY_RULES_PROPERTY_NAME	= "do_asciiy_rules";
+	public final static String	RULES_URL_PROPERTY_NAME				= "common_rules_url";
+	public final static String	DO_ASCIIFY_RULES_PROPERTY_NAME		= "do_asciiy_rules";
+	public final static String	DO_LOWERCASE_RULES_PROPERTY_NAME	= "do_lowercase_rules";
 
 	private final QuerqyParser	parser					= new WhiteSpaceQuerqyParser();
 	private RewriteChain		rewriteChain			= null;
@@ -41,6 +42,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 	public void initialize(Map<String, String> settings) {
 		String commonRulesLocation = settings == null ? null : settings.get(RULES_URL_PROPERTY_NAME);
 		Boolean isAsciifyRules = Boolean.parseBoolean(settings.get(DO_ASCIIFY_RULES_PROPERTY_NAME));
+		Boolean isLowercaseRules = Boolean.parseBoolean(settings.get(DO_LOWERCASE_RULES_PROPERTY_NAME));
 		try {
 			if (commonRulesLocation == null) {
 				log.error("no 'common_rules_url' provided! Won't enrich queries with querqy.");
@@ -48,7 +50,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			else if (commonRulesLocation.startsWith("http")) {
 				URL url = new URL(commonRulesLocation);
 				BufferedInputStream resourceStream = new BufferedInputStream(url.openStream());
-				rewriteChain = initFromStream(resourceStream, isAsciifyRules);
+				rewriteChain = initFromStream(resourceStream, isAsciifyRules, isLowercaseRules);
 			}
 			else {
 				InputStream resourceStream;
@@ -62,7 +64,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 				}
 
 				if (resourceStream != null) {
-					rewriteChain = initFromStream(resourceStream, isAsciifyRules);
+					rewriteChain = initFromStream(resourceStream, isAsciifyRules, isLowercaseRules);
 				}
 				else {
 					log.error("resource '{}' not found. querqy rewriter not initialized", commonRulesLocation);
@@ -78,10 +80,13 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 	}
 
 	@SuppressWarnings("resource")
-	private RewriteChain initFromStream(InputStream resourceStream, boolean asciifyRules) throws IOException {
+	private RewriteChain initFromStream(InputStream resourceStream, boolean asciifyRules, boolean lowercaseRules) throws IOException {
 		Reader inputReader = new InputStreamReader(resourceStream);
 		if (asciifyRules) {
 			inputReader = StringUtils.asAsciifyCharFilter(inputReader);
+		}
+		if (lowercaseRules) {
+			inputReader = StringUtils.asLowercaseCharFilter(inputReader);
 		}
 		List<RewriterFactory> factories;
 		factories = Collections.singletonList(

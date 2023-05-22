@@ -45,6 +45,36 @@ public final class StringUtils {
 		return b.toString();
 	}
 
+	public static Reader asLowercaseCharFilter(Reader inputReader) {
+		return new LowercaseCharFilter(inputReader);
+	}
+
+	private static class LowercaseCharFilter extends CharFilter {
+
+		public LowercaseCharFilter(Reader input) {
+			super(input);
+		}
+
+		@Override
+		protected int correct(int currentOff) {
+			return currentOff; // we don't change the length of the string
+		}
+
+		@Override
+		public int read(char[] cbuf, int off, int len) throws IOException {
+			final int charsRead = input.read(cbuf, off, len);
+			if (charsRead > 0) {
+				final int end = off + charsRead;
+				while (off < end) {
+					cbuf[off] = Character.toLowerCase(cbuf[off]);
+					off++;
+				}
+			}
+			return charsRead;
+		}
+
+	}
+
 	public static CharFilter asAsciifyCharFilter(Reader in) {
 		return new AsciifyCharFilter(in);
 	}
@@ -291,4 +321,5 @@ public final class StringUtils {
 		}
 		return c;
 	}
+
 }
