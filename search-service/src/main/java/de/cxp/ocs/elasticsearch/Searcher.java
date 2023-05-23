@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.action.search.SearchRequest;
@@ -453,7 +454,7 @@ public class Searcher {
 		Sample sample = Timer.start(registry);
 		SearchResponse searchResponse;
 		{
-			SearchRequest searchRequest = new SearchRequest(config.getIndexName())
+			SearchRequest searchRequest = new SearchRequest(StringUtils.split(config.getIndexName(), ','))
 					.searchType(SearchType.QUERY_THEN_FETCH).source(searchSourceBuilder);
 			searchResponse = restClient.search(searchRequest, RequestOptions.DEFAULT);
 		}

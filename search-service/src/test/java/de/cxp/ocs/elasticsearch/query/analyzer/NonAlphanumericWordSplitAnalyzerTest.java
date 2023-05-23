@@ -22,6 +22,11 @@ public class NonAlphanumericWordSplitAnalyzerTest {
 	}
 
 	@Test
+	public void testCombinedSeparators() {
+		assertEquals(Arrays.asList("lounge", "4-tlg"), underTest.analyze("lounge, 4-tlg.").getInputTerms());
+	}
+
+	@Test
 	public void testDelimiterAtEnd() {
 		assertEquals(Arrays.asList("123", "345"), underTest.analyze("123,345,").getInputTerms());
 	}

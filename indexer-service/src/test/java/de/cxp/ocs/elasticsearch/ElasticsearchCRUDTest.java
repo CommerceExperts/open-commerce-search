@@ -125,7 +125,8 @@ public class ElasticsearchCRUDTest {
 
 	@Test
 	public void addDocumentToFreshIndex() throws Exception {
-		String indexName = "first_index";
+		// requirement for indexes that are created via update API: they must be in the format <name>-<locale>
+		String indexName = "first_index-en";
 		String id = "a1";
 		Document doc = new Document(id);
 		doc.data.put("title", "document a");
@@ -147,7 +148,7 @@ public class ElasticsearchCRUDTest {
 
 	@Test
 	public void patchCombiFieldAndFacet() throws Exception {
-		String indexName = "patch_test";
+		String indexName = "patch_test-en";
 		String id = "b1";
 		Document doc = new Document(id);
 		doc.data.put("title", "document b");
@@ -169,7 +170,7 @@ public class ElasticsearchCRUDTest {
 
 	@Test
 	public void patchNumericFacetField() throws Exception {
-		String indexName = "patch_test";
+		String indexName = "patch_test-en";
 		String id = "c1";
 		Document doc = new Document(id);
 		doc.data.put("title", "document c");
@@ -193,7 +194,7 @@ public class ElasticsearchCRUDTest {
 
 	@Test
 	public void patchScoresField() throws Exception {
-		String indexName = "patch_test";
+		String indexName = "patch_test-en";
 		String id = "d1";
 		Document doc = new Document(id);
 		doc.data.put("title", "document d");
@@ -215,7 +216,7 @@ public class ElasticsearchCRUDTest {
 
 	@Test
 	public void patchCategoryField() throws Exception {
-		String indexName = "patch_test";
+		String indexName = "patch_test-en";
 		String id = "e1";
 		Document doc = new Document(id);
 		doc.data.put("title", "document e");
@@ -240,7 +241,7 @@ public class ElasticsearchCRUDTest {
 
 	@Test
 	public void patchVariantField() throws Exception {
-		String indexName = "patch_test";
+		String indexName = "patch_test-en";
 		String id = "f1";
 		Product prod = new Product(id);
 		prod.set("title", "document e");
@@ -276,7 +277,7 @@ public class ElasticsearchCRUDTest {
 
 	@Test
 	public void deleteDocument() throws Exception {
-		String indexName = "patch_test";
+		String indexName = "patch_test-en";
 		String id = "g1";
 		Document doc = new Document(id);
 		doc.data.put("title", "document g");
@@ -291,7 +292,7 @@ public class ElasticsearchCRUDTest {
 
 	@Test
 	public void deleteNonExistingDoc() throws Exception {
-		String indexName = "patch_test";
+		String indexName = "patch_test-en";
 		String id = "h1";
 		Document doc = new Document(id).set("title", "document h");
 		putDocument(indexName, doc);

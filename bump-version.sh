@@ -102,7 +102,7 @@ if [[ "$update_dependants" != "" ]]; then
 fi
 
 # add changed modules to the list of modules that should get current parent version
-main_dependants="$(echo "$update_dependants $changed_modules" | sed 's/ /\n/g' | sort -u | paste -sd ',' -)"
+main_dependants="$(echo "$update_dependants $changed_modules" | sed -r 's/\s+/\n/g' | sort -u | paste -sd ',' -)"
 
 if [[ "$orig_changed_modules" == *"suggest-service-parent"* ]]; then
     if cd suggest-service-parent; then
@@ -112,7 +112,7 @@ if [[ "$orig_changed_modules" == *"suggest-service-parent"* ]]; then
         if [[ "$update_dependants" == "" ]]; then
             main_dependants="suggest-service-parent"
         else
-            main_dependants="$update_dependants,suggest-service-parent"
+            main_dependants="$main_dependants,suggest-service-parent"
         fi
 
         # reset update_dependants and changed modules for suggest modules bump

@@ -14,7 +14,9 @@ import lombok.RequiredArgsConstructor;
 @NoArgsConstructor
 public class FacetConfiguration {
 
-	private FacetConfig defaultFacetConfiguration = new FacetConfig();
+	private FacetConfig defaultTermFacetConfiguration = new FacetConfig();
+
+	private FacetConfig defaultNumberFacetConfiguration = new FacetConfig().setType(FacetType.INTERVAL.name());
 
 	private List<FacetConfig> facets = new ArrayList<>();
 
@@ -48,8 +50,19 @@ public class FacetConfiguration {
 		return this;
 	}
 
+	@Deprecated
 	public FacetConfiguration setDefaultFacetConfiguration(de.cxp.ocs.config.FacetConfiguration.FacetConfig defaultFacetConfiguration) {
-		this.defaultFacetConfiguration = defaultFacetConfiguration;
+		this.defaultTermFacetConfiguration = defaultFacetConfiguration;
+		return this;
+	}
+
+	public FacetConfiguration setDefaultTermFacetConfiguration(de.cxp.ocs.config.FacetConfiguration.FacetConfig defaultTermFacetConfiguration) {
+		this.defaultTermFacetConfiguration = defaultTermFacetConfiguration;
+		return this;
+	}
+
+	public FacetConfiguration setDefaultNumberFacetConfiguration(de.cxp.ocs.config.FacetConfiguration.FacetConfig defaultNumberFacetConfiguration) {
+		this.defaultNumberFacetConfiguration = defaultNumberFacetConfiguration;
 		return this;
 	}
 

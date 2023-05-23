@@ -76,7 +76,7 @@ public class AsciifyQuerqyQueryAnalyzerTest {
 	}
 
 	@Test
-	public void testIfAsciifiedRuleIsUsedForNonAsciiTerm() {
+	public void testUppercaseConversionInRules() {
 		ExtendedQuery analyzedQuery = analyze("dzięci");
 		assertEquals("(dzięci) OR (dzieci OR dzieciece)", analyzedQuery.toQueryString());
 	}

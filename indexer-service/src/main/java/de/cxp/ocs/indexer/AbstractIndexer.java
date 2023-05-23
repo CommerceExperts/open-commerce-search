@@ -4,12 +4,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.commons.lang3.LocaleUtils;
@@ -75,6 +71,8 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 			throw new UncheckedIOException(e);
 		}
 	}
+
+	public abstract boolean indexExists(String indexName);
 
 	/**
 	 * <p>

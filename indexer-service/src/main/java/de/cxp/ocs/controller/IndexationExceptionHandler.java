@@ -28,6 +28,11 @@ public class IndexationExceptionHandler extends ResponseEntityExceptionHandler {
 				HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
+	@ExceptionHandler({ IllegalArgumentException.class })
+	public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException e) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.toString());
+	}
+
 	@ExceptionHandler({ ElasticsearchStatusException.class })
 	public ResponseEntity<String> handleElasticsearchStatusExceptions(ElasticsearchStatusException e) {
 		return ResponseEntity.status(e.status().getStatus()).body(e.toString());

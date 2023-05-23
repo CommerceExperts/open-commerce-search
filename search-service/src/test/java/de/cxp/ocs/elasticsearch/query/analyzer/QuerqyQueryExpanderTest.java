@@ -11,10 +11,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.junit.jupiter.api.AfterEach;
@@ -49,10 +46,14 @@ public class QuerqyQueryExpanderTest {
 	}
 
 	public QuerqyQueryExpander loadRule(String... instructions) {
-		return this.loadRule(false, instructions);
+		return this.loadRule(EnumSet.noneOf(RuleLoadingFlags.class), instructions);
 	}
 
-	public QuerqyQueryExpander loadRule(boolean asciifyRules, String... instructions) {
+	enum RuleLoadingFlags {
+		ASCIIFY, LOWERCASE
+	}
+
+	public QuerqyQueryExpander loadRule(EnumSet<RuleLoadingFlags> loadingFlags, String... instructions) {
 		QuerqyQueryExpander underTest = new QuerqyQueryExpander();
 		Path querqyRulesFile;
 		try {
@@ -61,7 +62,8 @@ public class QuerqyQueryExpanderTest {
 
 			Map<String, String> options = new HashMap<>();
 			options.put(QuerqyQueryExpander.RULES_URL_PROPERTY_NAME, querqyRulesFile.toAbsolutePath().toString());
-			options.put(QuerqyQueryExpander.DO_ASCIIFY_RULES_PROPERTY_NAME, Boolean.toString(asciifyRules));
+			options.put(QuerqyQueryExpander.DO_ASCIIFY_RULES_PROPERTY_NAME, Boolean.toString(loadingFlags.contains(RuleLoadingFlags.ASCIIFY)));
+			options.put(QuerqyQueryExpander.DO_LOWERCASE_RULES_PROPERTY_NAME, Boolean.toString(loadingFlags.contains(RuleLoadingFlags.LOWERCASE)));
 			underTest.initialize(options);
 			deleteAfterTest = querqyRulesFile.toFile();
 		}
@@ -74,10 +76,38 @@ public class QuerqyQueryExpanderTest {
 	@Test
 	public void testAsciifiedRule() {
 		// rules are asciified
-		QuerqyQueryExpander underTest = loadRule(true, "dziecięce =>", "  SYNONYM(0.5): dziewczęce");
+		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.ASCIIFY), "dziecięce =>", "  SYNONYM(0.5): dziewczęce");
 		// so that a ascii input triggers them
 		var analyzedQuery = analyze(underTest, "dzieciece");
 		assertEquals("(dzieciece OR dziewczece^0.5)", analyzedQuery.toQueryString());
+	}
+
+	@Test
+	public void testAsciifiedAndLowercasedRules() {
+		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.ASCIIFY, RuleLoadingFlags.LOWERCASE), "Dzięci =>", "  SYNONYM(0.5): Dziewczęce");
+		ExtendedQuery analyzedQuery = analyze(underTest, "dzieci");
+		assertEquals("(dzieci OR dziewczece^0.5)", analyzedQuery.toQueryString());
+	}
+
+	@Test
+	public void testAsciifiedAndLowercasedRulesAndInput() {
+		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.ASCIIFY, RuleLoadingFlags.LOWERCASE), "Dzięci =>", "  SYNONYM(0.5): Dziewczęce");
+		ExtendedQuery analyzedQuery = analyze(underTest, "Dzięci");
+		assertEquals("(dzieci OR dziewczece^0.5)", analyzedQuery.toQueryString());
+	}
+
+	public void testLowercasingRules() {
+		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.LOWERCASE), "Kreslo =>", "  SYNONYM(0.82): POLSTER");
+
+		ExtendedQuery analyzedQuery2 = analyze(underTest, "kreslo");
+		assertEquals("(kreslo OR polster^0.82)", analyzedQuery2.toQueryString());
+	}
+
+	public void testLowercasingRulesAndInput() {
+		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.LOWERCASE), "Kreslo =>", "  SYNONYM(0.82): POLSTER");
+
+		ExtendedQuery analyzedQuery2 = analyze(underTest, "KRESLOl");
+		assertEquals("(kreslo OR polster^0.82)", analyzedQuery2.toQueryString());
 	}
 
 	@Test
