@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @ExtendWith({ OCSStack.class })
 public class ITPartialUpdates {
 
-	private final static String indexName = "partial_update_test-en";
+	private final static String indexName = "partial_update_test";
 
 	@BeforeAll
 	public static void prepareData() throws Exception {

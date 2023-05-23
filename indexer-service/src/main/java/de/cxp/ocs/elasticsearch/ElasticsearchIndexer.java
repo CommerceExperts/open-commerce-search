@@ -81,7 +81,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		}
 		else {
 			Map<String, Set<AliasMetadata>> aliases = indexClient.getAliases(INDEX_PREFIX + "*" + INDEX_DELIMITER + indexName + "*");
-			return aliases.size() > 1;
+			return aliases.size() > 0;
 		}
 	}
 
