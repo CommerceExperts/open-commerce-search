@@ -251,7 +251,9 @@ public class FacetConfigurationApplyer {
 
 			// add facet creator for explicit facet creation that has different type than the default
 			if (!intervalFacetConfigs.isEmpty()) {
-				NestedFacetCreator intervalFacetCreator = new IntervalFacetCreator(intervalFacetConfigs, null).setMaxFacets(maxFacets);
+				IntervalFacetCreator intervalFacetCreator = new IntervalFacetCreator(intervalFacetConfigs, null);
+				intervalFacetCreator.setExplicitFacetCreator(true);
+				intervalFacetCreator.setMaxFacets(maxFacets);
 				intervalFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(allIgnoredFields, FieldType.NUMBER));
 				initializedFacetCreators.add(intervalFacetCreator);
 				facetCreatorsByTypes.put(isVariantLevel ? FacetCreatorClassifier.variantIntervalFacet : FacetCreatorClassifier.masterIntervalFacet, intervalFacetCreator);
@@ -271,7 +273,9 @@ public class FacetConfigurationApplyer {
 			if (!rangeFacetConfigs.isEmpty()) {
 				// TODO: FacetCreators that run on the same nested field, should be
 				// grouped to use a single nested-aggregation for their aggregations
-				NestedFacetCreator rangeFacetCreator = new RangeFacetCreator(rangeFacetConfigs, null).setMaxFacets(maxFacets);
+				RangeFacetCreator rangeFacetCreator = new RangeFacetCreator(rangeFacetConfigs, null);
+				rangeFacetCreator.setExplicitFacetCreator(true);
+				rangeFacetCreator.setMaxFacets(maxFacets);
 				rangeFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(allIgnoredFields, FieldType.NUMBER));
 				initializedFacetCreators.add(rangeFacetCreator);
 				facetCreatorsByTypes.put(isVariantLevel ? FacetCreatorClassifier.variantRangeFacet : FacetCreatorClassifier.masterRangeFacet, rangeFacetCreator);
@@ -491,7 +495,12 @@ public class FacetConfigurationApplyer {
 
 			FacetConfig facetConfig = facetsBySourceField.get(facet.getFieldName());
 			if (facetConfig == null) {
-				facetConfig = defaultTermFacetConfigProvider.apply(facet.getFieldName());
+				if (FacetType.TERM.name().equalsIgnoreCase(facet.type)) {
+					facetConfig = defaultTermFacetConfigProvider.apply(facet.getFieldName());
+				}
+				else {
+					facetConfig = defaultNumberFacetConfigProvider.apply(facet.getFieldName());
+				}
 			}
 			if (facetConfig != null) {
 				for (FacetFilter facetFilter : facetFilters) {

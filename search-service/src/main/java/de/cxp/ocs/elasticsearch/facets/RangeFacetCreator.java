@@ -18,6 +18,7 @@ import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.IntervalFacetEntry;
 import de.cxp.ocs.model.result.RangeFacetEntry;
 import de.cxp.ocs.util.SearchQueryBuilder;
+import lombok.Setter;
 
 /**
  * <p>
@@ -35,6 +36,13 @@ public class RangeFacetCreator extends NestedFacetCreator {
 
 	public final static String AGGREGATION_NAME = "_stats";
 
+	/**
+	 * Set to true, if this facet creator should only be used to create the configured facets. This should remain false
+	 * for a default facet creator.
+	 */
+	@Setter
+	private boolean isExplicitFacetCreator = false;
+
 	public RangeFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider) {
 		super(facetConfigs, defaultFacetConfigProvider);
 		// ensure the according filters are applied as post filters
@@ -48,7 +56,7 @@ public class RangeFacetCreator extends NestedFacetCreator {
 
 	@Override
 	protected boolean onlyFetchAggregationsForConfiguredFacets() {
-		return true;
+		return isExplicitFacetCreator;
 	}
 
 	@Override

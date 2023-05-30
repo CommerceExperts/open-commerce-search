@@ -36,6 +36,13 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 	@Setter
 	private int interval = 5;
 
+	/**
+	 * Set to true, if this facet creator should only be used to create the configured facets. This should remain false
+	 * for a default facet creator.
+	 */
+	@Setter
+	private boolean isExplicitFacetCreator = false;
+
 	public IntervalFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider) {
 		super(facetConfigs, defaultFacetConfigProvider);
 	}
@@ -47,7 +54,7 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 
 	@Override
 	protected boolean onlyFetchAggregationsForConfiguredFacets() {
-		return false;
+		return isExplicitFacetCreator;
 	}
 
 	@Override
