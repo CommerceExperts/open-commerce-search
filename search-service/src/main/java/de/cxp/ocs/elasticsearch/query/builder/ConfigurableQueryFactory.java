@@ -138,6 +138,19 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 				.append('"')
 				.append("^1.5");
 
+		// if we have more than one term and the quoteAnalyzer is different than the analyzer,
+		// then add a query variant that searches for the single terms quoted on their own.
+		if (parsedQuery.getInputTerms().size() > 1 && !querySettings.getOrDefault(analyzer, "").equals(querySettings.get(quoteAnalyzer))) {
+			queryStringBuilder
+					.append(" OR ")
+					.append('(')
+					.append('"')
+					.append(getOriginalTermQuery(parsedQuery.getInputTerms(), "\" \""))
+					.append('"')
+					.append(')')
+					.append("^1.1");
+		}
+
 		// build shingle variants if enabled
 		if (querySettings.getOrDefault(isQueryWithShingles, "false").equalsIgnoreCase("true")) {
 			attachQueryTermsAsShingles(parsedQuery.getInputTerms(), queryStringBuilder);
@@ -153,9 +166,13 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 	}
 
 	private String getOriginalTermQuery(List<String> inputTerms) {
+		return getOriginalTermQuery(inputTerms, " ");
+	}
+
+	private String getOriginalTermQuery(List<String> inputTerms, String delimiter) {
 		return inputTerms.stream()
 				.map(EscapeUtil::escapeReservedESCharacters)
-				.collect(Collectors.joining(" "));
+				.collect(Collectors.joining(delimiter));
 	}
 
 	private void attachQueryTermsAsShingles(List<String> inputTerms, StringBuilder queryStringBuilder) {
