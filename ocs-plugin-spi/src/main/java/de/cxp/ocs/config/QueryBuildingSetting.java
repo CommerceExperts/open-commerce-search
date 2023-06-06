@@ -8,6 +8,17 @@ public enum QueryBuildingSetting {
 	analyzer,
 
 	/**
+	 * Analyzer to be used to analyze the input query that is put into quotes as alternative match.
+	 */
+	quoteAnalyzer,
+
+	/**
+	 * Slop value that should be used for the quoted part of the query.
+	 * see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query-phrase.html
+	 */
+	phraseSlop,
+
+	/**
 	 * see
 	 * https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-minimum-should-match.html
 	 */

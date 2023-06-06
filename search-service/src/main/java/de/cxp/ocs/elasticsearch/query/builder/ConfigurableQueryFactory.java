@@ -1,14 +1,6 @@
 package de.cxp.ocs.elasticsearch.query.builder;
 
-import static de.cxp.ocs.config.QueryBuildingSetting.acceptNoResult;
-import static de.cxp.ocs.config.QueryBuildingSetting.allowParallelSpellcheck;
-import static de.cxp.ocs.config.QueryBuildingSetting.analyzer;
-import static de.cxp.ocs.config.QueryBuildingSetting.fuzziness;
-import static de.cxp.ocs.config.QueryBuildingSetting.isQueryWithShingles;
-import static de.cxp.ocs.config.QueryBuildingSetting.minShouldMatch;
-import static de.cxp.ocs.config.QueryBuildingSetting.multimatch_type;
-import static de.cxp.ocs.config.QueryBuildingSetting.operator;
-import static de.cxp.ocs.config.QueryBuildingSetting.tieBreaker;
+import static de.cxp.ocs.config.QueryBuildingSetting.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,9 +93,10 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 		QueryStringQueryBuilder esQuery = QueryBuilders.queryStringQuery(queryString)
 				.minimumShouldMatch(querySettings.getOrDefault(minShouldMatch, null))
 				.analyzer(querySettings.getOrDefault(analyzer, null))
-				.quoteAnalyzer("whitespace")
+				.quoteAnalyzer(querySettings.getOrDefault(quoteAnalyzer, "whitespace"))
 				.fuzziness(fuzziness)
 				.defaultOperator(Operator.fromString(defaultOperator))
+				.phraseSlop(Util.tryToParseAsNumber(querySettings.getOrDefault(phraseSlop, "0")).orElse(0).intValue())
 				.tieBreaker(Util.tryToParseAsNumber(querySettings.getOrDefault(tieBreaker, "0")).orElse(0).floatValue())
 				.autoGenerateSynonymsPhraseQuery(false);
 
