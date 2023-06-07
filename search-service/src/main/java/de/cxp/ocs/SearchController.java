@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
+import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -262,11 +262,12 @@ public class SearchController implements SearchService {
 		Set<String> tenants = new HashSet<>();
 		try {
 			esBuilder.getRestHLClient().indices()
-					.get(new GetIndexRequest().indices("ocs-*"), RequestOptions.DEFAULT)
-					.getAliases()
-					.stream()
-					.map(aliasEntry -> aliasEntry.getValue().iterator().next().alias())
+					.getAlias(new GetAliasesRequest().indices("ocs-*"), RequestOptions.DEFAULT)
+					.getAliases().values().stream()
+					.filter(aliases -> aliases.size() > 0)
+					.map(aliases -> aliases.iterator().next().alias())
 					.forEach(tenants::add);
+			;
 		}
 		catch (IOException e) {
 			log.warn("could not retrieve ES indices", e);
