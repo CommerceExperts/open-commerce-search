@@ -11,6 +11,7 @@ import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.RamUsageEstimator;
 
 import de.cxp.ocs.smartsuggest.limiter.Limiter;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
 import lombok.Setter;
@@ -24,8 +25,11 @@ public class CompoundQuerySuggester implements QuerySuggester, Accountable {
 	@Setter
 	private boolean isMultiThreaded = false;
 
-	public CompoundQuerySuggester(List<QuerySuggester> suggester) {
+	private SuggestConfig defaultSuggestConfig;
+
+	public CompoundQuerySuggester(List<QuerySuggester> suggester, SuggestConfig defaultSuggestConfig) {
 		suggesterList = new ArrayList<>(suggester);
+		this.defaultSuggestConfig = defaultSuggestConfig;
 	}
 
 	// for testing purposes
@@ -34,7 +38,7 @@ public class CompoundQuerySuggester implements QuerySuggester, Accountable {
 		suggesterList = new ArrayList<>();
 		for (SuggestDataProvider dataProvider : dataProviders) {
 			if (dataProvider.hasData(indexName)) {
-				QuerySuggester suggester = factory.getSuggester(dataProvider.loadData(indexName), configProvider.getConfig(indexName));
+				QuerySuggester suggester = factory.getSuggester(dataProvider.loadData(indexName), configProvider.getConfig(indexName, defaultSuggestConfig));
 				suggesterList.add(suggester);
 			}
 		}

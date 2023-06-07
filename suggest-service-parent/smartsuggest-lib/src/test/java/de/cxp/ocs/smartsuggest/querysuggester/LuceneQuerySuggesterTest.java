@@ -434,8 +434,9 @@ class LuceneQuerySuggesterTest {
 								"weiße hemdchen", "weißen hemd", "weißes hemd s", "weißes hemde", "weißhemd"),
 						500418),
 				asSuggestRecord(tShirtWeißMaster, setOf("weiße shirts", "weisse shirt", "weisse shirts"), 851928)
-
 		));
+		// sort like the LuceneSuggesterFactory does it
+		Collections.sort((List<SuggestRecord>) toIndex, Comparator.comparingDouble(SuggestRecord::getWeight).reversed());
 
 		underTest.index(toIndex).join();
 
@@ -448,8 +449,13 @@ class LuceneQuerySuggesterTest {
 		assertGroupName(results.get(7), LuceneQuerySuggester.BEST_MATCHES_GROUP_NAME);
 		assertLabel(results.get(0), weisseShortsMaster);
 		assertLabel(results.get(1), weisseStrickjackeMaster);
+
+		// suggestions with the same score are returned based on the better exact match position:
+		// weißeSocken contains a variant with ss (as searched in the query)
+		// weißeSchuhe does not contain a variant with ss, so it has a worse position although indexed first
 		assertLabel(results.get(2), weißeSockenMaster);
 		assertLabel(results.get(3), weißeSchuheMaster);
+
 		assertLabel(results.get(4), weißeSommerhoseMaster);
 		assertLabel(results.get(5), weißeStoffhoseMaster);
 		assertLabel(results.get(6), weißeSpitzenbluseMaster);

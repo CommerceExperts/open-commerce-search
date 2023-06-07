@@ -1,14 +1,6 @@
 package de.cxp.ocs.elasticsearch.query.builder;
 
-import static de.cxp.ocs.config.QueryBuildingSetting.acceptNoResult;
-import static de.cxp.ocs.config.QueryBuildingSetting.allowParallelSpellcheck;
-import static de.cxp.ocs.config.QueryBuildingSetting.analyzer;
-import static de.cxp.ocs.config.QueryBuildingSetting.fuzziness;
-import static de.cxp.ocs.config.QueryBuildingSetting.isQueryWithShingles;
-import static de.cxp.ocs.config.QueryBuildingSetting.minShouldMatch;
-import static de.cxp.ocs.config.QueryBuildingSetting.multimatch_type;
-import static de.cxp.ocs.config.QueryBuildingSetting.operator;
-import static de.cxp.ocs.config.QueryBuildingSetting.tieBreaker;
+import static de.cxp.ocs.config.QueryBuildingSetting.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,9 +93,10 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 		QueryStringQueryBuilder esQuery = QueryBuilders.queryStringQuery(queryString)
 				.minimumShouldMatch(querySettings.getOrDefault(minShouldMatch, null))
 				.analyzer(querySettings.getOrDefault(analyzer, null))
-				.quoteAnalyzer("whitespace")
+				.quoteAnalyzer(querySettings.getOrDefault(quoteAnalyzer, "whitespace"))
 				.fuzziness(fuzziness)
 				.defaultOperator(Operator.fromString(defaultOperator))
+				.phraseSlop(Util.tryToParseAsNumber(querySettings.getOrDefault(phraseSlop, "0")).orElse(0).intValue())
 				.tieBreaker(Util.tryToParseAsNumber(querySettings.getOrDefault(tieBreaker, "0")).orElse(0).floatValue())
 				.autoGenerateSynonymsPhraseQuery(false);
 
@@ -145,6 +138,19 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 				.append('"')
 				.append("^1.5");
 
+		// if we have more than one term and the quoteAnalyzer is different than the analyzer,
+		// then add a query variant that searches for the single terms quoted on their own.
+		if (parsedQuery.getInputTerms().size() > 1 && !querySettings.getOrDefault(analyzer, "").equals(querySettings.get(quoteAnalyzer))) {
+			queryStringBuilder
+					.append(" OR ")
+					.append('(')
+					.append('"')
+					.append(getOriginalTermQuery(parsedQuery.getInputTerms(), "\" \""))
+					.append('"')
+					.append(')')
+					.append("^1.1");
+		}
+
 		// build shingle variants if enabled
 		if (querySettings.getOrDefault(isQueryWithShingles, "false").equalsIgnoreCase("true")) {
 			attachQueryTermsAsShingles(parsedQuery.getInputTerms(), queryStringBuilder);
@@ -160,9 +166,13 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 	}
 
 	private String getOriginalTermQuery(List<String> inputTerms) {
+		return getOriginalTermQuery(inputTerms, " ");
+	}
+
+	private String getOriginalTermQuery(List<String> inputTerms, String delimiter) {
 		return inputTerms.stream()
 				.map(EscapeUtil::escapeReservedESCharacters)
-				.collect(Collectors.joining(" "));
+				.collect(Collectors.joining(delimiter));
 	}
 
 	private void attachQueryTermsAsShingles(List<String> inputTerms, StringBuilder queryStringBuilder) {

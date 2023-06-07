@@ -1,15 +1,16 @@
 package de.cxp.ocs.smartsuggest.spi;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
-public class SuggestConfig {
+@Builder(toBuilder = true)
+@AllArgsConstructor
+public class SuggestConfig implements Cloneable {
 
 	public Locale locale = Locale.ROOT;
 
@@ -214,5 +215,14 @@ public class SuggestConfig {
 	 */
 	public void setMaxSharpenedQueries(int maxSharpenedQueries) {
 		this.maxSharpenedQueries = maxSharpenedQueries;
+	}
+
+	@Override
+	public SuggestConfig clone() {
+		return this.toBuilder()
+				// deep copy of mutable properties
+				.groupConfig(this.groupConfig.stream().map(orig -> new GroupConfig(orig.groupName, orig.limit)).collect(Collectors.toList()))
+				.groupDeduplicationOrder(this.groupDeduplicationOrder.map(original -> Arrays.copyOf(original, original.length)))
+				.build();
 	}
 }

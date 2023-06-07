@@ -2,7 +2,6 @@ package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
 import static java.util.Collections.emptyList;
 import static org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester.PRESERVE_SEP;
-import static org.apache.lucene.search.suggest.analyzing.BlendedInfixSuggester.DEFAULT_NUM_FACTOR;
 import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_MIN_FUZZY_LENGTH;
 import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_TRANSPOSITIONS;
 
@@ -132,19 +131,20 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			Analyzer basicQueryAnalyzer = setupBasicAnalyzer(false, stopWords);
 
 			MMapDirectory infixDir = new MMapDirectory(indexFolder.resolve("infix"));
-			// infixSuggester = new AnalyzingInfixSuggester(indexDir,
-			// basicIndexAnalyzer, basicQueryAnalyzer,
-			// AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS, false, false,
-			// AnalyzingInfixSuggester.DEFAULT_HIGHLIGHT);
+			// the num-factor of 1 is all we need here, since the suggestions are considered as preordered and we use
+			// the 'BlenderType.CUSTOM' here that does not cause major reorderings.
+			// Although the AnalyzingInfixSuggester would still be a bit faster, the BlendedInfixSuggester has better
+			// handling of position match penalties for suggestions with the single weight
 			primarySuggester = new BlendedInfixSuggester(infixDir, basicIndexAnalyzer, basicQueryAnalyzer,
-					AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS, BlendedInfixSuggester.BlenderType.CUSTOM, DEFAULT_NUM_FACTOR, false);
+						AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS, BlendedInfixSuggester.BlenderType.CUSTOM, 1, null,
+						false, AnalyzingInfixSuggester.DEFAULT_ALL_TERMS_REQUIRED, false);
 			closeables.add(primarySuggester);
 
 			Analyzer basicIndexAnalyzer2 = setupBasicAnalyzer(true, stopWords);
 			Analyzer basicQueryAnalyzer2 = setupBasicAnalyzer(false, stopWords);
 			MMapDirectory infixDir2 = new MMapDirectory(indexFolder.resolve("typo"));
 			secondarySuggester = new AnalyzingInfixSuggester(infixDir2, basicIndexAnalyzer2, basicQueryAnalyzer2,
-					AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS, false);
+					AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS, false, AnalyzingInfixSuggester.DEFAULT_ALL_TERMS_REQUIRED, false);
 			closeables.add(secondarySuggester);
 
 			final Analyzer shingleIndexAnalyzer = setupShingleAnalyzer(true, stopWords);
@@ -152,7 +152,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			MMapDirectory shingleDir = new MMapDirectory(indexFolder.resolve("shingle"));
 			shingleSuggester = new BlendedInfixSuggester(shingleDir, shingleIndexAnalyzer, shingleQueryAnalyzer,
 					AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS,
-					BlendedInfixSuggester.BlenderType.POSITION_RECIPROCAL, DEFAULT_NUM_FACTOR, null, false, false, false);
+					BlendedInfixSuggester.BlenderType.POSITION_RECIPROCAL, 1, null, false, false, false);
 			closeables.add(shingleSuggester);
 
 			fuzzySuggesterOneEdit = createFuzzySuggester(indexFolder, "Short", basicIndexAnalyzer, basicQueryAnalyzer, 1);

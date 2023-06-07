@@ -184,6 +184,18 @@ public class Searcher {
 
 		// staged search: try each query builder until we get a result
 		// + try and use spell correction with first query
+		SearchResponse searchResponse = stagedSearch(parameters, parsedQuery, filterContext, variantSortings, searchSourceBuilder, stagedQueryBuildersIterator, searchMetaData);
+
+		SearchResult searchResult = buildResult(parameters, filterContext, searchResponse);
+		searchResult.getMeta().putAll(searchMetaData);
+
+		findTimerSample.stop(findTimer);
+
+		return searchResult;
+	}
+
+	private SearchResponse stagedSearch(InternalSearchParams parameters, ExtendedQuery parsedQuery, FilterContext filterContext, List<SortBuilder<?>> variantSortings, SearchSourceBuilder searchSourceBuilder, Iterator<ESQueryFactory> stagedQueryBuildersIterator,
+			Map<String, Object> searchMetaData) throws IOException {
 		int i = 0;
 		SearchResponse searchResponse = null;
 		Map<String, AssociatedTerm> correctedWords = null;
@@ -271,15 +283,9 @@ public class Searcher {
 
 			i++;
 		}
-		sqbSample.stop(sqbTimer);
-
-		SearchResult searchResult = buildResult(parameters, filterContext, searchResponse);
-		searchResult.getMeta().putAll(searchMetaData);
-
 		summary.record(i);
-		findTimerSample.stop(findTimer);
-
-		return searchResult;
+		sqbSample.stop(sqbTimer);
+		return searchResponse;
 	}
 
 	private Iterator<ESQueryFactory> initializeStageQueryBuilders(InternalSearchParams parameters, ExtendedQuery parsedQuery, boolean isInvalidUserQuery) {
