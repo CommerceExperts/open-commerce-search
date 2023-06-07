@@ -29,6 +29,8 @@ public class SuggestConfig {
 
 	public int maxSharpenedQueries = 3;
 
+	public int blendingNumFactor = 10;
+
 	public List<GroupConfig> groupConfig = new ArrayList<>();
 
 	/**
@@ -214,5 +216,15 @@ public class SuggestConfig {
 	 */
 	public void setMaxSharpenedQueries(int maxSharpenedQueries) {
 		this.maxSharpenedQueries = maxSharpenedQueries;
+	}
+
+	/**
+	 * Set result fetch factor for BlendedInfixSuggester that is used for the primary matches and also for the last
+	 * stage
+	 * 
+	 * @param blendingNumFactor
+	 */
+	public void setBlendingNumFactor(int blendingNumFactor) {
+		this.blendingNumFactor = blendingNumFactor;
 	}
 }
