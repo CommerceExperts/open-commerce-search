@@ -34,6 +34,8 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 	@NonNull
 	private final SuggestConfigProvider configProvider;
 
+	private final SuggestConfig defaultSuggestConfig;
+
 	@NonNull
 	private final String indexName;
 
@@ -112,7 +114,7 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 			log.info("Received data for index {} with {} records", indexName,
 					suggestData.getSuggestRecords() instanceof Collection ? ((Collection<?>) suggestData.getSuggestRecords()).size() : "?");
 
-			SuggestConfig suggestConfig = configProvider.getConfig(indexName);
+			SuggestConfig suggestConfig = configProvider.getConfig(indexName, defaultSuggestConfig);
 			long startIndexation = System.currentTimeMillis();
 			QuerySuggester querySuggester = factory.getSuggester(suggestData, suggestConfig);
 			final long count = querySuggester.recordCount();
