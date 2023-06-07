@@ -458,9 +458,8 @@ class LuceneQuerySuggesterTest {
 
 		assertLabel(results.get(4), weißeSommerhoseMaster);
 		assertLabel(results.get(5), weißeStoffhoseMaster);
-		// also suggestions with a weight of 0 are returned in the order of indexation
-		assertLabel(results.get(6), weißeSneakerMaster);
-		assertLabel(results.get(7), weißeSpitzenbluseMaster);
+		assertLabel(results.get(6), weißeSpitzenbluseMaster);
+		assertLabel(results.get(7), weißeSneakerMaster);
 
 		assertGroupName(results.get(8), LuceneQuerySuggester.TYPO_MATCHES_GROUP_NAME);
 		assertGroupName(results.get(12), LuceneQuerySuggester.TYPO_MATCHES_GROUP_NAME);
