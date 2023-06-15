@@ -75,7 +75,8 @@ class QueryPredictor {
 		});
 
 		// create ordered shingles from the original words
-		final Map<String, Set<String>> shingles = createOrderedShingles(parsedQuery.getInputTerms());
+		List<String> inputTerms = parsedQuery.getInputTerms();
+		final Map<String, Set<String>> shingles = createOrderedShingles(inputTerms);
 		final Map<String, Set<String>> shingleSources = invertedIndex(shingles);
 
 		// ..and add them to the list of searched terms
@@ -110,7 +111,7 @@ class QueryPredictor {
 
 			predictedQuery.matchCount = scoreBucket.getDocCount();
 			predictedQuery.termsUnique.putAll(matchingTerms);
-			applyTermMatches(searchWordsCleaned, shingleSources, predictedQuery, correctedWords);
+			applyTermMatches(inputTerms, shingleSources, predictedQuery, correctedWords);
 			hasFoundQueryWithAllTermsMatching ^= predictedQuery.isContainsAllTerms();
 
 			// if one of the searched terms matches documents but also has
@@ -182,7 +183,7 @@ class QueryPredictor {
 				predictedQuery.matchCount = correctedWord.getRelatedTerms().values().stream()
 						.mapToLong(ww -> ((CountedTerm) ww).getTermFrequency()).sum();
 
-				applyTermMatches(searchWordsCleaned, shingleSources, predictedQuery, correctedWords);
+				applyTermMatches(inputTerms, shingleSources, predictedQuery, correctedWords);
 				predictedQueries.put(getQueryKey(predictedQuery), predictedQuery);
 			}
 		}
@@ -326,26 +327,26 @@ class QueryPredictor {
 		return termsOrdered;
 	}
 
-	private void applyTermMatches(final List<QueryStringTerm> searchTerms,
+	private void applyTermMatches(final List<String> inputTerms,
 			final Map<String, Set<String>> shingleSources,
 			final PredictedQuery predictedQuery, final Map<String, AssociatedTerm> correctedWords) {
 		int originalTermCount = 0;
-		for (final QueryStringTerm term : searchTerms) {
-			if (predictedQuery.termsUnique.containsKey(term.getRawTerm())) {
+		for (final String term : inputTerms) {
+			if (predictedQuery.termsUnique.containsKey(term)) {
 				originalTermCount++;
 				continue;
 			}
 
-			final Set<String> shinglesWithTerm = shingleSources.get(term.getRawTerm());
-			if (shingleSources != null && containsAny(predictedQuery.termsUnique.keySet(), shinglesWithTerm)) {
+			final Set<String> shinglesWithTerm = shingleSources.get(term);
+			if (shinglesWithTerm != null && containsAny(predictedQuery.termsUnique.keySet(), shinglesWithTerm)) {
 				originalTermCount++;
 			}
 			else {
-				final AssociatedTerm correctedWord = correctedWords.get(term.getRawTerm());
-				predictedQuery.unknownTerms.add(correctedWord != null ? correctedWord : term);
+				final AssociatedTerm correctedWord = correctedWords.get(term);
+				predictedQuery.unknownTerms.add(correctedWord != null ? correctedWord : new WeightedTerm(term));
 			}
 		}
-		predictedQuery.containsAllTerms = originalTermCount == searchTerms.size();
+		predictedQuery.containsAllTerms = originalTermCount == inputTerms.size();
 		predictedQuery.originalTermCount = originalTermCount;
 	}
 
