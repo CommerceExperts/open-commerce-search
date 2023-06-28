@@ -50,7 +50,7 @@ public class UpdateIndexController implements UpdateIndexService {
 	public Map<String, Result> putDocuments(
 			@PathVariable("indexName") String indexName,
 			@RequestParam(name = "replaceExisting", defaultValue = "true") Boolean replaceExisting,
-			@RequestParam(name = "langCode") String langCode,
+			@RequestParam(name = "langCode", defaultValue = "") String langCode,
 			@RequestBody List<Document> documents) {
 		MDC.put("index", indexName);
 		try {
