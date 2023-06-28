@@ -244,7 +244,12 @@ public class FacetConfigurationApplyer {
 
 		if (FacetType.RANGE.name().equals(defaultNumberFacetType)) {
 			NestedFacetCreator rangeFacetCreator = new RangeFacetCreator(rangeFacetConfigs, defaultNumberFacetConfigProvider).setMaxFacets(maxFacets);
-			facetCreatorsByTypes.put(isVariantLevel ? FacetCreatorClassifier.variantRangeFacet : FacetCreatorClassifier.masterRangeFacet, rangeFacetCreator);
+			if (isVariantLevel) {
+				facetCreatorsByTypes.put(FacetCreatorClassifier.variantRangeFacet, new VariantFacetCreator(Collections.singleton(rangeFacetCreator)));
+			}
+			else {
+				facetCreatorsByTypes.put(FacetCreatorClassifier.masterRangeFacet, rangeFacetCreator);
+			}
 
 			defaultNumberFacetCreator = rangeFacetCreator;
 			nonDefaultNumberFacetFields = new HashSet<>(intervalFacetConfigs.keySet());
@@ -256,7 +261,13 @@ public class FacetConfigurationApplyer {
 				intervalFacetCreator.setMaxFacets(maxFacets);
 				intervalFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(allIgnoredFields, FieldType.NUMBER));
 				initializedFacetCreators.add(intervalFacetCreator);
-				facetCreatorsByTypes.put(isVariantLevel ? FacetCreatorClassifier.variantIntervalFacet : FacetCreatorClassifier.masterIntervalFacet, intervalFacetCreator);
+				if (isVariantLevel) {
+					facetCreatorsByTypes.put(FacetCreatorClassifier.variantIntervalFacet, new VariantFacetCreator(Collections.singleton(intervalFacetCreator)));
+				}
+				else {
+					facetCreatorsByTypes.put(FacetCreatorClassifier.masterIntervalFacet, intervalFacetCreator);
+				}
+
 			}
 		}
 		else {
@@ -264,7 +275,12 @@ public class FacetConfigurationApplyer {
 				log.error("Invalid type for default number facet configuration: '{}' - will consider 'INTERVAL' as default", defaultNumberFacetType);
 			}
 			NestedFacetCreator intervalFacetCreator = new IntervalFacetCreator(intervalFacetConfigs, defaultNumberFacetConfigProvider).setMaxFacets(maxFacets);
-			facetCreatorsByTypes.put(isVariantLevel ? FacetCreatorClassifier.variantIntervalFacet : FacetCreatorClassifier.masterIntervalFacet, intervalFacetCreator);
+			if (isVariantLevel) {
+				facetCreatorsByTypes.put(FacetCreatorClassifier.variantIntervalFacet, new VariantFacetCreator(Collections.singleton(intervalFacetCreator)));
+			}
+			else {
+				facetCreatorsByTypes.put(FacetCreatorClassifier.masterIntervalFacet, intervalFacetCreator);
+			}
 
 			defaultNumberFacetCreator = intervalFacetCreator;
 			nonDefaultNumberFacetFields = new HashSet<>(rangeFacetConfigs.keySet());
@@ -278,7 +294,13 @@ public class FacetConfigurationApplyer {
 				rangeFacetCreator.setMaxFacets(maxFacets);
 				rangeFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(allIgnoredFields, FieldType.NUMBER));
 				initializedFacetCreators.add(rangeFacetCreator);
-				facetCreatorsByTypes.put(isVariantLevel ? FacetCreatorClassifier.variantRangeFacet : FacetCreatorClassifier.masterRangeFacet, rangeFacetCreator);
+
+				if (isVariantLevel) {
+					facetCreatorsByTypes.put(FacetCreatorClassifier.variantRangeFacet, new VariantFacetCreator(Collections.singleton(rangeFacetCreator)));
+				}
+				else {
+					facetCreatorsByTypes.put(FacetCreatorClassifier.masterRangeFacet, rangeFacetCreator);
+				}
 			}
 
 		}
