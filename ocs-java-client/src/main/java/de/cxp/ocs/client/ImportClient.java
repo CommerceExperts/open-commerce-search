@@ -84,8 +84,8 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 	 * properly.
 	 */
 	@Override
-	public Map<String, Result> putDocuments(String indexName, Boolean replaceExisting, List<Document> docs) {
-		return target.putDocuments(indexName, replaceExisting == null ? true : replaceExisting, docs);
+	public Map<String, Result> putDocuments(String indexName, Boolean replaceExisting, String langCode, List<Document> docs) {
+		return target.putDocuments(indexName, replaceExisting == null ? true : replaceExisting, langCode, docs);
 	}
 
 	
@@ -97,8 +97,8 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 	 * @param products
 	 * @return
 	 */
-	public Map<String, Result> putProducts(String indexName, Boolean replaceExisting, List<Product> products) {
-		return target.putProducts(indexName, replaceExisting == null ? true : replaceExisting, products);
+	public Map<String, Result> putProducts(String indexName, Boolean replaceExisting, String langCode, List<Product> products) {
+		return target.putProducts(indexName, replaceExisting == null ? true : replaceExisting, langCode, products);
 	}
 
 	@Override

@@ -37,13 +37,13 @@ interface ImportApi {
 	@Headers("Content-Type: application/json")
 	Map<String, Result> patchProducts(@Param("indexName") String indexName, List<Product> doc);
 
-	@RequestLine("PUT /indexer-api/v1/update/{indexName}?replaceExisting={replaceExisting}")
+	@RequestLine("PUT /indexer-api/v1/update/{indexName}?replaceExisting={replaceExisting}&langCode={langCode}")
 	@Headers("Content-Type: application/json")
-	Map<String, Result> putDocuments(@Param("indexName") String indexName, @Param("replaceExisting") Boolean replaceExisting, List<Document> docs);
+	Map<String, Result> putDocuments(@Param("indexName") String indexName, @Param("replaceExisting") Boolean replaceExisting, @Param("langCode") String langCode, List<Document> docs);
 
-	@RequestLine("PUT /indexer-api/v1/update/{indexName}?replaceExisting={replaceExisting}")
+	@RequestLine("PUT /indexer-api/v1/update/{indexName}?replaceExisting={replaceExisting}&langCode={langCode}")
 	@Headers("Content-Type: application/json")
-	Map<String, Result> putProducts(@Param("indexName") String indexName, @Param("replaceExisting") Boolean replaceExisting, List<Product> prod);
+	Map<String, Result> putProducts(@Param("indexName") String indexName, @Param("replaceExisting") Boolean replaceExisting,  @Param("langCode") String langCode, List<Product> prod);
 
 	@RequestLine("DELETE /indexer-api/v1/update/{indexName}")
 	Map<String, Result> deleteDocuments(@Param("indexName") String indexName, @Param("id") List<String> id);

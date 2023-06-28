@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.api.indexer.UpdateIndexService;
 import de.cxp.ocs.indexer.AbstractIndexer;
+import de.cxp.ocs.model.index.BulkImportData;
 import de.cxp.ocs.model.index.Document;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,9 +26,7 @@ public class UpdateIndexController implements UpdateIndexService {
 
 	@PatchMapping
 	@Override
-	public Map<String, Result> patchDocuments(@PathVariable("indexName")
-	String indexName, @RequestBody
-	List<Document> documents) {
+	public Map<String, Result> patchDocuments(@PathVariable("indexName") String indexName, @RequestBody List<Document> documents) {
 		MDC.put("index", indexName);
 		try {
 			Map<String, Result> response = new HashMap<>(documents.size());
@@ -49,20 +48,18 @@ public class UpdateIndexController implements UpdateIndexService {
 	@PutMapping
 	@Override
 	public Map<String, Result> putDocuments(
-			@PathVariable("indexName")
-			String indexName,
-			@RequestParam(name = "replaceExisting", defaultValue = "true")
-			Boolean replaceExisting,
-			@RequestBody
-			List<Document> documents) {
+			@PathVariable("indexName") String indexName,
+			@RequestParam(name = "replaceExisting", defaultValue = "true") Boolean replaceExisting,
+			@RequestParam(name = "langCode") String langCode,
+			@RequestBody List<Document> documents) {
 		MDC.put("index", indexName);
 		try {
 			AbstractIndexer indexer = indexerManager.getIndexer(indexName);
 			if (!indexer.indexExists(indexName)) {
-				return putIntoNewIndex(indexer, indexName, replaceExisting, documents);
+				return putIntoNewIndex(indexer, indexName, replaceExisting, langCode, documents);
 			}
 			else {
-				return indexer.putDocuments(indexName, replaceExisting, documents);
+				return indexer.putDocuments(indexName, replaceExisting, langCode, documents);
 			}
 		}
 		catch (IllegalArgumentException e) {
@@ -77,17 +74,20 @@ public class UpdateIndexController implements UpdateIndexService {
 		}
 	}
 
-	private Map<String, Result> putIntoNewIndex(AbstractIndexer indexer, String indexName, Boolean replaceExisting, List<Document> documents) throws Exception {
-		if (indexName.lastIndexOf('-') == -1) {
-			throw new IllegalArgumentException("Index " + indexName + " does not exist and not in require format <name>-<locale> to create a new one automatically.");
+	private Map<String, Result> putIntoNewIndex(AbstractIndexer indexer, String indexName, Boolean replaceExisting, String langCode, List<Document> documents) throws Exception {
+		if (langCode == null || langCode.isBlank()) {
+			throw new IllegalArgumentException("langcode required for new index but missing/null");
 		}
 
-		String locale = indexName.substring(indexName.lastIndexOf('-') + 1);
-		ImportSession importSession = indexer.startImport(indexName, locale);
-		Map<String, Result> putResult;
+		ImportSession importSession = indexer.startImport(indexName, langCode);
+		Map<String, Result> putResult = new HashMap<>();
 		try {
-			putResult = indexer.putDocuments(importSession.getTemporaryIndexName(), replaceExisting, documents);
+			BulkImportData bulkData = new BulkImportData();
+			bulkData.setSession(importSession);
+			bulkData.setDocuments(documents.toArray(Document[]::new));
+			indexer.add(bulkData);
 			indexer.done(importSession);
+			documents.forEach(d -> putResult.put(d.id, Result.CREATED));
 		}
 		catch (Exception e) {
 			indexer.cancel(importSession);
@@ -98,9 +98,7 @@ public class UpdateIndexController implements UpdateIndexService {
 
 	@DeleteMapping
 	@Override
-	public Map<String, Result> deleteDocuments(@PathVariable("indexName")
-	String indexName, @RequestParam("id")
-	List<String> ids) {
+	public Map<String, Result> deleteDocuments(@PathVariable("indexName") String indexName, @RequestParam("id") List<String> ids) {
 		MDC.put("index", indexName);
 		try {
 			return indexerManager.getIndexer(indexName)
