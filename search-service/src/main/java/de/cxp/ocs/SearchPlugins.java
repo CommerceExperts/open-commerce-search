@@ -1,22 +1,14 @@
 package de.cxp.ocs;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 
 import org.slf4j.MDC;
 
+import de.cxp.ocs.elasticsearch.prodset.ProductSetResolver;
 import de.cxp.ocs.plugin.ExtensionSupplierRegistry;
 import de.cxp.ocs.plugin.PluginManager;
-import de.cxp.ocs.spi.search.ConfigurableExtension;
-import de.cxp.ocs.spi.search.ESQueryFactory;
-import de.cxp.ocs.spi.search.RescorerProvider;
-import de.cxp.ocs.spi.search.SearchConfigurationProvider;
-import de.cxp.ocs.spi.search.UserQueryAnalyzer;
-import de.cxp.ocs.spi.search.UserQueryPreprocessor;
+import de.cxp.ocs.spi.search.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +29,8 @@ public class SearchPlugins {
 	private Map<String, Supplier<? extends UserQueryPreprocessor>> userQueryPreprocessors;
 
 	private Map<String, Supplier<? extends RescorerProvider>> rescorers;
+
+	private Map<String, Supplier<? extends ProductSetResolver>> heroProductResolvers;
 
 	// use lazy loading to guarantee, that
 	// a) all suppliers are only loaded once
@@ -69,6 +63,13 @@ public class SearchPlugins {
 			rescorers = loadSuppliers(RescorerProvider.class);
 		}
 		return rescorers;
+	}
+
+	public Map<String, Supplier<? extends ProductSetResolver>> getHeroProductResolvers() {
+		if (heroProductResolvers == null) {
+			heroProductResolvers = loadSuppliers(ProductSetResolver.class);
+		}
+		return heroProductResolvers;
 	}
 
 	private <T> Map<String, Supplier<? extends T>> loadSuppliers(Class<T> clazz) {
@@ -109,4 +110,5 @@ public class SearchPlugins {
 		}
 		return instances;
 	}
+
 }

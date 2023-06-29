@@ -10,6 +10,7 @@ import lombok.Setter;
 		discriminatorMapping = {
 				@DiscriminatorMapping(value = "static", schema = StaticProductSet.class),
 				@DiscriminatorMapping(value = "dynamic", schema = DynamicProductSet.class),
+				@DiscriminatorMapping(value = "generic", schema = DynamicProductSet.class)
 		})
 public abstract class ProductSet {
 

@@ -4,7 +4,10 @@ import static de.cxp.ocs.util.SearchParamsParser.extractInternalParams;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -12,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.get.GetRequest;
@@ -31,21 +33,14 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 import de.cxp.ocs.api.searcher.SearchService;
-import de.cxp.ocs.config.FieldConfigIncompatibilityException;
-import de.cxp.ocs.config.FieldConfigIndex;
-import de.cxp.ocs.config.FieldConfiguration;
-import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
-import de.cxp.ocs.elasticsearch.FieldConfigFetcher;
 import de.cxp.ocs.elasticsearch.Searcher;
 import de.cxp.ocs.elasticsearch.mapper.ResultMapper;
-import de.cxp.ocs.elasticsearch.prodset.HeroProductHandler;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.params.ArrangedSearchQuery;
 import de.cxp.ocs.model.params.ProductSet;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
-import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.NotFoundException;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -69,6 +64,10 @@ public class SearchController implements SearchService {
 	@Autowired
 	@NonNull
 	private SearchPlugins plugins;
+
+	@Autowired
+	@NonNull
+	private SearchContextLoader searchContextLoader;
 
 	@Autowired
 	private MeterRegistry registry;
@@ -106,7 +105,7 @@ public class SearchController implements SearchService {
 			MDC.put("tenant", tenant);
 			try {
 				brokenTenantsCache.invalidate(tenant);
-				SearchContext searchContext = loadContext(tenant);
+				SearchContext searchContext = searchContextLoader.loadContext(tenant);
 				SearchContext oldConfig = searchContexts.put(tenant, searchContext);
 				if (oldConfig == null) {
 					log.info("config successfuly loaded for tenant {}", tenant);
@@ -161,13 +160,13 @@ public class SearchController implements SearchService {
 
 			long start = System.currentTimeMillis();
 			try {
-				SearchContext searchContext = searchContexts.computeIfAbsent(tenant, this::loadContext);
+				SearchContext searchContext = searchContexts.computeIfAbsent(tenant, searchContextLoader::loadContext);
 
 				final InternalSearchParams parameters = extractInternalParams(searchQuery, filters, searchContext);
 
 				final Searcher searcher = searchClientCache.get(tenant, () -> initializeSearcher(searchContext));
 				if (heroProducts != null) {
-					parameters.heroProductSets = HeroProductHandler.resolve(heroProducts, searcher, searchContext);
+					parameters.heroProductSets = searchContext.heroProductHandler.resolve(heroProducts, searcher, searchContext);
 				}
 
 				SearchResult result = searcher.find(parameters);
@@ -236,7 +235,7 @@ public class SearchController implements SearchService {
 		Document foundDoc = null;
 		checkTenant(tenant);
 		try {
-			SearchContext searchContext = searchContexts.computeIfAbsent(tenant, this::loadContext);
+			SearchContext searchContext = searchContexts.computeIfAbsent(tenant, searchContextLoader::loadContext);
 			GetRequest getRequest = new GetRequest(searchContext.getConfig().getIndexName(), docId);
 			GetResponse getResponse = esBuilder.getRestHLClient().get(getRequest, RequestOptions.DEFAULT);
 			if (getResponse.isExists()) {
@@ -281,58 +280,6 @@ public class SearchController implements SearchService {
 		return new Searcher(esBuilder.getRestHLClient(), searchContext, registry, plugins);
 	}
 
-	private SearchContext loadContext(String tenant) {
-		SearchConfiguration searchConfig = plugins.getConfigurationProvider().getTenantSearchConfiguration(tenant);
-
-
-		FieldConfigIndex fieldConfigIndex = loadFieldConfigIndex(searchConfig);
-
-		List<UserQueryPreprocessor> userQueryPreprocessors = SearchPlugins.initialize(
-				searchConfig.getQueryProcessing().getUserQueryPreprocessors(),
-				plugins.getUserQueryPreprocessors(),
-				searchConfig.getPluginConfiguration());
-		log.info("Using index(es) {} for tenant {}", searchConfig.getIndexName(), tenant);
-		return new SearchContext(fieldConfigIndex, searchConfig, userQueryPreprocessors);
-	}
-
-	public FieldConfigIndex loadFieldConfigIndex(SearchConfiguration searchConfig) {
-		String[] tenantIndexes = StringUtils.split(searchConfig.getIndexName(), ',');
-		FieldConfigIndex fieldConfigIndex = null;
-		Set<String> validIndexNames = new HashSet<>();
-		for (String indexName : tenantIndexes) {
-			FieldConfiguration fieldConfig = loadFieldConfiguration(indexName);
-			if (fieldConfigIndex == null) {
-				fieldConfigIndex = new FieldConfigIndex(fieldConfig);
-				validIndexNames.add(indexName);
-			}
-			else {
-				try {
-					fieldConfigIndex.addFieldConfig(fieldConfig);
-					validIndexNames.add(indexName);
-				}
-				catch (FieldConfigIncompatibilityException e) {
-					log.error("field-configuration of indexes {} are not compatible! Will omit usage of {}.",
-							searchConfig.getIndexName(), indexName, e);
-				}
-			}
-		}
-		if (tenantIndexes.length > validIndexNames.size()) {
-			searchConfig.setIndexName(StringUtils.join(validIndexNames, ','));
-		}
-		return fieldConfigIndex;
-	}
-
-	private FieldConfiguration loadFieldConfiguration(String indexName) {
-		FieldConfiguration fieldConfig;
-		try {
-			fieldConfig = new FieldConfigFetcher(esBuilder.getRestHLClient()).fetchConfig(indexName);
-		}
-		catch (IOException e) {
-			log.error("couldn't fetch field configuration from index {}", indexName);
-			throw new UncheckedIOException(e);
-		}
-		return fieldConfig;
-	}
 
 	@ExceptionHandler({ NotFoundException.class })
 	public ResponseEntity<ExceptionResponse> handleNotFoundException(NotFoundException e) {
