@@ -78,6 +78,7 @@ public class SearchController implements SearchService {
 
 	private final Cache<String, Searcher> searchClientCache = CacheBuilder.newBuilder()
 			.expireAfterAccess(10, TimeUnit.MINUTES)
+			.removalListener(notification -> searchContexts.remove(notification.getKey()))
 			.build();
 
 	private final Cache<String, Exception> brokenTenantsCache = CacheBuilder.newBuilder()
@@ -87,10 +88,10 @@ public class SearchController implements SearchService {
 
 	@Scheduled(fixedDelayString = "${ocs.scheduler.refresh-config-delay-ms:60000}")
 	public void refreshAllConfigs() {
-		Set<String> configuredTenants = plugins.getConfigurationProvider().getConfiguredTenants();
-		if (configuredTenants.size() > 0) {
-			log.info("SearchController {} configured tenants {}", searchClientCache.size() == 0 ? "initializing" : "reloading", configuredTenants);
-			configuredTenants.forEach(this::flushConfig);
+		Set<String> loadedTenants = new HashSet<>(searchContexts.keySet());
+		if (loadedTenants.size() > 0) {
+			log.info("Refreshing {} loaded tenants: {}", loadedTenants.size(), loadedTenants);
+			loadedTenants.forEach(this::flushConfig);
 		}
 	}
 
@@ -141,7 +142,6 @@ public class SearchController implements SearchService {
 	@GetMapping("/search/{tenant}")
 	@Override
 	public SearchResult search(@PathVariable("tenant") String tenant, SearchQuery searchQuery, @RequestParam Map<String, String> filters) throws Exception {
-		// TODO: add plugin that may inject hero products
 		return internalSearch(tenant, searchQuery, filters, null);
 	}
 
@@ -165,6 +165,7 @@ public class SearchController implements SearchService {
 				final InternalSearchParams parameters = extractInternalParams(searchQuery, filters, searchContext);
 
 				final Searcher searcher = searchClientCache.get(tenant, () -> initializeSearcher(searchContext));
+				
 				if (heroProducts != null) {
 					parameters.heroProductSets = searchContext.heroProductHandler.resolve(heroProducts, searcher, searchContext);
 				}
@@ -279,7 +280,6 @@ public class SearchController implements SearchService {
 	private Searcher initializeSearcher(SearchContext searchContext) {
 		return new Searcher(esBuilder.getRestHLClient(), searchContext, registry, plugins);
 	}
-
 
 	@ExceptionHandler({ NotFoundException.class })
 	public ResponseEntity<ExceptionResponse> handleNotFoundException(NotFoundException e) {
