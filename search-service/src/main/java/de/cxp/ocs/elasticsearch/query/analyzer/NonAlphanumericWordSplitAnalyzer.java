@@ -3,6 +3,8 @@ package de.cxp.ocs.elasticsearch.query.analyzer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
+
 import de.cxp.ocs.elasticsearch.model.query.AnalyzedQuery;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.elasticsearch.model.query.MultiTermQuery;
@@ -19,9 +21,11 @@ import de.cxp.ocs.spi.search.UserQueryAnalyzer;
  */
 public class NonAlphanumericWordSplitAnalyzer implements UserQueryAnalyzer {
 
+	public static String BIND_CHARS = "-_.";
+
 	@Override
 	public ExtendedQuery analyze(String userQuery) {
-		List<QueryStringTerm> terms = toQueryStringWordList(userQuery.toLowerCase().trim().split("[^\\p{L}\\p{N}-_]+"));
+		List<QueryStringTerm> terms = toQueryStringWordList(userQuery.toLowerCase().trim().split("[^\\p{L}\\p{N}" + BIND_CHARS + "]+"));
 		if (terms.isEmpty()) {
 			return ExtendedQuery.MATCH_ALL;
 		}
@@ -32,6 +36,9 @@ public class NonAlphanumericWordSplitAnalyzer implements UserQueryAnalyzer {
 	public static List<QueryStringTerm> toQueryStringWordList(String[] words) {
 		List<QueryStringTerm> queryWords = new ArrayList<>(words.length);
 		for (String word : words) {
+			word = StringUtils.strip(word, BIND_CHARS);
+			if (word.isEmpty()) continue;
+
 			queryWords.add(new WeightedTerm(word));
 		}
 		return queryWords;

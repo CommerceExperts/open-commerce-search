@@ -367,6 +367,29 @@ public class QuerqyQueryExpanderTest {
 		assertEquals(Occur.MUST_NOT, term2.getOccur());
 	}
 
+	@Disabled("field filters should be passed as raw queries, but if part of a term rule, we can't handle that (yet?)")
+	@Test
+	public void testInvalidExcludeTermAndFieldCombined() {
+		QuerqyQueryExpander underTest = loadRule(
+				"input =>",
+				"  FILTER: -excl_term -field3:filter");
+		var analyzedQuery = analyze(underTest, "input");
+		List<QueryStringTerm> result = extractTerms(analyzedQuery);
+
+		assertEquals(3, result.size(), () -> result.toString());
+		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
+		assertEquals("input", term1.getRawTerm());
+
+		WeightedTerm term2 = assertAndCastInstanceOf(result.get(1), WeightedTerm.class);
+		assertEquals("excl_term", term2.getRawTerm());
+		assertEquals(Occur.MUST_NOT, term2.getOccur());
+
+		QueryFilterTerm term3 = assertAndCastInstanceOf(result.get(2), QueryFilterTerm.class);
+		assertEquals("field2", term3.getField());
+		assertEquals("filter", term3.getRawTerm());
+		assertEquals(Occur.MUST_NOT, term3.getOccur());
+	}
+
 	@Test
 	public void testExcludeCategoryPathFilter() {
 		// actually this is invalid lucene syntax, but in this context it's the only thing that makes sense
