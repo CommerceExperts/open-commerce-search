@@ -143,7 +143,7 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 		facet.setAbsoluteFacetCoverage(absDocCount);
 	}
 
-	private FacetEntry createIntervalFacetEntry(NumericFacetEntryBuilder currentValueInterval, NumberResultFilter selectedFilter, FacetConfig facetConfig,
+	protected FacetEntry createIntervalFacetEntry(NumericFacetEntryBuilder currentValueInterval, NumberResultFilter selectedFilter, FacetConfig facetConfig,
 			SearchQueryBuilder linkBuilder) {
 		boolean isSelected = selectedFilter != null
 				&& selectedFilter.getLowerBound().floatValue() == currentValueInterval.lowerBound.floatValue()
@@ -169,7 +169,7 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 	}
 
 	@NoArgsConstructor
-	private static class NumericFacetEntryBuilder {
+	protected static class NumericFacetEntryBuilder {
 
 		Number	lowerBound;
 		Number	upperBound;
