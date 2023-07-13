@@ -17,7 +17,7 @@
 	 first by setting the correct api version at src/main/resources/openapi-configuration.json
 	 then my running 'mvn process-sources -P sync-openapi-spec'
 	-->
-	<version>0.20.0</version>
+	<version>0.21.0</version>
 	<packaging>jar</packaging>
 
 	<description>An open and abstract search API that covers minimal search functionality</description>
