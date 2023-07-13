@@ -14,7 +14,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;

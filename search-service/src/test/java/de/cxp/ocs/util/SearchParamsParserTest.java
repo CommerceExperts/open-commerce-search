@@ -13,7 +13,7 @@ import java.util.Locale;
 import org.junit.jupiter.api.Test;
 
 import de.cxp.ocs.config.*;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.result.SortOrder;

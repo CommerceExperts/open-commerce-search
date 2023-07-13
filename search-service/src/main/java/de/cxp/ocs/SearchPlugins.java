@@ -1,7 +1,9 @@
 package de.cxp.ocs;
 
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.slf4j.MDC;
 
@@ -31,6 +33,8 @@ public class SearchPlugins {
 	private Map<String, Supplier<? extends RescorerProvider>> rescorers;
 
 	private Map<String, Supplier<? extends ProductSetResolver>> heroProductResolvers;
+
+	private Set<Supplier<? extends CustomFacetCreator>> customFacetCreators;
 
 	// use lazy loading to guarantee, that
 	// a) all suppliers are only loaded once
@@ -70,6 +74,18 @@ public class SearchPlugins {
 			heroProductResolvers = loadSuppliers(ProductSetResolver.class);
 		}
 		return heroProductResolvers;
+	}
+
+	public Set<Supplier<? extends CustomFacetCreator>> getFacetCreators() {
+		if (customFacetCreators == null) {
+			Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreatorsMap = loadSuppliers(CustomFacetCreator.class);
+			// fetch each supplier once
+			customFacetCreators = customFacetCreatorsMap.entrySet().stream()
+					// filter by canonical name since it's unique and we should not have any duplicates
+					.filter(entry -> entry.getKey().contains("."))
+					.map(Entry::getValue).collect(Collectors.toSet());
+		}
+		return customFacetCreators;
 	}
 
 	private <T> Map<String, Supplier<? extends T>> loadSuppliers(Class<T> clazz) {

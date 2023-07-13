@@ -4,6 +4,7 @@ import java.util.Locale;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import lombok.Data;
 import lombok.experimental.Accessors;
 

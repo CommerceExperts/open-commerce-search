@@ -15,7 +15,7 @@ import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldUsage;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;

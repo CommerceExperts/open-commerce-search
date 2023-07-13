@@ -2,6 +2,7 @@ package de.cxp.ocs.elasticsearch.query.filter;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;

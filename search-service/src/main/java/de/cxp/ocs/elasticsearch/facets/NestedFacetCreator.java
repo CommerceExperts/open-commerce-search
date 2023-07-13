@@ -21,8 +21,8 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.util.SearchQueryBuilder;
 import lombok.NonNull;

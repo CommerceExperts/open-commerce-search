@@ -136,7 +136,7 @@ public class Searcher {
 		queryParser = new QueryStringParser(searchContext.userQueryPreprocessors, userQueryAnalyzer, fieldIndex, config.getLocale());
 
 		sortingHandler = new SortingHandler(fieldIndex, config.getSortConfigs());
-		facetApplier = new FacetConfigurationApplyer(searchContext);
+		facetApplier = new FacetConfigurationApplyer(searchContext, plugins.getFacetCreators());
 		filtersBuilder = new FiltersBuilder(searchContext);
 		scoringCreator = new ScoringCreator(searchContext);
 		spellCorrector = initSpellCorrection();
