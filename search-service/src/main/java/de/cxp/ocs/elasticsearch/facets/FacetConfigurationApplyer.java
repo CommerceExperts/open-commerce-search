@@ -74,11 +74,11 @@ public class FacetConfigurationApplyer {
 	public Map<String, FacetConfig> loadFacetConfig(SearchContext context, Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreators) {
 		Map<String, FacetConfig> _facetsBySourceField = new HashMap<>();
 
-		FacetCreatorInitializer creatorInit = new FacetCreatorInitializer(customFacetCreators, context, defaultTermFacetConfigProvider, defaultNumberFacetConfigProvider);
+		FacetCreatorInitializer creatorInit = new FacetCreatorInitializer(customFacetCreators, context.config, defaultTermFacetConfigProvider, defaultNumberFacetConfigProvider);
 
 		// put facet configs into according maps
 		for (FacetConfig facetConfig : context.config.getFacetConfiguration().getFacets()) {
-			
+
 			Optional<Field> sourceField = context.getFieldConfigIndex().getField(facetConfig.getSourceField());
 
 			// TODO: make this general with FacetCreatorFactory
@@ -93,12 +93,11 @@ public class FacetConfigurationApplyer {
 				// log.info("For facet with type INDEX_NAME an artificial source field name has to be defined, that is
 				// usable for filtering. Automatically choosed name '{}'", );
 				// }
-				
+
 				_facetsBySourceField.put(facetConfig.getSourceField(), facetConfig);
 				facetCreators.add(new IndexNameFacetCreator(facetConfig));
 				continue;
 			}
-
 
 			if (!sourceField.isPresent()) {
 				log.warn("facet {} configured for field {}, but that field does not exist. Facet won't be created",
@@ -132,17 +131,21 @@ public class FacetConfigurationApplyer {
 		List<FacetCreator> variantFacetCreators = new ArrayList<>();
 		for (Entry<FacetCreatorClassifier, FacetCreator> fcEntry : facetCreatorsByTypes.entrySet()) {
 			if (fcEntry.getKey().onVariantLevel) {
-				variantFacetCreators.add(fcEntry.getValue());
+				if (fcEntry.getValue() instanceof VariantFacetCreator) {
+					variantFacetCreators.addAll(((VariantFacetCreator) fcEntry.getValue()).getInnerCreators());
+				}
+				else {
+					variantFacetCreators.add(fcEntry.getValue());
+				}
 			}
 			else {
 				facetCreators.add(fcEntry.getValue());
 			}
 		}
 		facetCreators.add(new VariantFacetCreator(variantFacetCreators));
-		
+
 		return Collections.unmodifiableMap(_facetsBySourceField);
 	}
-
 
 	private Function<String, FacetConfig> getDefaultFacetConfigProvider(FacetConfig defaultFacetConf) {
 		if (defaultFacetConf.equals(new FacetConfig())) {
@@ -163,8 +166,6 @@ public class FacetConfigurationApplyer {
 				.setMinFacetCoverage(defaultFacetConf.getMinFacetCoverage())
 				.setMinValueCount(defaultFacetConf.getMinValueCount());
 	}
-
-
 
 	private FacetType getDefaultFacetType(FieldType type) {
 		switch (type) {

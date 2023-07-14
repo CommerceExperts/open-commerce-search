@@ -1,13 +1,6 @@
 package de.cxp.ocs.elasticsearch.facets;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 import org.elasticsearch.index.query.QueryBuilder;
@@ -25,6 +18,8 @@ import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.util.SearchQueryBuilder;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -46,9 +41,11 @@ public abstract class NestedFacetCreator implements FacetCreator {
 	@Setter
 	private String uniqueAggregationName = this.getClass().getSimpleName() + "Aggregation";
 
+	@Getter(value = AccessLevel.PACKAGE)
 	private final Map<String, FacetConfig> facetConfigs;
 	private final Function<String, FacetConfig>	defaultFacetConfigProvider;
 
+	@Getter(value = AccessLevel.PACKAGE)
 	@Setter
 	@NonNull
 	private Set<String> generalExcludedFields = Collections.emptySet();

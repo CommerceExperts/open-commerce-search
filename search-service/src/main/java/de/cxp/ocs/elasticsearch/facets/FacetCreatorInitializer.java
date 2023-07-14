@@ -13,11 +13,11 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldType;
+import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.spi.search.CustomFacetCreator;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -29,26 +29,31 @@ class FacetCreatorInitializer {
 	@NonNull
 	private final Map<String, Supplier<? extends CustomFacetCreator>>	customFacetCreators;
 	@NonNull
-	private final SearchContext											context;
-	@NonNull
 	private final Function<String, FacetConfig>							defaultTermFacetConfigProvider;
 	private final Function<String, FacetConfig>							defaultNumberFacetConfigProvider;
 
 	private final int													maxFacets;
+	private final Locale	locale;
 
-	public FacetCreatorInitializer(Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreators, SearchContext context, Function<String, FacetConfig> defaultTermFacetConfigProvider, Function<String, FacetConfig> defaultNumberFacetConfigProvider) {
+	public FacetCreatorInitializer(Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreators, SearchConfiguration config, Function<String, FacetConfig> defaultTermFacetConfigProvider, Function<String, FacetConfig> defaultNumberFacetConfigProvider) {
 		this.customFacetCreators = customFacetCreators;
-		this.context = context;
 		this.defaultTermFacetConfigProvider = defaultTermFacetConfigProvider;
 		this.defaultNumberFacetConfigProvider = defaultNumberFacetConfigProvider;
-		maxFacets = context.getConfig().getFacetConfiguration().getMaxFacets();
+		maxFacets = config.getFacetConfiguration().getMaxFacets();
+		locale = config.getLocale();
+	}
+
+	public FacetCreatorInitializer(Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreators, Function<String, FacetConfig> defaultTermFacetConfigProvider, Function<String, FacetConfig> defaultNumberFacetConfigProvider, Locale locale, int maxFacets) {
+		this.customFacetCreators = customFacetCreators;
+		this.defaultTermFacetConfigProvider = defaultTermFacetConfigProvider;
+		this.defaultNumberFacetConfigProvider = defaultNumberFacetConfigProvider;
+		this.maxFacets = maxFacets;
+		this.locale = locale;
 	}
 
 
 	@RequiredArgsConstructor
 	private class ConfigCollector {
-
-		private final FieldType type;
 
 		Map<String, FacetConfig>	standardConfigs	= new HashMap<>();
 		Map<String, FacetConfig>	customConfigs	= new HashMap<>();
@@ -117,7 +122,7 @@ class FacetCreatorInitializer {
 	}
 
 	private void _addValidatedFacet(Field facetField, boolean variant, FacetConfig facetConfig, Function<ConfigCollector, Map<String, FacetConfig>> collectorTargetMap) {
-		ConfigCollector configCollector = collectedConfigs.computeIfAbsent(new FacetCreatorClassifier(variant, facetConfig.getType()), k -> new ConfigCollector(facetField.getType()));
+		ConfigCollector configCollector = collectedConfigs.computeIfAbsent(new FacetCreatorClassifier(variant, facetConfig.getType()), k -> new ConfigCollector());
 		collectorTargetMap.apply(configCollector).put(facetField.getName(), facetConfig);
 	}
 
@@ -154,7 +159,6 @@ class FacetCreatorInitializer {
 		categoryFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(ignoredFields, FieldType.CATEGORY));
 		facetCreatorsByTypes.put(hierarchicalFacet, categoryFacetCreator);
 
-		Locale locale = context.config.getLocale();
 		NestedFacetCreator masterTermFacetCreator = new TermFacetCreator(getStandardConfigs(masterTermFacet), defaultTermFacetConfigProvider, locale)
 				.setMaxFacets(maxFacets);
 		masterTermFacetCreator.setGeneralExcludedFields(getNamesOfMatchingFields(ignoredFields, FieldType.STRING));
