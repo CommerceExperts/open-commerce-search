@@ -124,7 +124,7 @@ public class FacetConfigurationApplyer {
 				}
 			}
 
-			creatorInit.addFacet(null, facetConfig);
+			creatorInit.addFacet(facetField, facetConfig);
 		}
 
 		facetCreatorsByTypes.putAll(creatorInit.init());
