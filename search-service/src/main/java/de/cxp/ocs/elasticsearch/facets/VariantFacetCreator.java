@@ -1,10 +1,6 @@
 package de.cxp.ocs.elasticsearch.facets;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -17,9 +13,12 @@ import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.util.SearchQueryBuilder;
+import lombok.AccessLevel;
+import lombok.Getter;
 
 public class VariantFacetCreator implements FacetCreator {
 
+	@Getter(value = AccessLevel.PACKAGE)
 	private final Collection<FacetCreator> innerCreators;
 
 	public VariantFacetCreator(Collection<FacetCreator> creators) {

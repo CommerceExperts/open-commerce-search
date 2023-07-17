@@ -63,6 +63,7 @@ import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.TraceOptions.TraceFlag;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -136,7 +137,7 @@ public class Searcher {
 		queryParser = new QueryStringParser(searchContext.userQueryPreprocessors, userQueryAnalyzer, fieldIndex, config.getLocale());
 
 		sortingHandler = new SortingHandler(fieldIndex, config.getSortConfigs());
-		facetApplier = new FacetConfigurationApplyer(searchContext);
+		facetApplier = new FacetConfigurationApplyer(searchContext, plugins.getFacetCreators());
 		filtersBuilder = new FiltersBuilder(searchContext);
 		scoringCreator = new ScoringCreator(searchContext);
 		spellCorrector = initSpellCorrection();
@@ -241,6 +242,9 @@ public class Searcher {
 
 			if (log.isTraceEnabled()) {
 				log.trace(QUERY_MARKER, "{ \"user_query\": \"{}\", \"query\": {} }", parameters.userQuery, searchSourceBuilder.toString().replaceAll("[\n\\s]+", " "));
+			}
+			if (parameters.trace.isSet(TraceFlag.EsQuery)) {
+				searchMetaData.put("elasticsearch_query", searchSourceBuilder.toString());
 			}
 
 			searchResponse = executeSearchRequest(searchSourceBuilder);

@@ -11,10 +11,10 @@ import org.elasticsearch.search.SearchHit;
 
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.config.FieldConstants;
+import de.cxp.ocs.config.SearchConfiguration.ProductSetType;
 import de.cxp.ocs.elasticsearch.Searcher;
 import de.cxp.ocs.elasticsearch.mapper.ResultMapper;
 import de.cxp.ocs.elasticsearch.mapper.VariantPickingStrategy;
-import de.cxp.ocs.model.params.DynamicProductSet;
 import de.cxp.ocs.model.params.ProductSet;
 import de.cxp.ocs.model.params.StaticProductSet;
 import de.cxp.ocs.model.result.ResultHit;
@@ -53,10 +53,13 @@ public class HeroProductHandler {
 	public static String QUERY_NAME_PREFIX = "hero-product-set-";
 
 	@NonNull
-	private final static Map<String, ProductSetResolver> resolvers = new HashMap<>(2);
-	static {
-		resolvers.put(new DynamicProductSet().type, new DynamicProductSetResolver());
-		resolvers.put(new StaticProductSet().type, new StaticProductSetResolver());
+	private final Map<ProductSetType, ProductSetResolver> resolvers;
+
+	public HeroProductHandler(Map<ProductSetType, ProductSetResolver> productSetResolvers) {
+		resolvers = new EnumMap<>(ProductSetType.class);
+		resolvers.put(ProductSetType.Dynamic, Optional.ofNullable(productSetResolvers.get(ProductSetType.Dynamic)).orElseGet(DynamicProductSetResolver::new));
+		resolvers.put(ProductSetType.Static, Optional.ofNullable(productSetResolvers.get(ProductSetType.Static)).orElseGet(StaticProductSetResolver::new));
+		resolvers.put(ProductSetType.Generic, Optional.ofNullable(productSetResolvers.get(ProductSetType.Generic)).orElseGet(NoopProductSetResolver::new));
 	}
 
 	/**
@@ -72,29 +75,36 @@ public class HeroProductHandler {
 	 *        context
 	 * @return array of resolved product sets
 	 */
-	public static StaticProductSet[] resolve(ProductSet[] productSets, Searcher searcher, SearchContext searchContext) {
+	public StaticProductSet[] resolve(ProductSet[] productSets, Searcher searcher, SearchContext searchContext) {
 		StaticProductSet[] resolvedSets = new StaticProductSet[productSets.length];
 		int nextPos = 0;
 		Set<String> foundIds = new HashSet<String>(Arrays.stream(productSets).mapToInt(ProductSet::getSize).sum());
 		for (ProductSet set : productSets) {
 			int position = nextPos++;
 
-			final ProductSetResolver resolver = resolvers.get(set.getType());
+			final ProductSetResolver resolver = resolvers.get(ProductSetType.fromString(set.getType()));
 
 			if (resolver == null) {
 				log.error("No resolver found for product set type '{}'", set.getType());
 				resolvedSets[position] = new StaticProductSet().setIds(new String[0]).setName(set.getName());
 			}
-			// only run async, if there are more than 1 sets
-			else if (resolver.runAsync() && productSets.length > 1) {
-				resolvedSets[position] = resolver.resolve(set, foundIds, searcher, searchContext);
-				foundIds.addAll(Arrays.asList(resolvedSets[position].getIds()));
-			}
+			// dropped support for async resolving, because it may put unnecessary concurrent load on Elasticsearch from
+			// a single request and cause a DOS effect
+			// else if (resolver.runAsync() && productSets.length > 1) {
+			// List<CompletableFuture<Void>> futures = new ArrayList<>();
+			// CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+			// resolvedSets[position] = resolver.resolve(set, foundIds, searcher, searchContext);
+			// foundIds.addAll(Arrays.asList(resolvedSets[position].getIds()));
+			// });
+			// }
 			else {
 				resolvedSets[position] = resolver.resolve(set, foundIds, searcher, searchContext);
 				foundIds.addAll(Arrays.asList(resolvedSets[position].getIds()));
 			}
 		}
+
+		// Disabled async resolver support
+		// CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).get(1, TimeUnit.SECONDS);
 
 		return resolvedSets;
 	}

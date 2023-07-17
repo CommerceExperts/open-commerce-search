@@ -71,6 +71,13 @@ public class NonAlphanumericStripPreprocessorTest {
 	}
 
 	@Test
+	public void testEuropeanSpecialCharacters() {
+		for (String query : new String[] { "Boîte à outils", "búsqueda", "Šport a voľný čas", "megkönnyíthetjük" }) {
+			assertEquals(query.toLowerCase(), underTest.preProcess(query));
+		}
+	}
+
+	@Test
 	public void testDimensionsSeparatorX() {
 		assertEquals("12x34", underTest.preProcess("12x34"));
 	}

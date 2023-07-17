@@ -6,10 +6,10 @@ import java.util.stream.Collectors;
 import org.apache.lucene.search.BooleanClause.Occur;
 
 import de.cxp.ocs.config.FieldConfigIndex;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.elasticsearch.model.term.QueryFilterTerm;
 import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import de.cxp.ocs.util.InternalSearchParams;
