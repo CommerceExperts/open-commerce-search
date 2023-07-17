@@ -56,6 +56,8 @@ public class InternalSearchParams {
 
 	public Set<String> excludedIds;
 
+	public TraceOptions trace;
+
 	public InternalSearchParams withSorting(Sorting sorting) {
 		sortings.add(sorting);
 		return this;

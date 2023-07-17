@@ -57,6 +57,8 @@ public class SearchParamsParser {
 			parameters.includeMainResult = ((ArrangedSearchQuery) searchQuery).includeMainResult;
 		}
 
+		parameters.trace = Optional.ofNullable(parameters.customParams.get("trace")).map(TraceOptions::parse).orElse(TraceOptions.OFF);
+
 		return parameters;
 	}
 

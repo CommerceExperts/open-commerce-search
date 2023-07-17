@@ -43,6 +43,7 @@ import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.NotFoundException;
+import de.cxp.ocs.util.TraceOptions.TraceFlag;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -163,6 +164,11 @@ public class SearchController implements SearchService {
 				SearchContext searchContext = searchContexts.computeIfAbsent(tenant, searchContextLoader::loadContext);
 
 				final InternalSearchParams parameters = extractInternalParams(searchQuery, filters, searchContext);
+
+				if (parameters.trace.isSet(TraceFlag.Request)) {
+					log.info("called search through method={} with searchQuery={}, filters={} and productSet={}",
+							Thread.currentThread().getStackTrace()[2].getMethodName(), searchQuery, filters, heroProducts);
+				}
 
 				final Searcher searcher = searchClientCache.get(tenant, () -> initializeSearcher(searchContext));
 				
