@@ -20,7 +20,6 @@ import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.spi.search.CustomFacetCreator;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -52,15 +51,9 @@ class FacetCreatorInitializer {
 	}
 
 
-	@RequiredArgsConstructor
-	private class ConfigCollector {
-
-		Map<String, FacetConfig>	standardConfigs	= new HashMap<>();
-		Map<String, FacetConfig>	customConfigs	= new HashMap<>();
-	}
-
-	Map<FacetCreatorClassifier, ConfigCollector>	collectedConfigs	= new HashMap<>();
-	Set<Field>									ignoredFields		= new HashSet<>();
+	Map<FacetCreatorClassifier, Map<String, FacetConfig>>	collectedConfigs	= new HashMap<>();
+	Set<String>										customTypes			= new HashSet<>();
+	Set<Field>										ignoredFields		= new HashSet<>();
 
 	void addFacet(Field field, FacetConfig facetConfig) {
 
@@ -103,27 +96,24 @@ class FacetCreatorInitializer {
 		}
 	}
 
+	private void addValidatedCustomFacet(Field facetField, FacetConfig facetConfig) {
+		customTypes.add(facetConfig.getType());
+		addValidatedFacet(facetField, facetConfig);
+	}
+
 	private void addValidatedFacet(Field facetField, FacetConfig facetConfig) {
 		if (facetField.isVariantLevel()) {
-			_addValidatedFacet(facetField, true, facetConfig, c -> c.standardConfigs);
+			_addValidatedFacet(facetField, true, facetConfig);
 		}
 		if (facetField.isMasterLevel()) {
-			_addValidatedFacet(facetField, false, facetConfig, c -> c.standardConfigs);
+			_addValidatedFacet(facetField, false, facetConfig);
 		}
 	}
 
-	private void addValidatedCustomFacet(Field facetField, FacetConfig facetConfig) {
-		if (facetField.isVariantLevel()) {
-			_addValidatedFacet(facetField, true, facetConfig, c -> c.customConfigs);
-		}
-		if (facetField.isMasterLevel()) {
-			_addValidatedFacet(facetField, false, facetConfig, c -> c.customConfigs);
-		}
-	}
-
-	private void _addValidatedFacet(Field facetField, boolean variant, FacetConfig facetConfig, Function<ConfigCollector, Map<String, FacetConfig>> collectorTargetMap) {
-		ConfigCollector configCollector = collectedConfigs.computeIfAbsent(new FacetCreatorClassifier(variant, facetConfig.getType()), k -> new ConfigCollector());
-		collectorTargetMap.apply(configCollector).put(facetField.getName(), facetConfig);
+	private void _addValidatedFacet(Field facetField, boolean variant, FacetConfig facetConfig) {
+		FacetCreatorClassifier classifier = new FacetCreatorClassifier(variant, facetConfig.getType());
+		Map<String, FacetConfig> configCollector = collectedConfigs.computeIfAbsent(classifier, k -> new HashMap<>());
+		configCollector.put(facetField.getName(), facetConfig);
 	}
 
 	private FacetType getDefaultFacetType(FieldType type) {
@@ -180,7 +170,7 @@ class FacetCreatorInitializer {
 	}
 
 	private Map<String, FacetConfig> getStandardConfigs(FacetCreatorClassifier type) {
-		return Optional.ofNullable(collectedConfigs.get(type)).map(cc -> cc.standardConfigs).orElse(Collections.emptyMap());
+		return Optional.ofNullable(collectedConfigs.get(type)).orElse(Collections.emptyMap());
 	}
 
 	/**
