@@ -81,6 +81,6 @@ interface ImportApi {
 	@Headers("Content-Type: application/json")
 	Map<String, Result> putProducts(@Param("indexName") String indexName, @Param("replaceExisting") Boolean replaceExisting,  @Param("langCode") String langCode, List<Product> prod);
 
-	@RequestLine("DELETE /indexer-api/v1/update/{indexName}")
+	@RequestLine("DELETE /indexer-api/v1/update/{indexName}?id={id}")
 	Map<String, Result> deleteDocuments(@Param("indexName") String indexName, @Param("id") List<String> id);
 }
