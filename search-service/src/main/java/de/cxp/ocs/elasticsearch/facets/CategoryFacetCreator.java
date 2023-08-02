@@ -166,10 +166,12 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		if (facetFilter.getValues().length > 0) {
 			if (facetFilter.isFilterOnId()) {
 				for (String idFilter : facetFilter.getValues()) {
-					if ((idFilter.charAt(0) == PATH_SEPARATOR && category.idPathString.equals(idFilter))
-							|| category.id.equals(idFilter)) {
-						isSelectedPath = true;
-						break;
+					if(category != null) {
+						if ((idFilter.charAt(0) == PATH_SEPARATOR && category.idPathString != null && category.idPathString.equals(idFilter))
+								|| (category.id != null && category.id.equals(idFilter))) {
+							isSelectedPath = true;
+							break;
+						}
 					}
 				}
 			}
