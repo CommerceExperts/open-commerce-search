@@ -1,6 +1,5 @@
 package de.cxp.ocs.smartsuggest.updater;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
@@ -78,7 +77,7 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 		}
 	}
 
-	private void update() throws IOException {
+	private void update() throws Exception {
 		if (lastUpdate == null && !dataProvider.hasData(indexName)) {
 			throw new IllegalStateException("dataprovider " + dataProvider.getClass().getSimpleName()
 					+ " has no data for index " + indexName);
@@ -86,9 +85,13 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 
 		long remoteModTimeMs = dataProvider.getLastDataModTime(indexName);
 		if (remoteModTimeMs < 0) {
-			throw new IllegalStateException("dataprovider " + dataProvider.getClass().getSimpleName()
-					+ " states to have data for index " + indexName
-					+ " but lastModTime was " + remoteModTimeMs);
+			if (lastUpdate != null) {
+				throw new Exception("dataprovider " + dataProvider.getClass().getSimpleName() + " seems unavailable at the moment");
+			} else {
+				throw new IllegalStateException("dataprovider " + dataProvider.getClass().getSimpleName()
+						+ " states to have data for index " + indexName
+						+ " but lastModTime was " + remoteModTimeMs);
+			}
 		}
 
 		Instant remoteModTime = Instant.ofEpochMilli(remoteModTimeMs);
