@@ -55,4 +55,16 @@ public interface CustomFacetCreator {
 	 * @return facet if it can be created otherwise an empty optional.
 	 */
 	Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, LinkBuilder linkBuilder);
+
+	/**
+	 * In case such a custom facet should be created on a field that is indexed on variant and master level, two facets
+	 * are created and should be merged.
+	 * If that is not possible feel free to log an error and return Optional.empty or just one of those facets.
+	 * 
+	 * @param first
+	 * @param second
+	 * @return
+	 */
+	Optional<Facet> mergeFacets(Facet first, Facet second);
+
 }

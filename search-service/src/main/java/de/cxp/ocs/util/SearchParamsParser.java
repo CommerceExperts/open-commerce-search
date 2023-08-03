@@ -1,8 +1,8 @@
 package de.cxp.ocs.util;
 
-import static de.cxp.ocs.util.SearchQueryBuilder.SORT_DESC_PREFIX;
-import static de.cxp.ocs.util.SearchQueryBuilder.VALUE_DELIMITER;
-import static de.cxp.ocs.util.SearchQueryBuilder.VALUE_DELIMITER_ENCODED;
+import static de.cxp.ocs.util.DefaultLinkBuilder.SORT_DESC_PREFIX;
+import static de.cxp.ocs.util.DefaultLinkBuilder.VALUE_DELIMITER;
+import static de.cxp.ocs.util.DefaultLinkBuilder.VALUE_DELIMITER_ENCODED;
 import static org.apache.commons.lang3.StringUtils.replace;
 import static org.apache.commons.lang3.StringUtils.split;
 import static org.apache.commons.lang3.StringUtils.splitPreserveAllTokens;

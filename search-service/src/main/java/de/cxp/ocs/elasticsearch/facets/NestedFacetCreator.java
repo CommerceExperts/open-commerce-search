@@ -17,7 +17,7 @@ import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.model.result.Facet;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.DefaultLinkBuilder;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
@@ -70,7 +70,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 
 	protected abstract boolean isMatchingFilterType(InternalResultFilter internalResultFilter);
 
-	protected abstract Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, SearchQueryBuilder linkBuilder);
+	protected abstract Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, DefaultLinkBuilder linkBuilder);
 
 	@Override
 	public AggregationBuilder buildAggregation() {
@@ -153,7 +153,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 	}
 
 	@Override
-	public Collection<Facet> createFacets(Aggregations aggResult, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
+	public Collection<Facet> createFacets(Aggregations aggResult, FilterContext filterContext, DefaultLinkBuilder linkBuilder) {
 		ParsedFilter filtersAgg = ((Nested) aggResult.get(uniqueAggregationName)).getAggregations().get(FILTERED_AGG);
 		if (filtersAgg == null) return Collections.emptyList();
 
@@ -163,7 +163,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 		return extractedFacets;
 	}
 
-	protected List<Facet> extractFacets(Terms facetNames, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
+	protected List<Facet> extractFacets(Terms facetNames, FilterContext filterContext, DefaultLinkBuilder linkBuilder) {
 		List<Facet> facets = new ArrayList<>();
 		for (Terms.Bucket facetNameBucket : facetNames.getBuckets()) {
 			String facetName = facetNameBucket.getKeyAsString();

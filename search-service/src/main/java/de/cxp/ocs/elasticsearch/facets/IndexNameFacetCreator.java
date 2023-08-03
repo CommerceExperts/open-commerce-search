@@ -15,7 +15,7 @@ import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.DefaultLinkBuilder;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -41,7 +41,7 @@ public class IndexNameFacetCreator implements FacetCreator {
 	}
 
 	@Override
-	public Collection<Facet> createFacets(Aggregations aggResult, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
+	public Collection<Facet> createFacets(Aggregations aggResult, FilterContext filterContext, DefaultLinkBuilder linkBuilder) {
 		Terms indexTermAggResult = aggResult.get("_indexes");
 		if (indexTermAggResult == null) return Collections.emptyList();
 		
