@@ -398,6 +398,9 @@ public class QuerySuggestManager implements AutoCloseable {
 		if (removedSuggester != null) {
 			removedSuggester.destroy();	
 		}
+		// remove last (?) reference and suggest garbage collection
+		removedSuggester = null;
+		System.gc();
 	}
 
 	/**

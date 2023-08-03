@@ -65,6 +65,10 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 					indexName, unrecoverableEx.getClass().getSimpleName(), unrecoverableEx.getMessage());
 			throw unrecoverableEx;
 		}
+		catch (InterruptedException interrupt) {
+			log.info("Updates for index {} interrupted. Stopping Updater now.", indexName);
+			throw new RuntimeException(interrupt);
+		}
 		catch (Throwable e) {
 			updateFailCount++;
 			log.warn("update failed for index {}: {}",
