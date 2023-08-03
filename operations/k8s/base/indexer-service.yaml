@@ -38,3 +38,11 @@ spec:
             memory: 3256Mi
           requests:
             memory: 3256Mi
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8535
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8535

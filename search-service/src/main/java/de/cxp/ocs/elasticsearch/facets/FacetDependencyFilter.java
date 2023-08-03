@@ -10,11 +10,11 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
 import de.cxp.ocs.model.result.Facet;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.DefaultLinkBuilder;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -165,7 +165,7 @@ public class FacetDependencyFilter implements FacetFilter {
 				log.warn("dropping invalid filter dependency {}", rawFilter);
 				continue;
 			}
-			String[] filterValueSplit = StringUtils.split(filterPair[1], SearchQueryBuilder.VALUE_DELIMITER);
+			String[] filterValueSplit = StringUtils.split(filterPair[1], DefaultLinkBuilder.VALUE_DELIMITER);
 			Set<String> filterValues = new HashSet<String>(filterValueSplit.length);
 			for (String filterValueRaw : filterValueSplit) {
 				filterValues.add(decode(filterValueRaw).toLowerCase(Locale.ROOT));

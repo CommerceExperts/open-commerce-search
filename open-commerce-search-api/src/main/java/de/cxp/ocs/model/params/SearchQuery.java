@@ -2,6 +2,7 @@ package de.cxp.ocs.model.params;
 
 import javax.validation.constraints.Min;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
@@ -24,12 +25,8 @@ public class SearchQuery {
 	/**
 	 * the user query.
 	 */
+	@Schema(description = "the user query", example = "blue shirt")
 	public String q;
-
-	public SearchQuery setUserQuery(String userQuery) {
-		q = userQuery;
-		return this;
-	}
 
 	/**
 	 * <p>
@@ -45,12 +42,18 @@ public class SearchQuery {
 	 * <li>sort=price,-name (price asc and name descending)</li>
 	 * </ul>
 	 */
+	@Schema(description = "Full sorting parameter value. This is the name of the sorting and "
+			+ "optionally a dash as prefix, thats means the sorting should be "
+			+ "descending. Several sorting criterion can be defined by separating the "
+			+ "values using comma.", example = "sort=price,-name (price asc and name descending)")
 	public String sort;
 
 	@Min(1)
+	@Schema(description = "The amount of products to return in the result")
 	public int limit = 12;
 
 	@Min(0)
+	@Schema(description = "The amount of products to omit from the whole result to select the returned results.")
 	public int offset = 0;
 
 	/**
@@ -58,6 +61,8 @@ public class SearchQuery {
 	 * Should be set to false in case only the next batch of hits is requested
 	 * (e.g. for endless scrolling).
 	 */
+	@Schema(description = "flag to specify if facets should be returned with the requested response. "
+			+ "Should be set to false in case only the next batch of hits is requested (e.g. for endless scrolling).")
 	public boolean withFacets = true;
 
 	public String asUri() {

@@ -120,6 +120,43 @@ public class IndexItemConverterTest {
 		assertTrue(result.getTermFacetData().isEmpty());
 	}
 
+	@Test
+	public void textFieldUsedForSorting() {
+		underTest = new IndexItemConverter(new FieldConfigIndex(new FieldConfiguration()
+				.addField(new Field("title").setUsage(FieldUsage.SORT).setType(FieldType.STRING))));
+
+		{
+			IndexableItem result = underTest.toIndexableItem(new Document("1").set("title", "a"));
+			assertEquals("a", ((MinMaxSet<?>) result.getSortData().get("title")).min());
+			assertEquals("a", ((MinMaxSet<?>) result.getSortData().get("title")).max());
+		}
+
+		{
+			IndexableItem result = underTest.toIndexableItem(new Document("2").set("title", "a", "b"));
+			assertEquals("a", ((MinMaxSet<?>) result.getSortData().get("title")).min());
+			assertEquals("b", ((MinMaxSet<?>) result.getSortData().get("title")).max());
+		}
+	}
+
+	@Test
+	public void textMultipleFieldsMappedIntoSameSortingField() {
+		underTest = new IndexItemConverter(new FieldConfigIndex(new FieldConfiguration().addField(
+				new Field("title").addSourceName("name").setUsage(FieldUsage.SORT).setType(FieldType.STRING))));
+
+		{
+			IndexableItem result = underTest.toIndexableItem(new Document("1").set("title", "a").set("name", "apple"));
+			assertEquals("a", ((MinMaxSet<?>) result.getSortData().get("title")).min());
+			assertEquals("apple", ((MinMaxSet<?>) result.getSortData().get("title")).max());
+		}
+
+		{
+			IndexableItem result = underTest
+					.toIndexableItem(new Document("2").set("title", "a", "b").set("name", "apple", "banana"));
+			assertEquals("a", ((MinMaxSet<?>) result.getSortData().get("title")).min());
+			assertEquals("banana", ((MinMaxSet<?>) result.getSortData().get("title")).max());
+		}
+	}
+
 	@SuppressWarnings("unchecked")
 	@Test
 	public void sourceNamesConsidered() {

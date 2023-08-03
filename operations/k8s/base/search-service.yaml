@@ -50,3 +50,11 @@ spec:
           value: "elastic:$(ES_AUTH_PW)"
         - name: JAVA_OPTS
           value: "-XX:MaxRAMPercentage=90.0"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8534
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8534

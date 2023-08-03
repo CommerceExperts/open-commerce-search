@@ -52,6 +52,9 @@ public class SuggestProperties {
 	public SuggestConfig getDefaultSuggestConfig() {
 		SuggestConfig defaultConfig = new SuggestConfig();
 
+		defaultConfig.setPrefetchLimitFactor(getGroupingPrefetchLimitFactor());
+		defaultConfig.setUseDataSourceMerger(useDataSourceMerger());
+
 		getGroupKey().ifPresent(defaultConfig::setGroupKey);
 
 		Optional<LinkedHashMap<String, Double>> groupedShareConf = getGroupedShareConf();
@@ -175,6 +178,25 @@ public class SuggestProperties {
 
 	/**
 	 * <p>
+	 * If several suggest-data-providers are used, they are indexed into separate indexes by default. This option
+	 * activates a merging logic, so that all provided data is merged into one index.
+	 * </p>
+	 * <p>
+	 * This could reduce load and improve performance since a single Lucene suggester is asked for results.
+	 * However in such a case the weights should be in a similar range to avoid a proper ranking.
+	 * </p>
+	 * Default: false
+	 * 
+	 * @return
+	 */
+	public boolean useDataSourceMerger() {
+		return getVarValue("SUGGEST_DATA_SOURCE_MERGER")
+				.map(Boolean::parseBoolean)
+				.orElse(false);
+	}
+
+	/**
+	 * <p>
 	 * Expects the env var 'SUGGEST_GROUP_KEY' to be set to a string value. If
 	 * set, it will
 	 * be used to extract that particular payload value and group the
@@ -209,6 +231,22 @@ public class SuggestProperties {
 	public Optional<LinkedHashMap<String, Double>> getGroupedShareConf() {
 		return getVarValue("SUGGEST_GROUP_SHARE_CONF")
 				.map(rawConf -> toLinkedHashMap(rawConf, Double::parseDouble));
+	}
+
+	/**
+	 * <p>
+	 * If grouping and limiting is configured by a key that comes from a single or merged data-provider, then this value
+	 * can be used to increase the internal amount of fetched suggestions.
+	 * This is usable to increase the likeliness to get the desired group counts.
+	 * </p>
+	 * Default: 1
+	 * 
+	 * @return
+	 */
+	public Integer getGroupingPrefetchLimitFactor() {
+		return getVarValue("SUGGEST_GROUP_PREFETCH_LIMIT_FACTOR")
+				.map(Integer::parseInt)
+				.orElse(1);
 	}
 
 	/**

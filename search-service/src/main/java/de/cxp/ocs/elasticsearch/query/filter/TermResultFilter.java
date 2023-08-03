@@ -4,6 +4,7 @@ import java.util.Locale;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -18,7 +19,10 @@ public class TermResultFilter implements InternalResultFilter {
 
 	private final String[] values;
 
-	private boolean filterOnId = false;
+	private boolean isFilterOnId = false;
+
+	private boolean isNegated = false;
+
 
 	private String fieldPrefix = FieldConstants.TERM_FACET_DATA;
 

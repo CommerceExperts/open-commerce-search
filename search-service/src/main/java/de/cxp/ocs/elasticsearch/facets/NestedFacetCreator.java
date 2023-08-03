@@ -1,13 +1,6 @@
 package de.cxp.ocs.elasticsearch.facets;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 import org.elasticsearch.index.query.QueryBuilder;
@@ -21,10 +14,12 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.model.result.Facet;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.DefaultLinkBuilder;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -46,9 +41,11 @@ public abstract class NestedFacetCreator implements FacetCreator {
 	@Setter
 	private String uniqueAggregationName = this.getClass().getSimpleName() + "Aggregation";
 
+	@Getter(value = AccessLevel.PACKAGE)
 	private final Map<String, FacetConfig> facetConfigs;
 	private final Function<String, FacetConfig>	defaultFacetConfigProvider;
 
+	@Getter(value = AccessLevel.PACKAGE)
 	@Setter
 	@NonNull
 	private Set<String> generalExcludedFields = Collections.emptySet();
@@ -73,7 +70,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 
 	protected abstract boolean isMatchingFilterType(InternalResultFilter internalResultFilter);
 
-	protected abstract Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, SearchQueryBuilder linkBuilder);
+	protected abstract Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, DefaultLinkBuilder linkBuilder);
 
 	@Override
 	public AggregationBuilder buildAggregation() {
@@ -156,7 +153,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 	}
 
 	@Override
-	public Collection<Facet> createFacets(Aggregations aggResult, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
+	public Collection<Facet> createFacets(Aggregations aggResult, FilterContext filterContext, DefaultLinkBuilder linkBuilder) {
 		ParsedFilter filtersAgg = ((Nested) aggResult.get(uniqueAggregationName)).getAggregations().get(FILTERED_AGG);
 		if (filtersAgg == null) return Collections.emptyList();
 
@@ -166,7 +163,7 @@ public abstract class NestedFacetCreator implements FacetCreator {
 		return extractedFacets;
 	}
 
-	protected List<Facet> extractFacets(Terms facetNames, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
+	protected List<Facet> extractFacets(Terms facetNames, FilterContext filterContext, DefaultLinkBuilder linkBuilder) {
 		List<Facet> facets = new ArrayList<>();
 		for (Terms.Bucket facetNameBucket : facetNames.getBuckets()) {
 			String facetName = facetNameBucket.getKeyAsString();

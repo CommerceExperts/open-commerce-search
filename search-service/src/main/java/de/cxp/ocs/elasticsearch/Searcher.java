@@ -2,11 +2,12 @@ package de.cxp.ocs.elasticsearch;
 
 import static de.cxp.ocs.config.FieldConstants.RESULT_DATA;
 import static de.cxp.ocs.config.FieldConstants.VARIANTS;
-import static de.cxp.ocs.util.SearchParamsParser.parseFilters;
 
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nullable;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.StopWatch;
@@ -30,6 +31,8 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
+import com.google.common.collect.Iterators;
+
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.SearchPlugins;
 import de.cxp.ocs.config.*;
@@ -37,18 +40,19 @@ import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.elasticsearch.facets.FacetConfigurationApplyer;
 import de.cxp.ocs.elasticsearch.mapper.ResultMapper;
 import de.cxp.ocs.elasticsearch.mapper.VariantPickingStrategy;
+import de.cxp.ocs.elasticsearch.model.query.AnalyzedQuery;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
+import de.cxp.ocs.elasticsearch.model.term.AssociatedTerm;
 import de.cxp.ocs.elasticsearch.prodset.HeroProductHandler;
+import de.cxp.ocs.elasticsearch.prodset.HeroProductsQuery;
 import de.cxp.ocs.elasticsearch.query.FiltersBuilder;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
 import de.cxp.ocs.elasticsearch.query.analyzer.WhitespaceAnalyzer;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries;
 import de.cxp.ocs.elasticsearch.query.builder.ESQueryFactoryBuilder;
+import de.cxp.ocs.elasticsearch.query.builder.EnforcedSpellCorrectionQueryFactory;
 import de.cxp.ocs.elasticsearch.query.builder.MatchAllQueryFactory;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
-import de.cxp.ocs.elasticsearch.query.model.QueryFilterTerm;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
-import de.cxp.ocs.elasticsearch.query.model.WordAssociation;
 import de.cxp.ocs.model.params.ProductSet;
 import de.cxp.ocs.model.result.ResultHit;
 import de.cxp.ocs.model.result.SearchResult;
@@ -56,10 +60,10 @@ import de.cxp.ocs.model.result.SearchResultSlice;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import de.cxp.ocs.spi.search.RescorerProvider;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
-import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.InternalSearchParams;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.DefaultLinkBuilder;
+import de.cxp.ocs.util.TraceOptions.TraceFlag;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -85,8 +89,7 @@ public class Searcher {
 	@NonNull
 	private final FieldConfigIndex fieldIndex;
 
-	private final List<UserQueryPreprocessor>	userQueryPreprocessors;
-	private final UserQueryAnalyzer				userQueryAnalyzer;
+	private final QueryStringParser queryParser;
 
 	private final FacetConfigurationApplyer facetApplier;
 
@@ -129,12 +132,12 @@ public class Searcher {
 				.register(registry);
 
 		String queryAnalyzerClazz = config.getQueryProcessing().getUserQueryAnalyzer();
-		userQueryAnalyzer = SearchPlugins.initialize(queryAnalyzerClazz, plugins.getUserQueryAnalyzers(), config.getPluginConfiguration().get(queryAnalyzerClazz))
+		UserQueryAnalyzer userQueryAnalyzer = SearchPlugins.initialize(queryAnalyzerClazz, plugins.getUserQueryAnalyzers(), config.getPluginConfiguration().get(queryAnalyzerClazz))
 				.orElseGet(WhitespaceAnalyzer::new);
-		userQueryPreprocessors = searchContext.userQueryPreprocessors;
+		queryParser = new QueryStringParser(searchContext.userQueryPreprocessors, userQueryAnalyzer, fieldIndex, config.getLocale());
 
 		sortingHandler = new SortingHandler(fieldIndex, config.getSortConfigs());
-		facetApplier = new FacetConfigurationApplyer(searchContext);
+		facetApplier = new FacetConfigurationApplyer(searchContext, plugins.getFacetCreators());
 		filtersBuilder = new FiltersBuilder(searchContext);
 		scoringCreator = new ScoringCreator(searchContext);
 		spellCorrector = initSpellCorrection();
@@ -168,73 +171,46 @@ public class Searcher {
 
 	public SearchResult find(InternalSearchParams parameters) throws IOException {
 		Sample findTimerSample = Timer.start(Clock.SYSTEM);
-		Iterator<ESQueryFactory> stagedQueryBuilders;
-		List<QueryStringTerm> searchWords;
+		Map<String, Object> searchMetaData = new HashMap<>();
 
-		String preprocessedQuery = null;
-		if (!parameters.includeMainResult) {
-			stagedQueryBuilders = Collections.<ESQueryFactory> singletonList(new MatchAllQueryFactory()).iterator();
-			searchWords = Collections.emptyList();
-		}
-		else if (parameters.userQuery != null && !parameters.userQuery.isEmpty()) {
-			preprocessedQuery = parameters.userQuery;
-			for (UserQueryPreprocessor preprocessor : userQueryPreprocessors) {
-				preprocessedQuery = preprocessor.preProcess(preprocessedQuery);
-			}
+		ExtendedQuery parsedQuery = queryParser.preprocessQuery(parameters, searchMetaData);
+		boolean isInvalidUserQuery = parsedQuery.isEmpty() && parameters.getUserQuery() != null && !parameters.getUserQuery().isBlank();
 
-			searchWords = userQueryAnalyzer.analyze(preprocessedQuery);
-			searchWords = handleFiltersOnFields(parameters, searchWords);
+		Iterator<ESQueryFactory> stagedQueryBuildersIterator = initializeStageQueryBuilders(parameters, parsedQuery, isInvalidUserQuery);
 
-			stagedQueryBuilders = queryBuilder.getMatchingFactories(searchWords);
-		}
-		else {
-			stagedQueryBuilders = Collections.<ESQueryFactory> singletonList(new MatchAllQueryFactory()).iterator();
-			searchWords = Collections.emptyList();
-		}
+		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters, parameters.inducedFilters, parameters.withFacets);
+		List<SortBuilder<?>> variantSortings = sortingHandler.getVariantSortings(parameters.sortings);
 
-		SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource().size(parameters.limit)
-				.from(parameters.offset);
-
-		List<SortBuilder<?>> variantSortings = sortingHandler.applySorting(parameters.sortings, searchSourceBuilder);
-
-		if (searchSourceBuilder.sorts() == null || searchSourceBuilder.sorts().isEmpty()) {
-			addRescorersFailsafe(parameters, searchSourceBuilder);
-		}
-
-		setFetchSources(searchSourceBuilder, variantSortings, parameters.withResultData);
-
-		FilterContext filterContext = filtersBuilder.buildFilterContext(parameters.filters, parameters.querqyFilters);
-
-		QueryBuilder postFilter = filterContext.getJoinedPostFilters();
-		if (postFilter != null) {
-			searchSourceBuilder.postFilter(postFilter);
-		}
-
-		if (parameters.isWithFacets()) {
-			List<AggregationBuilder> aggregators = facetApplier.buildAggregators(filterContext);
-			if (aggregators != null && aggregators.size() > 0) {
-				aggregators.forEach(searchSourceBuilder::aggregation);
-			}
-		}
-
-		// TODO: add a cache to pick the correct query for known search terms
+		SearchSourceBuilder searchSourceBuilder = buildBasicSearchSourceBuilder(parameters, filterContext, variantSortings);
 
 		// staged search: try each query builder until we get a result
 		// + try and use spell correction with first query
+		SearchResponse searchResponse = stagedSearch(parameters, parsedQuery, filterContext, variantSortings, searchSourceBuilder, stagedQueryBuildersIterator, searchMetaData);
+
+		SearchResult searchResult = buildResult(parameters, filterContext, searchResponse);
+		searchResult.getMeta().putAll(searchMetaData);
+
+		findTimerSample.stop(findTimer);
+
+		return searchResult;
+	}
+
+	private SearchResponse stagedSearch(InternalSearchParams parameters, ExtendedQuery parsedQuery, FilterContext filterContext, List<SortBuilder<?>> variantSortings, SearchSourceBuilder searchSourceBuilder, Iterator<ESQueryFactory> stagedQueryBuildersIterator,
+			Map<String, Object> searchMetaData) throws IOException {
 		int i = 0;
 		SearchResponse searchResponse = null;
-		Map<String, WordAssociation> correctedWords = null;
+		Map<String, AssociatedTerm> correctedWords = null;
 		Sample sqbSample = Timer.start(registry);
 
-		Optional<QueryBuilder> heroProductsQuery = HeroProductHandler.getHeroQuery(parameters);
+		Optional<HeroProductsQuery> heroProductsQuery = HeroProductHandler.getHeroQuery(parameters);
 		boolean isResultSufficient = false;
-		while ((searchResponse == null || !isResultSufficient) && stagedQueryBuilders.hasNext()) {
+		while ((searchResponse == null || !isResultSufficient) && stagedQueryBuildersIterator.hasNext()) {
 			StopWatch sw = new StopWatch();
 			sw.start();
 			Sample inputWordsSample = Timer.start(registry);
-			ESQueryFactory stagedQueryBuilder = stagedQueryBuilders.next();
+			ESQueryFactory stagedQueryBuilder = stagedQueryBuildersIterator.next();
 
-			MasterVariantQuery searchQuery = stagedQueryBuilder.createQuery(searchWords);
+			MasterVariantQuery searchQuery = stagedQueryBuilder.createQuery(parsedQuery);
 			if (log.isTraceEnabled()) {
 				log.trace("query nr {}: {}: match query = {}", i, stagedQueryBuilder.getName(),
 						searchQuery == null ? "NULL"
@@ -249,7 +225,7 @@ public class Searcher {
 
 			if (correctedWords == null && spellCorrector != null
 					&& stagedQueryBuilder.allowParallelSpellcheckExecution()
-					&& (!searchQuery.isWithSpellCorrection() || stagedQueryBuilders.hasNext())) {
+					&& (!searchQuery.isWithSpellCorrection() || stagedQueryBuildersIterator.hasNext())) {
 				searchSourceBuilder.suggest(spellCorrector.buildSpellCorrectionQuery(parameters.userQuery));
 			}
 			else {
@@ -262,10 +238,13 @@ public class Searcher {
 				searchQuery.setMasterLevelQuery(masterLevelQueryWithExcludes);
 			}
 
-			searchSourceBuilder.query(buildFinalQuery(searchQuery, heroProductsQuery, filterContext, variantSortings));
+			searchSourceBuilder.query(buildFinalQuery(searchQuery, heroProductsQuery.orElse(null), filterContext, variantSortings));
 
 			if (log.isTraceEnabled()) {
 				log.trace(QUERY_MARKER, "{ \"user_query\": \"{}\", \"query\": {} }", parameters.userQuery, searchSourceBuilder.toString().replaceAll("[\n\\s]+", " "));
+			}
+			if (parameters.trace.isSet(TraceFlag.EsQuery)) {
+				searchMetaData.put("elasticsearch_query", searchSourceBuilder.toString());
 			}
 
 			searchResponse = executeSearchRequest(searchSourceBuilder);
@@ -282,21 +261,25 @@ public class Searcher {
 			// words, then enrich the search words with the corrected words
 			if (!isResultSufficient && correctedWords == null && spellCorrector != null && searchResponse.getSuggest() != null) {
 				Sample correctedWordsSample = Timer.start(registry);
-				correctedWords = spellCorrector.extractRelatedWords(searchWords, searchResponse.getSuggest());
+				correctedWords = spellCorrector.extractRelatedWords(searchResponse.getSuggest());
 				if (correctedWords.size() > 0) {
-					searchWords = SpellCorrector.toListWithAllTerms(searchWords, correctedWords);
+					AnalyzedQuery queryWithCorrections = SpellCorrector.toListWithAllTerms(parsedQuery.getSearchQuery(), correctedWords);
+					parsedQuery = new ExtendedQuery(queryWithCorrections, parsedQuery.getFilters());
+					searchMetaData.put("query_corrected", parsedQuery.getSearchQuery().toQueryString());
 				}
 
 				// if the current query builder didn't take corrected words into
 				// account, then try again with corrected words
 				if (correctedWords.size() > 0 && !searchQuery.isWithSpellCorrection()) {
-					searchQuery = stagedQueryBuilder.createQuery(searchWords);
-					searchSourceBuilder
-							.query(buildFinalQuery(searchQuery, heroProductsQuery, filterContext, variantSortings));
+					searchQuery = stagedQueryBuilder.createQuery(parsedQuery);
+					searchSourceBuilder.query(buildFinalQuery(searchQuery, heroProductsQuery.orElse(null), filterContext, variantSortings));
 					searchResponse = executeSearchRequest(searchSourceBuilder);
+					searchMetaData.put("query_correction", correctedWordsSample);
 				}
 				correctedWordsSample.stop(correctedWordsTimer);
 			}
+			searchMetaData.put("query_executed", searchQuery.getMasterLevelQuery().queryName());
+			searchMetaData.put("query_stage", Optional.ofNullable(parameters.customParams.get("query_stage")).map(Integer::parseInt).orElse(i));
 
 			if (!isResultSufficient && searchQuery.isAcceptNoResult()) {
 				break;
@@ -304,19 +287,72 @@ public class Searcher {
 
 			i++;
 		}
+		summary.record(i);
 		sqbSample.stop(sqbTimer);
+		return searchResponse;
+	}
 
-		SearchResult searchResult = buildResult(parameters, filterContext, searchResponse);
+	private Iterator<ESQueryFactory> initializeStageQueryBuilders(InternalSearchParams parameters, ExtendedQuery parsedQuery, boolean isInvalidUserQuery) {
+		Iterator<ESQueryFactory> stagedQueryBuildersIterator;
+		if (parsedQuery.isEmpty()) {
+			if (isInvalidUserQuery && parsedQuery.getFilters().isEmpty()) {
+				stagedQueryBuildersIterator = Collections.emptyIterator();
+			}
+			else {
+				stagedQueryBuildersIterator = Collections.<ESQueryFactory> singletonList(new MatchAllQueryFactory()).iterator();
+			}
+		}
+		else {
+			List<ESQueryFactory> stagedQueryBuilders = queryBuilder.getMatchingFactories(parsedQuery);
+			// TODO: add a cache to pick the correct query for known search terms
+			int queryStage = Optional.ofNullable(parameters.customParams.get("query_stage")).map(Integer::parseInt).orElse(-1);
+			if (queryStage >= 0 && queryStage < stagedQueryBuilders.size()) {
+				ESQueryFactory singleQueryStage = stagedQueryBuilders.get(queryStage);
 
-		if (preprocessedQuery != null) {
-			searchResult.meta.put("preprocessedQuery", preprocessedQuery);
-			searchResult.meta.put("analyzedQuery", StringUtils.join(searchWords));
+				// if we jump to a stage > 0 it is possible that we hit a stage that used corrected queries via the
+				// spell-check request from a previous stage. This is checked here and enforced for that stage as well.
+				// FIXME: It can still happen, that the uncorrected queries have enough hits and a different result is
+				// returned than before.
+				for (int i = 0; i < queryStage; i++) {
+					if (stagedQueryBuilders.get(i).allowParallelSpellcheckExecution()) {
+						singleQueryStage = new EnforcedSpellCorrectionQueryFactory(singleQueryStage);
+						break;
+					}
+				}
+
+				log.info("Jumping to query stage {} with parallel spellcheck {}", queryStage, singleQueryStage instanceof EnforcedSpellCorrectionQueryFactory ? "enabled" : "disabled");
+				stagedQueryBuildersIterator = Iterators.singletonIterator(singleQueryStage);
+			}
+			else {
+				stagedQueryBuildersIterator = stagedQueryBuilders.iterator();
+			}
+		}
+		return stagedQueryBuildersIterator;
+	}
+
+	private SearchSourceBuilder buildBasicSearchSourceBuilder(InternalSearchParams parameters, FilterContext filterContext, List<SortBuilder<?>> variantSortings) {
+		SearchSourceBuilder searchSourceBuilder = SearchSourceBuilder.searchSource().size(parameters.limit)
+				.from(parameters.offset);
+		sortingHandler.applySorting(parameters.sortings, searchSourceBuilder);
+
+		if (searchSourceBuilder.sorts() == null || searchSourceBuilder.sorts().isEmpty()) {
+			addRescorersFailsafe(parameters, searchSourceBuilder);
 		}
 
-		summary.record(i);
-		findTimerSample.stop(findTimer);
+		setFetchSources(searchSourceBuilder, variantSortings, parameters.withResultData);
 
-		return searchResult;
+		QueryBuilder postFilter = filterContext.getJoinedPostFilters();
+		if (postFilter != null) {
+			searchSourceBuilder.postFilter(postFilter);
+		}
+
+		if (parameters.isWithFacets()) {
+			List<AggregationBuilder> aggregators = facetApplier.buildAggregators(filterContext);
+			if (aggregators != null && aggregators.size() > 0) {
+				aggregators.forEach(searchSourceBuilder::aggregation);
+			}
+		}
+		return searchSourceBuilder;
 	}
 
 	private boolean isResultSufficient(SearchResponse searchResponse, InternalSearchParams parameters) {
@@ -364,37 +400,6 @@ public class Searcher {
 		}
 
 		return foundNonHeroProduct;
-	}
-
-	/**
-	 * For simple word filters the returned searchWords are used
-	 * For any special Querqy style filtering they are put into the parameters object
-	 * @param parameters
-	 * @param searchWords
-	 * @return
-	 */
-	private List<QueryStringTerm> handleFiltersOnFields(InternalSearchParams parameters, List<QueryStringTerm> searchWords) {
-		// Pull all QueryFilterTerm items into a list of its own
-		List<QueryStringTerm> remainingSearchWords = new ArrayList<>();
-
-		Map<String, String> filtersAsMap = searchWords.stream()
-			.filter(searchWord -> searchWord instanceof QueryFilterTerm || !remainingSearchWords.add(searchWord))
-			// Generate the filters and add them
-			.map(term -> (QueryFilterTerm) term)
-			// TODO: support exclude filters
-			.collect(Collectors.toMap(QueryFilterTerm::getField, QueryFilterTerm::getWord, (word1, word2) -> word1));
-
-		parameters.querqyFilters = convertFiltersMapToInternalResultFilters(filtersAsMap);
-
-		return remainingSearchWords;
-	}
-
-	private List<InternalResultFilter> convertFiltersMapToInternalResultFilters(Map<String, String> additionalFilters) {
-		List<InternalResultFilter> convertedFilters = new ArrayList<>();
-		for (String key : additionalFilters.keySet()) {
-			convertedFilters = parseFilters(Collections.singletonMap(key, additionalFilters.get(key)), fieldIndex, config.getLocale());
-		}
-		return convertedFilters;
 	}
 
 	private void addRescorersFailsafe(InternalSearchParams parameters, SearchSourceBuilder searchSourceBuilder) {
@@ -448,7 +453,7 @@ public class Searcher {
 			int heroWindowSize = maxWindowSize;
 			HeroProductHandler.getHeroQuery(parameters)
 					.ifPresent(heroQuery -> searchSourceBuilder.addRescorer(
-							new QueryRescorerBuilder(heroQuery)
+							new QueryRescorerBuilder(heroQuery.getMainQuery())
 									.windowSize(heroWindowSize)
 									.setQueryWeight(1)
 									.setRescoreQueryWeight(heroRescoreWeight)));
@@ -459,7 +464,7 @@ public class Searcher {
 		Sample sample = Timer.start(registry);
 		SearchResponse searchResponse;
 		{
-			SearchRequest searchRequest = new SearchRequest(config.getIndexName())
+			SearchRequest searchRequest = new SearchRequest(StringUtils.split(config.getIndexName(), ','))
 					.searchType(SearchType.QUERY_THEN_FETCH).source(searchSourceBuilder);
 			searchResponse = restClient.search(searchRequest, RequestOptions.DEFAULT);
 		}
@@ -468,13 +473,15 @@ public class Searcher {
 	}
 
 	private SearchResult buildResult(InternalSearchParams parameters, FilterContext filterContext, SearchResponse searchResponse) {
-		SearchQueryBuilder linkBuilder = new SearchQueryBuilder(parameters);
+		DefaultLinkBuilder linkBuilder = new DefaultLinkBuilder(parameters);
 		SearchResult searchResult = new SearchResult();
-		searchResult.inputURI = SearchQueryBuilder.toLink(parameters).toString();
+		searchResult.inputURI = DefaultLinkBuilder.toLink(parameters).toString();
 		searchResult.slices = new ArrayList<>(1);
+		searchResult.sortOptions = sortingHandler.buildSortOptions(linkBuilder);
+		searchResult.meta = new HashMap<>();
 
-		resultTimer.record(() -> {
-			if (searchResponse != null) {
+		if (searchResponse != null) {
+			resultTimer.record(() -> {
 				Set<String> heroIds;
 				if (parameters.heroProductSets != null) {
 					heroIds = HeroProductHandler.extractSlices(searchResponse, parameters, searchResult, variantPickingStrategy);
@@ -490,11 +497,18 @@ public class Searcher {
 					}
 					searchResultSlice.label = "main";
 					searchResult.slices.add(searchResultSlice);
-				}
-			}
-		});
-		searchResult.sortOptions = sortingHandler.buildSortOptions(linkBuilder);
-		searchResult.meta = new HashMap<>();
+					}
+			});
+		}
+		else {
+			searchResult.slices.add(new SearchResultSlice()
+					.setLabel("main")
+					.setMatchCount(0)
+					.setResultLink(DefaultLinkBuilder.toLink(parameters).toString())
+					.setHits(Collections.emptyList())
+					.setFacets(Collections.emptyList()));
+			searchResult.meta.put("error", "invalid user query");
+		}
 
 		return searchResult;
 	}
@@ -515,10 +529,10 @@ public class Searcher {
 		}
 	}
 
-	private QueryBuilder buildFinalQuery(MasterVariantQuery searchQuery, Optional<QueryBuilder> heroProductsQuery,
-			FilterContext filterContext,
-			List<SortBuilder<?>> variantSortings) {
-		QueryBuilder masterLevelQuery = searchQuery.getMasterLevelQuery(); // ESQueryUtils.mergeQueries(,
+	private QueryBuilder buildFinalQuery(MasterVariantQuery searchQuery, @Nullable
+	HeroProductsQuery heroProductsQuery,
+			FilterContext filterContext, List<SortBuilder<?>> variantSortings) {
+		QueryBuilder masterLevelQuery = searchQuery.getMasterLevelQuery();
 
 		FilterFunctionBuilder[] masterScoringFunctions = scoringCreator.getScoringFunctions(false);
 		if (masterScoringFunctions.length > 0) {
@@ -545,10 +559,19 @@ public class Searcher {
 			variantsOnlyFiltered = false;
 		}
 
+		if (heroProductsQuery != null) {
+			variantsMatchQuery = heroProductsQuery.applyToVariantQuery(variantsMatchQuery);
+			if (variantsMatchQuery != null) {
+				variantsOnlyFiltered = false;
+			}
+		}
+
 		FilterFunctionBuilder[] variantScoringFunctions = variantSortings.isEmpty() ? scoringCreator.getScoringFunctions(true) : new FilterFunctionBuilder[0];
 		if (variantScoringFunctions.length > 0) {
 			if (variantsMatchQuery == null) variantsMatchQuery = QueryBuilders.matchAllQuery();
-			variantsMatchQuery = QueryBuilders.functionScoreQuery(variantsMatchQuery, variantScoringFunctions);
+			variantsMatchQuery = QueryBuilders.functionScoreQuery(variantsMatchQuery, variantScoringFunctions)
+					.boostMode(scoringCreator.getBoostMode())
+					.scoreMode(scoringCreator.getScoreMode());
 			variantsOnlyFiltered = false;
 		}
 
@@ -562,14 +585,9 @@ public class Searcher {
 			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).should(variantQuery);
 			isRetrieveVariantInnerHits = true;
 		}
-		
+
 		// add hero products without the impact of the "natural query"
-		if (heroProductsQuery.isPresent()) {
-			masterLevelQuery = QueryBuilders.disMaxQuery()
-					.add(heroProductsQuery.get())
-					.add(masterLevelQuery)
-					.tieBreaker(0f);
-		}
+		masterLevelQuery = heroProductsQuery != null ? heroProductsQuery.applyToMasterQuery(masterLevelQuery) : masterLevelQuery;
 
 		// add filters on top of main-query + hero-products
 		QueryBuilder masterFilterQuery = filterContext.getJoinedBasicFilters().getMasterLevelQuery();
@@ -589,6 +607,11 @@ public class Searcher {
 
 		if (variantPickingStrategy.isAllVariantHitCountRequired() && isRetrieveVariantInnerHits) {
 			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).should(getAllVariantInnerHits());
+		}
+		else if (VariantPickingStrategy.pickAlways.equals(variantPickingStrategy) && !isRetrieveVariantInnerHits) {
+			NestedQueryBuilder variantQuery = QueryBuilders.nestedQuery(FieldConstants.VARIANTS, QueryBuilders.matchAllQuery(), ScoreMode.None)
+					.innerHit(getVariantInnerHits(variantSortings));
+			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).should(variantQuery);
 		}
 
 		return masterLevelQuery;
@@ -614,8 +637,8 @@ public class Searcher {
 		SearchResultSlice srSlice = new SearchResultSlice();
 		// XXX think about building parameters according to the actual performed
 		// search (e.g. with relaxed query or with implicit set filters)
-		srSlice.resultLink = SearchQueryBuilder.toLink(parameters).toString();
-		srSlice.matchCount = searchHits.getTotalHits().value;
+		srSlice.resultLink = DefaultLinkBuilder.toLink(parameters).toString();
+		srSlice.matchCount = searchHits.getTotalHits().value - heroIds.size();
 
 		Map<String, SortOrder> sortedFields = sortingHandler.getSortedNumericFields(parameters);
 
@@ -627,7 +650,10 @@ public class Searcher {
 		for (int i = 0; i < searchHits.getHits().length; i++) {
 			SearchHit hit = searchHits.getHits()[i];
 			if (!heroIds.contains(hit.getId())) {
-				ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields, preferVariantHit ? VariantPickingStrategy.pickAlways : variantPickingStrategy);
+				ResultHit resultHit = ResultMapper.mapSearchHit(hit, sortedFields, preferVariantHit ? VariantPickingStrategy.pickAlways : variantPickingStrategy)
+						.withMetaData("score", hit.getScore())
+						.withMetaData("sort_values", hit.getSortValues())
+						.withMetaData("version", hit.getVersion());
 				resultHits.add(resultHit);
 			}
 		}

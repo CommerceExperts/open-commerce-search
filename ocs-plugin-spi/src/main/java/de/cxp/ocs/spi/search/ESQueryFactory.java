@@ -1,12 +1,11 @@
 package de.cxp.ocs.spi.search;
 
-import java.util.List;
 import java.util.Map;
 
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.QueryBuildingSetting;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 
 /**
  * <p>
@@ -20,7 +19,7 @@ public interface ESQueryFactory {
 
 	void initialize(String name, Map<QueryBuildingSetting, String> settings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig);
 
-	MasterVariantQuery createQuery(List<QueryStringTerm> searchWords);
+	MasterVariantQuery createQuery(ExtendedQuery parsedQuery);
 
 	boolean allowParallelSpellcheckExecution();
 

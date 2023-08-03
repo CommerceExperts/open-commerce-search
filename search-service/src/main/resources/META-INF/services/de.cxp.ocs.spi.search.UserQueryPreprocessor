@@ -1,1 +1,2 @@
 de.cxp.ocs.elasticsearch.query.AsciifyUserQueryPreprocessor
+de.cxp.ocs.elasticsearch.query.CodePointFilterUserQueryPreprocessor

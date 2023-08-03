@@ -1,6 +1,5 @@
 package de.cxp.ocs.smartsuggest.updater;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
@@ -33,6 +32,8 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 
 	@NonNull
 	private final SuggestConfigProvider configProvider;
+
+	private final SuggestConfig defaultSuggestConfig;
 
 	@NonNull
 	private final String indexName;
@@ -76,7 +77,7 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 		}
 	}
 
-	private void update() throws IOException {
+	private void update() throws Exception {
 		if (lastUpdate == null && !dataProvider.hasData(indexName)) {
 			throw new IllegalStateException("dataprovider " + dataProvider.getClass().getSimpleName()
 					+ " has no data for index " + indexName);
@@ -84,9 +85,13 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 
 		long remoteModTimeMs = dataProvider.getLastDataModTime(indexName);
 		if (remoteModTimeMs < 0) {
-			throw new IllegalStateException("dataprovider " + dataProvider.getClass().getSimpleName()
-					+ " states to have data for index " + indexName
-					+ " but lastModTime was " + remoteModTimeMs);
+			if (lastUpdate != null) {
+				throw new Exception("dataprovider " + dataProvider.getClass().getSimpleName() + " seems unavailable at the moment");
+			} else {
+				throw new IllegalStateException("dataprovider " + dataProvider.getClass().getSimpleName()
+						+ " states to have data for index " + indexName
+						+ " but lastModTime was " + remoteModTimeMs);
+			}
 		}
 
 		Instant remoteModTime = Instant.ofEpochMilli(remoteModTimeMs);
@@ -112,7 +117,7 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 			log.info("Received data for index {} with {} records", indexName,
 					suggestData.getSuggestRecords() instanceof Collection ? ((Collection<?>) suggestData.getSuggestRecords()).size() : "?");
 
-			SuggestConfig suggestConfig = configProvider.getConfig(indexName);
+			SuggestConfig suggestConfig = configProvider.getConfig(indexName, defaultSuggestConfig);
 			long startIndexation = System.currentTimeMillis();
 			QuerySuggester querySuggester = factory.getSuggester(suggestData, suggestConfig);
 			final long count = querySuggester.recordCount();

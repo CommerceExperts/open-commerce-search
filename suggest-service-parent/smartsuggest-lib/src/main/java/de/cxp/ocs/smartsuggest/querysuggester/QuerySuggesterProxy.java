@@ -3,11 +3,7 @@ package de.cxp.ocs.smartsuggest.querysuggester;
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -40,6 +36,7 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 	private final int						cacheLetterLength	= Integer.getInteger("CACHE_LETTER_LENGTH", 3);
 	private Cache<String, List<Suggestion>>	firstLetterCache	= CacheBuilder.newBuilder()
 			.maximumSize(Long.getLong("CACHE_MAX_SIZE", 10_000L))
+			.recordStats()
 			.build();
 
 	private CacheStats	cacheStats;

@@ -14,12 +14,12 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.IntervalFacetEntry;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.DefaultLinkBuilder;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -36,6 +36,13 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 	@Setter
 	private int interval = 5;
 
+	/**
+	 * Set to true, if this facet creator should only be used to create the configured facets. This should remain false
+	 * for a default facet creator.
+	 */
+	@Setter
+	private boolean isExplicitFacetCreator = false;
+
 	public IntervalFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider) {
 		super(facetConfigs, defaultFacetConfigProvider);
 	}
@@ -47,7 +54,7 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 
 	@Override
 	protected boolean onlyFetchAggregationsForConfiguredFacets() {
-		return false;
+		return isExplicitFacetCreator;
 	}
 
 	@Override
@@ -71,9 +78,9 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 
 	@Override
 	protected Optional<Facet> createFacet(Terms.Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter,
-			SearchQueryBuilder linkBuilder) {
+			DefaultLinkBuilder linkBuilder) {
 		Facet facet = FacetFactory.create(facetConfig, FacetType.INTERVAL);
-		if (facetFilter != null && facetFilter instanceof NumberResultFilter) {
+		if (facetFilter != null && !facetFilter.isNegated() && facetFilter instanceof NumberResultFilter) {
 			if (!facetConfig.isMultiSelect() && !facetConfig.isShowUnselectedOptions()) {
 				// filtered single select facet
 				long docCount = getDocCount(facetNameBucket);
@@ -110,7 +117,7 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 		return absFacetCoverage;
 	}
 
-	private void fillFacet(Terms.Bucket facetNameBucket, Facet facet, FacetConfig facetConfig, SearchQueryBuilder linkBuilder, NumberResultFilter selectedFilter) {
+	private void fillFacet(Terms.Bucket facetNameBucket, Facet facet, FacetConfig facetConfig, DefaultLinkBuilder linkBuilder, NumberResultFilter selectedFilter) {
 		Histogram facetValues = ((Histogram) facetNameBucket.getAggregations().get(FACET_VALUES_AGG));
 		List<? extends Bucket> valueBuckets = facetValues.getBuckets();
 
@@ -144,7 +151,7 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 	}
 
 	protected FacetEntry createIntervalFacetEntry(NumericFacetEntryBuilder currentValueInterval, NumberResultFilter selectedFilter, FacetConfig facetConfig,
-			SearchQueryBuilder linkBuilder) {
+			DefaultLinkBuilder linkBuilder) {
 		boolean isSelected = selectedFilter != null
 				&& selectedFilter.getLowerBound().floatValue() == currentValueInterval.lowerBound.floatValue()
 				&& selectedFilter.getUpperBound().floatValue() == currentValueInterval.upperBound.floatValue();

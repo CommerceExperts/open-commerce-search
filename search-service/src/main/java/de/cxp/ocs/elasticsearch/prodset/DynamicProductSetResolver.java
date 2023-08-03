@@ -3,6 +3,7 @@ package de.cxp.ocs.elasticsearch.prodset;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 
 import de.cxp.ocs.SearchContext;
@@ -20,24 +21,26 @@ public class DynamicProductSetResolver implements ProductSetResolver {
 
 	@Override
 	public StaticProductSet resolve(ProductSet dynamicProductSet, Set<String> excludedIds, Searcher searcher, SearchContext searchContext) {
-		DynamicProductSet productSet = (DynamicProductSet) dynamicProductSet;
+		DynamicProductSet dynamicSet = (DynamicProductSet) dynamicProductSet;
 
 		SearchQuery searchQuery = new SearchQuery();
-		searchQuery.q = productSet.query;
-		searchQuery.sort = productSet.sort;
-		searchQuery.limit = productSet.limit;
+		searchQuery.q = dynamicSet.query;
+		searchQuery.sort = dynamicSet.sort;
+		searchQuery.limit = dynamicSet.limit;
 		searchQuery.withFacets = false;
 
 		InternalSearchParams productSetParams = SearchParamsParser.extractInternalParams(
 				searchQuery,
-				productSet.filters == null ? Collections.emptyMap() : productSet.filters,
+				dynamicSet.filters == null ? Collections.emptyMap() : dynamicSet.filters,
 				searchContext);
 		productSetParams.excludedIds = excludedIds;
 		productSetParams.setWithResultData(false);
 
 		// TODO: add caching
-		StaticProductSet resolved = search(dynamicProductSet, searcher, productSetParams);
-		return resolved;
+		StaticProductSet resolvedSet = search(dynamicProductSet, searcher, productSetParams);
+		resolvedSet.setAsSeparateSlice(dynamicSet.asSeparateSlice);
+		resolvedSet.setVariantBoostTerms(Optional.ofNullable(dynamicSet.getVariantBoostTerms()).orElse(dynamicSet.query));
+		return resolvedSet;
 	}
 
 	private StaticProductSet search(ProductSet dynamicProductSet, Searcher searcher, InternalSearchParams productSetParams) {

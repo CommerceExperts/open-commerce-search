@@ -1,6 +1,5 @@
 package de.cxp.ocs.elasticsearch.query.builder;
 
-import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.common.unit.Fuzziness;
@@ -12,10 +11,9 @@ import org.elasticsearch.index.query.QueryStringQueryBuilder;
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.QueryBuildingSetting;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.spi.search.ESQueryFactory;
-import de.cxp.ocs.util.ESQueryUtils;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -47,21 +45,21 @@ public class DefaultQueryFactory implements ESQueryFactory {
 	}
 
 	@Override
-	public MasterVariantQuery createQuery(List<QueryStringTerm> searchTerms) {
+	public MasterVariantQuery createQuery(ExtendedQuery parsedQuery) {
 		QueryStringQueryBuilder mainQuery = QueryBuilders
-				.queryStringQuery(ESQueryUtils.buildQueryString(searchTerms, " "))
+				.queryStringQuery(parsedQuery.toQueryString())
 				.defaultField(FieldConstants.SEARCH_DATA + ".*")
 				.analyzer("standard")
 				.fuzziness(Fuzziness.AUTO)
 				.minimumShouldMatch("2<80%")
 				.tieBreaker(0.8f)
-				.type(searchTerms.size() == 1 ? Type.BEST_FIELDS : Type.CROSS_FIELDS)
+				.type(parsedQuery.getInputTerms().size() == 1 ? Type.BEST_FIELDS : Type.CROSS_FIELDS)
 				.queryName(name);
 		if (fields != null) {
 			mainQuery.fields(fields);
 		}
 
-		QueryBuilder variantQuery = new VariantQueryFactory().createMatchAnyTermQuery(searchTerms);
+		QueryBuilder variantQuery = new VariantQueryFactory().createMatchAnyTermQuery(parsedQuery);
 
 		// isWithSpellCorrect=true because we use fuzzy matching
 		return new MasterVariantQuery(mainQuery, variantQuery, true, false);

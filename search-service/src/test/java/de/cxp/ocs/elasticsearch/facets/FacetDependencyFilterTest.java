@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.Field;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.result.Facet;

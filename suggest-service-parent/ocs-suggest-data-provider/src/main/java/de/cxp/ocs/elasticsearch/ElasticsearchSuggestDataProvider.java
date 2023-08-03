@@ -58,6 +58,7 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 
 	public ElasticsearchSuggestDataProvider() {
 		ConnectionConfiguration connectionConf = settings.getConnectionConfig();
+		log.info("Connecting to Elasticsearch at {}", connectionConf.getHosts());
 		RestClientBuilder restClientBuilder = RestClientBuilderFactory.createRestClientBuilder(connectionConf);
 		client = new RestHighLevelClient(restClientBuilder);
 	}
@@ -73,11 +74,11 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 			return client.indices().exists(new GetIndexRequest(indexName), RequestOptions.DEFAULT);
 		}
 		catch (ElasticsearchException | ConnectException esExc) {
-			log.info("No connection to Elasticsearch. Won't fetch suggest data for index {}", indexName);
+			log.info("No connection to Elasticsearch because of {}:{}. Won't fetch suggest data for index {}", esExc.getClass().getSimpleName(), esExc.getMessage(), indexName);
 			return false;
 		}
 		catch (Throwable e) {
-			log.warn("index exists request failed for index {} because of {}", indexName, e.getMessage());
+			log.warn("index exists request failed because of {}:{} for index {}", e.getClass().getSimpleName(), e.getMessage(), indexName);
 			return false;
 		}
 	}

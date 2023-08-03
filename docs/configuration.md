@@ -98,7 +98,7 @@ With the `data-processor-configuration` you can list the data-processors that sh
 These can be standard processors shipped with OCSS or custom data-processors.
 
 For data-processors that expect some configuration, it can be specified as key-value map below a key with the processor's classname.
-Check the [java-doc of the data-processors](javadoc.html#de/cxp/ocs/preprocessor/impl/package-summary.html) about the configuration details.
+Check the [java-doc of the data-processors](javadoc.html#apidocs/de/cxp/ocs/preprocessor/impl/package-summary.html) about the configuration details.
 
 ```yaml
     data-processor-configuration:
@@ -454,8 +454,10 @@ It contains the following properties:
         optimal-value-count: <int>
         exclude-from-facet-limit: <boolean>
         show-unselected-options: <boolean>
-        is-multi-select: <boolean>
+        multi-select: <boolean>
         prefer-variant-on-filter: <boolean>
+        min-facet-coverage: <double>
+        min-value-count: <int>
         meta-data:
           "<key>": "<value>"
       facets:
@@ -467,8 +469,10 @@ It contains the following properties:
         optimal-value-count: <int>
         exclude-from-facet-limit: <boolean>
         show-unselected-options: <boolean>
-        is-multi-select: <boolean>
+        multi-select: <boolean>
         prefer-variant-on-filter: <boolean>
+        min-facet-coverage: <double>
+        min-value-count: <int>
         meta-data:
           "<key>": "<value>"
       - ...
@@ -485,10 +489,12 @@ Each individual facet config may contain the following properties:
 - `value-order`: Set the order of the facet values. Defaults to COUNT which means, the value with the highest result coverage will be listed first. Other possible values are 'ALPHANUM_ASC' or 'ALPHANUM_DESC'. This setting is only used for term-facets and category-facets. Category facet will be sorted recursively.
   If the order of two facets is the same, the one that's filtered will be preferd. If both have the same filter-status, the one with the higher result-coverage will be prefered.
 - `optimal-value-count`: (default = 5) Only used for "interval" facets to specify how many interval-filter-options should be generated at the maximum (if there enough results).
-- `explude-from-facet-limit`: (default = false) See `max-facets` description above
+- `exclude-from-facet-limit`: (default = false) See `max-facets` description above
 - `show-unselected-options`: (default = false) If set to "true" all possible facet values will be returned, even if one of them is used as filter. Choosing another filter-option will then toggle the selected filter.
-- `is-multi-select`: (default = false) If set to "true" the behaviour is similar to `show-unselected-options` and additionally choosing another filter-option will filter the result for both of them inclusively (e.g. "blue" or "red").
+- `multi-select`: (default = false) If set to "true" the behaviour is similar to `show-unselected-options` and additionally choosing another filter-option will filter the result for both of them inclusively (e.g. "blue" or "red").
 - `prefer-variant-on-filter`: (default = false) Set to true, if variant documents should be preferred in the result in case a filter of that facet/field is used. This can only be used for facets/fields, that exist on variant level, otherwise it is ignored. If several facets have this flag activated, one of them must be filtered to prefer a variant. E.g. if you have different variants per "color" and "material", and you set this flag for both facets, variants will be shown if there is either a color or a material filter. This setting is ignored if the "variant-picking-strategy" is set to "pickAlways".
+- `min-facet-coverage`: (default: 0.1) Must be a floating value between 0 and 1. It defines the share of hits in the result that a facet with its elements should relate to, in order to show that facet. For example the color facet with a min-facet-coverage of 0.2 will only be shown, if 20% of the hits have a color attribute.
+- `min-value-count`: (default: 2) An absolute number greater than 0. It defines the minimum amount of filter-elements that facet must have in order to be displayed. For example a facet with 3 filter-elements won't be shown if its `min-value-count` is set to 5. This value is reduced if the whole search-index contains less values for that particular facet field. For example if the "sale" field only contains the value "true", then the `min-value-count` is always set to 1, no matter what is set in the configuration.
 - `meta-data`: (default = null) Can be used to add arbitrary data to a facet. The value is a simple string map. This is useful to add configuration values that can be considered at the implementation side. Some internal data is also exposed at that meta-data map (e.g. label and count)
 
 
@@ -570,6 +576,16 @@ suggest.update.rate=60
 #
 #suggest.index.folder=
 
+# If several suggest-data-providers are used, they are indexed into separate indexes by default. This option
+# activates a merging logic, so that all provided data is merged into one index.
+#
+# This could reduce load and improve performance since a single Lucene suggester is asked for results.
+# However in such a case the weights should be in a similar range to avoid a proper ranking.
+#
+# Default: false
+#
+#suggest.data.source.merger=false
+
 # If this property is set, it will be used to extract the payload value with
 # this key and group the suggestions accordingly.
 # It's recommended to specify 'suggest.group.share.conf' or
@@ -599,6 +615,14 @@ suggest.update.rate=60
 # The values are considered as absolute limites.
 #
 #suggest.group.cutoff.conf=
+
+# If grouping and limiting is configured by a key that comes from a single or merged data-provider, then this value
+# can be used to increase the internal amount of fetched suggestions.
+# This is usable to increase the likeliness to get the desired group counts.
+#
+# Default: 1
+#
+#suggest.group.prefetch.limit.factor=1
 
 # If this property is set, the returned values will be deduplicated. As a value
 # a comma separated list of the group-values can be specified. It's used as

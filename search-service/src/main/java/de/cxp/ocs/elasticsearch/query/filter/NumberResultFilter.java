@@ -2,16 +2,25 @@ package de.cxp.ocs.elasticsearch.query.filter;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 
+@Accessors(chain = true)
 @Data
 public class NumberResultFilter implements InternalResultFilter {
 
 	private final Field field;
 
-	private final Number lowerBound;
+	private Number lowerBound;
 
-	private final Number upperBound;
+	private Number upperBound;
+
+	@Getter
+	@Setter
+	private boolean isNegated = false;
 
 	public NumberResultFilter(Field field, Number lowerBound, Number upperBound) {
 		if (lowerBound == null && upperBound == null) {
@@ -48,4 +57,5 @@ public class NumberResultFilter implements InternalResultFilter {
 		// no "ID" implementation for numbers available
 		return false;
 	}
+
 }

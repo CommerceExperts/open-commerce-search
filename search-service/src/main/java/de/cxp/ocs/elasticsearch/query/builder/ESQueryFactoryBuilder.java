@@ -9,11 +9,12 @@ import org.elasticsearch.client.RestHighLevelClient;
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.config.*;
 import de.cxp.ocs.config.QueryConfiguration.QueryCondition;
+import de.cxp.ocs.elasticsearch.model.query.AnalyzedQuery;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.ComposedPredicate;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.ConditionalQuery;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.PatternCondition;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.TermCountCondition;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
+import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.QueryLengthCondition;
 import de.cxp.ocs.plugin.ExtensionSupplierRegistry;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import lombok.NonNull;
@@ -69,18 +70,23 @@ public class ESQueryFactoryBuilder {
 			ConditionalQuery queryBuilder = new ConditionalQuery();
 			queryBuilder.predicate = createPredicate(queryConf.getCondition());
 			queryBuilder.queryBuilder = createQueryFactory(queryConf);
-			predicatesAndBuilders.add(queryBuilder);
+			if (queryBuilder.queryBuilder != null) {
+				predicatesAndBuilders.add(queryBuilder);
+			}
 		}
 		return new ConditionalQueries(predicatesAndBuilders);
 	}
 
-	private Predicate<List<QueryStringTerm>> createPredicate(QueryCondition condition) {
-		List<Predicate<List<QueryStringTerm>>> collectedPredicates = new ArrayList<>();
+	private Predicate<AnalyzedQuery> createPredicate(QueryCondition condition) {
+		List<Predicate<AnalyzedQuery>> collectedPredicates = new ArrayList<>();
 		if (condition.getMatchingRegex() != null) {
 			collectedPredicates.add(new PatternCondition(condition.getMatchingRegex()));
 		}
 		if (condition.getMaxTermCount() < Integer.MAX_VALUE || condition.getMinTermCount() > 1) {
 			collectedPredicates.add(new TermCountCondition(condition.getMinTermCount(), condition.getMaxTermCount()));
+		}
+		if (condition.getMaxQueryLength() < Integer.MAX_VALUE && condition.getMaxQueryLength() > 0) {
+			collectedPredicates.add(new QueryLengthCondition(condition.getMaxQueryLength()));
 		}
 		if (collectedPredicates.size() > 0) {
 			return new ComposedPredicate(collectedPredicates);

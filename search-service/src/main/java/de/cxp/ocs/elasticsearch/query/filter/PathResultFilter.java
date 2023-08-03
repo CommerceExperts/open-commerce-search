@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 import de.cxp.ocs.config.Field;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -20,7 +21,7 @@ public class PathResultFilter implements InternalResultFilter {
 	private final Field field;
 
 	@Getter
-	private String[] values;
+	private final String[] values;
 
 	@Getter
 	private List<String[]> filterPaths;
@@ -30,7 +31,11 @@ public class PathResultFilter implements InternalResultFilter {
 
 	@Getter
 	@Setter
-	private boolean filterOnId = false;
+	private boolean isFilterOnId = false;
+
+	@Getter
+	@Setter
+	private boolean isNegated = false;
 
 	@Getter
 	@Setter

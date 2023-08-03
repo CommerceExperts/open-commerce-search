@@ -34,6 +34,24 @@ public class SearchConfiguration {
 
 	private String variantPickingStrategy = "pickIfBestScored";
 
+	public enum ProductSetType {
+		Static, Dynamic, Generic;
+
+		public static ProductSetType fromString(String s) {
+			if (s == null || s.isBlank() || s.length() < 2) {
+				throw new IllegalArgumentException("Invalid enum name " + s);
+			}
+			return ProductSetType.valueOf(Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase());
+		}
+	}
+
+	private EnumMap<ProductSetType, String> heroProductResolver = new EnumMap<>(ProductSetType.class);
+
+	public SearchConfiguration setHeroProductResolver(Map<ProductSetType, String> customResolverClasses) {
+		heroProductResolver.putAll(customResolverClasses);
+		return this;
+	}
+
 	/**
 	 * Optional index-name that should be addressed by the tenant. If null, the
 	 * index name will be set to the tenant name.

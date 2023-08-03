@@ -26,7 +26,9 @@ import de.cxp.ocs.model.params.ProductSet;
 import de.cxp.ocs.model.params.StaticProductSet;
 import de.cxp.ocs.plugin.PluginManager;
 import de.cxp.ocs.spi.search.SearchConfigurationProvider;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @SpringBootApplication
 @RefreshScope
 @Configuration
@@ -43,6 +45,7 @@ public class Application {
 
 	@Bean
 	public RestClientBuilder getRestClientBuilder(ApplicationProperties properties) {
+		log.info("going to connect to Elasticsearch hosts {}", properties.getConnectionConfiguration().getHosts());
 		return RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
 	}
 

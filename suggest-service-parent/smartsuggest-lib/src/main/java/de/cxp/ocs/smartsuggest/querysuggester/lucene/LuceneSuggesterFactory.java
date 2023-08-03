@@ -36,8 +36,9 @@ public class LuceneSuggesterFactory implements SuggesterFactory {
 				indexFolder,
 				suggestConfig,
 				new ModifiedTermsService(
-						Collections.emptyMap(),
-						Collections.emptyMap()),
+						suggestData.getRelaxedQueries(),
+						suggestData.getSharpenedQueries(),
+						suggestConfig),
 				Optional.ofNullable(suggestData.getWordsToIgnore())
 						.map(sw -> new CharArraySet(sw, true))
 						.orElse(null));

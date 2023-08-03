@@ -1,14 +1,13 @@
 package de.cxp.ocs.elasticsearch.query.builder;
 
-import java.util.List;
 import java.util.Map;
 
 import org.elasticsearch.index.query.QueryBuilders;
 
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.QueryBuildingSetting;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +26,7 @@ public class MatchAllQueryFactory implements ESQueryFactory {
 	}
 
 	@Override
-	public MasterVariantQuery createQuery(List<QueryStringTerm> searchTerms) {
+	public MasterVariantQuery createQuery(ExtendedQuery parsedQuery) {
 		return new MasterVariantQuery(
 				QueryBuilders
 						.matchAllQuery()

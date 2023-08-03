@@ -71,6 +71,8 @@ public class QuerySuggestManager implements AutoCloseable {
 
 	public Limiter defaultLimiter;
 
+	private SuggestConfig defaultSuggestConfig;
+
 	/**
 	 * This builder should be used to set up the QuerySuggestManager
 	 */
@@ -88,7 +90,7 @@ public class QuerySuggestManager implements AutoCloseable {
 
 		private Map<String, Map<String, Object>> dataProviderConfigs = new HashMap<>(1);
 
-		private SuggestConfig defaultSuggestConfig = new SuggestConfig();
+		private SuggestConfig defaultSuggestConfig = null;
 
 		/**
 		 * Sets the root path where the indices for the different tenants
@@ -244,6 +246,8 @@ public class QuerySuggestManager implements AutoCloseable {
 		 * Add default suggest config that should be used in case no
 		 * SuggestConfigProvider exists or no provider has a config for a
 		 * certain index.
+		 * This config is also forwarded to the suggest config providers in
+		 * case they only overwrite specific values.
 		 * 
 		 * @param defaultSuggestConfig
 		 *        default suggest config object
@@ -291,7 +295,8 @@ public class QuerySuggestManager implements AutoCloseable {
 	 */
 	private QuerySuggestManager(Optional<MeterRegistryAdapter> meterRegistryAdapter, Map<String, Map<String, Object>> dataProviderConfig, SuggestConfig defaultSuggestConfig) {
 		suggestDataProviders = loadDataProviders(meterRegistryAdapter, dataProviderConfig);
-		suggestConfigProvider = loadConfigProviders(defaultSuggestConfig);
+		suggestConfigProvider = loadConfigProviders();
+		this.defaultSuggestConfig = defaultSuggestConfig;
 	}
 
 	private List<SuggestDataProvider> loadDataProviders(Optional<MeterRegistryAdapter> meterRegistryAdapter, Map<String, Map<String, Object>> dataProviderConfig) {
@@ -328,19 +333,17 @@ public class QuerySuggestManager implements AutoCloseable {
 		return dataProviders;
 	}
 
-	private SuggestConfigProvider loadConfigProviders(SuggestConfig defaultSuggestConfig) {
+	private SuggestConfigProvider loadConfigProviders() {
 		ServiceLoader<SuggestConfigProvider> serviceLoader = ServiceLoader.load(SuggestConfigProvider.class);
 		Iterator<SuggestConfigProvider> loadedConfigProviders = serviceLoader.iterator();
 		if (!loadedConfigProviders.hasNext()) {
 			log.info("No SuggestConfigProvider found. Using default.");
-			return new DefaultSuggestConfigProvider(defaultSuggestConfig);
+			return new DefaultSuggestConfigProvider(defaultSuggestConfig != null ? defaultSuggestConfig : new SuggestConfig());
 		}
 		else {
 			List<SuggestConfigProvider> configProviders = new ArrayList<>();
 			loadedConfigProviders.forEachRemaining(configProviders::add);
 			Collections.sort(configProviders, Comparator.comparingInt(SuggestConfigProvider::getPriority));
-			// add default config provider to make sure the config is never null
-			configProviders.add(new DefaultSuggestConfigProvider(defaultSuggestConfig));
 			return new CompoundSuggestConfigProvider(configProviders);
 		}
 	}
@@ -406,14 +409,19 @@ public class QuerySuggestManager implements AutoCloseable {
 	 * @return
 	 */
 	private QuerySuggester initializeQuerySuggesters(final String indexName, final boolean synchronous) {
+		log.info("Initializing SuggestIndex '{}' {}synchronously", indexName, synchronous ? "" : "a");
 		List<SuggestDataProvider> actualSuggestDataProviders = suggestDataProviders.stream()
 				.filter(sdp -> {
 					try {
-						return sdp.hasData(indexName);
+						boolean hasData = sdp.hasData(indexName);
+						if (!hasData) {
+							log.info("SuggestDataProvider of type {} has no data for index {} - skipping.", sdp.getClass().getSimpleName(), indexName);
+						}
+						return hasData;
 					}
 					catch (Exception e) {
 						// catch potential Runtime Exceptions
-						log.warn("SuggestDataProvider implementation {} caused unexpected Exception: {}", sdp.getClass().getCanonicalName(), e);
+						log.warn("SuggestDataProvider of type {} caused unexpected Exception: {}", sdp.getClass().getCanonicalName(), e);
 						return false;
 					}
 				})
@@ -428,40 +436,50 @@ public class QuerySuggestManager implements AutoCloseable {
 
 			return new NoopQuerySuggester(true);
 		}
-		if (actualSuggestDataProviders.size() == 1) {
-			return initializeQuerySuggester(actualSuggestDataProviders.get(0), indexName, synchronous);
-		}
 
-		SuggestConfig suggestConfig = suggestConfigProvider.getConfig(indexName);
-		if (suggestConfig.useDataSourceMerger) {
-			return initializeQuerySuggester(new MergingSuggestDataProvider(actualSuggestDataProviders), indexName, synchronous);
+		SuggestConfig suggestConfig = enforceSuggestConfig(indexName);
+		final QuerySuggester actualQuerySuggester;
+		if (actualSuggestDataProviders.size() == 1) {
+			actualQuerySuggester = initializeQuerySuggester(actualSuggestDataProviders.get(0), indexName, synchronous);
+		}
+		else if (suggestConfig.useDataSourceMerger) {
+			actualQuerySuggester = initializeQuerySuggester(new MergingSuggestDataProvider(actualSuggestDataProviders), indexName, synchronous);
 		}
 		else {
 			List<QuerySuggester> suggesters = new ArrayList<>();
 			for (SuggestDataProvider sdp : actualSuggestDataProviders) {
 				suggesters.add(initializeQuerySuggester(sdp, indexName, synchronous));
 			}
-			Limiter limiter = createLimiter(suggestConfig);
-			return new CompoundQuerySuggester(suggesters, limiter);
+			actualQuerySuggester = new CompoundQuerySuggester(suggesters, defaultSuggestConfig);
 		}
+
+		return createLimiter(suggestConfig)
+				.map(_limiter -> (QuerySuggester) new GroupingSuggester(actualQuerySuggester, _limiter).setPrefetchLimitFactor(suggestConfig.getPrefetchLimitFactor()))
+				.orElse(actualQuerySuggester);
 	}
 
-	private Limiter createLimiter(SuggestConfig suggestConfig) {
+	private SuggestConfig enforceSuggestConfig(String indexName) {
+		SuggestConfig suggestConfig = suggestConfigProvider.getConfig(indexName, defaultSuggestConfig);
+		if (suggestConfig == null) suggestConfig = defaultSuggestConfig != null ? defaultSuggestConfig : new SuggestConfig();
+		return suggestConfig;
+	}
+
+	private Optional<Limiter> createLimiter(SuggestConfig suggestConfig) {
 		if (suggestConfig.getGroupKey() != null) {
 			if (suggestConfig.useRelativeShareLimit) {
 				LinkedHashMap<String, Double> internalGroupConfig = new LinkedHashMap<>();
 				suggestConfig.getGroupConfig().forEach(groupConfig -> internalGroupConfig.put(groupConfig.groupName, (double) groupConfig.limit));
-				return new ConfigurableShareLimiter(suggestConfig.getGroupKey(), internalGroupConfig, suggestConfig.groupDeduplicationOrder);
+				return Optional.of(new ConfigurableShareLimiter(suggestConfig.getGroupKey(), internalGroupConfig, suggestConfig.groupDeduplicationOrder));
 			}
 			else {
 				LinkedHashMap<String, Integer> internalGroupConfig = new LinkedHashMap<>();
 				suggestConfig.getGroupConfig().forEach(groupConfig -> internalGroupConfig.put(groupConfig.groupName, groupConfig.limit));
 				Integer cutoffDefault = internalGroupConfig.getOrDefault(CommonPayloadFields.PAYLOAD_TYPE_OTHER, 5);
-				return new GroupedCutOffLimiter(suggestConfig.getGroupKey(), cutoffDefault, internalGroupConfig, suggestConfig.groupDeduplicationOrder);
+				return Optional.of(new GroupedCutOffLimiter(suggestConfig.getGroupKey(), cutoffDefault, internalGroupConfig, suggestConfig.groupDeduplicationOrder));
 			}
 		}
 		else {
-			return defaultLimiter;
+			return Optional.empty();
 		}
 	}
 
@@ -481,7 +499,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		SuggesterFactory factory = new LuceneSuggesterFactory(tenantFolder);
 		factory.instrument(metricsRegistry, tags);
 
-		SuggestionsUpdater updateTask = new SuggestionsUpdater(suggestDataProvider, suggestConfigProvider, indexName, updateableQuerySuggester, factory);
+		SuggestionsUpdater updateTask = new SuggestionsUpdater(suggestDataProvider, suggestConfigProvider, defaultSuggestConfig, indexName, updateableQuerySuggester, factory);
 		updateTask.instrument(metricsRegistry, tags);
 
 		long initialDelay = 0;

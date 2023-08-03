@@ -3,12 +3,7 @@ package de.cxp.ocs.api.indexer;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.PATCH;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 
 import de.cxp.ocs.model.index.Document;
 import io.swagger.v3.oas.annotations.Operation;
@@ -98,9 +93,9 @@ public interface UpdateIndexService {
 	 */
 	@PUT
 	@Operation(
-			description = "Puts a document to the index. If document does not exist, it will be added."
+			description = "Puts a document to the index. If document does not exist, it will be added, but in that case the langCode parameter is required."
 					+ " An existing product will be overwritten unless the parameter 'replaceExisting\" is set to \"false\"."
-					+ " Provided document should be a complete object, partial updates should be  done using the updateDocument method.",
+					+ " Provided document should be a complete object, partial updates should be done using the updateDocument method.",
 			responses = {
 					@ApiResponse(responseCode = "200", description = "OK. The response contains a map of ids and according result."),
 					@ApiResponse(responseCode = "404", description = "index does not exist"),
@@ -115,6 +110,13 @@ public interface UpdateIndexService {
 					name = "replaceExisting",
 					description = "set to false to avoid overriding a document with that ID. Defaults to 'true'",
 					required = false) Boolean replaceExisting,
+			@Parameter(
+					in = ParameterIn.QUERY,
+					name = "langCode",
+					description = "If this put request targets an index that does not exist yet, that index will be created. "
+							+ "To use the correct index template, the language is required for that case. Otherwise its ignored.",
+					required = false)
+			String langCode,
 			@RequestBody List<Document> docs);
 
 	/**

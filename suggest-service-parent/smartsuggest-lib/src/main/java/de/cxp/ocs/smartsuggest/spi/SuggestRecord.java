@@ -3,7 +3,10 @@ package de.cxp.ocs.smartsuggest.spi;
 import java.util.Map;
 import java.util.Set;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @AllArgsConstructor

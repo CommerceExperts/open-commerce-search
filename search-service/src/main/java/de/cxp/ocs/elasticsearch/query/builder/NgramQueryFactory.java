@@ -5,13 +5,11 @@ import static de.cxp.ocs.config.QueryBuildingSetting.minShouldMatch;
 import static de.cxp.ocs.config.QueryBuildingSetting.multimatch_type;
 import static de.cxp.ocs.config.QueryBuildingSetting.tieBreaker;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder.Type;
@@ -20,10 +18,11 @@ import org.elasticsearch.index.query.QueryBuilders;
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.QueryBuildingSetting;
+import de.cxp.ocs.elasticsearch.model.query.AnalyzedQuery;
+import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
+import de.cxp.ocs.elasticsearch.model.util.EscapeUtil;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
-import de.cxp.ocs.elasticsearch.query.model.QueryStringTerm;
 import de.cxp.ocs.spi.search.ESQueryFactory;
-import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.Util;
 import lombok.Getter;
 import lombok.Setter;
@@ -81,26 +80,24 @@ public class NgramQueryFactory implements ESQueryFactory {
 	}
 
 	@Override
-	public MasterVariantQuery createQuery(List<QueryStringTerm> searchTerms) {
-		StringBuilder searchPhrase = new StringBuilder();
+	public MasterVariantQuery createQuery(ExtendedQuery parsedQuery) {
 		// TODO: do a ngram tokenization on each term separately and search each
 		// "ngramed word" separately combined with boolean-should-clauses but
 		// each using "best-field" match strategy.
 		// minShouldMatch setting is then used twice: per splitted field and for
 		// the words itself (the should clauses)
-		searchTerms.forEach(term -> searchPhrase.append(term.getWord()).append(" "));
+		String searchPhrase = parsedQuery.getSearchQuery().getInputTerms().stream()
+				.map(EscapeUtil::escapeReservedESCharacters)
+				.collect(Collectors.joining(" "));
 
-		// TODO: use locale for lowercase or better: use elasticsearch analyzer!
-		String ngramPhrase = buildNgrams(searchPhrase.toString().trim().toLowerCase());
-
-		MultiMatchQueryBuilder mainQuery = buildEsQuery(ngramPhrase);
+		MultiMatchQueryBuilder mainQuery = buildEsQuery(searchPhrase);
 		if (masterFields.size() > 0) {
 			mainQuery.fields(masterFields);
 		}
-		String queryName = getLabel(searchTerms);
+		String queryName = getLabel(parsedQuery.getSearchQuery());
 		mainQuery.queryName(queryName);
 
-		MultiMatchQueryBuilder variantQuery = buildEsQuery(ngramPhrase);
+		MultiMatchQueryBuilder variantQuery = buildEsQuery(searchPhrase);
 		if (variantFields.size() > 0) {
 			variantQuery.fields(variantFields);
 		}
@@ -111,17 +108,17 @@ public class NgramQueryFactory implements ESQueryFactory {
 				Boolean.parseBoolean(querySettings.getOrDefault(acceptNoResult, "true")));
 	}
 
-	private String getLabel(List<QueryStringTerm> searchTerms) {
+	private String getLabel(AnalyzedQuery analyzedQuery) {
 		if (name == null) {
 			name = "ngram-" + getMinShouldMatch();
 		}
-		return name + "(" + ESQueryUtils.getQueryLabel(searchTerms) + ")";
+		return name + analyzedQuery.getInputTerms().toString();
 	}
 
 	private MultiMatchQueryBuilder buildEsQuery(String ngramPhrase) {
 		MultiMatchQueryBuilder mainQuery = QueryBuilders
 				.multiMatchQuery(ngramPhrase)
-				.analyzer("whitespace")
+				.analyzer("ngram")
 				.fuzziness(Fuzziness.ZERO)
 				.minimumShouldMatch(getMinShouldMatch())
 				.tieBreaker(Util.tryToParseAsNumber(querySettings.getOrDefault(tieBreaker, "0")).orElse(0).floatValue())
@@ -132,35 +129,6 @@ public class NgramQueryFactory implements ESQueryFactory {
 
 	private String getMinShouldMatch() {
 		return querySettings.getOrDefault(minShouldMatch, "70%");
-	}
-
-	protected String buildNgrams(String searchPhrase) {
-		if (searchPhrase == null || searchPhrase.length() < 2) return searchPhrase;
-
-		List<String> ngrams = new ArrayList<>();
-		ngrams.add("_" + searchPhrase.substring(0, 2));
-
-		// in: damenkleider
-		// out: _da dam ame men enk nkl kle lei eid ide der er_
-		for (int i = 0; i < searchPhrase.length() - 2; i++) {
-			boolean foundWhiteSpace = false;
-			if (searchPhrase.charAt(i) == ' ') {
-				if (i + 3 <= searchPhrase.length()) {
-					ngrams.add("_" + searchPhrase.substring(i + 1, i + 3));
-				}
-				foundWhiteSpace = true;
-			}
-			if (searchPhrase.charAt(i + 2) == ' ') {
-				ngrams.add(searchPhrase.substring(i, i + 2) + "_");
-				i++;
-				foundWhiteSpace = true;
-			}
-			if (!foundWhiteSpace) {
-				ngrams.add(searchPhrase.substring(i, i + 3));
-			}
-		}
-		ngrams.add(searchPhrase.substring(searchPhrase.length() - 2) + "_");
-		return StringUtils.join(ngrams, " ");
 	}
 
 	@Override

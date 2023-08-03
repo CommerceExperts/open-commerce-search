@@ -1,13 +1,11 @@
 package de.cxp.ocs.smartsuggest.spi;
 
-import static java.util.Collections.emptySet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
@@ -82,7 +80,10 @@ public class MergingSuggestDataProviderTest {
 	}
 
 	private SuggestData getSuggestData(String type, SuggestRecord... records) {
-		return new SuggestData(type, Locale.ROOT, emptySet(), Arrays.asList(records), System.currentTimeMillis());
+		return SuggestData.builder().type(type)
+				.suggestRecords(Arrays.asList(records))
+				.modificationTime(System.currentTimeMillis())
+				.build();
 	}
 
 	private SuggestRecord simpleSuggestRecord(String primaryQuery) {

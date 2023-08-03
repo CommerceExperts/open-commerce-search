@@ -2,7 +2,6 @@ package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
 import static java.util.Collections.emptyList;
 import static org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester.PRESERVE_SEP;
-import static org.apache.lucene.search.suggest.analyzing.BlendedInfixSuggester.DEFAULT_NUM_FACTOR;
 import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_MIN_FUZZY_LENGTH;
 import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_TRANSPOSITIONS;
 
@@ -12,16 +11,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -91,8 +81,8 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 
 	private static final Logger perfLog = LoggerFactory.getLogger("de.cxp.ocs.smartsuggest.performance");
 
-	private final AnalyzingInfixSuggester	infixSuggester;
-	private final AnalyzingInfixSuggester	typoSuggester;
+	private final AnalyzingInfixSuggester	primarySuggester;
+	private final AnalyzingInfixSuggester	secondarySuggester;
 	private final AnalyzingInfixSuggester	shingleSuggester;
 
 	/**
@@ -141,27 +131,28 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			Analyzer basicQueryAnalyzer = setupBasicAnalyzer(false, stopWords);
 
 			MMapDirectory infixDir = new MMapDirectory(indexFolder.resolve("infix"));
-			// infixSuggester = new AnalyzingInfixSuggester(indexDir,
-			// basicIndexAnalyzer, basicQueryAnalyzer,
-			// AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS, false, false,
-			// AnalyzingInfixSuggester.DEFAULT_HIGHLIGHT);
-			infixSuggester = new BlendedInfixSuggester(infixDir, basicIndexAnalyzer, basicQueryAnalyzer,
-					AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS, BlendedInfixSuggester.BlenderType.CUSTOM, DEFAULT_NUM_FACTOR, false);
-			closeables.add(infixSuggester);
+			// the num-factor of 1 is all we need here, since the suggestions are considered as preordered and we use
+			// the 'BlenderType.CUSTOM' here that does not cause major reorderings.
+			// Although the AnalyzingInfixSuggester would still be a bit faster, the BlendedInfixSuggester has better
+			// handling of position match penalties for suggestions with the single weight
+			primarySuggester = new BlendedInfixSuggester(infixDir, basicIndexAnalyzer, basicQueryAnalyzer,
+						AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS, BlendedInfixSuggester.BlenderType.CUSTOM, 1, null,
+						false, AnalyzingInfixSuggester.DEFAULT_ALL_TERMS_REQUIRED, false);
+			closeables.add(primarySuggester);
 
 			Analyzer basicIndexAnalyzer2 = setupBasicAnalyzer(true, stopWords);
 			Analyzer basicQueryAnalyzer2 = setupBasicAnalyzer(false, stopWords);
 			MMapDirectory infixDir2 = new MMapDirectory(indexFolder.resolve("typo"));
-			typoSuggester = new AnalyzingInfixSuggester(infixDir2, basicIndexAnalyzer2, basicQueryAnalyzer2,
-					AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS, false);
-			closeables.add(typoSuggester);
+			secondarySuggester = new AnalyzingInfixSuggester(infixDir2, basicIndexAnalyzer2, basicQueryAnalyzer2,
+					AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS, false, AnalyzingInfixSuggester.DEFAULT_ALL_TERMS_REQUIRED, false);
+			closeables.add(secondarySuggester);
 
 			final Analyzer shingleIndexAnalyzer = setupShingleAnalyzer(true, stopWords);
 			final Analyzer shingleQueryAnalyzer = setupShingleAnalyzer(false, stopWords);
 			MMapDirectory shingleDir = new MMapDirectory(indexFolder.resolve("shingle"));
 			shingleSuggester = new BlendedInfixSuggester(shingleDir, shingleIndexAnalyzer, shingleQueryAnalyzer,
 					AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS,
-					BlendedInfixSuggester.BlenderType.POSITION_RECIPROCAL, DEFAULT_NUM_FACTOR, null, false, false, false);
+					BlendedInfixSuggester.BlenderType.POSITION_RECIPROCAL, 1, null, false, false, false);
 			closeables.add(shingleSuggester);
 
 			fuzzySuggesterOneEdit = createFuzzySuggester(indexFolder, "Short", basicIndexAnalyzer, basicQueryAnalyzer, 1);
@@ -281,14 +272,14 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 
 			// lookup for best matches
 			{
-				int resultCount = collectSuggestions(term, contexts, infixSuggester, maxResults, uniqueQueries, maxResults, BEST_MATCHES_GROUP_NAME, results);
+				int resultCount = collectSuggestions(term, contexts, primarySuggester, maxResults, uniqueQueries, maxResults, BEST_MATCHES_GROUP_NAME, results);
 				perfResult.addStep("bestMatches", resultCount);
 			}
 
 			// lookup known typo variants
 			if (uniqueQueries.size() < maxResults) {
 				final int itemsToFetchTypos = maxResults - uniqueQueries.size();
-				int resultCount = collectSuggestions(term, contexts, typoSuggester, itemsToFetchTypos, uniqueQueries, itemsToFetchTypos, TYPO_MATCHES_GROUP_NAME, results);
+				int resultCount = collectSuggestions(term, contexts, secondarySuggester, itemsToFetchTypos, uniqueQueries, itemsToFetchTypos, TYPO_MATCHES_GROUP_NAME, results);
 				if (SortStrategy.PrimaryAndSecondaryByWeight.equals(suggestConfig.getSortStrategy())) {
 					Collections.sort(results, Util.getDefaultComparator(suggestConfig.locale, term));
 				}
@@ -469,8 +460,8 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 
 	@Override
 	public CompletableFuture<Void> index(Iterable<SuggestRecord> suggestions) {
-		CompletableFuture<Void> infixFuture = CompletableFuture.runAsync(indexAsync(infixSuggester, suggestions, false));
-		CompletableFuture<Void> typoInfixFuture = CompletableFuture.runAsync(indexAsync(typoSuggester, suggestions, true));
+		CompletableFuture<Void> infixFuture = CompletableFuture.runAsync(indexAsync(primarySuggester, suggestions, false));
+		CompletableFuture<Void> typoInfixFuture = CompletableFuture.runAsync(indexAsync(secondarySuggester, suggestions, true));
 		CompletableFuture<Void> fuzzyShortFuture = CompletableFuture.runAsync(indexAsync(fuzzySuggesterOneEdit, suggestions, false));
 		CompletableFuture<Void> fuzzyLongFuture = CompletableFuture.runAsync(indexAsync(fuzzySuggesterTwoEdits, suggestions, false));
 		CompletableFuture<Void> shingleFuture = CompletableFuture.runAsync(indexAsync(shingleSuggester, suggestions, true));
@@ -489,7 +480,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		}
 		else {
 			try {
-				return infixSuggester.getCount();
+				return primarySuggester.getCount();
 			}
 			catch (IOException e) {
 				return StreamSupport.stream(suggestions.spliterator(), false).count();
@@ -515,6 +506,8 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		};
 	}
 
+	private int deserializationFailLogCount = 0;
+
 	/**
 	 * @see SuggestionIterator#payload()
 	 */
@@ -529,7 +522,10 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 					.setContext(result.contexts);
 		}
 		catch (Exception e) {
-			log.error("failed to deserialize LookupResult for key {}", result.key);
+			if (deserializationFailLogCount % 100 == 0) {
+				log.error("failed to deserialize LookupResult for key {} ({}th time)", result.key, deserializationFailLogCount, e);
+			}
+			deserializationFailLogCount++;
 			return null;
 		}
 	}
@@ -555,8 +551,8 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	@Override
 	public long ramBytesUsed() {
 		long mySize = RamUsageEstimator.shallowSizeOf(this);
-		mySize += RamUsageEstimator.sizeOf(infixSuggester);
-		mySize += RamUsageEstimator.sizeOf(typoSuggester);
+		mySize += RamUsageEstimator.sizeOf(primarySuggester);
+		mySize += RamUsageEstimator.sizeOf(secondarySuggester);
 		mySize += RamUsageEstimator.sizeOf(shingleSuggester);
 		mySize += RamUsageEstimator.sizeOf(fuzzySuggesterOneEdit);
 		mySize += RamUsageEstimator.sizeOf(fuzzySuggesterTwoEdits);
@@ -567,7 +563,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	@Override
 	public long recordCount() {
 		try {
-			return infixSuggester.getCount();
+			return primarySuggester.getCount();
 		}
 		catch (IOException e) {
 			log.warn("IOException when retrieving count of infixSuggester: " + e.getMessage());

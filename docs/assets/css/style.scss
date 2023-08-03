@@ -1,0 +1,16 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+#project_title {
+    font-size: 32px;
+    margin-top: 8px;
+}
+#project_logo {
+    float: left;
+    width: 100px;
+    border: 0;
+    box-shadow: none;
+    margin: 0 10px 0 0;
+}

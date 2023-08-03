@@ -33,6 +33,7 @@ public class QueryConfiguration {
 
 		private int		minTermCount	= 1;
 		private int		maxTermCount	= Integer.MAX_VALUE;
+		private int		maxQueryLength	= Integer.MAX_VALUE;
 		private String	matchingRegex	= null;
 
 		/**
@@ -56,6 +57,18 @@ public class QueryConfiguration {
 		 */
 		public QueryCondition setMaxTermCount(int maxTermCount) {
 			this.maxTermCount = maxTermCount;
+			return this;
+		}
+
+		/**
+		 * Set inclusive maximum of length for a query factory to be used.
+		 *
+		 * @param maxQueryLength
+		 *        max query length (value &gt; 1)
+		 * @return the changed query condition
+		 */
+		public QueryCondition setMaxQueryLength(int maxQueryLength) {
+			this.maxQueryLength = maxQueryLength;
 			return this;
 		}
 

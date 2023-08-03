@@ -17,14 +17,14 @@ public class SearchQueryBuilderTest {
 
 	@Test
 	public void testAddingFilter() {
-		SearchQueryBuilder underTest = new SearchQueryBuilder(new InternalSearchParams().setUserQuery("foo"));
+		DefaultLinkBuilder underTest = new DefaultLinkBuilder(new InternalSearchParams().setUserQuery("foo"));
 		String result = underTest.withFilterAsLink(new FacetConfig("Brand", "brand"), "bar");
 		assertTrue(result.contains("brand=bar"), result);
 	}
 
 	@Test
 	public void testRemovingFilter() {
-		SearchQueryBuilder underTest = new SearchQueryBuilder(
+		DefaultLinkBuilder underTest = new DefaultLinkBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
 						.withFilter(new TermResultFilter(new Field("brand"), "bar")));
@@ -34,7 +34,7 @@ public class SearchQueryBuilderTest {
 
 	@Test
 	public void testAddMultiSelectFilter() {
-		SearchQueryBuilder underTest = new SearchQueryBuilder(
+		DefaultLinkBuilder underTest = new DefaultLinkBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
 						.withFilter(new TermResultFilter(new Field("brand"), "apple")));
@@ -46,7 +46,7 @@ public class SearchQueryBuilderTest {
 
 	@Test
 	public void testAddThirdFilterToSelectedFilters() {
-		SearchQueryBuilder underTest = new SearchQueryBuilder(
+		DefaultLinkBuilder underTest = new DefaultLinkBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
 						.withFilter(new TermResultFilter(new Field("brand"), "apple", "orange")));
@@ -58,7 +58,7 @@ public class SearchQueryBuilderTest {
 
 	@Test
 	public void testAddSeveralFiltersToSelectedFilters() {
-		SearchQueryBuilder underTest = new SearchQueryBuilder(
+		DefaultLinkBuilder underTest = new DefaultLinkBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
 						.withFilter(new TermResultFilter(new Field("brand"), "apple", "orange")));
@@ -70,7 +70,7 @@ public class SearchQueryBuilderTest {
 
 	@Test
 	public void testAddSeveralSpecialCharacterFiltersToSelectedFilters() {
-		SearchQueryBuilder underTest = new SearchQueryBuilder(
+		DefaultLinkBuilder underTest = new DefaultLinkBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
 						.withFilter(new TermResultFilter(new Field("brand"), "pine & apple")));
@@ -82,7 +82,7 @@ public class SearchQueryBuilderTest {
 
 	@Test
 	public void testSeveralFilters() {
-		SearchQueryBuilder underTest = new SearchQueryBuilder(
+		DefaultLinkBuilder underTest = new DefaultLinkBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
 						.withFilter(new TermResultFilter(new Field("brand"), "apple", "orange")));
@@ -94,7 +94,7 @@ public class SearchQueryBuilderTest {
 
 	@Test
 	public void testCaseSensitiveFilters() {
-		SearchQueryBuilder underTest = new SearchQueryBuilder(
+		DefaultLinkBuilder underTest = new DefaultLinkBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
 						.withFilter(new TermResultFilter(new Field("brand"), "Apple", "Orange", "apple")));
@@ -106,7 +106,7 @@ public class SearchQueryBuilderTest {
 
 	@Test
 	public void testEncodedFilters() {
-		SearchQueryBuilder underTest = new SearchQueryBuilder(
+		DefaultLinkBuilder underTest = new DefaultLinkBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
 						.withFilter(new TermResultFilter(new Field("brand"), "äpple"))
@@ -120,7 +120,7 @@ public class SearchQueryBuilderTest {
 
 	@Test
 	public void testRemoveMultiSelectFilter() {
-		SearchQueryBuilder underTest = new SearchQueryBuilder(
+		DefaultLinkBuilder underTest = new DefaultLinkBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
 						.withFilter(new TermResultFilter(new Field("brand"), "apple", "orange")));
@@ -133,7 +133,7 @@ public class SearchQueryBuilderTest {
 
 	@Test
 	public void testRemoveFilter() {
-		SearchQueryBuilder underTest = new SearchQueryBuilder(
+		DefaultLinkBuilder underTest = new DefaultLinkBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
 						.withFilter(new TermResultFilter(new Field("brand"), "apple", "orange"))
@@ -149,7 +149,7 @@ public class SearchQueryBuilderTest {
 
 	@Test
 	public void testNonMultiSelectFilter() {
-		SearchQueryBuilder underTest = new SearchQueryBuilder(
+		DefaultLinkBuilder underTest = new DefaultLinkBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
 						.withFilter(new TermResultFilter(new Field("brand"), "bar")));
@@ -159,14 +159,14 @@ public class SearchQueryBuilderTest {
 
 	@Test
 	public void testSetOnlyFilter() {
-		SearchQueryBuilder underTest = new SearchQueryBuilder(new InternalSearchParams());
+		DefaultLinkBuilder underTest = new DefaultLinkBuilder(new InternalSearchParams());
 		String result = underTest.withFilterAsLink(new FacetConfig("Brand", "brand"), "foo,bar");
 		assertEquals(result, "brand=foo%252Cbar");
 	}
 
 	@Test
 	public void testSetFilterAlreadySelected() {
-		SearchQueryBuilder underTest = new SearchQueryBuilder(
+		DefaultLinkBuilder underTest = new DefaultLinkBuilder(
 				new InternalSearchParams()
 						.setUserQuery("foo")
 						.withFilter(new TermResultFilter(new Field("brand"), "bar")));

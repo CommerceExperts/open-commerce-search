@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: suggest-ingress
+  labels:
+    role: ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /suggest-api
+        pathType: Prefix
+        backend:
+          service:
+            name: suggest-api-service
+            port:
+              name: suggest-api

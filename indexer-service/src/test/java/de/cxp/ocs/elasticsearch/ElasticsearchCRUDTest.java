@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
@@ -79,8 +80,7 @@ public class ElasticsearchCRUDTest {
 		@Bean
 		public RestHighLevelClient getElasticsearchClient(ApplicationProperties properties) throws Exception {
 			System.out.println("initializing ES client");
-			properties.getConnectionConfiguration().setHosts("127.0.0.1:" +
-					HTTP_TEST_PORT);
+			properties.getConnectionConfiguration().setHosts("127.0.0.1:" + HTTP_TEST_PORT);
 			RestClientBuilder restClientBuilder = RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
 			return new RestHighLevelClient(restClientBuilder);
 		}
@@ -93,8 +93,11 @@ public class ElasticsearchCRUDTest {
 		container = new ElasticsearchContainer(
 				DockerImageName
 						.parse("docker.elastic.co/elasticsearch/elasticsearch")
-						.withTag(Version.V_7_17_1.toString()));
+						.withTag(Version.CURRENT.toString()));
+		container.addEnv("discovery.type", "single-node");
+		container.addEnv("ES_JAVA_OPTS", "-Xms1024m -Xmx1024m");
 		container.setWaitStrategy(new HttpWaitStrategy().forPort(9200));
+		container.withStartupTimeout(Duration.ofSeconds(60));
 		container.start();
 		HTTP_TEST_PORT = container.getMappedPort(9200);
 	}
@@ -122,6 +125,7 @@ public class ElasticsearchCRUDTest {
 
 	@Test
 	public void addDocumentToFreshIndex() throws Exception {
+		// requirement for indexes that are created via update API: they must be in the format <name>-<locale>
 		String indexName = "first_index";
 		String id = "a1";
 		Document doc = new Document(id);
@@ -309,7 +313,7 @@ public class ElasticsearchCRUDTest {
 	void putDocument(String indexName, Document doc, int expectedStatus, Result expectedResult) throws Exception {
 		String docBody = objectMapper.writeValueAsString(Collections.singletonList(doc));
 		mockMvc.perform(MockMvcRequestBuilders
-				.put("/indexer-api/v1/update/" + indexName)
+				.put("/indexer-api/v1/update/" + indexName + "?langCode=en")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(docBody))
 				.andExpect(MockMvcResultMatchers.status().is(expectedStatus))

@@ -54,7 +54,7 @@ Manipulated generated /tmp/ocss-track/track.json.
 Start with generating challenges...
 Challenges from search log created.
 ```
-The script creates the `track` in the folder `/tmp/ocss-track`. If you are not familiar with what a `track` is, take a look at our [blog](https://blog.searchhub.io/elasticsearch-benchmark-setup-with-rally) or check the official [Rally documentation](https://esrally.readthedocs.io/en/stable/).
+The script creates the `track` in the folder `/tmp/ocss-track`. If you are not familiar with what a `track` is, take a look at our [blog](https://blog.searchhub.io/how-to-setup-elasticsearch-benchmarking) or check the official [Rally documentation](https://esrally.readthedocs.io/en/stable/).
 The generated `track` has three `challenges`:
 
  - index

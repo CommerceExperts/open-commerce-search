@@ -10,12 +10,12 @@ public class DefaultSuggestConfigProvider implements SuggestConfigProvider {
 
 	public DefaultSuggestConfigProvider() {}
 
-	public DefaultSuggestConfigProvider(SuggestConfig defaultSuggestConfig) {
+	public DefaultSuggestConfigProvider(@NonNull SuggestConfig defaultSuggestConfig) {
 		this.defaultSuggestConfig = defaultSuggestConfig;
 	}
 
 	@Override
-	public SuggestConfig getConfig(@NonNull String indexName) {
+	public SuggestConfig getConfig(@NonNull String indexName, SuggestConfig ignored) {
 		return defaultSuggestConfig;
 	}
 

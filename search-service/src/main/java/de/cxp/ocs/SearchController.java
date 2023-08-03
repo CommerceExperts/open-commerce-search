@@ -5,7 +5,6 @@ import static de.cxp.ocs.util.SearchParamsParser.extractInternalParams;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -28,42 +27,31 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 import de.cxp.ocs.api.searcher.SearchService;
-import de.cxp.ocs.config.FieldConfigIndex;
-import de.cxp.ocs.config.FieldConfiguration;
-import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
-import de.cxp.ocs.elasticsearch.FieldConfigFetcher;
 import de.cxp.ocs.elasticsearch.Searcher;
 import de.cxp.ocs.elasticsearch.mapper.ResultMapper;
-import de.cxp.ocs.elasticsearch.prodset.HeroProductHandler;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.params.ArrangedSearchQuery;
 import de.cxp.ocs.model.params.ProductSet;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
-import de.cxp.ocs.spi.search.UserQueryPreprocessor;
 import de.cxp.ocs.util.InternalSearchParams;
 import de.cxp.ocs.util.NotFoundException;
+import de.cxp.ocs.util.TraceOptions.TraceFlag;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @RefreshScope
-@CrossOrigin(origins = "http://localhost:8081")
+@CrossOrigin("*")
 @RestController
 @RequestMapping(path = "/search-api/v1")
 @EnableScheduling
@@ -79,6 +67,10 @@ public class SearchController implements SearchService {
 	private SearchPlugins plugins;
 
 	@Autowired
+	@NonNull
+	private SearchContextLoader searchContextLoader;
+
+	@Autowired
 	private MeterRegistry registry;
 
 	private final Map<String, SearchContext> searchContexts = new ConcurrentHashMap<>();
@@ -87,6 +79,7 @@ public class SearchController implements SearchService {
 
 	private final Cache<String, Searcher> searchClientCache = CacheBuilder.newBuilder()
 			.expireAfterAccess(10, TimeUnit.MINUTES)
+			.removalListener(notification -> searchContexts.remove(notification.getKey()))
 			.build();
 
 	private final Cache<String, Exception> brokenTenantsCache = CacheBuilder.newBuilder()
@@ -96,13 +89,17 @@ public class SearchController implements SearchService {
 
 	@Scheduled(fixedDelayString = "${ocs.scheduler.refresh-config-delay-ms:60000}")
 	public void refreshAllConfigs() {
-		Set<String> configuredTenants = plugins.getConfigurationProvider().getConfiguredTenants();
-		if (configuredTenants.size() > 0) {
-			log.info("SearchController {} configured tenants {}", searchClientCache.size() == 0 ? "initializing" : "reloading", configuredTenants);
-			configuredTenants.forEach(this::flushConfig);
+		Set<String> loadedTenants = new HashSet<>(searchContexts.keySet());
+		if (loadedTenants.size() > 0) {
+			log.info("Refreshing {} loaded tenants: {}", loadedTenants.size(), loadedTenants);
+			loadedTenants.forEach(this::flushConfig);
 		}
 	}
 
+	@Operation(summary = "Reload configuration for specified tenant.", responses = {
+			@ApiResponse(responseCode = "200", description = "successful reloaded configuration for tenant"),
+			@ApiResponse(responseCode = "201", description = "Config was loaded first time for tenant"),
+			@ApiResponse(responseCode = "304", description = "No config changes detected. Nothing to reload.") })
 	@GetMapping("/flushConfig/{tenant}")
 	public ResponseEntity<HttpStatus> flushConfig(@PathVariable("tenant") String tenant) {
 		HttpStatus status;
@@ -110,7 +107,7 @@ public class SearchController implements SearchService {
 			MDC.put("tenant", tenant);
 			try {
 				brokenTenantsCache.invalidate(tenant);
-				SearchContext searchContext = loadContext(tenant);
+				SearchContext searchContext = searchContextLoader.loadContext(tenant);
 				SearchContext oldConfig = searchContexts.put(tenant, searchContext);
 				if (oldConfig == null) {
 					log.info("config successfuly loaded for tenant {}", tenant);
@@ -146,7 +143,6 @@ public class SearchController implements SearchService {
 	@GetMapping("/search/{tenant}")
 	@Override
 	public SearchResult search(@PathVariable("tenant") String tenant, SearchQuery searchQuery, @RequestParam Map<String, String> filters) throws Exception {
-		// TODO: add plugin that may inject hero products
 		return internalSearch(tenant, searchQuery, filters, null);
 	}
 
@@ -165,13 +161,19 @@ public class SearchController implements SearchService {
 
 			long start = System.currentTimeMillis();
 			try {
-				SearchContext searchContext = searchContexts.computeIfAbsent(tenant, this::loadContext);
+				SearchContext searchContext = searchContexts.computeIfAbsent(tenant, searchContextLoader::loadContext);
 
 				final InternalSearchParams parameters = extractInternalParams(searchQuery, filters, searchContext);
 
+				if (parameters.trace.isSet(TraceFlag.Request)) {
+					log.info("called search through method={} with searchQuery={}, filters={} and productSet={}",
+							Thread.currentThread().getStackTrace()[2].getMethodName(), searchQuery, filters, heroProducts);
+				}
+
 				final Searcher searcher = searchClientCache.get(tenant, () -> initializeSearcher(searchContext));
+				
 				if (heroProducts != null) {
-					parameters.heroProductSets = HeroProductHandler.resolve(heroProducts, searcher, searchContext);
+					parameters.heroProductSets = searchContext.heroProductHandler.resolve(heroProducts, searcher, searchContext);
 				}
 
 				SearchResult result = searcher.find(parameters);
@@ -240,7 +242,7 @@ public class SearchController implements SearchService {
 		Document foundDoc = null;
 		checkTenant(tenant);
 		try {
-			SearchContext searchContext = searchContexts.computeIfAbsent(tenant, this::loadContext);
+			SearchContext searchContext = searchContexts.computeIfAbsent(tenant, searchContextLoader::loadContext);
 			GetRequest getRequest = new GetRequest(searchContext.getConfig().getIndexName(), docId);
 			GetResponse getResponse = esBuilder.getRestHLClient().get(getRequest, RequestOptions.DEFAULT);
 			if (getResponse.isExists()) {
@@ -259,18 +261,19 @@ public class SearchController implements SearchService {
 		return foundDoc;
 	}
 
+	@SuppressWarnings("deprecation")
 	@GetMapping("/tenants")
 	@Override
 	public String[] getTenants() {
 		Set<String> tenants = new HashSet<>();
 		try {
 			esBuilder.getRestHLClient().indices()
-					.getAlias(new GetAliasesRequest().aliases("ocs-"), RequestOptions.DEFAULT)
-					.getAliases()
-					.entrySet()
-					.stream()
-					.map(aliasEntry -> aliasEntry.getValue().iterator().next().alias())
+					.getAlias(new GetAliasesRequest().indices("ocs-*"), RequestOptions.DEFAULT)
+					.getAliases().values().stream()
+					.filter(aliases -> aliases.size() > 0)
+					.map(aliases -> aliases.iterator().next().alias())
 					.forEach(tenants::add);
+			;
 		}
 		catch (IOException e) {
 			log.warn("could not retrieve ES indices", e);
@@ -282,29 +285,6 @@ public class SearchController implements SearchService {
 
 	private Searcher initializeSearcher(SearchContext searchContext) {
 		return new Searcher(esBuilder.getRestHLClient(), searchContext, registry, plugins);
-	}
-
-	private SearchContext loadContext(String tenant) {
-		SearchConfiguration searchConfig = plugins.getConfigurationProvider().getTenantSearchConfiguration(tenant);
-		FieldConfigIndex fieldConfigAccess = loadFieldConfiguration(searchConfig.getIndexName());
-		List<UserQueryPreprocessor> userQueryPreprocessors = SearchPlugins.initialize(
-				searchConfig.getQueryProcessing().getUserQueryPreprocessors(),
-				plugins.getUserQueryPreprocessors(),
-				searchConfig.getPluginConfiguration());
-		log.info("Using index {} for tenant {}", searchConfig.getIndexName(), tenant);
-		return new SearchContext(fieldConfigAccess, searchConfig, userQueryPreprocessors);
-	}
-
-	private FieldConfigIndex loadFieldConfiguration(String indexName) {
-		FieldConfiguration fieldConfig;
-		try {
-			fieldConfig = new FieldConfigFetcher(esBuilder.getRestHLClient()).fetchConfig(indexName);
-		}
-		catch (IOException e) {
-			log.error("couldn't fetch field configuration from index {}", indexName);
-			throw new UncheckedIOException(e);
-		}
-		return new FieldConfigIndex(fieldConfig);
 	}
 
 	@ExceptionHandler({ NotFoundException.class })

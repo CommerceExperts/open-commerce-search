@@ -30,9 +30,11 @@ import de.cxp.ocs.plugin.PluginManager;
 import de.cxp.ocs.spi.indexer.IndexerConfigurationProvider;
 import de.cxp.ocs.util.DocumentDeserializer;
 import de.cxp.ocs.util.ProductDeserializer;
+import lombok.extern.slf4j.Slf4j;
 
 @SpringBootApplication
 @RefreshScope
+@Slf4j
 public class Application {
 
 	public static void main(String[] args) {
@@ -56,19 +58,12 @@ public class Application {
 
 	@Bean
 	public IndexerConfigurationProvider configurationProvider(PluginManager pluginManager, ApplicationProperties properties) {
+		log.info("going to connect to Elasticsearch hosts {}", properties.getConnectionConfiguration().getHosts());
 		DefaultIndexerConfigurationProvider defaultConfigProvider = new DefaultIndexerConfigurationProvider(properties);
 		Optional<IndexerConfigurationProvider> indexerConfigurationProvider = pluginManager.loadPrefered(IndexerConfigurationProvider.class);
 		indexerConfigurationProvider.ifPresent(icp -> icp.setDefaultProvider(defaultConfigProvider));
 		return indexerConfigurationProvider.orElse(defaultConfigProvider);
 	}
-
-	// @Bean
-	// public MeterRegistryCustomizer<MeterRegistry> metricsCommonTags(
-	// @Value("${spring.application.name}") String applicationName) {
-	// return registry -> {
-	// registry.config().commonTags("application", applicationName);
-	// };
-	// }
 
 	/**
 	 * Customization for ObjectMapper that's used for rest requests.

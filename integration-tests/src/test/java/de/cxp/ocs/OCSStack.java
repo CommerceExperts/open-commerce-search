@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.http.HttpHost;
+import org.elasticsearch.Version;
 import org.elasticsearch.client.RestClient;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -68,11 +69,12 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 				}
 			}
 			else {
-				elasticsearch = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:7.17.0");
+				elasticsearch = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:" + Version.CURRENT.toString());
 				elasticsearch.addEnv("discovery.type", "single-node");
 				elasticsearch.setExposedPorts(Collections.singletonList(ES_DEFAULT_PORT));
 				elasticsearch.withNetwork(Network.newNetwork());
 				elasticsearch.withNetworkAliases("elasticsearch");
+				elasticsearch.addEnv("ES_JAVA_OPTS", "-Xms1024m -Xmx1024m");
 
 				esHost = CompletableFuture.supplyAsync(() -> {
 					elasticsearch.start();
@@ -101,7 +103,7 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 		else {
 			indexerService = new GenericContainer<>("commerceexperts/ocs-indexer-service:latest");
 			indexerService.addExposedPort(INDEXER_DEFAULT_PORT);
-			indexerService.addEnv("JAVA_TOOL_OPTIONS", "-Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset");
+			indexerService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset");
 
 			if (elasticsearch != null) {
 				indexerService.setNetwork(elasticsearch.getNetwork());
@@ -130,7 +132,7 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 			searchService.addExposedPort(SEARCH_DEFAULT_PORT);
 			// searchService.setCommand("-Dspring.cloud.config.enabled=false",
 			// "-Dspring.profiles.active=preset");
-			searchService.addEnv("JAVA_TOOL_OPTIONS", "-Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,trace-searches");
+			searchService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,trace-searches");
 
 			if (elasticsearch != null) {
 				searchService.setNetwork(elasticsearch.getNetwork());
@@ -157,6 +159,7 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 		else {
 			suggestService = new GenericContainer<>("commerceexperts/ocs-suggest-service:latest");
 			suggestService.addExposedPort(SUGGEST_DEFAULT_PORT);
+			suggestService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m");
 
 			String esAddr;
 			if (elasticsearch != null) {

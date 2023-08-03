@@ -1,15 +1,16 @@
 package de.cxp.ocs.smartsuggest.spi;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 
 @Data
-public class SuggestConfig {
+@Builder(toBuilder = true)
+@AllArgsConstructor
+public class SuggestConfig implements Cloneable {
 
 	public Locale locale = Locale.ROOT;
 
@@ -24,6 +25,10 @@ public class SuggestConfig {
 	public Optional<String[]> groupDeduplicationOrder = Optional.empty();
 
 	public boolean useRelativeShareLimit = false;
+
+	public int prefetchLimitFactor = 1;
+
+	public int maxSharpenedQueries = 3;
 
 	public List<GroupConfig> groupConfig = new ArrayList<>();
 
@@ -194,5 +199,30 @@ public class SuggestConfig {
 	 */
 	public void setGroupConfig(List<GroupConfig> groupConfig) {
 		this.groupConfig = groupConfig;
+	}
+
+	/**
+	 * Defines the limit of returned sharpened queries.
+	 * <p>
+	 * Sharpened queries are queries that are injected directly (without requesting a Lucene index) from a hash-map if
+	 * the input query matches one of the existing entries.
+	 * </p>
+	 * <p>
+	 * This limit only is considered if there are more sharpened queries than defined by that limit.
+	 * </p>
+	 * 
+	 * @param maxSharpenedQueries
+	 */
+	public void setMaxSharpenedQueries(int maxSharpenedQueries) {
+		this.maxSharpenedQueries = maxSharpenedQueries;
+	}
+
+	@Override
+	public SuggestConfig clone() {
+		return this.toBuilder()
+				// deep copy of mutable properties
+				.groupConfig(this.groupConfig.stream().map(orig -> new GroupConfig(orig.groupName, orig.limit)).collect(Collectors.toList()))
+				.groupDeduplicationOrder(this.groupDeduplicationOrder.map(original -> Arrays.copyOf(original, original.length)))
+				.build();
 	}
 }

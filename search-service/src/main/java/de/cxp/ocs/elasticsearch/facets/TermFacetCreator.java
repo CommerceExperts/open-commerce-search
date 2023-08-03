@@ -12,11 +12,11 @@ import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig.ValueOrder;
 import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.DefaultLinkBuilder;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -71,9 +71,9 @@ public class TermFacetCreator extends NestedFacetCreator {
 
 	@Override
 	protected Optional<Facet> createFacet(Terms.Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter,
-			SearchQueryBuilder linkBuilder) {
+			DefaultLinkBuilder linkBuilder) {
 		Facet facet = FacetFactory.create(facetConfig, FacetType.TERM);
-		if (facetFilter != null && facetFilter instanceof TermResultFilter) {
+		if (facetFilter != null && !facetFilter.isNegated() && facetFilter instanceof TermResultFilter) {
 			facet.setFiltered(true);
 			fillFacet(facet, facetNameBucket, (TermResultFilter) facetFilter, facetConfig, linkBuilder);
 		}
@@ -125,7 +125,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 		return Optional.of(first);
 	}
 
-	private void fillFacet(Facet facet, Bucket facetNameBucket, TermResultFilter facetFilter, FacetConfig facetConfig, SearchQueryBuilder linkBuilder) {
+	private void fillFacet(Facet facet, Bucket facetNameBucket, TermResultFilter facetFilter, FacetConfig facetConfig, DefaultLinkBuilder linkBuilder) {
 		Terms facetValues = ((Terms) facetNameBucket.getAggregations().get(FACET_VALUES_AGG));
 		Set<String> filterValues = facetFilter == null ? Collections.emptySet() : asSet(facetFilter.getValues());
 		Map<String, FacetEntry> facetEntriesByNormalizedValue = new LinkedHashMap<>();
@@ -177,7 +177,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 		facet.setAbsoluteFacetCoverage(absDocCount);
 	}
 
-	public String createFacetLink(TermResultFilter facetFilter, FacetConfig facetConfig, SearchQueryBuilder linkBuilder, String facetValue, String facetValueId,
+	public String createFacetLink(TermResultFilter facetFilter, FacetConfig facetConfig, DefaultLinkBuilder linkBuilder, String facetValue, String facetValueId,
 			boolean isSelected) {
 		String link;
 		if (isSelected) {

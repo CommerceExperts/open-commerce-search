@@ -44,7 +44,7 @@ public class ITPartialUpdates {
 	@Test
 	public void testAdd() throws Exception {
 		getImportClient()
-				.putDocuments(indexName, false, Collections.singletonList(
+				.putDocuments(indexName, false, null, Collections.singletonList(
 								new Document().setId("101").set("title", "Add Test")));
 		
 		flushIndex();

@@ -1,5 +1,10 @@
 package de.cxp.ocs.util;
 
+import java.io.IOException;
+import java.io.Reader;
+
+import org.apache.lucene.analysis.CharFilter;
+
 public final class StringUtils {
 
 	private StringUtils() {}
@@ -38,6 +43,72 @@ public final class StringUtils {
 			b.append(translate(element));
 		}
 		return b.toString();
+	}
+
+	public static Reader asLowercaseCharFilter(Reader inputReader) {
+		return new LowercaseCharFilter(inputReader);
+	}
+
+	private static class LowercaseCharFilter extends CharFilter {
+
+		public LowercaseCharFilter(Reader input) {
+			super(input);
+		}
+
+		@Override
+		protected int correct(int currentOff) {
+			return currentOff; // we don't change the length of the string
+		}
+
+		@Override
+		public int read(char[] cbuf, int off, int len) throws IOException {
+			final int charsRead = input.read(cbuf, off, len);
+			if (charsRead > 0) {
+				final int end = off + charsRead;
+				while (off < end) {
+					cbuf[off] = Character.toLowerCase(cbuf[off]);
+					off++;
+				}
+			}
+			return charsRead;
+		}
+
+	}
+
+	public static CharFilter asAsciifyCharFilter(Reader in) {
+		return new AsciifyCharFilter(in);
+	}
+
+	private static class AsciifyCharFilter extends CharFilter {
+
+		public AsciifyCharFilter(Reader in) {
+			super(in);
+		}
+
+		@Override
+		protected int correct(int currentOff) {
+			return currentOff; // we don't change the length of the string
+		}
+
+		@Override
+		public int read(char[] cbuf, int off, int len) throws IOException {
+			final int charsRead = input.read(cbuf, off, len);
+			if (charsRead > 0) {
+				final int end = off + charsRead;
+				while (off < end) {
+					cbuf[off] = translate(cbuf[off]);
+					off++;
+				}
+			}
+			return charsRead;
+		}
+
+		@Override
+		public int read() throws IOException {
+			int ch = input.read();
+			return (int) translate((char) ch);
+		}
+
 	}
 
 	/**
@@ -250,4 +321,5 @@ public final class StringUtils {
 		}
 		return c;
 	}
+
 }

@@ -12,12 +12,13 @@ import org.elasticsearch.search.aggregations.metrics.ParsedStats;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.IntervalFacetEntry;
 import de.cxp.ocs.model.result.RangeFacetEntry;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.DefaultLinkBuilder;
+import lombok.Setter;
 
 /**
  * <p>
@@ -35,6 +36,13 @@ public class RangeFacetCreator extends NestedFacetCreator {
 
 	public final static String AGGREGATION_NAME = "_stats";
 
+	/**
+	 * Set to true, if this facet creator should only be used to create the configured facets. This should remain false
+	 * for a default facet creator.
+	 */
+	@Setter
+	private boolean isExplicitFacetCreator = false;
+
 	public RangeFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider) {
 		super(facetConfigs, defaultFacetConfigProvider);
 		// ensure the according filters are applied as post filters
@@ -48,7 +56,7 @@ public class RangeFacetCreator extends NestedFacetCreator {
 
 	@Override
 	protected boolean onlyFetchAggregationsForConfiguredFacets() {
-		return true;
+		return isExplicitFacetCreator;
 	}
 
 	@Override
@@ -68,14 +76,14 @@ public class RangeFacetCreator extends NestedFacetCreator {
 	}
 
 	@Override
-	protected Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, SearchQueryBuilder linkBuilder) {
+	protected Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, DefaultLinkBuilder linkBuilder) {
 		ParsedStats stats = facetNameBucket.getAggregations().get(AGGREGATION_NAME);
 		if (stats.getMin() == stats.getMax() || stats.getCount() == 1) {
 			return Optional.empty();
 		}
 		else {
 			RangeFacetEntry rangeFacetEntry = new RangeFacetEntry(stats.getMin(), stats.getMax(), stats.getCount(), linkBuilder.toString(), facetFilter != null);
-			if (facetFilter != null && facetFilter instanceof NumberResultFilter) {
+			if (facetFilter != null && !facetFilter.isNegated() && facetFilter instanceof NumberResultFilter) {
 				rangeFacetEntry.setSelectedMin(((NumberResultFilter) facetFilter).getLowerBound());
 				rangeFacetEntry.setSelectedMax(((NumberResultFilter) facetFilter).getUpperBound());
 			}

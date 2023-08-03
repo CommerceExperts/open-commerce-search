@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.model.params.StaticProductSet;
 import de.cxp.ocs.model.result.Sorting;
 import lombok.Data;
@@ -45,13 +45,18 @@ public class InternalSearchParams {
 
 	public List<InternalResultFilter> filters = new ArrayList<>();
 
-	public List<InternalResultFilter> querqyFilters = new ArrayList<>();
+	/**
+	 * Optional filters added by the analyzer that should only be applied internally but not exposed in the result.
+	 */
+	public List<InternalResultFilter> inducedFilters = new ArrayList<>();
 
 	public Map<String, String> customParams;
 
 	public StaticProductSet[] heroProductSets;
 
 	public Set<String> excludedIds;
+
+	public TraceOptions trace;
 
 	public InternalSearchParams withSorting(Sorting sorting) {
 		sortings.add(sorting);

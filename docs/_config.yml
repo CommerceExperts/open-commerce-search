@@ -1,5 +1,6 @@
 theme: jekyll-theme-slate
 title: Open Commerce Search Stack
+logo_src: ./assets/ocss_logo_only.png
 description: <a href="https://commerceexperts.github.io/open-commerce-search/">The Documentation</a>
 show_downloads: false
 repository: CommerceExperts/open-commerce-search
