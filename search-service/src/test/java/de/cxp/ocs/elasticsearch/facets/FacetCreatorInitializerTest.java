@@ -18,6 +18,7 @@ import java.util.function.Supplier;
 
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.junit.jupiter.api.Test;
 
@@ -122,7 +123,7 @@ public class FacetCreatorInitializerTest {
 			}
 
 			@Override
-			public Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, LinkBuilder linkBuilder) {
+			public Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, LinkBuilder linkBuilder, Function<MultiBucketsAggregation.Bucket, Long> nestedValueBucketDocCountCorrector) {
 				Facet facet = new Facet(facetConfig.getSourceField());
 				facet.addEntry("a", 12, linkBuilder.withFilterAsLink(facetConfig.getSourceField(), false, "a"));
 				facet.addEntry("b", 5, linkBuilder.withFilterAsLink(facetConfig.getSourceField(), false, "b"));

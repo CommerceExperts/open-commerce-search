@@ -16,6 +16,7 @@ import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.spi.search.CustomFacetCreator;
 import de.cxp.ocs.util.DefaultLinkBuilder;
+import de.cxp.ocs.util.LinkBuilder;
 import lombok.NonNull;
 
 public class NestedCustomFacetCreator extends NestedFacetCreator {
@@ -55,7 +56,7 @@ public class NestedCustomFacetCreator extends NestedFacetCreator {
 
 	@Override
 	protected Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, DefaultLinkBuilder linkBuilder) {
-		return customFacetCreator.createFacet(facetNameBucket, facetConfig, facetFilter, linkBuilder);
+		return customFacetCreator.createFacet(facetNameBucket, facetConfig, facetFilter, (LinkBuilder) linkBuilder, nestedFacetCorrector::getCorrectedDocumentCount);
 	}
 
 	@Override
