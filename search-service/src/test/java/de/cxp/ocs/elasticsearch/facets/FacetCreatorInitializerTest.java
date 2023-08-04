@@ -155,7 +155,7 @@ public class FacetCreatorInitializerTest {
 		// top level aggregation
 		AggregationBuilder aggregation = nestedCustomFC.buildAggregation();
 		// ensure it has a non-conflicting name
-		assertEquals("CustomFacetAgg_" + CUSTOM_FACET_TYPE, aggregation.getName(), aggregation::toString);
+		assertEquals("CustomFacetAgg_" + CUSTOM_FACET_TYPE + "_m", aggregation.getName(), aggregation::toString);
 
 		AggregationBuilder customSubAgg = aggregation
 				.getSubAggregations().iterator().next() // filters agg
