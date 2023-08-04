@@ -25,7 +25,7 @@ import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.spi.search.CustomFacetCreator;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.DefaultLinkBuilder;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -63,7 +63,14 @@ public class FacetConfigurationApplyer {
 		maxFacets = context.config.getFacetConfiguration().getMaxFacets();
 
 		Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreatorsByType = new HashMap<>();
-		customFacetCreatorSupplier.forEach(supplier -> customFacetCreatorsByType.put(supplier.get().getFacetType(), supplier));
+		customFacetCreatorSupplier.forEach(supplier -> {
+			CustomFacetCreator customFacetCreator = supplier.get();
+			Supplier<?> previousSupplier = customFacetCreatorsByType.put(customFacetCreator.getFacetType(), supplier);
+			if (previousSupplier != null) {
+				log.warn("For facet-type '{}' there are two conflicting CustomFacetCreator implementation: {} replaced {}! Make sure to use unique facet types!",
+						customFacetCreator.getFacetType(), customFacetCreator.getClass().getCanonicalName(), previousSupplier.get().getClass().getCanonicalName());
+			}
+		});
 		facetsBySourceField = loadFacetConfig(context, customFacetCreatorsByType);
 
 		facetFilters.add(new FacetCoverageFilter());
@@ -297,7 +304,7 @@ public class FacetConfigurationApplyer {
 	}
 
 	public List<Facet> getFacets(Aggregations aggregations, long matchCount,
-			FilterContext filterContext, SearchQueryBuilder linkBuilder) {
+			FilterContext filterContext, DefaultLinkBuilder linkBuilder) {
 		List<Facet> facets;
 
 		if (filterContext.getPostFilterQueries().isEmpty()) {
@@ -365,7 +372,7 @@ public class FacetConfigurationApplyer {
 		}
 	}
 
-	private List<Facet> facetsFromFilteredAggregations(Aggregations aggregations, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
+	private List<Facet> facetsFromFilteredAggregations(Aggregations aggregations, FilterContext filterContext, DefaultLinkBuilder linkBuilder) {
 		Map<String, Facet> facets = new HashMap<>();
 
 		Filter filteredAggregation = aggregations.get(FILTERED_AGG_NAME);
@@ -384,14 +391,14 @@ public class FacetConfigurationApplyer {
 		return new ArrayList<>(facets.values());
 	}
 
-	private List<Facet> facetsFromUnfilteredAggregations(Aggregations aggregations, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
+	private List<Facet> facetsFromUnfilteredAggregations(Aggregations aggregations, FilterContext filterContext, DefaultLinkBuilder linkBuilder) {
 		Map<String, Facet> facets = new HashMap<>();
 		collectFacets(facets, facetCreators, aggregations, filterContext, linkBuilder);
 		return new ArrayList<>(facets.values());
 	}
 
 	private void collectFacets(Map<String, Facet> facets, List<FacetCreator> facetCreators, Aggregations aggregations, FilterContext filterContext,
-			SearchQueryBuilder linkBuilder) {
+			DefaultLinkBuilder linkBuilder) {
 		Set<String> appliedFilters = filterContext.getInternalFilters().keySet();
 
 		for (FacetCreator fc : facetCreators) {

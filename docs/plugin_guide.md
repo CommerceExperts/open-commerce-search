@@ -125,6 +125,56 @@ Severl implementations can be used per tenant.
 
 [See details at the Java-docs](javadoc.html#apidocs/de/cxp/ocs/spi/search/UserQueryPreprocessor.html)
 
+### de.cxp.ocs.spi.search.CustomFacetCreator
+
+With an implementation of that SPI you can add your own type of facet. The implementation have to return the type-name (which must **not** be one of the existing types "interval", "range", "term" and "hierarchical"). That CustomFacetCreator is used automatically if a facet is configured with that type.
+
+The `de.cxp.ocs.elasticsearch.facets.FixedIntervalFacetCreator` is an abstract implementation that is included inside the SearchService. It can be used to create fixed-interval facets for different usecases.
+
+It is also a great example that it is not possible to have one facet creator to build different Elasticsearch aggregation. That's because *the same instance of a FacetCreator is used for all facets that define that type*! This might lead to problems if you want to have a slight different way of creating the Elasticsearch aggregation, as it is the case for the FixedIntervalFacetCreator, where you might want to have different fixed intervals for different facets.
+
+Nevertheless the FixedIntervalFacetCreator is there to be easy extendable for different kind of facets.
+Example:
+
+```java
+            class RatingFacetCreator extends FixedIntervalFacetCreator {
+
+                // never forget: a SPI implementation must provide a no-args constructor!
+                public RatingFacetCreator() {
+                    super(Arrays.asList(
+                        new NumericRange("> 1", 1., 5.01), // the ranges are upper-bound-exclusive
+                        new NumericRange("> 2", 2., 5.01), // ..to to include all ratings of 5,
+                        new NumericRange("> 3", 3., 5.01), // ..use an upper bound > 5
+                        new NumericRange("> 4", 4., 5.01)));
+                }
+
+                @Override
+                public String getFacetType() {
+                    return "rating"; // custom type
+                }
+
+            });
+            class PriceRangeFacetCreator extends FixedIntervalFacetCreator {
+
+                public PriceRangeFacetCreator() {
+                    super(Arrays.asList(
+                        new NumericRange("< 10", 0, 10),
+                        new NumericRange(10, 100),  // labels are optional
+                        new NumericRange(100, 200), // .. per default "min"-"max" is used as label
+                        new NumericRange(200, 500), 
+                        new NumericRange(500, 1000), 
+                        new NumericRange("> 1000", 1000, 100000)));
+                }
+
+                @Override
+                public String getFacetType() {
+                    return "fixed_price_ranges";
+                }
+
+            });
+```
+
+
 [back to top](#)
 
 ## Suggest-Service SPI

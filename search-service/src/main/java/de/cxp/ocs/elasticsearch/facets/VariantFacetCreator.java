@@ -12,7 +12,7 @@ import org.elasticsearch.search.aggregations.bucket.nested.NestedAggregationBuil
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.model.result.Facet;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.DefaultLinkBuilder;
 import lombok.AccessLevel;
 import lombok.Getter;
 
@@ -54,7 +54,7 @@ public class VariantFacetCreator implements FacetCreator {
 	}
 
 	@Override
-	public Collection<Facet> createFacets(Aggregations aggResult, FilterContext filterContext, SearchQueryBuilder linkBuilder) {
+	public Collection<Facet> createFacets(Aggregations aggResult, FilterContext filterContext, DefaultLinkBuilder linkBuilder) {
 		List<Facet> facets = new ArrayList<>();
 		Nested nestedAgg = (Nested) aggResult.get("_variants");
 		for (FacetCreator creator : innerCreators) {

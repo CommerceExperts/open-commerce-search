@@ -1,8 +1,10 @@
 package de.cxp.ocs.spi.search;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
@@ -23,7 +25,9 @@ public interface CustomFacetCreator {
 	String getFacetType();
 
 	/**
-	 * Specify for which field type this creator works. Must be one of: STRING, NUMBER, CATEGORY
+	 * Specify for which field type this creator works. Must be one of: STRING, NUMBER, CATEGORY.
+	 * A facet creator can not work for different field types - in that case different implementation of the
+	 * facet-creator with different
 	 * 
 	 * @return
 	 */
@@ -54,5 +58,17 @@ public interface CustomFacetCreator {
 	 *        a helper to create links for facet values / filters.
 	 * @return facet if it can be created otherwise an empty optional.
 	 */
-	Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, LinkBuilder linkBuilder);
+	Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, LinkBuilder linkBuilder, Function<MultiBucketsAggregation.Bucket, Long> nestedValueBucketDocCountCorrector);
+
+	/**
+	 * In case such a custom facet should be created on a field that is indexed on variant and master level, two facets
+	 * are created and should be merged.
+	 * If that is not possible feel free to log an error and return Optional.empty or just one of those facets.
+	 * 
+	 * @param first
+	 * @param second
+	 * @return
+	 */
+	Optional<Facet> mergeFacets(Facet first, Facet second);
+
 }

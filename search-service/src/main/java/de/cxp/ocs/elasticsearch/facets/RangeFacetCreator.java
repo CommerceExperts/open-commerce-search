@@ -17,7 +17,7 @@ import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.IntervalFacetEntry;
 import de.cxp.ocs.model.result.RangeFacetEntry;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.DefaultLinkBuilder;
 import lombok.Setter;
 
 /**
@@ -76,7 +76,7 @@ public class RangeFacetCreator extends NestedFacetCreator {
 	}
 
 	@Override
-	protected Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, SearchQueryBuilder linkBuilder) {
+	protected Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter, DefaultLinkBuilder linkBuilder) {
 		ParsedStats stats = facetNameBucket.getAggregations().get(AGGREGATION_NAME);
 		if (stats.getMin() == stats.getMax() || stats.getCount() == 1) {
 			return Optional.empty();

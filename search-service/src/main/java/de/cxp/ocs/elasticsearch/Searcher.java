@@ -62,7 +62,7 @@ import de.cxp.ocs.spi.search.RescorerProvider;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.InternalSearchParams;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.DefaultLinkBuilder;
 import de.cxp.ocs.util.TraceOptions.TraceFlag;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.DistributionSummary;
@@ -473,9 +473,9 @@ public class Searcher {
 	}
 
 	private SearchResult buildResult(InternalSearchParams parameters, FilterContext filterContext, SearchResponse searchResponse) {
-		SearchQueryBuilder linkBuilder = new SearchQueryBuilder(parameters);
+		DefaultLinkBuilder linkBuilder = new DefaultLinkBuilder(parameters);
 		SearchResult searchResult = new SearchResult();
-		searchResult.inputURI = SearchQueryBuilder.toLink(parameters).toString();
+		searchResult.inputURI = DefaultLinkBuilder.toLink(parameters).toString();
 		searchResult.slices = new ArrayList<>(1);
 		searchResult.sortOptions = sortingHandler.buildSortOptions(linkBuilder);
 		searchResult.meta = new HashMap<>();
@@ -504,7 +504,7 @@ public class Searcher {
 			searchResult.slices.add(new SearchResultSlice()
 					.setLabel("main")
 					.setMatchCount(0)
-					.setResultLink(SearchQueryBuilder.toLink(parameters).toString())
+					.setResultLink(DefaultLinkBuilder.toLink(parameters).toString())
 					.setHits(Collections.emptyList())
 					.setFacets(Collections.emptyList()));
 			searchResult.meta.put("error", "invalid user query");
@@ -637,7 +637,7 @@ public class Searcher {
 		SearchResultSlice srSlice = new SearchResultSlice();
 		// XXX think about building parameters according to the actual performed
 		// search (e.g. with relaxed query or with implicit set filters)
-		srSlice.resultLink = SearchQueryBuilder.toLink(parameters).toString();
+		srSlice.resultLink = DefaultLinkBuilder.toLink(parameters).toString();
 		srSlice.matchCount = searchHits.getTotalHits().value - heroIds.size();
 
 		Map<String, SortOrder> sortedFields = sortingHandler.getSortedNumericFields(parameters);

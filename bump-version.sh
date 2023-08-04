@@ -3,10 +3,18 @@
 main_modules=("open-commerce-search-api" "ocs-plugin-spi" "ocs-commons" "indexer-service" "search-service" "ocs-java-client" "integration-tests")
 suggest_modules=("smartsuggest-lib" "ocs-suggest-data-provider" "suggest-service")
 
-bump_level="incremental"
-if [[ "$1" == minor ]]; then
-    bump_level="minor"
-fi
+echo "Choose bump level: "
+echo " 1) incremental (for bug fixes etc)"
+echo " 2) minor (for new non-breaking features)"
+read -r BL
+
+case "$BL" in
+    1) bump_level="incremental" ;;
+    incremental) bump_level="incremental" ;;
+    2) bump_level="minor" ;;
+    minor) bump_level="minor" ;;
+    *) echo "Invalid bump level: $BL" && exit 1 ;;
+esac
 
 cd "$(dirname "$0")" || exit
 orig_changed_modules="$(git diff --dirstat=0 origin/master | awk '{print $NF}' | cut -d "/" -f1 | sort -u | xargs)"
@@ -164,8 +172,11 @@ then
         mvn -q versions:update-parent -DgenerateBackupPoms=false -DskipResolution=true -DparentVersion="$new_version" -pl "$suggest_update_dependants"
         cd - || exit
     fi 
+
+    echo "!! This script is limited to automatic bump of simple changes! Please verify manually if all is done properly!"
 else
     echo "all versions are already bumped"
+    echo "However this script is limited to automatic bump of simple changes! Please verify manually if all is done properly!"
 fi
 
 

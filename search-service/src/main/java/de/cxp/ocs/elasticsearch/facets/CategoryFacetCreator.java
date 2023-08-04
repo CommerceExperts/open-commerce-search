@@ -21,7 +21,7 @@ import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.DefaultLinkBuilder;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.Accessors;
@@ -70,7 +70,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 	}
 
 	@Override
-	protected Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter intFacetFilter, SearchQueryBuilder linkBuilder) {
+	protected Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter intFacetFilter, DefaultLinkBuilder linkBuilder) {
 		Terms categoryAgg = facetNameBucket.getAggregations().get(FACET_VALUES_AGG);
 		List<? extends Bucket> catBuckets = categoryAgg.getBuckets();
 		if (catBuckets.size() == 0) return Optional.empty();
@@ -166,10 +166,12 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		if (facetFilter.getValues().length > 0) {
 			if (facetFilter.isFilterOnId()) {
 				for (String idFilter : facetFilter.getValues()) {
-					if ((idFilter.charAt(0) == PATH_SEPARATOR && category.idPathString.equals(idFilter))
-							|| category.id.equals(idFilter)) {
-						isSelectedPath = true;
-						break;
+					if(category != null) {
+						if ((idFilter.charAt(0) == PATH_SEPARATOR && category.idPathString != null && category.idPathString.equals(idFilter))
+								|| (category.id != null && category.id.equals(idFilter))) {
+							isSelectedPath = true;
+							break;
+						}
 					}
 				}
 			}
@@ -388,7 +390,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 	protected static class CategoryContext {
 
 		PathResultFilter							facetFilter;
-		SearchQueryBuilder							linkBuilder;
+		DefaultLinkBuilder							linkBuilder;
 		FacetConfig									facetConfig;
 		final Map<String, String>					idPathIndex;
 		final Map<String, HierarchialFacetEntry>	entries;

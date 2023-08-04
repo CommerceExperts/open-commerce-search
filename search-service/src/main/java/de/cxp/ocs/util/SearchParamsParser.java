@@ -1,8 +1,8 @@
 package de.cxp.ocs.util;
 
-import static de.cxp.ocs.util.SearchQueryBuilder.SORT_DESC_PREFIX;
-import static de.cxp.ocs.util.SearchQueryBuilder.VALUE_DELIMITER;
-import static de.cxp.ocs.util.SearchQueryBuilder.VALUE_DELIMITER_ENCODED;
+import static de.cxp.ocs.util.DefaultLinkBuilder.SORT_DESC_PREFIX;
+import static de.cxp.ocs.util.DefaultLinkBuilder.VALUE_DELIMITER;
+import static de.cxp.ocs.util.DefaultLinkBuilder.VALUE_DELIMITER_ENCODED;
 import static org.apache.commons.lang3.StringUtils.replace;
 import static org.apache.commons.lang3.StringUtils.split;
 import static org.apache.commons.lang3.StringUtils.splitPreserveAllTokens;
@@ -189,6 +189,11 @@ public class SearchParamsParser {
 			// such
 			// case this will simply fail
 			paramValues = splitPreserveAllTokens(paramValues[0], '-');
+			// if a single value is provided, use it as a min and max, so products with exactly that value are returned
+			// (good for numeric flag fields with 0 and 1)
+			if (paramValues.length == 1) {
+				paramValues = new String[] { paramValues[0], paramValues[0] };
+			}
 			if (paramValues.length != 2) {
 				throw new IllegalArgumentException("unexpected numeric filter value: " + paramValues[0]);
 			}

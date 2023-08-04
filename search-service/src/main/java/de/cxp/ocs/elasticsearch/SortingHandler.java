@@ -1,6 +1,6 @@
 package de.cxp.ocs.elasticsearch;
 
-import static de.cxp.ocs.util.SearchQueryBuilder.sortStringRepresentation;
+import static de.cxp.ocs.util.DefaultLinkBuilder.sortStringRepresentation;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -13,7 +13,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import de.cxp.ocs.config.*;
 import de.cxp.ocs.model.result.Sorting;
 import de.cxp.ocs.util.InternalSearchParams;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.DefaultLinkBuilder;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,7 +31,7 @@ public class SortingHandler {
 		sortConfigIndex = sortConfigs.stream().collect(Collectors.toMap(s -> sortStringRepresentation(s.getField(), s.getOrder()), s -> s));
 	}
 
-	List<Sorting> buildSortOptions(SearchQueryBuilder linkBuilder) {
+	List<Sorting> buildSortOptions(DefaultLinkBuilder linkBuilder) {
 		List<Sorting> sortings = new ArrayList<>();
 
 		if (sortConfigs.isEmpty()) {
