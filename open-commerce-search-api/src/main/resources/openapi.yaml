@@ -8,7 +8,7 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Open Commerce Search Stack API
-  version: 0.18.0-SNAPSHOT
+  version: 0.22.0
 paths:
   /indexer-api/v1/full/add:
     post:
@@ -228,9 +228,10 @@ paths:
       - update
     put:
       description: "Puts a document to the index. If document does not exist, it will\
-        \ be added. An existing product will be overwritten unless the parameter 'replaceExisting\"\
-        \ is set to \"false\". Provided document should be a complete object, partial\
-        \ updates should be  done using the updateDocument method."
+        \ be added, but in that case the langCode parameter is required. An existing\
+        \ product will be overwritten unless the parameter 'replaceExisting\" is set\
+        \ to \"false\". Provided document should be a complete object, partial updates\
+        \ should be done using the updateDocument method."
       operationId: putDocuments
       parameters:
       - in: path
@@ -244,6 +245,13 @@ paths:
         name: replaceExisting
         schema:
           type: boolean
+      - description: "If this put request targets an index that does not exist yet,\
+          \ that index will be created. To use the correct index template, the language\
+          \ is required for that case. Otherwise its ignored."
+        in: query
+        name: langCode
+        schema:
+          type: string
       responses:
         "200":
           description: OK. The response contains a map of ids and according result.
@@ -632,6 +640,8 @@ components:
             type: string
           type:
             type: string
+          variantBoostTerms:
+            type: string
     Facet:
       type: object
       description: "If facets are part of this slice, they are placed here. By default\
@@ -702,6 +712,28 @@ components:
             \ selected."
         type:
           type: string
+    GenericProductSet:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/ProductSet'
+      - type: object
+        properties:
+          asSeparateSlice:
+            type: boolean
+          name:
+            type: string
+          parameters:
+            type: object
+            additionalProperties:
+              type: string
+          size:
+            type: integer
+            format: int32
+          type:
+            type: string
+          variantBoostTerms:
+            type: string
+      description: A non-specific product set usable for custom product set resolvers.
     HierarchialFacetEntry:
       type: object
       allOf:
@@ -798,6 +830,7 @@ components:
       discriminator:
         mapping:
           dynamic: '#/components/schemas/DynamicProductSet'
+          generic: '#/components/schemas/GenericProductSet'
           static: '#/components/schemas/StaticProductSet'
         propertyName: type
       properties:
@@ -809,6 +842,8 @@ components:
           type: integer
           format: int32
         type:
+          type: string
+        variantBoostTerms:
           type: string
     RangeFacetEntry:
       type: object
@@ -857,6 +892,10 @@ components:
           type: array
           items:
             type: string
+        metaData:
+          type: object
+          additionalProperties:
+            type: object
     SearchQuery:
       type: object
       properties:
@@ -1005,6 +1044,8 @@ components:
             type: integer
             format: int32
           type:
+            type: string
+          variantBoostTerms:
             type: string
     Suggestion:
       type: object

@@ -172,8 +172,11 @@ then
         mvn -q versions:update-parent -DgenerateBackupPoms=false -DskipResolution=true -DparentVersion="$new_version" -pl "$suggest_update_dependants"
         cd - || exit
     fi 
+
+    echo "!! This script is limited to automatic bump of simple changes! Please verify manually if all is done properly!"
 else
     echo "all versions are already bumped"
+    echo "However this script is limited to automatic bump of simple changes! Please verify manually if all is done properly!"
 fi
 
 
