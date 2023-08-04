@@ -25,7 +25,9 @@ public interface CustomFacetCreator {
 	String getFacetType();
 
 	/**
-	 * Specify for which field type this creator works. Must be one of: STRING, NUMBER, CATEGORY
+	 * Specify for which field type this creator works. Must be one of: STRING, NUMBER, CATEGORY.
+	 * A facet creator can not work for different field types - in that case different implementation of the
+	 * facet-creator with different
 	 * 
 	 * @return
 	 */

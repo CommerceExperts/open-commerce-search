@@ -63,7 +63,14 @@ public class FacetConfigurationApplyer {
 		maxFacets = context.config.getFacetConfiguration().getMaxFacets();
 
 		Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreatorsByType = new HashMap<>();
-		customFacetCreatorSupplier.forEach(supplier -> customFacetCreatorsByType.put(supplier.get().getFacetType(), supplier));
+		customFacetCreatorSupplier.forEach(supplier -> {
+			CustomFacetCreator customFacetCreator = supplier.get();
+			Supplier<?> previousSupplier = customFacetCreatorsByType.put(customFacetCreator.getFacetType(), supplier);
+			if (previousSupplier != null) {
+				log.warn("For facet-type '{}' there are two conflicting CustomFacetCreator implementation: {} replaced {}! Make sure to use unique facet types!",
+						customFacetCreator.getFacetType(), customFacetCreator.getClass().getCanonicalName(), previousSupplier.get().getClass().getCanonicalName());
+			}
+		});
 		facetsBySourceField = loadFacetConfig(context, customFacetCreatorsByType);
 
 		facetFilters.add(new FacetCoverageFilter());

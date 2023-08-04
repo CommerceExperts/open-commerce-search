@@ -58,27 +58,27 @@ public abstract class FixedIntervalFacetCreator implements CustomFacetCreator {
 	 * and to hide the fact of that range, use an according range label.
 	 * </p>
 	 * <p>
-	 * Although open ranges are possible by setting one of from and to to null, the created filters are invalid since
-	 * they will contain the text "Infinite" which can't be parsed by OCS. To achieve open ranges, consider using your
-	 * own high values and a custom range label.
+	 * Although open ranges are possible at Elasticsearch by setting one of from and to to null, the created filters are
+	 * invalid since they will contain the text "Infinite" which can't be parsed by OCS. That's why primitives are
+	 * enforced with this implementation. To achieve open ranges use your a low or high value plus a custom range label.
 	 * </p>
 	 */
 	public static class NumericRange extends org.elasticsearch.search.aggregations.bucket.range.RangeAggregator.Range {
 
-		public NumericRange(String rangeLabel, Double from, Double to) {
+		public NumericRange(String rangeLabel, double from, double to) {
 			super(rangeLabel, from, to);
 		}
 
-		public NumericRange(Double from, Double to) {
+		public NumericRange(double from, double to) {
 			super(null, from, to);
 		}
 
-		public NumericRange(Integer from, Integer to) {
-			super(null, from != null ? from.doubleValue() : null, to != null ? to.doubleValue() : null);
+		public NumericRange(int from, int to) {
+			super(null, (double) from, (double) to);
 		}
 
-		public NumericRange(String rangeLabel, Integer from, Integer to) {
-			super(rangeLabel, from != null ? from.doubleValue() : null, to != null ? to.doubleValue() : null);
+		public NumericRange(String rangeLabel, int from, int to) {
+			super(rangeLabel, (double) from, (double) to);
 		}
 
 	}
