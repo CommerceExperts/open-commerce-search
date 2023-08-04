@@ -192,7 +192,7 @@ class FacetCreatorInitializer {
 			FacetCreatorClassifier facetClassifier = customFacetCreatorEntry.getKey();
 
 			Map<String, FacetConfig> customFacetConfigs = getConfigs(facetClassifier);
-			NestedCustomFacetCreator nestedCustomFacetCreator = new NestedCustomFacetCreator(customFacetConfigs, collectedConfigs.get(facetClassifier).relatedFieldType, customFacetCreatorEntry.getValue());
+			NestedCustomFacetCreator nestedCustomFacetCreator = new NestedCustomFacetCreator(customFacetConfigs, collectedConfigs.get(facetClassifier).relatedFieldType, facetClassifier.onVariantLevel, customFacetCreatorEntry.getValue());
 
 			facetCreatorsByTypes.put(facetClassifier, nestedCustomFacetCreator);
 		}

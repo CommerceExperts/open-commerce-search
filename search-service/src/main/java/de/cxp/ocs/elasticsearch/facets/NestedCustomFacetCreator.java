@@ -7,6 +7,7 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
+import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
@@ -24,11 +25,11 @@ public class NestedCustomFacetCreator extends NestedFacetCreator {
 	private final FieldType fieldType;
 	private final CustomFacetCreator customFacetCreator;
 	
-	public NestedCustomFacetCreator(Map<String, FacetConfig> facetConfigs, @NonNull FieldType fieldType, @NonNull CustomFacetCreator customFacetCreator) {
+	public NestedCustomFacetCreator(Map<String, FacetConfig> facetConfigs, @NonNull FieldType fieldType, boolean variantLevel, @NonNull CustomFacetCreator customFacetCreator) {
 		super(facetConfigs, null);
 		this.fieldType = fieldType;
 		this.customFacetCreator = customFacetCreator;
-		this.setUniqueAggregationName("CustomFacetAgg_" + customFacetCreator.getFacetType());
+		this.setUniqueAggregationName("CustomFacetAgg_" + customFacetCreator.getFacetType()+"_"+(variantLevel ? "v" : "m"));
 	}
 
 	@Override
