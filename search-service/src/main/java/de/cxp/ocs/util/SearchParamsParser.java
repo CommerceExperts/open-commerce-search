@@ -189,6 +189,11 @@ public class SearchParamsParser {
 			// such
 			// case this will simply fail
 			paramValues = splitPreserveAllTokens(paramValues[0], '-');
+			// if a single value is provided, use it as a min and max, so products with exactly that value are returned
+			// (good for numeric flag fields with 0 and 1)
+			if (paramValues.length == 1) {
+				paramValues = new String[] { paramValues[0], paramValues[0] };
+			}
 			if (paramValues.length != 2) {
 				throw new IllegalArgumentException("unexpected numeric filter value: " + paramValues[0]);
 			}

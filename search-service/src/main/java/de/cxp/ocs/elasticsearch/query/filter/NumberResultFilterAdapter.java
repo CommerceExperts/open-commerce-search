@@ -12,6 +12,8 @@ public class NumberResultFilterAdapter implements InternalResultFilterAdapter<Nu
 	@Override
 	public QueryBuilder getAsQuery(String fieldPrefix, NumberResultFilter filter) {
 		RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery(fieldPrefix + "value");
+		// lower and upper bound must be inclusive, since we support numeric filters like `sale=1` that
+		// are converted into the internal filter equivalent to `sale=1-1`
 		if (filter.getLowerBound() != null) rangeQuery.from(filter.getLowerBound(), true);
 		if (filter.getUpperBound() != null) rangeQuery.to(filter.getUpperBound(), true);
 
