@@ -26,6 +26,12 @@ public class IntervalFacetEntry extends FacetEntry {
 
 	private Number upperBound;
 
+	public IntervalFacetEntry(String label, Number lowerBound, Number upperBound, long docCount, String link, boolean isSelected) {
+		super(label, null, docCount, link, isSelected);
+		this.lowerBound = lowerBound;
+		this.upperBound = upperBound;
+	}
+
 	/**
 	 * 
 	 * @param lowerBound
@@ -42,9 +48,7 @@ public class IntervalFacetEntry extends FacetEntry {
 	 *        true if the related result is currently filtered by that interval
 	 */
 	public IntervalFacetEntry(Number lowerBound, Number upperBound, long docCount, String link, boolean isSelected) {
-		super(getLabel(lowerBound, upperBound), null, docCount, link, isSelected);
-		this.lowerBound = lowerBound;
-		this.upperBound = upperBound;
+		this(getLabel(lowerBound, upperBound), lowerBound, upperBound, docCount, link, isSelected);
 	}
 
 	/**

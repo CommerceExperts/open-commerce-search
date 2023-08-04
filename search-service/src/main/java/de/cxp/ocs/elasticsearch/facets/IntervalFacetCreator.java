@@ -182,6 +182,7 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 		Number	upperBound;
 		long	currentDocumentCount	= 0;
 		int		currentVariantCount		= 0;
+		String	key;
 
 		NumericFacetEntryBuilder(NumberResultFilter facetFilter) {
 			lowerBound = facetFilter.getLowerBound();
