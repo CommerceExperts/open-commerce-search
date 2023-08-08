@@ -1,2 +1,3 @@
 de.cxp.ocs.elasticsearch.query.AsciifyUserQueryPreprocessor
 de.cxp.ocs.elasticsearch.query.CodePointFilterUserQueryPreprocessor
+de.cxp.ocs.elasticsearch.query.NonAlphanumericStripPreprocessor
