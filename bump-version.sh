@@ -110,7 +110,7 @@ if [[ "$update_dependants" != "" ]]; then
 fi
 
 # add changed modules to the list of modules that should get current parent version
-main_dependants="$(echo "$update_dependants $changed_modules" | sed -r 's/\s+/\n/g' | sort -u | paste -sd ',' -)"
+main_dependants="$(echo "$update_dependants $orig_changed_modules" | sed -r 's/\s+/\n/g' | sort -u | paste -sd ',' -)"
 
 if [[ "$orig_changed_modules" == *"suggest-service-parent"* ]]; then
     if cd suggest-service-parent; then

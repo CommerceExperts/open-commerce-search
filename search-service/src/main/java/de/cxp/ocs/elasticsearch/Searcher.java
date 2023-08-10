@@ -60,9 +60,9 @@ import de.cxp.ocs.model.result.SearchResultSlice;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import de.cxp.ocs.spi.search.RescorerProvider;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
+import de.cxp.ocs.util.DefaultLinkBuilder;
 import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.InternalSearchParams;
-import de.cxp.ocs.util.DefaultLinkBuilder;
 import de.cxp.ocs.util.TraceOptions.TraceFlag;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.DistributionSummary;
@@ -170,8 +170,22 @@ public class Searcher {
 	}
 
 	public SearchResult find(InternalSearchParams parameters) throws IOException {
+		return find(parameters, new HashMap<>());
+	}
+
+	/**
+	 * Compute result based on the given parameters. The searchMetaData are attached to the search-result, so by that
+	 * you can pass additional information into the result or use it for debugging in case of an error.
+	 * 
+	 * @param parameters
+	 * @param searchMetaData
+	 *        in case an exception occurs, this meta data might already be partially filled with data which might be
+	 *        useful for debugging
+	 * @return
+	 * @throws IOException
+	 */
+	public SearchResult find(InternalSearchParams parameters, Map<String, Object> searchMetaData) throws IOException {
 		Sample findTimerSample = Timer.start(Clock.SYSTEM);
-		Map<String, Object> searchMetaData = new HashMap<>();
 
 		ExtendedQuery parsedQuery = queryParser.preprocessQuery(parameters, searchMetaData);
 		boolean isInvalidUserQuery = parsedQuery.isEmpty() && parameters.getUserQuery() != null && !parameters.getUserQuery().isBlank();

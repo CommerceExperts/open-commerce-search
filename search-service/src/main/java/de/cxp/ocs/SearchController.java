@@ -4,10 +4,7 @@ import static de.cxp.ocs.util.SearchParamsParser.extractInternalParams;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -32,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
+import de.cxp.ocs.ExceptionResponse.ExceptionResponseBuilder;
 import de.cxp.ocs.api.searcher.SearchService;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.Searcher;
@@ -160,6 +158,7 @@ public class SearchController implements SearchService {
 			checkTenant(tenant);
 
 			long start = System.currentTimeMillis();
+			Map<String, Object> searchMetaData = new HashMap<>();
 			try {
 				SearchContext searchContext = searchContexts.computeIfAbsent(tenant, searchContextLoader::loadContext);
 
@@ -176,7 +175,7 @@ public class SearchController implements SearchService {
 					parameters.heroProductSets = searchContext.heroProductHandler.resolve(heroProducts, searcher, searchContext);
 				}
 
-				SearchResult result = searcher.find(parameters);
+				SearchResult result = searcher.find(parameters, searchMetaData);
 
 				triggerFlushIfNecessary(tenant, result);
 
@@ -184,6 +183,10 @@ public class SearchController implements SearchService {
 				return result;
 			}
 			catch (ElasticsearchStatusException esx) {
+				if (!searchMetaData.isEmpty()) {
+					log.debug("meta data collected before exception occurred: {}", searchMetaData);
+				}
+
 				handleUnavailableIndex(tenant, esx);
 
 				// TODO: in case an index was requested where it fails because
@@ -302,12 +305,17 @@ public class SearchController implements SearchService {
 		final String errorId = UUID.randomUUID().toString();
 		log.error("Internal Server Error {} for {}", errorId, request, e);
 
+		ExceptionResponseBuilder exceptionResponseBuilder = ExceptionResponse.builder()
+				.message("Internal Error")
+				.code(HttpStatus.INTERNAL_SERVER_ERROR.value())
+				.errorId(errorId);
+
+		if (request.getParameter("trace") != null) {
+			exceptionResponseBuilder.exception(e);
+		}
+
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-				.body(ExceptionResponse.builder()
-						.message("Internal Error")
-						.code(HttpStatus.INTERNAL_SERVER_ERROR.value())
-						.errorId(errorId)
-						.build());
+				.body(exceptionResponseBuilder.build());
 	}
 
 }
