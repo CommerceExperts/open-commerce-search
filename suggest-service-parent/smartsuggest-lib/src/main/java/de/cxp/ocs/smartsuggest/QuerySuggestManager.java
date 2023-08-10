@@ -441,6 +441,8 @@ public class QuerySuggestManager implements AutoCloseable {
 		}
 
 		SuggestConfig suggestConfig = enforceSuggestConfig(indexName);
+		Optional<Limiter> limiter = createLimiter(suggestConfig);
+
 		final QuerySuggester actualQuerySuggester;
 		if (actualSuggestDataProviders.size() == 1) {
 			actualQuerySuggester = initializeQuerySuggester(actualSuggestDataProviders.get(0), indexName, synchronous);
@@ -454,9 +456,12 @@ public class QuerySuggestManager implements AutoCloseable {
 				suggesters.add(initializeQuerySuggester(sdp, indexName, synchronous));
 			}
 			actualQuerySuggester = new CompoundQuerySuggester(suggesters, defaultSuggestConfig);
+			if (limiter.isPresent()) {
+				((CompoundQuerySuggester) actualQuerySuggester).setDoLimitFinalResult(false);
+			}
 		}
 
-		return createLimiter(suggestConfig)
+		return limiter
 				.map(_limiter -> (QuerySuggester) new GroupingSuggester(actualQuerySuggester, _limiter).setPrefetchLimitFactor(suggestConfig.getPrefetchLimitFactor()))
 				.orElse(actualQuerySuggester);
 	}

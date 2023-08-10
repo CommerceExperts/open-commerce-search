@@ -70,7 +70,7 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>suggest-service</artifactId>
-				<version>0.22.0</version>
+				<version>0.22.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
