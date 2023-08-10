@@ -29,7 +29,6 @@ import org.springframework.web.bind.annotation.*;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
-import de.cxp.ocs.ExceptionResponse.ExceptionResponseBuilder;
 import de.cxp.ocs.api.searcher.SearchService;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.Searcher;
@@ -305,7 +304,7 @@ public class SearchController implements SearchService {
 		final String errorId = UUID.randomUUID().toString();
 		log.error("Internal Server Error {} for {}", errorId, request, e);
 
-		ExceptionResponseBuilder exceptionResponseBuilder = ExceptionResponse.builder()
+		ExceptionResponse.ExceptionResponseBuilder exceptionResponseBuilder = ExceptionResponse.builder()
 				.message("Internal Error")
 				.code(HttpStatus.INTERNAL_SERVER_ERROR.value())
 				.errorId(errorId);
