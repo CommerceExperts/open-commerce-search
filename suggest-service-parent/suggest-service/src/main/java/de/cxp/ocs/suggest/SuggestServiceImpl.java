@@ -1,18 +1,10 @@
 package de.cxp.ocs.suggest;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
+import com.google.common.cache.*;
 
 import de.cxp.ocs.api.SuggestService;
 import de.cxp.ocs.model.suggest.Suggestion;
@@ -80,13 +72,14 @@ public class SuggestServiceImpl implements SuggestService {
 		Suggestion mappedSuggestion = new Suggestion(suggestion.getLabel());
 
 		if (suggestion.getPayload() != null) {
-			suggestion.getPayload().remove(CommonPayloadFields.PAYLOAD_LABEL_KEY);
-			String type = suggestion.getPayload().remove(CommonPayloadFields.PAYLOAD_TYPE_KEY);
+			Map<String, String> payload = new HashMap<>(suggestion.getPayload());
+			payload.remove(CommonPayloadFields.PAYLOAD_LABEL_KEY);
+			String type = payload.remove(CommonPayloadFields.PAYLOAD_TYPE_KEY);
 			if (type != null) {
 				mappedSuggestion.setType(type);
 			}
-			suggestion.getPayload().putIfAbsent(CommonPayloadFields.PAYLOAD_WEIGHT_KEY, String.valueOf(suggestion.getWeight()));
-			mappedSuggestion.setPayload(suggestion.getPayload());
+			payload.putIfAbsent(CommonPayloadFields.PAYLOAD_WEIGHT_KEY, String.valueOf(suggestion.getWeight()));
+			mappedSuggestion.setPayload(payload);
 		}
 		else {
 			mappedSuggestion.setPayload(Collections.singletonMap(CommonPayloadFields.PAYLOAD_WEIGHT_KEY, String.valueOf(suggestion.getWeight())));
