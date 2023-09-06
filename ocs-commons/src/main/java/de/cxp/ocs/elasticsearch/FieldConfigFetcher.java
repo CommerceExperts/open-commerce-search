@@ -1,13 +1,17 @@
 package de.cxp.ocs.elasticsearch;
 
+import static de.cxp.ocs.config.FieldConstants.FILTER_DATA;
 import static de.cxp.ocs.config.FieldConstants.NUMBER_FACET_DATA;
 import static de.cxp.ocs.config.FieldConstants.PATH_FACET_DATA;
+import static de.cxp.ocs.config.FieldConstants.RESULT_DATA;
+import static de.cxp.ocs.config.FieldConstants.SCORES;
+import static de.cxp.ocs.config.FieldConstants.SEARCH_DATA;
+import static de.cxp.ocs.config.FieldConstants.SORT_DATA;
 import static de.cxp.ocs.config.FieldConstants.TERM_FACET_DATA;
 import static de.cxp.ocs.config.FieldConstants.VARIANTS;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -37,6 +41,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class FieldConfigFetcher {
 
+	private static final String PROPERTIES_PROPERTY = "properties";
 	private final RestHighLevelClient restHLClient;
 
 	public FieldConfiguration fetchConfig(String searchIndex) throws IOException {
@@ -49,17 +54,19 @@ public class FieldConfigFetcher {
 		MappingMetadata mappingsData = mappingResponse.mappings().values().iterator().next();
 
 		@SuppressWarnings("unchecked")
-		Map<String, Object> mappings = (Map<String, Object>) mappingsData.getSourceAsMap().get("properties");
-		modifyFields(resultFields, getPropertyBasedFields(mappings, "searchData"), f -> f.setUsage(FieldUsage.SEARCH));
-		modifyFields(resultFields, getPropertyBasedFields(mappings, "resultData"), f -> f.setUsage(FieldUsage.RESULT));
-		modifyFields(resultFields, getPropertyBasedFields(mappings, "sortData"), f -> f.setUsage(FieldUsage.SORT));
-		modifyFields(resultFields, getPropertyBasedFields(mappings, "scores"), f -> f.setUsage(FieldUsage.SCORE).setType(FieldType.NUMBER));
+		Map<String, Object> mappings = (Map<String, Object>) mappingsData.getSourceAsMap().get(PROPERTIES_PROPERTY);
+		modifyFields(resultFields, getPropertyBasedFields(mappings, SEARCH_DATA), f -> f.setUsage(FieldUsage.SEARCH));
+		modifyFields(resultFields, getPropertyBasedFields(mappings, RESULT_DATA), f -> f.setUsage(FieldUsage.RESULT));
+		modifyFields(resultFields, getPropertyBasedFields(mappings, SORT_DATA), f -> f.setUsage(FieldUsage.SORT));
+		modifyFields(resultFields, getPropertyBasedFields(mappings, FILTER_DATA), f -> f.setUsage(FieldUsage.FILTER));
+		modifyFields(resultFields, getPropertyBasedFields(mappings, SCORES), f -> f.setUsage(FieldUsage.SCORE).setType(FieldType.NUMBER));
 
-		Map<String, Object> variantMappings = getProperties(mappings, "variants");
-		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, "searchData"), f -> f.setUsage(FieldUsage.SEARCH));
-		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, "resultData"), f -> f.setUsage(FieldUsage.RESULT));
-		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, "sortData"), f -> f.setUsage(FieldUsage.SORT));
-		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, "scores"), f -> f.setUsage(FieldUsage.SCORE).setType(FieldType.NUMBER));
+		Map<String, Object> variantMappings = getProperties(mappings, VARIANTS);
+		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, SEARCH_DATA), f -> f.setUsage(FieldUsage.SEARCH));
+		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, RESULT_DATA), f -> f.setUsage(FieldUsage.RESULT));
+		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, SORT_DATA), f -> f.setUsage(FieldUsage.SORT));
+		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, FILTER_DATA), f -> f.setUsage(FieldUsage.FILTER));
+		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, SCORES), f -> f.setUsage(FieldUsage.SCORE).setType(FieldType.NUMBER));
 
 		// get facet fields
 		SearchSourceBuilder sourceBuilder = SearchSourceBuilder.searchSource()
@@ -89,14 +96,6 @@ public class FieldConfigFetcher {
 		modifyFields(resultFields, extractFacetFields(searchResponse, "_master_number_facets"), f -> f.setUsage(FieldUsage.FACET).setType(FieldType.NUMBER));
 		modifyVariantFields(resultFields, extractFacetFields(searchResponse, "_variant_term_facets"), f -> f.setUsage(FieldUsage.FACET));
 		modifyVariantFields(resultFields, extractFacetFields(searchResponse, "_variant_number_facets"), f -> f.setUsage(FieldUsage.FACET).setType(FieldType.NUMBER));
-
-		// deduplicate FieldUsages which can't be a Set natively because of some
-		// spring config mapper thing...
-		result.getFields().values().forEach(f -> {
-			if (f.getUsage().size() > 1) {
-				f.setUsage(EnumSet.copyOf(f.getUsage()));
-			}
-		});
 
 		return result;
 	}
@@ -161,7 +160,7 @@ public class FieldConfigFetcher {
 		Object superField = mappings.get(superFieldName);
 		Object props = null;
 		if (superField != null && superField instanceof Map) {
-			props = ((Map<String, Object>) superField).get("properties");
+			props = ((Map<String, Object>) superField).get(PROPERTIES_PROPERTY);
 		}
 		if (props != null && props instanceof Map) {
 			return ((Map<String, Object>) props);
@@ -175,7 +174,7 @@ public class FieldConfigFetcher {
 		Object superField = mappings.get(superFieldName);
 		Object props = null;
 		if (superField != null && superField instanceof Map) {
-			props = ((Map<String, Object>) superField).get("properties");
+			props = ((Map<String, Object>) superField).get(PROPERTIES_PROPERTY);
 		}
 		if (props != null && props instanceof Map) {
 			return ((Map<String, Object>) props).keySet().stream().map(FacetFetchData::new).collect(Collectors.toSet());

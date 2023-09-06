@@ -200,6 +200,20 @@
           }
         },
         {
+          "string_filter_data": {
+            "path_match": "*filterData.*",
+            "match_mapping_type": "string",
+            "mapping": {
+              "type": "text",
+              "eager_global_ordinals": false,
+              "norms": false,
+              "analyzer": "filter_normalizer",
+              "fielddata": false,
+              "index_options": "docs"
+            }
+          }
+        },
+        {
           "search_data": {
             "path_match": "*searchData.*",
             "mapping": {
@@ -268,7 +282,8 @@
                   "norms": false,
                   "analyzer": "filter_normalizer",
                   "type": "text",
-                  "fielddata": "true"
+                  "fielddata": "false",
+                  "index_options": "docs"
                 }
               }
             }
@@ -325,7 +340,7 @@
                       "norms": false,
                       "analyzer": "filter_normalizer",
                       "type": "text",
-                      "fielddata": "true"
+                      "fielddata": "false"
                     }
                   }
                 }

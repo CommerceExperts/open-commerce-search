@@ -1,14 +1,8 @@
 package de.cxp.ocs.config;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import lombok.experimental.Accessors;
 
 @Data
@@ -90,6 +84,17 @@ public class Field {
 	// Needs to be a List because of Springs yaml annotation processing.
 	private List<FieldUsage> usage = new ArrayList<>();
 
+	@Setter(value = AccessLevel.NONE)
+	@Getter(value = AccessLevel.NONE)
+	private EnumSet<FieldUsage> __usageSet = null;
+
+	public boolean hasUsage(FieldUsage searchedUsage) {
+		if (__usageSet == null) {
+			__usageSet = EnumSet.copyOf(usage);
+		}
+		return __usageSet.contains(searchedUsage);
+	}
+
 	public Field setUsage(final FieldUsage usage1, final FieldUsage... usages) {
 		if (usage1 != null) {
 			usage.add(usage1);
@@ -97,11 +102,14 @@ public class Field {
 		if (usages != null && usages.length > 0) {
 			usage.addAll(Arrays.asList(usages));
 		}
+		__usageSet = EnumSet.copyOf(usage);
 		return this;
 	}
 
 	public Field setUsage(final Collection<FieldUsage> usages) {
-		usage = new ArrayList<>(usages);
+		__usageSet = EnumSet.copyOf(usages);
+		// ensure it's deduplicated
+		usage = new ArrayList<>(__usageSet);
 		return this;
 	}
 

@@ -1,7 +1,10 @@
 package de.cxp.ocs.elasticsearch.query.filter;
 
+import static de.cxp.ocs.config.FieldConstants.FILTER_DATA;
+import static de.cxp.ocs.config.FieldConstants.NUMBER_FACET_DATA;
+
 import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldConstants;
+import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import lombok.Data;
 import lombok.Getter;
@@ -44,12 +47,12 @@ public class NumberResultFilter implements InternalResultFilter {
 
 	@Override
 	public String getFieldPrefix() {
-		return FieldConstants.NUMBER_FACET_DATA;
+		return field.hasUsage(FieldUsage.FILTER) ? FILTER_DATA : NUMBER_FACET_DATA;
 	}
 
 	@Override
 	public boolean isNestedFilter() {
-		return true;
+		return NUMBER_FACET_DATA.equals(getFieldPrefix());
 	}
 
 	@Override

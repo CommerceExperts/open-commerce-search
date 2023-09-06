@@ -31,6 +31,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SearchParamsParser {
 
+	private static final Set<FieldUsage> FILTERABLE_FIELD_USAGES = EnumSet.of(FieldUsage.FACET, FieldUsage.FILTER);
+
 	public final static String	ID_FILTER_SUFFIX		= ".id";
 	public final static String	NEGATE_FILTER_PREFIX	= "!";
 
@@ -96,7 +98,7 @@ public class SearchParamsParser {
 	public static Optional<InternalResultFilter> parseSingleFilter(final String paramName, final String paramValue, FieldConfigIndex fieldConfig, Locale locale) {
 		final boolean isIdFilter = paramName.endsWith(ID_FILTER_SUFFIX);
 		final String fieldName = isIdFilter ? paramName.substring(0, paramName.length() - 3) : paramName;
-		return fieldConfig.getMatchingField(fieldName, paramValue, FieldUsage.FACET)
+		return fieldConfig.getMatchingField(fieldName, paramValue, FILTERABLE_FIELD_USAGES)
 				.map(f -> {
 					try {
 						return toInternalFilter(f, paramValue, locale, isIdFilter);
@@ -136,9 +138,17 @@ public class SearchParamsParser {
 						.setNegated(negate);
 				break;
 			default:
-				internalFilter = new TermResultFilter(locale, field, paramValues)
+				if (isIdFilter && !field.hasUsage(FieldUsage.FACET)) {
+					// not a warning, because this is a request failure. A 40x failure would be more suitable, but we
+					// avoid that here
+					log.info("Unsupported ID Filter: {}. ID filtering not possible for fields with usage FILTER", field.getName());
+					internalFilter = null;
+				}
+				else {
+					internalFilter = new TermResultFilter(locale, field, paramValues)
 						.setFilterOnId(isIdFilter)
 						.setNegated(negate);
+				}
 		}
 		return internalFilter;
 	}

@@ -143,6 +143,7 @@ ocs:
           usage:
             - Score
             - Result
+            - Filter
       dynamic-fields:
         - name: attribute
           type: number

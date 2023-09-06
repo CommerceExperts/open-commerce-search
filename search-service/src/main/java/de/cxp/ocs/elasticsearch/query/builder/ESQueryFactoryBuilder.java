@@ -10,11 +10,7 @@ import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.config.*;
 import de.cxp.ocs.config.QueryConfiguration.QueryCondition;
 import de.cxp.ocs.elasticsearch.model.query.AnalyzedQuery;
-import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.ComposedPredicate;
-import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.ConditionalQuery;
-import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.PatternCondition;
-import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.TermCountCondition;
-import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.QueryLengthCondition;
+import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.*;
 import de.cxp.ocs.plugin.ExtensionSupplierRegistry;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import lombok.NonNull;
@@ -166,6 +162,6 @@ public class ESQueryFactoryBuilder {
 		else {
 			fieldConf = fieldConfig.getField(fieldName).orElse(null);
 		}
-		return (fieldConf != null && fieldConf.getUsage().contains(FieldUsage.SEARCH));
+		return (fieldConf != null && fieldConf.hasUsage(FieldUsage.SEARCH));
 	}
 }
