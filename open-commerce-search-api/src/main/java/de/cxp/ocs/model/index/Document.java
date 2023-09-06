@@ -1,10 +1,6 @@
 package de.cxp.ocs.model.index;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -43,11 +39,12 @@ public class Document {
 					Long.class,
 					Double.class,
 					String.class,
-					Boolean[].class,
-					Integer[].class,
-					Long[].class,
-					Double[].class,
-					String[].class,
+					// latest version of swagger-core cannot handle this without NPE
+				 	//  Boolean[].class,
+					//  Integer[].class,
+					//  Long[].class,
+					//  Double[].class,
+					//  String[].class,
 			})
 	public Map<String, Object> data = new HashMap<>();
 
