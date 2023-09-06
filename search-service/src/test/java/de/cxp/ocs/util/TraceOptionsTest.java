@@ -29,7 +29,7 @@ public class TraceOptionsTest {
 	@Test
 	public void testLowercaseParam() {
 		assertTrue(TraceOptions.parse("request").isSet(TraceFlag.Request));
-		assertFalse(TraceOptions.parse("request,esQuery").isSet(TraceFlag.EsQuery));
+		assertTrue(TraceOptions.parse("request,esQuery").isSet(TraceFlag.EsQuery));
 
 		assertTrue(TraceOptions.parse("request,esQuery").isSet(TraceFlag.Request));
 		assertTrue(TraceOptions.parse("request,esQuery").isSet(TraceFlag.EsQuery));
@@ -38,7 +38,7 @@ public class TraceOptionsTest {
 	@Test
 	public void testStandardParam() {
 		assertTrue(TraceOptions.parse("Request").isSet(TraceFlag.Request));
-		assertFalse(TraceOptions.parse("EsQuery, Request").isSet(TraceFlag.EsQuery));
+		assertTrue(TraceOptions.parse("EsQuery, Request").isSet(TraceFlag.EsQuery));
 
 		assertTrue(TraceOptions.parse("EsQuery,Request").isSet(TraceFlag.Request));
 		assertTrue(TraceOptions.parse("EsQuery,Request").isSet(TraceFlag.EsQuery));
