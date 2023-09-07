@@ -119,10 +119,10 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 		for (Field field : sourceFields) {
 			fetchWatch.reset();
 			fetchWatch.start();
-			if (field.getUsage().contains(FieldUsage.FACET)) {
+			if (field.hasUsage(FieldUsage.FACET)) {
 				suggestRecords.addAll(fetchTermsFromFacetAggregation(indexName, field, dedupFilter));
 			}
-			else if (field.getUsage().contains(FieldUsage.SORT)) {
+			else if (field.hasUsage(FieldUsage.SORT)) {
 				suggestRecords.addAll(fetchTermsFromKeywordsField(indexName, FieldConstants.SORT_DATA, field, dedupFilter));
 			}
 			else if (field.isMasterLevel()) {
@@ -256,10 +256,10 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 	private Collection<SuggestRecord> fetchTermsFromResultData(String indexName, Field field, Optional<BloomFilter<CharSequence>> dedupFilter) throws IOException {
 		int maxFetchSize = settings.getMaxFetchSize(indexName);
 		String prefix;
-		if (field.getUsage().contains(FieldUsage.SEARCH)) {
+		if (field.hasUsage(FieldUsage.SEARCH)) {
 			prefix = FieldConstants.SEARCH_DATA;
 		}
-		else if (field.getUsage().contains(FieldUsage.RESULT)) {
+		else if (field.hasUsage(FieldUsage.RESULT)) {
 			prefix = FieldConstants.RESULT_DATA;
 		}
 		else {

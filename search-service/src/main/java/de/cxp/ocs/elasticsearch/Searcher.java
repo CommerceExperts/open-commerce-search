@@ -563,6 +563,9 @@ public class Searcher {
 		boolean variantsOnlyFiltered = variantFilterQuery != null;
 		if (searchQuery.getVariantLevelQuery() != null) {
 			variantsMatchQuery = searchQuery.getVariantLevelQuery();
+			if (VariantPickingStrategy.pickAlways.equals(variantPickingStrategy)) {
+				variantsMatchQuery = ESQueryUtils.mapToBoolQueryBuilder(variantsMatchQuery).should(QueryBuilders.matchAllQuery());
+			}
 			variantsOnlyFiltered = false;
 		}
 		if (variantFilterQuery != null) {

@@ -1,9 +1,12 @@
 package de.cxp.ocs.elasticsearch.query.filter;
 
+import static de.cxp.ocs.config.FieldConstants.FILTER_DATA;
+import static de.cxp.ocs.config.FieldConstants.TERM_FACET_DATA;
+
 import java.util.Locale;
 
 import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldConstants;
+import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -23,8 +26,6 @@ public class TermResultFilter implements InternalResultFilter {
 
 	private boolean isNegated = false;
 
-
-	private String fieldPrefix = FieldConstants.TERM_FACET_DATA;
 
 	public TermResultFilter(Field field, String... inputValues) {
 		this(Locale.ROOT, field, inputValues);
@@ -50,7 +51,22 @@ public class TermResultFilter implements InternalResultFilter {
 
 	@Override
 	public boolean isNestedFilter() {
-		return true;
+		return TERM_FACET_DATA.equals(getFieldPrefix());
+	}
+
+	@Override
+	public String getFieldPrefix() {
+		// ID filter only work with facet fields
+		if (isFilterOnId && field.hasUsage(FieldUsage.FACET)) {
+			return TERM_FACET_DATA;
+		}
+		// apart from that, always prefer filter_data field
+		else if (field.hasUsage(FieldUsage.FILTER)) {
+			return FILTER_DATA;
+		}
+		else {
+			return TERM_FACET_DATA;
+		}
 	}
 
 }

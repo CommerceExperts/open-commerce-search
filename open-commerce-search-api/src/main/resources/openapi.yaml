@@ -49,7 +49,6 @@ paths:
           \ could be used for product facets (e.g. book authors) but not for faceting\
           \ the content documents (e.g. blog post authors)."
         url: http://indexer-service
-        variables: {}
       tags:
       - indexer
   /indexer-api/v1/full/cancel:
@@ -83,7 +82,6 @@ paths:
           \ could be used for product facets (e.g. book authors) but not for faceting\
           \ the content documents (e.g. blog post authors)."
         url: http://indexer-service
-        variables: {}
       tags:
       - indexer
   /indexer-api/v1/full/done:
@@ -119,7 +117,6 @@ paths:
           \ could be used for product facets (e.g. book authors) but not for faceting\
           \ the content documents (e.g. blog post authors)."
         url: http://indexer-service
-        variables: {}
       tags:
       - indexer
   /indexer-api/v1/full/start/{indexName}:
@@ -166,7 +163,6 @@ paths:
           \ could be used for product facets (e.g. book authors) but not for faceting\
           \ the content documents (e.g. blog post authors)."
         url: http://indexer-service
-        variables: {}
       tags:
       - indexer
   /indexer-api/v1/update/{indexName}:
@@ -195,7 +191,6 @@ paths:
       - basic-auth: []
       servers:
       - url: http://indexer-service
-        variables: {}
       tags:
       - update
     patch:
@@ -223,7 +218,6 @@ paths:
       - basic-auth: []
       servers:
       - url: http://indexer-service
-        variables: {}
       tags:
       - update
     put:
@@ -261,7 +255,6 @@ paths:
       - basic-auth: []
       servers:
       - url: http://indexer-service
-        variables: {}
       tags:
       - update
   /search-api/v1/doc/{tenant}/{id}:
@@ -291,7 +284,6 @@ paths:
       - basic-auth: []
       servers:
       - url: http://search-service
-        variables: {}
       tags:
       - search
   /search-api/v1/search/arranged/{tenant}:
@@ -323,7 +315,6 @@ paths:
       - basic-auth: []
       servers:
       - url: http://search-service
-        variables: {}
       tags:
       - search
   /search-api/v1/search/{tenant}:
@@ -409,7 +400,6 @@ paths:
       - basic-auth: []
       servers:
       - url: http://search-service
-        variables: {}
       summary: Search for documents
       tags:
       - search
@@ -423,7 +413,6 @@ paths:
       - basic-auth: []
       servers:
       - url: http://search-service
-        variables: {}
       tags:
       - search
   /suggest-api/v1/{indexname}/suggest:
@@ -471,7 +460,6 @@ paths:
       - basic-auth: []
       servers:
       - url: http://suggest-service
-        variables: {}
       summary: Autocomplete the user input
       tags:
       - Suggest
@@ -598,6 +586,15 @@ components:
           type: object
           additionalProperties:
             type: object
+            anyOf:
+            - type: boolean
+            - type: integer
+              format: int32
+            - type: integer
+              format: int64
+            - type: number
+              format: double
+            - type: string
             description: "The data property should be used for standard fields, such\
               \ as title, description, price. Only values of the following types are\
               \ accepted (others will be dropped silently): Standard primitive types\

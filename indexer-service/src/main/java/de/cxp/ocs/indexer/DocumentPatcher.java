@@ -1,20 +1,10 @@
 package de.cxp.ocs.indexer;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldConfigIndex;
-import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.config.FieldType;
-import de.cxp.ocs.config.FieldUsage;
+import de.cxp.ocs.config.*;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
@@ -56,7 +46,7 @@ public class DocumentPatcher {
 	private static Optional<Field> getVariantIdField(FieldConfigIndex fieldConfIndex) {
 		return fieldConfIndex.getFieldsByType(FieldType.ID).values().stream()
 				.filter(Field::isVariantLevel)
-				.filter(f -> f.getUsage().contains(FieldUsage.RESULT) || f.getUsage().contains(FieldUsage.SEARCH) || f.getUsage().contains(FieldUsage.SORT))
+				.filter(f -> f.hasUsage(FieldUsage.RESULT) || f.getUsage().contains(FieldUsage.SEARCH) || f.getUsage().contains(FieldUsage.SORT))
 				.findFirst();
 	}
 

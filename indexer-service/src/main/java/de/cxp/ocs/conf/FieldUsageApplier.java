@@ -29,11 +29,9 @@ import io.micrometer.core.lang.NonNull;
 public class FieldUsageApplier {
 
 	public static void applyAll(final DataItem record, final Field field, final Object value) {
-		if (value == null
+		if (isEmpty(value)
 				|| (record instanceof MasterItem && !field.isMasterLevel())
 				|| (record instanceof VariantItem && !field.isVariantLevel())
-				|| (value instanceof String && ((String) value).isEmpty())
-				|| (value instanceof Collection<?> && ((Collection<?>) value).isEmpty())
 				|| field.getUsage() == null
 				|| field.getUsage().isEmpty()) {
 			return;
@@ -61,10 +59,17 @@ public class FieldUsageApplier {
 			case SEARCH:
 				handleSearchField(indexableItem, field, value);
 				break;
+			case FILTER:
+				if (!field.hasUsage(FieldUsage.FACET)) {
+					handleFilterField(indexableItem, field, value);
+				}
+				break;
+			default:
+				break;
 		}
 	}
 
-	public static void handleSearchField(final DataItem record, final Field field, Object value) {
+	private static void handleSearchField(final DataItem record, final Field field, Object value) {
 		if (isEmpty(value)) {
 			return;
 		}
@@ -116,7 +121,7 @@ public class FieldUsageApplier {
 		}
 	};
 
-	public static void handleResultField(final DataItem record, final Field field, Object value) {
+	private static void handleResultField(final DataItem record, final Field field, Object value) {
 		if (FieldType.CATEGORY.equals(field.getType())) {
 			value = convertCategoryDataToString(value, FieldUsageApplier::toCategoryPathString);
 		}
@@ -127,18 +132,9 @@ public class FieldUsageApplier {
 		record.getResultData().compute(fieldName, joinDataValueFunction(value));
 	};
 
-	public static void handleSortField(final DataItem record, final Field field, Object value) {
-		if (isEmpty(value)) {
-			return;
-		}
-
+	private static void handleSortField(final DataItem record, final Field field, Object value) {
+		value = unwrapValue(field, value);
 		String fieldName = field.getName();
-		if (value instanceof Attribute) {
-			value = ((Attribute) value).getValue();
-		}
-
-		value = ensureCorrectValueType(field, value);
-
 		Object previousValue = record.getSortData().putIfAbsent(fieldName, MinMaxSet.of(value));
 		if (previousValue != null && previousValue instanceof MinMaxSet<?>) {
 			addValuesToMinMaxSet((MinMaxSet<Object>) previousValue, value);
@@ -150,6 +146,24 @@ public class FieldUsageApplier {
 				addValuesToMinMaxSet((MinMaxSet<Object>) previousValue, value);
 			}
 		}
+	}
+
+	private static void handleFilterField(final DataItem record, final Field field, Object value) {
+		value = unwrapValue(field, value);
+		String fieldName = field.getName();
+		Object existingValue = record.getFilterData().putIfAbsent(fieldName, value);
+		if (existingValue != null) {
+			Object valueCollection = collectObjects(existingValue, value);
+			record.getFilterData().put(fieldName, valueCollection);
+		}
+	}
+
+	private static Object unwrapValue(final Field field, Object value) {
+		if (value instanceof Attribute) {
+			value = ((Attribute) value).getValue();
+		}
+
+		return ensureCorrectValueType(field, value);
 	}
 
 	private static void addValuesToMinMaxSet(MinMaxSet<Object> previousValue, Object value) {
@@ -204,10 +218,6 @@ public class FieldUsageApplier {
 	 *        value to be applied to the record
 	 */
 	public static void handleFacetField(final DataItem record, final Field field, Object value) {
-		if (isEmpty(value)) {
-			return;
-		}
-
 		switch (field.getType()) {
 			case NUMBER:
 				handleNumberFacetData(record, field, value);

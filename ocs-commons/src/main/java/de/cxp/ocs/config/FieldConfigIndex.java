@@ -97,7 +97,7 @@ public final class FieldConfigIndex implements FieldConfigAccess {
 			Field existingField = fields.get(fieldName);
 
 			if (existingField == null) {
-				if (newField.getUsage().contains(FieldUsage.SORT)) {
+				if (newField.hasUsage(FieldUsage.SORT)) {
 					throw new FieldConfigIncompatibilityException(
 							"Field " + fieldName + " is used for sorting in only one index.");
 				}
@@ -105,19 +105,16 @@ public final class FieldConfigIndex implements FieldConfigAccess {
 				fields.put(fieldName, newField);
 			} else {
 				if (!existingField.getType().equals(newField.getType())) {
-					if (existingField.getUsage().contains(FieldUsage.FACET)
-							&& newField.getUsage().contains(FieldUsage.FACET)) {
+					if (existingField.hasUsage(FieldUsage.FACET) && newField.hasUsage(FieldUsage.FACET)) {
 						throw new FieldConfigIncompatibilityException(
 								"Fields with name " + fieldName + " have different types and are used for facetting.");
 					}
-					if (existingField.getUsage().contains(FieldUsage.SCORE)
-							&& newField.getUsage().contains(FieldUsage.SCORE)) {
+					if (existingField.hasUsage(FieldUsage.SCORE) && newField.hasUsage(FieldUsage.SCORE)) {
 						throw new FieldConfigIncompatibilityException(
 								"Fields with name " + fieldName + " have different types and are used for scoring.");
 					}
 				}
-				if (existingField.getUsage().contains(FieldUsage.SORT) != newField.getUsage()
-						.contains(FieldUsage.SORT)) {
+				if (existingField.hasUsage(FieldUsage.SORT) != newField.hasUsage(FieldUsage.SORT)) {
 					throw new FieldConfigIncompatibilityException(
 							"Fields with name " + fieldName + " are used for sorting in only one index.");
 				}
@@ -327,9 +324,13 @@ public final class FieldConfigIndex implements FieldConfigAccess {
 	 * @return
 	 */
 	public Optional<Field> getMatchingField(String fieldName, Object value, FieldUsage usage) {
+		return this.getMatchingField(fieldName, value, EnumSet.of(usage));
+	}
+
+	public Optional<Field> getMatchingField(String fieldName, Object value, Set<FieldUsage> searchedUsages) {
 		return getMatchingFields(fieldName, value)
 				.stream()
-				.filter(f -> f.getUsage().contains(FieldUsage.FACET))
+				.filter(f -> f.getUsage().stream().anyMatch(searchedUsages::contains))
 				.findFirst();
 	}
 

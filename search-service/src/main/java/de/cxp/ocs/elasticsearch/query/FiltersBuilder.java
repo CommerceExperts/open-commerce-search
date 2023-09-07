@@ -153,7 +153,7 @@ public class FiltersBuilder {
 					ScoreMode.None);
 		}
 		else {
-			filterQuery = filterAdapter.getAsQuery(fieldPrefix, filter);
+			filterQuery = filterAdapter.getAsQuery(fieldPrefix + ".", filter);
 		}
 		return filterQuery;
 	}

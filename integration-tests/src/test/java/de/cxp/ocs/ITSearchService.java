@@ -3,6 +3,7 @@ package de.cxp.ocs;
 import static de.cxp.ocs.OCSStack.getImportClient;
 import static de.cxp.ocs.OCSStack.getSearchClient;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 
@@ -68,5 +69,27 @@ public class ITSearchService {
 				.anyMatch(hit -> hit.getDocument().id.equals("006"))
 				.anyMatch(hit -> hit.getDocument().id.equals("006")
 						&& ("31".equals(hit.getDocument().data.get("size")) || "31".equals(((Attribute) hit.getDocument().data.get("size")).getValue())));
+	}
+
+	@Test
+	public void testFacetlessFilterSearch() throws Exception {
+		// negated filter
+		SearchResult searchResult1 = getSearchClient().search(indexName, new SearchQuery(), Collections.singletonMap("stock", "!0"));
+		assertThat(searchResult1.slices.get(0).hits)
+				.noneMatch(hit -> hit.getDocument().id.equals("005"))
+				.noneMatch(hit -> hit.getDocument().id.equals("006"));
+
+		// with query
+		SearchResult searchResult2 = getSearchClient().search(indexName, new SearchQuery().setQ("Apparel"), Collections.singletonMap("stock", "0"));
+		assertThat(searchResult2.slices.get(0).hits)
+				.anyMatch(hit -> hit.getDocument().id.equals("005"))
+				.anyMatch(hit -> hit.getDocument().id.equals("006"));
+
+		// with range filter
+		SearchResult searchResult3 = getSearchClient().search(indexName, new SearchQuery().setQ("Apparel"), Collections.singletonMap("stock", "1-1000"));
+		assertTrue(searchResult3.slices.get(0).matchCount > 0L);
+		assertThat(searchResult3.slices.get(0).hits)
+				.noneMatch(hit -> hit.getDocument().id.equals("005"))
+				.noneMatch(hit -> hit.getDocument().id.equals("006"));
 	}
 }
