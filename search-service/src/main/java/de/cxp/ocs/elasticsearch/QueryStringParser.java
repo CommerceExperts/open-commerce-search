@@ -71,6 +71,7 @@ public class QueryStringParser {
 		List<QueryStringTerm> remainingFilters = new ArrayList<>();
 
 		Map<String, InternalResultFilter> filtersAsMap = parsedQuery.getFilters().stream()
+				.filter(Objects::nonNull)
 				.filter(searchWord -> searchWord instanceof QueryFilterTerm || !remainingFilters.add(searchWord))
 				// Generate the filters and add them
 				.map(term -> (QueryFilterTerm) term)
