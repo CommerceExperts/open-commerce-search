@@ -32,6 +32,9 @@ public class SuggestConfig implements Cloneable {
 
 	public List<GroupConfig> groupConfig = new ArrayList<>();
 
+	// TODO: Attention: for each added configuration value, also extend
+	// de.cxp.ocs.suggest.SuggestProperties in the suggest-service
+
 	/**
 	 * If suggestions are grouped by a certain value of their payload (e.g.
 	 * 'type'), this config is used to define the order and limit of each group.

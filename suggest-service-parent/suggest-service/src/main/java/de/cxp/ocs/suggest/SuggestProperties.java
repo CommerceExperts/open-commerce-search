@@ -15,6 +15,7 @@ import java.util.function.Function;
 import org.apache.commons.lang3.StringUtils;
 
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig.SortStrategy;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -70,6 +71,11 @@ public class SuggestProperties {
 		}
 
 		getGroupDeduplicationOrder().ifPresent(defaultConfig::setGroupDeduplicationOrder);
+
+		getVarValue("SUGGEST_ALWAYS_DO_FUZZY").map(Boolean::parseBoolean).ifPresent(defaultConfig::setAlwaysDoFuzzy);
+		getVarValue("SUGGEST_LOCALE").map(Locale::forLanguageTag).ifPresent(defaultConfig::setLocale);
+		getVarValue("SUGGEST_MAX_SHARPENED_QUERIES").map(Integer::parseInt).ifPresent(defaultConfig::setMaxSharpenedQueries);
+		getVarValue("SUGGEST_SORT_STRATEGY").map(SortStrategy::valueOf).ifPresent(defaultConfig::setSortStrategy);
 
 		return defaultConfig;
 	}
