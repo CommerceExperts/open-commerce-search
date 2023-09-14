@@ -10,12 +10,21 @@ public interface SuggestConfigProvider {
 	 * 
 	 * @param indexName
 	 * @param defaultSuggestConfig
-	 *        nullable suggest config that was set as default for the whole service. Can be used to merge global and
-	 *        index-specific config values.
+	 *        copy of the suggest config that was set as default for the whole service.
+	 *        It can be modified and returned or a different config object can be returned.
+	 *        Returning null is considered equivalent to returning that default config.
 	 * @return
 	 */
-	SuggestConfig getConfig(@NonNull String indexName, SuggestConfig defaultSuggestConfig);
+	SuggestConfig getConfig(@NonNull
+	String indexName, SuggestConfig defaultSuggestConfig);
 
+	/**
+	 * Return priority when this config provider should be asked for the configuration. Providers with a low priority
+	 * value (e.g. 1) will be asked first and providers with a higher value will be called later and can overwrite
+	 * previously set values.
+	 * 
+	 * @return priority value, defaults to 100
+	 */
 	default int getPriority() {
 		return 100;
 	}

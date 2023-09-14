@@ -3,7 +3,6 @@ package de.cxp.ocs;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import org.rapidoid.http.HttpHeaders;
 import org.rapidoid.http.Req;
@@ -15,8 +14,8 @@ import de.cxp.ocs.model.suggest.Suggestion;
 import de.cxp.ocs.smartsuggest.QuerySuggestManager;
 import de.cxp.ocs.smartsuggest.QuerySuggestManager.QuerySuggestManagerBuilder;
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
-import de.cxp.ocs.suggest.SuggestProperties;
 import de.cxp.ocs.suggest.SuggestServiceImpl;
+import de.cxp.ocs.suggest.SuggestServiceProperties;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
@@ -30,7 +29,7 @@ public class Application {
 
 	public static void main(String[] args) {
 		log.info("starting suggest-service");
-		SuggestProperties properties = loadProperties();
+		SuggestServiceProperties properties = loadProperties();
 		final PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
 		final QuerySuggestManager querySuggestManager = getQuerySuggestManager(properties, meterRegistry);
 		final SuggestService suggestService = new SuggestServiceImpl(querySuggestManager, properties);
@@ -87,12 +86,12 @@ public class Application {
 		On.get(mgmPathPrefix + "/health").plain("up");
 	}
 
-	private static SuggestProperties loadProperties() {
+	private static SuggestServiceProperties loadProperties() {
 		InputStream suggestPropertiesStream = Application.class.getClassLoader().getResourceAsStream("suggest.properties");
-		return new SuggestProperties(Optional.ofNullable(suggestPropertiesStream));
+		return suggestPropertiesStream == null ? new SuggestServiceProperties() : new SuggestServiceProperties(suggestPropertiesStream);
 	}
 
-	public static QuerySuggestManager getQuerySuggestManager(SuggestProperties props, MeterRegistry meterRegistry) {
+	public static QuerySuggestManager getQuerySuggestManager(SuggestServiceProperties props, MeterRegistry meterRegistry) {
 		QuerySuggestManagerBuilder querySuggestManagerBuilder = QuerySuggestManager.builder()
 				.indexFolder(props.getIndexFolder())
 				.updateRate(props.getUpdateRateInSeconds())

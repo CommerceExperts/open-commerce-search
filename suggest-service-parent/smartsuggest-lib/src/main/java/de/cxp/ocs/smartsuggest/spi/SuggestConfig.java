@@ -83,6 +83,24 @@ public class SuggestConfig implements Cloneable {
 	}
 
 	/**
+	 * <p>
+	 * If several suggest-data-providers are used, they are indexed into separate indexes by default. This option
+	 * activates a merging logic, so that all provided data is merged into one index.
+	 * </p>
+	 * <p>
+	 * This could reduce load and improve performance since a single Lucene suggester is asked for results.
+	 * However in such a case the weights should be in a similar range to avoid a proper ranking.
+	 * </p>
+	 * Default: false
+	 * 
+	 * @param useDataSourceMerge
+	 * @return
+	 */
+	public void setUseDataSourceMerger(boolean useDataSourceMerge) {
+		this.useDataSourceMerger = useDataSourceMerge;
+	}
+
+	/**
 	 * By default fuzzy searches are only done, if there are no exact matches
 	 * within primary or secondary text. If this flag is set, fuzzy search is
 	 * also done if result size is below limit.
@@ -116,6 +134,10 @@ public class SuggestConfig implements Cloneable {
 	 * the payload of all provided suggestions. The final result list will then
 	 * be grouped by this payload-value and truncated according to the provided
 	 * group configs.
+	 * </p>
+	 * <p>
+	 * It's recommended to setGroupConfig as well, otherwise the default limiter will
+	 * be used after grouping.
 	 * </p>
 	 * 
 	 * @param groupKey
@@ -218,6 +240,20 @@ public class SuggestConfig implements Cloneable {
 	 */
 	public void setMaxSharpenedQueries(int maxSharpenedQueries) {
 		this.maxSharpenedQueries = maxSharpenedQueries;
+	}
+
+	/**
+	 * <p>
+	 * If grouping and limiting is configured by a key that comes from a single or merged data-provider, then this value
+	 * can be used to increase the internal amount of fetched suggestions.
+	 * This is usable to increase the likeliness to get the desired group counts.
+	 * </p>
+	 * Default: 1
+	 * 
+	 * @return
+	 */
+	public void setPrefetchLimitFactor(int prefetchLimitFactor) {
+		this.prefetchLimitFactor = prefetchLimitFactor;
 	}
 
 	@Override

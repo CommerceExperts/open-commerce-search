@@ -20,7 +20,7 @@ public class SuggestServiceImpl implements SuggestService {
 
 	private final LoadingCache<String, Boolean> deletionCache;
 
-	public SuggestServiceImpl(QuerySuggestManager suggestManager, SuggestProperties properties) {
+	public SuggestServiceImpl(QuerySuggestManager suggestManager, SuggestServiceProperties properties) {
 		querySuggestManager = suggestManager;
 		deletionCache = CacheBuilder.newBuilder()
 				.expireAfterAccess(properties.getSuggesterMaxIdleMinutes(), TimeUnit.MINUTES)

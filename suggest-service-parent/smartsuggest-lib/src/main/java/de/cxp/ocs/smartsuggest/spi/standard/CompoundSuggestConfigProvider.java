@@ -17,14 +17,14 @@ public class CompoundSuggestConfigProvider implements SuggestConfigProvider {
 
 	@Override
 	public SuggestConfig getConfig(@NonNull String indexName, SuggestConfig defaultSuggestConfig) {
-		SuggestConfig foundConfig = null;
+		// the very default is the no-args constructed SuggestConfig
+		SuggestConfig foundConfig = defaultSuggestConfig != null ? defaultSuggestConfig : new SuggestConfig();
 		for (SuggestConfigProvider configProvider : configProviders) {
-			foundConfig = configProvider.getConfig(indexName, defaultSuggestConfig);
-			if (foundConfig != null) break;
-		}
-		if (foundConfig == null) {
-			// the very default is the no-args constructed SuggestConfig
-			foundConfig = defaultSuggestConfig != null ? defaultSuggestConfig : new SuggestConfig();
+			// provide the config of the previous config providers as default, so they can be merged
+			SuggestConfig providedConfig = configProvider.getConfig(indexName, foundConfig);
+			if (providedConfig != null) {
+				foundConfig = providedConfig;
+			}
 		}
 		return foundConfig;
 	}
