@@ -357,6 +357,7 @@ public class QuerySuggestManager implements AutoCloseable {
 	QuerySuggestManager(SuggestConfigProvider configProvider, SuggestDataProvider... dataProvider) {
 		suggestDataProviders = Arrays.asList(dataProvider);
 		suggestConfigProvider = configProvider;
+		defaultSuggestConfig = new SuggestConfig();
 		defaultLimiter = new CutOffLimiter();
 		try {
 			suggestIndexFolder = Files.createTempDirectory(QuerySuggestManager.class.getSimpleName() + "-for-testing-");

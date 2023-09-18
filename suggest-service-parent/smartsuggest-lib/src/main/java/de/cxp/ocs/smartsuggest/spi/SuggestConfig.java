@@ -94,7 +94,6 @@ public class SuggestConfig implements Cloneable {
 	 * Default: false
 	 * 
 	 * @param useDataSourceMerge
-	 * @return
 	 */
 	public void setUseDataSourceMerger(boolean useDataSourceMerge) {
 		this.useDataSourceMerger = useDataSourceMerge;
@@ -249,8 +248,6 @@ public class SuggestConfig implements Cloneable {
 	 * This is usable to increase the likeliness to get the desired group counts.
 	 * </p>
 	 * Default: 1
-	 * 
-	 * @return
 	 */
 	public void setPrefetchLimitFactor(int prefetchLimitFactor) {
 		this.prefetchLimitFactor = prefetchLimitFactor;
