@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.52.1</version>
+		<version>0.53.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>search-service</artifactId>
-	<version>0.46.1</version>
+	<version>0.46.2</version>
 	<packaging>jar</packaging>
 
 	<!-- Import dependency management from Spring Boot -->
@@ -191,6 +191,9 @@
 	<profiles>
 		<profile>
 			<id>dockerize</id>
+			<properties>
+				<docker.tag>${project.version}</docker.tag>
+			</properties>
 			<build>
 				<plugins>
 					<plugin>
@@ -235,8 +238,9 @@
 		<profile>
 			<id>searchhub</id>
 			<properties>
-				<docker.tag>searchhub-latest</docker.tag>
-                <feign.version>12.1</feign.version>
+				<docker.tag>${project.version}-searchhub</docker.tag>
+				<docker.latest.tag>searchhub-latest</docker.latest.tag>
+				<feign.version>12.1</feign.version>
 			</properties>
 			<dependencyManagement>
 				<dependencies>
