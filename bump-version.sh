@@ -17,7 +17,7 @@ case "$BL" in
 esac
 
 cd "$(dirname "$0")" || exit
-orig_changed_modules="$(git diff --dirstat=0 origin/master | awk '{print $NF}' | cut -d "/" -f1 | sort -u | xargs)"
+orig_changed_modules="$(git diff --dirstat=0 origin/master -- */pom.xml | awk '{print $NF}' | cut -d "/" -f1 | sort -u | xargs)"
 changed_modules="$orig_changed_modules"
 
 echo "found changes in modules $changed_modules"

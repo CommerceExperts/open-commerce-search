@@ -10,7 +10,7 @@
 	</parent>
 
 	<artifactId>search-service</artifactId>
-	<version>0.46.2</version>
+	<version>0.47.0</version>
 	<packaging>jar</packaging>
 
 	<!-- Import dependency management from Spring Boot -->
