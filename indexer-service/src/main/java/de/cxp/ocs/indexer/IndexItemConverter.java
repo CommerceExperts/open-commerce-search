@@ -8,6 +8,7 @@ import java.util.function.Predicate;
 import de.cxp.ocs.conf.FieldUsageApplier;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
+import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.indexer.model.DataItem;
 import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.indexer.model.MasterItem;
@@ -17,13 +18,13 @@ import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * converts {@link Document} / {@link Product} objects into
  * {@link DataItem}
  */
-@RequiredArgsConstructor
+@Slf4j
 public class IndexItemConverter {
 
 	@NonNull
@@ -34,6 +35,21 @@ public class IndexItemConverter {
 
 	public IndexItemConverter(FieldConfigIndex fieldConfigIndex) {
 		this(fieldConfigIndex, Collections.emptyList());
+	}
+
+	public IndexItemConverter(FieldConfigIndex fieldConfigIndex, List<DocumentPostProcessor> postProcessors) {
+		this.fieldConfigIndex = fieldConfigIndex;
+		this.postProcessors = postProcessors;
+		validate(fieldConfigIndex);
+
+	}
+
+	private void validate(FieldConfigIndex fieldConfigIndex2) {
+		fieldConfigIndex.getFields().values().forEach(field -> {
+			if (field.hasUsage(FieldUsage.FILTER) && field.hasUsage(FieldUsage.FACET)) {
+				log.info("No need to configure a field with usage FILTER and FACET together as done for {}", field.getName());
+			}
+		});
 	}
 
 	/**

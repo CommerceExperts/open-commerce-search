@@ -201,6 +201,10 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 	protected abstract Result _patch(String index, IndexableItem indexableItem);
 
 	@Override
+	public Map<String, Result> putDocuments(String indexName, Boolean replaceExisting, String langCode, List<Document> documents) {
+		return putDocuments(indexName, replaceExisting, documents);
+	}
+
 	public Map<String, Result> putDocuments(String indexName, Boolean replaceExisting, List<Document> documents) {
 		Map<String, Result> response = new HashMap<>(documents.size());
 		for (Document doc : documents) {

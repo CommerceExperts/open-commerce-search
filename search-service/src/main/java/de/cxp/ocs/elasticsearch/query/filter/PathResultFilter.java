@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 import de.cxp.ocs.config.Field;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;

@@ -48,4 +48,9 @@ public abstract class DataItem {
 	 */
 	private final Map<String, Object> sortData = new HashMap<>();
 
+	/**
+	 * Values that can be used for filtering but no facets are created.
+	 */
+	private final Map<String, Object> filterData = new HashMap<>();
+
 }

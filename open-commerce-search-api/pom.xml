@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.47.0</version>
+		<version>0.52.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
@@ -17,7 +17,7 @@
 	 first by setting the correct api version at src/main/resources/openapi-configuration.json
 	 then my running 'mvn process-sources -P sync-openapi-spec'
 	-->
-	<version>0.19.1</version>
+	<version>0.23.0</version>
 	<packaging>jar</packaging>
 
 	<description>An open and abstract search API that covers minimal search functionality</description>
@@ -25,19 +25,30 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
-
+    
+    <dependencyManagement>
+        <dependencies>
+            <!-- fix dependency clash for incompatible swagger libraries -->
+            <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>2.3.3</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+    
 	<dependencies>
 		<!-- dependencies to generate api spec -->
 		<dependency>
 			<groupId>io.swagger.core.v3</groupId>
 			<artifactId>swagger-jaxrs2</artifactId>
-			<version>2.1.0</version>
+			<version>2.2.15</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>io.swagger.core.v3</groupId>
 			<artifactId>swagger-core</artifactId>
-			<version>2.1.0</version>
+			<version>2.2.15</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -91,7 +102,7 @@
 					<plugin>
 						<groupId>io.swagger.core.v3</groupId>
 						<artifactId>swagger-maven-plugin</artifactId>
-						<version>2.1.6</version>
+						<version>2.2.15</version>
 						<configuration>
 							<configurationFilePath>${project.basedir}/src/main/resources/openapi-configuration.json</configurationFilePath>
 							<outputFileName>openapi</outputFileName>

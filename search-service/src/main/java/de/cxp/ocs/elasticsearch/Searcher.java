@@ -60,9 +60,10 @@ import de.cxp.ocs.model.result.SearchResultSlice;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import de.cxp.ocs.spi.search.RescorerProvider;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
+import de.cxp.ocs.util.DefaultLinkBuilder;
 import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.InternalSearchParams;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.TraceOptions.TraceFlag;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -136,7 +137,7 @@ public class Searcher {
 		queryParser = new QueryStringParser(searchContext.userQueryPreprocessors, userQueryAnalyzer, fieldIndex, config.getLocale());
 
 		sortingHandler = new SortingHandler(fieldIndex, config.getSortConfigs());
-		facetApplier = new FacetConfigurationApplyer(searchContext);
+		facetApplier = new FacetConfigurationApplyer(searchContext, plugins.getFacetCreators());
 		filtersBuilder = new FiltersBuilder(searchContext);
 		scoringCreator = new ScoringCreator(searchContext);
 		spellCorrector = initSpellCorrection();
@@ -169,8 +170,22 @@ public class Searcher {
 	}
 
 	public SearchResult find(InternalSearchParams parameters) throws IOException {
+		return find(parameters, new HashMap<>());
+	}
+
+	/**
+	 * Compute result based on the given parameters. The searchMetaData are attached to the search-result, so by that
+	 * you can pass additional information into the result or use it for debugging in case of an error.
+	 * 
+	 * @param parameters
+	 * @param searchMetaData
+	 *        in case an exception occurs, this meta data might already be partially filled with data which might be
+	 *        useful for debugging
+	 * @return
+	 * @throws IOException
+	 */
+	public SearchResult find(InternalSearchParams parameters, Map<String, Object> searchMetaData) throws IOException {
 		Sample findTimerSample = Timer.start(Clock.SYSTEM);
-		Map<String, Object> searchMetaData = new HashMap<>();
 
 		ExtendedQuery parsedQuery = queryParser.preprocessQuery(parameters, searchMetaData);
 		boolean isInvalidUserQuery = parsedQuery.isEmpty() && parameters.getUserQuery() != null && !parameters.getUserQuery().isBlank();
@@ -241,6 +256,9 @@ public class Searcher {
 
 			if (log.isTraceEnabled()) {
 				log.trace(QUERY_MARKER, "{ \"user_query\": \"{}\", \"query\": {} }", parameters.userQuery, searchSourceBuilder.toString().replaceAll("[\n\\s]+", " "));
+			}
+			if (parameters.trace.isSet(TraceFlag.EsQuery)) {
+				searchMetaData.put("elasticsearch_query", searchSourceBuilder.toString());
 			}
 
 			searchResponse = executeSearchRequest(searchSourceBuilder);
@@ -469,9 +487,9 @@ public class Searcher {
 	}
 
 	private SearchResult buildResult(InternalSearchParams parameters, FilterContext filterContext, SearchResponse searchResponse) {
-		SearchQueryBuilder linkBuilder = new SearchQueryBuilder(parameters);
+		DefaultLinkBuilder linkBuilder = new DefaultLinkBuilder(parameters);
 		SearchResult searchResult = new SearchResult();
-		searchResult.inputURI = SearchQueryBuilder.toLink(parameters).toString();
+		searchResult.inputURI = DefaultLinkBuilder.toLink(parameters).toString();
 		searchResult.slices = new ArrayList<>(1);
 		searchResult.sortOptions = sortingHandler.buildSortOptions(linkBuilder);
 		searchResult.meta = new HashMap<>();
@@ -500,7 +518,7 @@ public class Searcher {
 			searchResult.slices.add(new SearchResultSlice()
 					.setLabel("main")
 					.setMatchCount(0)
-					.setResultLink(SearchQueryBuilder.toLink(parameters).toString())
+					.setResultLink(DefaultLinkBuilder.toLink(parameters).toString())
 					.setHits(Collections.emptyList())
 					.setFacets(Collections.emptyList()));
 			searchResult.meta.put("error", "invalid user query");
@@ -545,6 +563,9 @@ public class Searcher {
 		boolean variantsOnlyFiltered = variantFilterQuery != null;
 		if (searchQuery.getVariantLevelQuery() != null) {
 			variantsMatchQuery = searchQuery.getVariantLevelQuery();
+			if (VariantPickingStrategy.pickAlways.equals(variantPickingStrategy)) {
+				variantsMatchQuery = ESQueryUtils.mapToBoolQueryBuilder(variantsMatchQuery).should(QueryBuilders.matchAllQuery());
+			}
 			variantsOnlyFiltered = false;
 		}
 		if (variantFilterQuery != null) {
@@ -633,7 +654,7 @@ public class Searcher {
 		SearchResultSlice srSlice = new SearchResultSlice();
 		// XXX think about building parameters according to the actual performed
 		// search (e.g. with relaxed query or with implicit set filters)
-		srSlice.resultLink = SearchQueryBuilder.toLink(parameters).toString();
+		srSlice.resultLink = DefaultLinkBuilder.toLink(parameters).toString();
 		srSlice.matchCount = searchHits.getTotalHits().value - heroIds.size();
 
 		Map<String, SortOrder> sortedFields = sortingHandler.getSortedNumericFields(parameters);

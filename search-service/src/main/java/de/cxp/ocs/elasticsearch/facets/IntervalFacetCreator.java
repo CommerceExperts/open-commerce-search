@@ -14,12 +14,12 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.IntervalFacetEntry;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.DefaultLinkBuilder;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -78,7 +78,7 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 
 	@Override
 	protected Optional<Facet> createFacet(Terms.Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter facetFilter,
-			SearchQueryBuilder linkBuilder) {
+			DefaultLinkBuilder linkBuilder) {
 		Facet facet = FacetFactory.create(facetConfig, FacetType.INTERVAL);
 		if (facetFilter != null && !facetFilter.isNegated() && facetFilter instanceof NumberResultFilter) {
 			if (!facetConfig.isMultiSelect() && !facetConfig.isShowUnselectedOptions()) {
@@ -117,7 +117,7 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 		return absFacetCoverage;
 	}
 
-	private void fillFacet(Terms.Bucket facetNameBucket, Facet facet, FacetConfig facetConfig, SearchQueryBuilder linkBuilder, NumberResultFilter selectedFilter) {
+	private void fillFacet(Terms.Bucket facetNameBucket, Facet facet, FacetConfig facetConfig, DefaultLinkBuilder linkBuilder, NumberResultFilter selectedFilter) {
 		Histogram facetValues = ((Histogram) facetNameBucket.getAggregations().get(FACET_VALUES_AGG));
 		List<? extends Bucket> valueBuckets = facetValues.getBuckets();
 
@@ -150,8 +150,8 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 		facet.setAbsoluteFacetCoverage(absDocCount);
 	}
 
-	private FacetEntry createIntervalFacetEntry(NumericFacetEntryBuilder currentValueInterval, NumberResultFilter selectedFilter, FacetConfig facetConfig,
-			SearchQueryBuilder linkBuilder) {
+	protected FacetEntry createIntervalFacetEntry(NumericFacetEntryBuilder currentValueInterval, NumberResultFilter selectedFilter, FacetConfig facetConfig,
+			DefaultLinkBuilder linkBuilder) {
 		boolean isSelected = selectedFilter != null
 				&& selectedFilter.getLowerBound().floatValue() == currentValueInterval.lowerBound.floatValue()
 				&& selectedFilter.getUpperBound().floatValue() == currentValueInterval.upperBound.floatValue();
@@ -176,12 +176,13 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 	}
 
 	@NoArgsConstructor
-	private static class NumericFacetEntryBuilder {
+	protected static class NumericFacetEntryBuilder {
 
 		Number	lowerBound;
 		Number	upperBound;
 		long	currentDocumentCount	= 0;
 		int		currentVariantCount		= 0;
+		String	key;
 
 		NumericFacetEntryBuilder(NumberResultFilter facetFilter) {
 			lowerBound = facetFilter.getLowerBound();

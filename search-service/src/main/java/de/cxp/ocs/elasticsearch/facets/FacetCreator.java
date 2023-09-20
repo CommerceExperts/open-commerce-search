@@ -9,7 +9,7 @@ import org.elasticsearch.search.aggregations.Aggregations;
 
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.model.result.Facet;
-import de.cxp.ocs.util.SearchQueryBuilder;
+import de.cxp.ocs.util.DefaultLinkBuilder;
 
 public interface FacetCreator {
 
@@ -21,7 +21,6 @@ public interface FacetCreator {
 	AggregationBuilder buildAggregation();
 
 	/**
-	 * 
 	 * Build aggregation that is necessary to create the facets specified by the
 	 * includes list.
 	 * 
@@ -52,7 +51,7 @@ public interface FacetCreator {
 	 *        a link builder to create facet-entry-links
 	 * @return a list of facets that can be derived from the aggregation result
 	 */
-	Collection<Facet> createFacets(Aggregations aggResult, FilterContext filterContext, SearchQueryBuilder linkBuilder);
+	Collection<Facet> createFacets(Aggregations aggResult, FilterContext filterContext, DefaultLinkBuilder linkBuilder);
 
 	/**
 	 * Try to merge facets with same label. If not possible, return

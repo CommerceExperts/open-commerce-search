@@ -1,8 +1,8 @@
 package de.cxp.ocs.util;
 
-import static de.cxp.ocs.util.SearchQueryBuilder.SORT_DESC_PREFIX;
-import static de.cxp.ocs.util.SearchQueryBuilder.VALUE_DELIMITER;
-import static de.cxp.ocs.util.SearchQueryBuilder.VALUE_DELIMITER_ENCODED;
+import static de.cxp.ocs.util.DefaultLinkBuilder.SORT_DESC_PREFIX;
+import static de.cxp.ocs.util.DefaultLinkBuilder.VALUE_DELIMITER;
+import static de.cxp.ocs.util.DefaultLinkBuilder.VALUE_DELIMITER_ENCODED;
 import static org.apache.commons.lang3.StringUtils.replace;
 import static org.apache.commons.lang3.StringUtils.split;
 import static org.apache.commons.lang3.StringUtils.splitPreserveAllTokens;
@@ -15,7 +15,7 @@ import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldUsage;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
@@ -30,6 +30,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class SearchParamsParser {
+
+	private static final Set<FieldUsage> FILTERABLE_FIELD_USAGES = EnumSet.of(FieldUsage.FACET, FieldUsage.FILTER);
 
 	public final static String	ID_FILTER_SUFFIX		= ".id";
 	public final static String	NEGATE_FILTER_PREFIX	= "!";
@@ -56,6 +58,8 @@ public class SearchParamsParser {
 		if (searchQuery instanceof ArrangedSearchQuery) {
 			parameters.includeMainResult = ((ArrangedSearchQuery) searchQuery).includeMainResult;
 		}
+
+		parameters.trace = Optional.ofNullable(parameters.customParams.get("trace")).map(TraceOptions::parse).orElse(TraceOptions.OFF);
 
 		return parameters;
 	}
@@ -94,7 +98,7 @@ public class SearchParamsParser {
 	public static Optional<InternalResultFilter> parseSingleFilter(final String paramName, final String paramValue, FieldConfigIndex fieldConfig, Locale locale) {
 		final boolean isIdFilter = paramName.endsWith(ID_FILTER_SUFFIX);
 		final String fieldName = isIdFilter ? paramName.substring(0, paramName.length() - 3) : paramName;
-		return fieldConfig.getMatchingField(fieldName, paramValue, FieldUsage.FACET)
+		return fieldConfig.getMatchingField(fieldName, paramValue, FILTERABLE_FIELD_USAGES)
 				.map(f -> {
 					try {
 						return toInternalFilter(f, paramValue, locale, isIdFilter);
@@ -134,9 +138,17 @@ public class SearchParamsParser {
 						.setNegated(negate);
 				break;
 			default:
-				internalFilter = new TermResultFilter(locale, field, paramValues)
+				if (isIdFilter && !field.hasUsage(FieldUsage.FACET)) {
+					// not a warning, because this is a request failure. A 40x failure would be more suitable, but we
+					// avoid that here
+					log.info("Unsupported ID Filter: {}. ID filtering not possible for fields with usage FILTER", field.getName());
+					internalFilter = null;
+				}
+				else {
+					internalFilter = new TermResultFilter(locale, field, paramValues)
 						.setFilterOnId(isIdFilter)
 						.setNegated(negate);
+				}
 		}
 		return internalFilter;
 	}
@@ -187,6 +199,11 @@ public class SearchParamsParser {
 			// such
 			// case this will simply fail
 			paramValues = splitPreserveAllTokens(paramValues[0], '-');
+			// if a single value is provided, use it as a min and max, so products with exactly that value are returned
+			// (good for numeric flag fields with 0 and 1)
+			if (paramValues.length == 1) {
+				paramValues = new String[] { paramValues[0], paramValues[0] };
+			}
 			if (paramValues.length != 2) {
 				throw new IllegalArgumentException("unexpected numeric filter value: " + paramValues[0]);
 			}

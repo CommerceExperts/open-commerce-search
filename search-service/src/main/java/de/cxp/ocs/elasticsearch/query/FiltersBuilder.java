@@ -16,6 +16,7 @@ import com.google.common.base.Functions;
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FieldConfigIndex;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.*;
 
 public class FiltersBuilder {
@@ -152,7 +153,7 @@ public class FiltersBuilder {
 					ScoreMode.None);
 		}
 		else {
-			filterQuery = filterAdapter.getAsQuery(fieldPrefix, filter);
+			filterQuery = filterAdapter.getAsQuery(fieldPrefix + ".", filter);
 		}
 		return filterQuery;
 	}

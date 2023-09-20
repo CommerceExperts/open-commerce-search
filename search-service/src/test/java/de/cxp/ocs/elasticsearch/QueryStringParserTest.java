@@ -18,6 +18,7 @@ import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.config.FieldUsage;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.elasticsearch.model.query.SingleTermQuery;
 import de.cxp.ocs.elasticsearch.model.term.QueryFilterTerm;
@@ -25,7 +26,6 @@ import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.model.term.WeightedTerm;
 import de.cxp.ocs.elasticsearch.query.analyzer.AnalyzerUtil;
 import de.cxp.ocs.elasticsearch.query.analyzer.WhitespaceAnalyzer;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
 import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.util.InternalSearchParams;
 

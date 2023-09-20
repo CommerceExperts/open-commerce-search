@@ -398,6 +398,9 @@ public class QuerySuggestManager implements AutoCloseable {
 		if (removedSuggester != null) {
 			removedSuggester.destroy();	
 		}
+		// remove last (?) reference and suggest garbage collection
+		removedSuggester = null;
+		System.gc();
 	}
 
 	/**
@@ -409,14 +412,19 @@ public class QuerySuggestManager implements AutoCloseable {
 	 * @return
 	 */
 	private QuerySuggester initializeQuerySuggesters(final String indexName, final boolean synchronous) {
+		log.info("Initializing SuggestIndex '{}' {}synchronously", indexName, synchronous ? "" : "a");
 		List<SuggestDataProvider> actualSuggestDataProviders = suggestDataProviders.stream()
 				.filter(sdp -> {
 					try {
-						return sdp.hasData(indexName);
+						boolean hasData = sdp.hasData(indexName);
+						if (!hasData) {
+							log.info("SuggestDataProvider of type {} has no data for index {} - skipping.", sdp.getClass().getSimpleName(), indexName);
+						}
+						return hasData;
 					}
 					catch (Exception e) {
 						// catch potential Runtime Exceptions
-						log.warn("SuggestDataProvider implementation {} caused unexpected Exception: {}", sdp.getClass().getCanonicalName(), e);
+						log.warn("SuggestDataProvider of type {} caused unexpected Exception: {}", sdp.getClass().getCanonicalName(), e);
 						return false;
 					}
 				})
@@ -433,6 +441,8 @@ public class QuerySuggestManager implements AutoCloseable {
 		}
 
 		SuggestConfig suggestConfig = enforceSuggestConfig(indexName);
+		Optional<Limiter> limiter = createLimiter(suggestConfig);
+
 		final QuerySuggester actualQuerySuggester;
 		if (actualSuggestDataProviders.size() == 1) {
 			actualQuerySuggester = initializeQuerySuggester(actualSuggestDataProviders.get(0), indexName, synchronous);
@@ -446,9 +456,12 @@ public class QuerySuggestManager implements AutoCloseable {
 				suggesters.add(initializeQuerySuggester(sdp, indexName, synchronous));
 			}
 			actualQuerySuggester = new CompoundQuerySuggester(suggesters, defaultSuggestConfig);
+			if (limiter.isPresent()) {
+				((CompoundQuerySuggester) actualQuerySuggester).setDoLimitFinalResult(false);
+			}
 		}
 
-		return createLimiter(suggestConfig)
+		return limiter
 				.map(_limiter -> (QuerySuggester) new GroupingSuggester(actualQuerySuggester, _limiter).setPrefetchLimitFactor(suggestConfig.getPrefetchLimitFactor()))
 				.orElse(actualQuerySuggester);
 	}

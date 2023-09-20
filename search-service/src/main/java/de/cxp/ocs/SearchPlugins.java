@@ -1,22 +1,16 @@
 package de.cxp.ocs;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.Map.Entry;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.slf4j.MDC;
 
+import de.cxp.ocs.elasticsearch.prodset.ProductSetResolver;
 import de.cxp.ocs.plugin.ExtensionSupplierRegistry;
 import de.cxp.ocs.plugin.PluginManager;
-import de.cxp.ocs.spi.search.ConfigurableExtension;
-import de.cxp.ocs.spi.search.ESQueryFactory;
-import de.cxp.ocs.spi.search.RescorerProvider;
-import de.cxp.ocs.spi.search.SearchConfigurationProvider;
-import de.cxp.ocs.spi.search.UserQueryAnalyzer;
-import de.cxp.ocs.spi.search.UserQueryPreprocessor;
+import de.cxp.ocs.spi.search.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +31,10 @@ public class SearchPlugins {
 	private Map<String, Supplier<? extends UserQueryPreprocessor>> userQueryPreprocessors;
 
 	private Map<String, Supplier<? extends RescorerProvider>> rescorers;
+
+	private Map<String, Supplier<? extends ProductSetResolver>> heroProductResolvers;
+
+	private Set<Supplier<? extends CustomFacetCreator>> customFacetCreators;
 
 	// use lazy loading to guarantee, that
 	// a) all suppliers are only loaded once
@@ -69,6 +67,25 @@ public class SearchPlugins {
 			rescorers = loadSuppliers(RescorerProvider.class);
 		}
 		return rescorers;
+	}
+
+	public Map<String, Supplier<? extends ProductSetResolver>> getHeroProductResolvers() {
+		if (heroProductResolvers == null) {
+			heroProductResolvers = loadSuppliers(ProductSetResolver.class);
+		}
+		return heroProductResolvers;
+	}
+
+	public Set<Supplier<? extends CustomFacetCreator>> getFacetCreators() {
+		if (customFacetCreators == null) {
+			Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreatorsMap = loadSuppliers(CustomFacetCreator.class);
+			// fetch each supplier once
+			customFacetCreators = customFacetCreatorsMap.entrySet().stream()
+					// filter by canonical name since it's unique and we should not have any duplicates
+					.filter(entry -> entry.getKey().contains("."))
+					.map(Entry::getValue).collect(Collectors.toSet());
+		}
+		return customFacetCreators;
 	}
 
 	private <T> Map<String, Supplier<? extends T>> loadSuppliers(Class<T> clazz) {
@@ -109,4 +126,5 @@ public class SearchPlugins {
 		}
 		return instances;
 	}
+
 }

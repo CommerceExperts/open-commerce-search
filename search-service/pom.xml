@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.48.1</version>
+		<version>0.52.1</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>search-service</artifactId>
-	<version>0.42.1</version>
+	<version>0.46.1</version>
 	<packaging>jar</packaging>
 
 	<!-- Import dependency management from Spring Boot -->
@@ -236,18 +236,24 @@
 			<id>searchhub</id>
 			<properties>
 				<docker.tag>searchhub-latest</docker.tag>
+                <feign.version>12.1</feign.version>
 			</properties>
 			<dependencyManagement>
 				<dependencies>
 					<dependency>
 						<groupId>io.github.openfeign</groupId>
 						<artifactId>feign-core</artifactId>
-						<version>10.8</version>
+						<version>${feign.version}</version>
 					</dependency>
 					<dependency>
 						<groupId>io.github.openfeign</groupId>
 						<artifactId>feign-okhttp</artifactId>
-						<version>10.8</version>
+						<version>${feign.version}</version>
+					</dependency>
+					<dependency>
+						<groupId>io.github.openfeign</groupId>
+						<artifactId>feign-jackson</artifactId>
+						<version>${feign.version}</version>
 					</dependency>
 				</dependencies>
 			</dependencyManagement>
@@ -255,7 +261,7 @@
 				<dependency>
 					<groupId>io.searchhub</groupId>
 					<artifactId>ocs-smartquery-plugin</artifactId>
-					<version>1.2.13</version>
+					<version>1.3.1</version>
 				</dependency>
 			</dependencies>
 		</profile>

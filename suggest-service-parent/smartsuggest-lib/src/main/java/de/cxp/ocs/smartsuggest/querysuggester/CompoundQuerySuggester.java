@@ -24,8 +24,11 @@ public class CompoundQuerySuggester implements QuerySuggester, Accountable {
 
 	@Setter
 	private boolean isMultiThreaded = false;
+	@Setter
+	private boolean	doLimitFinalResult	= true;
 
 	private SuggestConfig defaultSuggestConfig;
+
 
 	public CompoundQuerySuggester(List<QuerySuggester> suggester, SuggestConfig defaultSuggestConfig) {
 		suggesterList = new ArrayList<>(suggester);
@@ -56,7 +59,7 @@ public class CompoundQuerySuggester implements QuerySuggester, Accountable {
 		suggesterStream
 				.map(s -> s.suggest(term, maxResults, tags))
 				.forEach(finalResult::addAll);
-		return finalResult.size() > maxResults ? finalResult.subList(0, maxResults) : finalResult;
+		return doLimitFinalResult && finalResult.size() > maxResults ? finalResult.subList(0, maxResults) : finalResult;
 	}
 
 	@Override

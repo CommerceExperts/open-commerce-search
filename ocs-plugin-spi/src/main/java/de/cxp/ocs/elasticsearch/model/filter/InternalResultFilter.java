@@ -1,4 +1,4 @@
-package de.cxp.ocs.elasticsearch.query.filter;
+package de.cxp.ocs.elasticsearch.model.filter;
 
 import de.cxp.ocs.config.Field;
 

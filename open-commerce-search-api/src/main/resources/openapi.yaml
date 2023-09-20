@@ -8,7 +8,7 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Open Commerce Search Stack API
-  version: 0.18.0-SNAPSHOT
+  version: 0.22.0
 paths:
   /indexer-api/v1/full/add:
     post:
@@ -49,7 +49,6 @@ paths:
           \ could be used for product facets (e.g. book authors) but not for faceting\
           \ the content documents (e.g. blog post authors)."
         url: http://indexer-service
-        variables: {}
       tags:
       - indexer
   /indexer-api/v1/full/cancel:
@@ -83,7 +82,6 @@ paths:
           \ could be used for product facets (e.g. book authors) but not for faceting\
           \ the content documents (e.g. blog post authors)."
         url: http://indexer-service
-        variables: {}
       tags:
       - indexer
   /indexer-api/v1/full/done:
@@ -119,7 +117,6 @@ paths:
           \ could be used for product facets (e.g. book authors) but not for faceting\
           \ the content documents (e.g. blog post authors)."
         url: http://indexer-service
-        variables: {}
       tags:
       - indexer
   /indexer-api/v1/full/start/{indexName}:
@@ -166,7 +163,6 @@ paths:
           \ could be used for product facets (e.g. book authors) but not for faceting\
           \ the content documents (e.g. blog post authors)."
         url: http://indexer-service
-        variables: {}
       tags:
       - indexer
   /indexer-api/v1/update/{indexName}:
@@ -195,7 +191,6 @@ paths:
       - basic-auth: []
       servers:
       - url: http://indexer-service
-        variables: {}
       tags:
       - update
     patch:
@@ -223,14 +218,14 @@ paths:
       - basic-auth: []
       servers:
       - url: http://indexer-service
-        variables: {}
       tags:
       - update
     put:
       description: "Puts a document to the index. If document does not exist, it will\
-        \ be added. An existing product will be overwritten unless the parameter 'replaceExisting\"\
-        \ is set to \"false\". Provided document should be a complete object, partial\
-        \ updates should be  done using the updateDocument method."
+        \ be added, but in that case the langCode parameter is required. An existing\
+        \ product will be overwritten unless the parameter 'replaceExisting\" is set\
+        \ to \"false\". Provided document should be a complete object, partial updates\
+        \ should be done using the updateDocument method."
       operationId: putDocuments
       parameters:
       - in: path
@@ -244,6 +239,13 @@ paths:
         name: replaceExisting
         schema:
           type: boolean
+      - description: "If this put request targets an index that does not exist yet,\
+          \ that index will be created. To use the correct index template, the language\
+          \ is required for that case. Otherwise its ignored."
+        in: query
+        name: langCode
+        schema:
+          type: string
       responses:
         "200":
           description: OK. The response contains a map of ids and according result.
@@ -253,7 +255,6 @@ paths:
       - basic-auth: []
       servers:
       - url: http://indexer-service
-        variables: {}
       tags:
       - update
   /search-api/v1/doc/{tenant}/{id}:
@@ -283,7 +284,6 @@ paths:
       - basic-auth: []
       servers:
       - url: http://search-service
-        variables: {}
       tags:
       - search
   /search-api/v1/search/arranged/{tenant}:
@@ -315,7 +315,6 @@ paths:
       - basic-auth: []
       servers:
       - url: http://search-service
-        variables: {}
       tags:
       - search
   /search-api/v1/search/{tenant}:
@@ -401,7 +400,6 @@ paths:
       - basic-auth: []
       servers:
       - url: http://search-service
-        variables: {}
       summary: Search for documents
       tags:
       - search
@@ -415,7 +413,6 @@ paths:
       - basic-auth: []
       servers:
       - url: http://search-service
-        variables: {}
       tags:
       - search
   /suggest-api/v1/{indexname}/suggest:
@@ -463,7 +460,6 @@ paths:
       - basic-auth: []
       servers:
       - url: http://suggest-service
-        variables: {}
       summary: Autocomplete the user input
       tags:
       - Suggest
@@ -590,6 +586,15 @@ components:
           type: object
           additionalProperties:
             type: object
+            anyOf:
+            - type: boolean
+            - type: integer
+              format: int32
+            - type: integer
+              format: int64
+            - type: number
+              format: double
+            - type: string
             description: "The data property should be used for standard fields, such\
               \ as title, description, price. Only values of the following types are\
               \ accepted (others will be dropped silently): Standard primitive types\
@@ -631,6 +636,8 @@ components:
           sort:
             type: string
           type:
+            type: string
+          variantBoostTerms:
             type: string
     Facet:
       type: object
@@ -702,6 +709,28 @@ components:
             \ selected."
         type:
           type: string
+    GenericProductSet:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/ProductSet'
+      - type: object
+        properties:
+          asSeparateSlice:
+            type: boolean
+          name:
+            type: string
+          parameters:
+            type: object
+            additionalProperties:
+              type: string
+          size:
+            type: integer
+            format: int32
+          type:
+            type: string
+          variantBoostTerms:
+            type: string
+      description: A non-specific product set usable for custom product set resolvers.
     HierarchialFacetEntry:
       type: object
       allOf:
@@ -798,6 +827,7 @@ components:
       discriminator:
         mapping:
           dynamic: '#/components/schemas/DynamicProductSet'
+          generic: '#/components/schemas/GenericProductSet'
           static: '#/components/schemas/StaticProductSet'
         propertyName: type
       properties:
@@ -809,6 +839,8 @@ components:
           type: integer
           format: int32
         type:
+          type: string
+        variantBoostTerms:
           type: string
     RangeFacetEntry:
       type: object
@@ -857,6 +889,10 @@ components:
           type: array
           items:
             type: string
+        metaData:
+          type: object
+          additionalProperties:
+            type: object
     SearchQuery:
       type: object
       properties:
@@ -1005,6 +1041,8 @@ components:
             type: integer
             format: int32
           type:
+            type: string
+          variantBoostTerms:
             type: string
     Suggestion:
       type: object

@@ -34,12 +34,33 @@ public class NonAlphanumericWordSplitAnalyzerTest {
 	@Test
 	public void testDifferentDelimitersCombined() {
 		assertEquals(Arrays.asList("123", "345"), underTest.analyze("123, .:345").getInputTerms());
+		assertEquals(Arrays.asList("123", "345"), underTest.analyze("123,.:345").getInputTerms());
+		assertEquals(Arrays.asList("123", "345"), underTest.analyze("123,:345").getInputTerms());
+		assertEquals(Arrays.asList("123", "345"), underTest.analyze("123:345").getInputTerms());
 	}
 
 	@Test
 	public void testWordBindCharactersAreNotSplit() {
 		assertEquals(Arrays.asList("hochvolt-schiene", "50w"), underTest.analyze("hochvolt-schiene 50w").getInputTerms());
 		assertEquals(Arrays.asList("hochvolt_schiene", "50w"), underTest.analyze("hochvolt_schiene 50w").getInputTerms());
+	}
+
+	@Test
+	public void testBindCharactersAreTrimmed() {
+		assertEquals(Arrays.asList("tld"), underTest.analyze("tld.").getInputTerms());
+		assertEquals(Arrays.asList("bind"), underTest.analyze("bind-").getInputTerms());
+		assertEquals(Arrays.asList("under"), underTest.analyze("under_").getInputTerms());
+	}
+
+	@Test
+	public void testSingleBindCharactersAreRemoved() {
+		assertEquals(Arrays.asList("hochvolt", "schiene"), underTest.analyze("hochvolt - schiene").getInputTerms());
+	}
+
+	@Test
+	public void testQuotesAreRemoved() {
+		assertEquals(Arrays.asList("monitor", "15.6"), underTest.analyze("monitor 15.6\"").getInputTerms());
+		assertEquals(Arrays.asList("model", "superduper"), underTest.analyze("model \"superduper\"").getInputTerms());
 	}
 
 	@Test

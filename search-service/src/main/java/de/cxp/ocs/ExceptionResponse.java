@@ -17,5 +17,7 @@ public class ExceptionResponse {
 	 */
 	String errorId;
 
+	Exception exception;
+
 	final long timestamp = System.currentTimeMillis();
 }

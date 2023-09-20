@@ -17,11 +17,11 @@ import com.google.common.collect.Sets;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.Field;
-import de.cxp.ocs.elasticsearch.query.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.model.result.SortOrder;
 import de.cxp.ocs.model.result.Sorting;
 
-public class SearchQueryBuilder {
+public final class DefaultLinkBuilder implements LinkBuilder {
 
 	public static String VALUE_DELIMITER = ",";
 	public static String VALUE_DELIMITER_ENCODED = "%2C";
@@ -33,7 +33,7 @@ public class SearchQueryBuilder {
 	private final Map<String, String> urlParams;
 	private final URI searchQueryLink;
 
-	public SearchQueryBuilder(InternalSearchParams params) {
+	public DefaultLinkBuilder(InternalSearchParams params) {
 		filters = new HashMap<>(params.filters.size());
 		for (InternalResultFilter filter : params.filters) {
 			filters.put(filter.getField().getName(), filter);
@@ -183,13 +183,17 @@ public class SearchQueryBuilder {
 	}
 
 	/**
-	 * the complete filter parameter and returns the link.
+	 * Removes the complete filter parameter and returns the link.
 	 * 
 	 * @param facetConfig
 	 * @return
 	 */
 	public String withoutFilterAsLink(FacetConfig facetConfig) {
-		String filterName = getFilterName(facetConfig);
+		return withoutFilterAsLink(getFilterName(facetConfig));
+	}
+
+	@Override
+	public String withoutFilterAsLink(String filterName) {
 		if (containsParameter(filterName)) {
 			URIBuilder linkBuilder = new URIBuilder(searchQueryLink);
 			List<NameValuePair> queryParams = linkBuilder.getQueryParams();
@@ -219,13 +223,19 @@ public class SearchQueryBuilder {
 
 	public String withFilterAsLink(FacetConfig facetConfig, String... filterInputValues) {
 		String filterName = getFilterName(facetConfig);
+		boolean mergeValues = facetConfig.isMultiSelect();
+		return withFilterAsLink(filterName, mergeValues, filterInputValues);
+	}
+
+	@Override
+	public String withFilterAsLink(String filterName, boolean mergeValues, String... filterInputValues) {
 		String filterValues = joinParameterValues(filterInputValues);
 		if (isFilterSelected(filterName, filterValues)) {
 			return searchQueryLink.getRawQuery();
 		}
 		if (searchQueryLink.toString().matches(".*[?&]" + Pattern.quote(filterName) + "=.*")) {
 			URIBuilder linkBuilder = new URIBuilder(searchQueryLink);
-			if (facetConfig.isMultiSelect()) {
+			if (mergeValues) {
 				Optional<String> otherValues = linkBuilder.getQueryParams().stream()
 						.filter(param -> filterName.equals(param.getName())).findFirst()
 						.map(NameValuePair::getValue);
@@ -329,6 +339,5 @@ public class SearchQueryBuilder {
 	public String toString() {
 		return searchQueryLink.getRawQuery();
 	}
-
 
 }
