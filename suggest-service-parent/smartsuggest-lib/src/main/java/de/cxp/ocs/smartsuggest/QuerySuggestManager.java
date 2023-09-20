@@ -295,9 +295,9 @@ public class QuerySuggestManager implements AutoCloseable {
 	 * @param defaultSuggestConfig
 	 */
 	private QuerySuggestManager(Optional<MeterRegistryAdapter> meterRegistryAdapter, Map<String, Map<String, Object>> dataProviderConfig, SuggestConfig defaultSuggestConfig) {
+		this.defaultSuggestConfig = defaultSuggestConfig;
 		suggestDataProviders = loadDataProviders(meterRegistryAdapter, dataProviderConfig);
 		suggestConfigProvider = loadConfigProviders();
-		this.defaultSuggestConfig = defaultSuggestConfig;
 	}
 
 	private List<SuggestDataProvider> loadDataProviders(Optional<MeterRegistryAdapter> meterRegistryAdapter, Map<String, Map<String, Object>> dataProviderConfig) {
