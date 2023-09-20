@@ -15,8 +15,8 @@ public class DefaultSuggestConfigProvider implements SuggestConfigProvider {
 	}
 
 	@Override
-	public SuggestConfig getConfig(@NonNull String indexName, SuggestConfig ignored) {
-		return defaultSuggestConfig;
+	public SuggestConfig getConfig(@NonNull String indexName, SuggestConfig indexConfig) {
+		return indexConfig == null ? defaultSuggestConfig.clone() : indexConfig;
 	}
 
 	@Override

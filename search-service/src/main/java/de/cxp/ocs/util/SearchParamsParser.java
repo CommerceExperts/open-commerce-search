@@ -33,6 +33,11 @@ public class SearchParamsParser {
 
 	private static final Set<FieldUsage> FILTERABLE_FIELD_USAGES = EnumSet.of(FieldUsage.FACET, FieldUsage.FILTER);
 
+	/**
+	 * Max result count as defined by default Elasticsearch setting 'max_result_window'
+	 */
+	public final static int MAX_RESULT_COUNT = 10000;
+
 	public final static String	ID_FILTER_SUFFIX		= ".id";
 	public final static String	NEGATE_FILTER_PREFIX	= "!";
 
@@ -40,6 +45,13 @@ public class SearchParamsParser {
 		final InternalSearchParams parameters = new InternalSearchParams();
 		parameters.limit = searchQuery.limit;
 		parameters.offset = searchQuery.offset;
+		if (parameters.limit > MAX_RESULT_COUNT) {
+			parameters.limit = MAX_RESULT_COUNT;
+		}
+		if (parameters.limit + parameters.offset > MAX_RESULT_COUNT) {
+			parameters.offset = MAX_RESULT_COUNT - parameters.limit;
+		}
+
 		parameters.withFacets = searchQuery.withFacets;
 		parameters.userQuery = searchQuery.q;
 

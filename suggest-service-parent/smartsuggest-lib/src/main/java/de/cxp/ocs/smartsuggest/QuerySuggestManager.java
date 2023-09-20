@@ -90,7 +90,8 @@ public class QuerySuggestManager implements AutoCloseable {
 
 		private Map<String, Map<String, Object>> dataProviderConfigs = new HashMap<>(1);
 
-		private SuggestConfig defaultSuggestConfig = null;
+		@NonNull
+		private SuggestConfig defaultSuggestConfig = new SuggestConfig();
 
 		/**
 		 * Sets the root path where the indices for the different tenants
@@ -253,7 +254,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		 *        default suggest config object
 		 * @return fluid builder
 		 */
-		public QuerySuggestManagerBuilder withDefaultSuggestConfig(SuggestConfig defaultSuggestConfig) {
+		public QuerySuggestManagerBuilder withDefaultSuggestConfig(@NonNull SuggestConfig defaultSuggestConfig) {
 			this.defaultSuggestConfig = defaultSuggestConfig;
 			return this;
 		}
@@ -294,9 +295,9 @@ public class QuerySuggestManager implements AutoCloseable {
 	 * @param defaultSuggestConfig
 	 */
 	private QuerySuggestManager(Optional<MeterRegistryAdapter> meterRegistryAdapter, Map<String, Map<String, Object>> dataProviderConfig, SuggestConfig defaultSuggestConfig) {
+		this.defaultSuggestConfig = defaultSuggestConfig;
 		suggestDataProviders = loadDataProviders(meterRegistryAdapter, dataProviderConfig);
 		suggestConfigProvider = loadConfigProviders();
-		this.defaultSuggestConfig = defaultSuggestConfig;
 	}
 
 	private List<SuggestDataProvider> loadDataProviders(Optional<MeterRegistryAdapter> meterRegistryAdapter, Map<String, Map<String, Object>> dataProviderConfig) {
@@ -338,7 +339,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		Iterator<SuggestConfigProvider> loadedConfigProviders = serviceLoader.iterator();
 		if (!loadedConfigProviders.hasNext()) {
 			log.info("No SuggestConfigProvider found. Using default.");
-			return new DefaultSuggestConfigProvider(defaultSuggestConfig != null ? defaultSuggestConfig : new SuggestConfig());
+			return new DefaultSuggestConfigProvider(defaultSuggestConfig);
 		}
 		else {
 			List<SuggestConfigProvider> configProviders = new ArrayList<>();
@@ -356,6 +357,7 @@ public class QuerySuggestManager implements AutoCloseable {
 	QuerySuggestManager(SuggestConfigProvider configProvider, SuggestDataProvider... dataProvider) {
 		suggestDataProviders = Arrays.asList(dataProvider);
 		suggestConfigProvider = configProvider;
+		defaultSuggestConfig = new SuggestConfig();
 		defaultLimiter = new CutOffLimiter();
 		try {
 			suggestIndexFolder = Files.createTempDirectory(QuerySuggestManager.class.getSimpleName() + "-for-testing-");
@@ -445,17 +447,17 @@ public class QuerySuggestManager implements AutoCloseable {
 
 		final QuerySuggester actualQuerySuggester;
 		if (actualSuggestDataProviders.size() == 1) {
-			actualQuerySuggester = initializeQuerySuggester(actualSuggestDataProviders.get(0), indexName, synchronous);
+			actualQuerySuggester = initializeQuerySuggester(actualSuggestDataProviders.get(0), indexName, suggestConfig, synchronous);
 		}
 		else if (suggestConfig.useDataSourceMerger) {
-			actualQuerySuggester = initializeQuerySuggester(new MergingSuggestDataProvider(actualSuggestDataProviders), indexName, synchronous);
+			actualQuerySuggester = initializeQuerySuggester(new MergingSuggestDataProvider(actualSuggestDataProviders), indexName, suggestConfig, synchronous);
 		}
 		else {
 			List<QuerySuggester> suggesters = new ArrayList<>();
 			for (SuggestDataProvider sdp : actualSuggestDataProviders) {
-				suggesters.add(initializeQuerySuggester(sdp, indexName, synchronous));
+				suggesters.add(initializeQuerySuggester(sdp, indexName, suggestConfig, synchronous));
 			}
-			actualQuerySuggester = new CompoundQuerySuggester(suggesters, defaultSuggestConfig);
+			actualQuerySuggester = new CompoundQuerySuggester(suggesters, suggestConfig);
 			if (limiter.isPresent()) {
 				((CompoundQuerySuggester) actualQuerySuggester).setDoLimitFinalResult(false);
 			}
@@ -467,8 +469,11 @@ public class QuerySuggestManager implements AutoCloseable {
 	}
 
 	private SuggestConfig enforceSuggestConfig(String indexName) {
-		SuggestConfig suggestConfig = suggestConfigProvider.getConfig(indexName, defaultSuggestConfig);
-		if (suggestConfig == null) suggestConfig = defaultSuggestConfig != null ? defaultSuggestConfig : new SuggestConfig();
+		// use clone here, because suggest config providers are able to modify the default suggest config
+		SuggestConfig clonedConfig = defaultSuggestConfig.clone();
+		SuggestConfig suggestConfig = suggestConfigProvider.getConfig(indexName, clonedConfig);
+		// in case the suggest config provider returned null, we fall back to the cloned config
+		if (suggestConfig == null) suggestConfig = clonedConfig;
 		return suggestConfig;
 	}
 
@@ -491,7 +496,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		}
 	}
 
-	private QuerySuggester initializeQuerySuggester(SuggestDataProvider suggestDataProvider, String indexName, boolean synchronous) {
+	private QuerySuggester initializeQuerySuggester(SuggestDataProvider suggestDataProvider, String indexName, SuggestConfig suggestConfig, boolean synchronous) {
 		if ("noop".equals(indexName)) {
 			return new NoopQuerySuggester(true);
 		}
@@ -507,7 +512,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		SuggesterFactory factory = new LuceneSuggesterFactory(tenantFolder);
 		factory.instrument(metricsRegistry, tags);
 
-		SuggestionsUpdater updateTask = new SuggestionsUpdater(suggestDataProvider, suggestConfigProvider, defaultSuggestConfig, indexName, updateableQuerySuggester, factory);
+		SuggestionsUpdater updateTask = new SuggestionsUpdater(suggestDataProvider, suggestConfigProvider, suggestConfig, indexName, updateableQuerySuggester, factory);
 		updateTask.instrument(metricsRegistry, tags);
 
 		long initialDelay = 0;

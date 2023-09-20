@@ -63,6 +63,7 @@ import de.cxp.ocs.spi.search.UserQueryAnalyzer;
 import de.cxp.ocs.util.DefaultLinkBuilder;
 import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.InternalSearchParams;
+import de.cxp.ocs.util.SearchParamsParser;
 import de.cxp.ocs.util.TraceOptions.TraceFlag;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.DistributionSummary;
@@ -676,6 +677,9 @@ public class Searcher {
 		}
 		srSlice.hits = resultHits;
 		srSlice.nextOffset = parameters.offset + searchHits.getHits().length;
+		if (srSlice.nextOffset >= SearchParamsParser.MAX_RESULT_COUNT) {
+			srSlice.nextOffset = parameters.offset;
+		}
 		return srSlice;
 	}
 

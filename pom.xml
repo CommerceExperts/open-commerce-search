@@ -5,7 +5,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.52.1</version>
+	<version>0.53.0</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -25,7 +25,8 @@
 
 		<docker.repository>commerceexperts</docker.repository>
 		<docker.prefix>ocs-</docker.prefix>
-		<docker.tag>latest</docker.tag>
+        <docker.tag>${project.version}</docker.tag>
+		<docker.latest.tag>latest</docker.latest.tag>
 		<dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
 
 		<elasticsearch.version>7.17.8</elasticsearch.version>
@@ -63,14 +64,14 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>search-service</artifactId>
-				<version>0.46.1</version>
+				<version>0.47.0</version>
 			</dependency>
 			<!-- only including the suggest-service directly, because it depends on 
 				the other suggest modules -->
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>suggest-service</artifactId>
-				<version>0.23.0</version>
+				<version>0.24.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
@@ -253,6 +254,7 @@
 							<image>${docker.repository}/${docker.prefix}${project.artifactId}:${project.version}</image>
 							<tags>
 								<tag>${docker.tag}</tag>
+                                <tag>${docker.latest.tag}</tag>
 							</tags>
 						</to>
 						<container>

@@ -546,35 +546,45 @@ Some more stand-alone setting options on tenant level:
 
 Similar to the other ConfigurationProvider there is also a SuggestConfigProvider interface that can be implemented and added to the suggest-service classpath.
 It allows different suggest configurations per index.
-A default configuration can also be provided by Java system properties (see below).
 
-Details about the suggest service (host, port, etc.) are configured trough Java's system properties. 
-Optionaly you can put a file named `suggest.properties` into classpath, and the Suggest Service will load them into the system properties.
+The configuration can also be provided by Java system properties or by providing a `suggest.properties` into classpath, 
+and the Suggest Service will load them accordingly.
 
-For missing system properties the Suggest Service tries to lookup an environment variable where each dot `.` is replaced by underscore `_` and all letters are uppercase.
+For missing system properties the Suggest Service tries to lookup an environment variable where each dot `.` and dash `-` is replaced by underscore `_` and all letters are uppercase.
 (Example: If the property `suggest.index.folder` is undefined, it will lookup the `SUGGEST_INDEX_FOLDER` environment variable)
+
+
+### Default Config
 
 Due to simplicity and having a proper blueprint, the properties are presented as a properties file including all explanation as comments and all default values already set.
 
+> Legacy Support: In previous versions of the suggest-service, some properties had different names, for example `suggest.preload.indexes` or `suggester.max.idle.minutes`. 
+> Those names are still supported by internal fallback mappers, even if not documented anymore. This means that its also possible to have conflicting property names, however 
+> in such cases the properties documented here are always prefered over the legacy ones.
+
 ```properties
+# global setting for the service
 # server listening settings
 suggest.server.port=8080
 suggest.server.adress=0.0.0.0
 
+# global setting for all indexes
 # how often (in seconds) are the data providers asked if the have new data
-suggest.update.rate=60
+suggest.update-rate=60
 
 # Normally the data for an index is loaded when the first request comes in.
 # With this setting, you can name the indexes that should be loaded directly at the start.
 # Values should be comma-separated - index names MUST NOT contain commas.
 # Example: suggest.preload.indexes=myindex1,myindex2
+# (global setting since only read initially)
 # 
-#suggest.preload.indexes=
+#suggest.preload-indexes=
 
 # Specify where lucene puts the indexes. If not specified, the temporary 
 # directory will be used.
+# (global setting)
 #
-#suggest.index.folder=
+#suggest.index-folder=
 
 # If several suggest-data-providers are used, they are indexed into separate indexes by default. This option
 # activates a merging logic, so that all provided data is merged into one index.
@@ -584,7 +594,7 @@ suggest.update.rate=60
 #
 # Default: false
 #
-#suggest.data.source.merger=false
+#suggest.data-source-merger=false
 
 # If this property is set, it will be used to extract the payload value with
 # this key and group the suggestions accordingly.
@@ -607,14 +617,14 @@ suggest.update.rate=60
 # also be configured here directly, but all in upper case, like that:
 # SUGGEST_GROUP_SHARE_BRAND=
 #
-#suggest.group.share.conf=
+#suggest.group.share-conf=
 
 # Depends on a configured `suggest.group.key` property
 # Expects the property to be specified in the format 'group1=N,group2=M'
 # with the group names that exist in your suggestion data and integer values.
 # The values are considered as absolute limites.
 #
-#suggest.group.cutoff.conf=
+#suggest.group.cutoff-conf=
 
 # If grouping and limiting is configured by a key that comes from a single or merged data-provider, then this value
 # can be used to increase the internal amount of fetched suggestions.
@@ -622,7 +632,7 @@ suggest.update.rate=60
 #
 # Default: 1
 #
-#suggest.group.prefetch.limit.factor=1
+#suggest.group.prefetch-limit-factor=1
 
 # If this property is set, the returned values will be deduplicated. As a value
 # a comma separated list of the group-values can be specified. It's used as
@@ -633,16 +643,28 @@ suggest.update.rate=60
 # (lowercase+trim). Defining the property without a value will enable
 # deduplication, but will do that without any priorization.
 #
-#suggest.group.deduplication.order=
+#suggest.group.deduplication-order=
 
 # Optional path prefix for the '/health' and '/metrics' endpoint.
-#suggest.mgmt.path.prefix=
+#suggest.service.mgmt-path-prefix=
 
 # If a suggest index is not requested for that time, it will be unloaded.
 # A new request to that index will return an empty list, but restart the loading
 # of that index.
-suggester.max.idle.minutes=30
+# (global setting)
+suggest.service.max-idle-minutes=30
 
 ```
+
+### Index specifc settings
+
+Besides the properties documented as "global" and the ones with "suggest.service", all other properties can be specified specifically for an individual index by putting the indexes name
+directly after the `suggest.` prefix.
+
+Example:
+
+> With the properties `suggest.group.prefetch-limit-factor=1` and `suggest.my-special-index.group.prefetch-limit-factor=3` all indexes will use the configured default 
+> prefetch limit factor of 1, only the index with the name "my-special-index" will use a factor of 3.   
+
 
 [back to top](#)
