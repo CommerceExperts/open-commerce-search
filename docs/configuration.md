@@ -648,6 +648,10 @@ suggest.update-rate=60
 # Optional path prefix for the '/health' and '/metrics' endpoint.
 #suggest.service.mgmt-path-prefix=
 
+# Optional Limit for the amount of queries that should be injected by a full query match. 
+# Such sharpened queries must be provided by at least one of the used Suggest-Data-Providers
+#suggest.max-sharpened-queries=12
+
 # If a suggest index is not requested for that time, it will be unloaded.
 # A new request to that index will return an empty list, but restart the loading
 # of that index.
