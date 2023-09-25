@@ -28,7 +28,7 @@ public class SuggestConfig implements Cloneable {
 
 	public int prefetchLimitFactor = 1;
 
-	public int maxSharpenedQueries = 3;
+	public int maxSharpenedQueries = 12;
 
 	public List<GroupConfig> groupConfig = new ArrayList<>();
 
