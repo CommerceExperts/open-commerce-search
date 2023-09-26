@@ -69,8 +69,8 @@ public class PredictionQueryFactory implements ESQueryFactory {
 		this.settings.putAll(settings);
 		this.fieldWeights.putAll(fieldWeights);
 		metaFetcher.setAnalyzer(settings.get(QueryBuildingSetting.analyzer));
-		Optional.ofNullable(settings.get(QueryBuildingSetting.analyzer)).ifPresent(variantQueryFactory::setAnalyzer);
 		variantQueryFactory = new VariantQueryFactory(fieldConfig);
+		Optional.ofNullable(settings.get(QueryBuildingSetting.analyzer)).ifPresent(variantQueryFactory::setAnalyzer);
 	}
 
 	@Override
