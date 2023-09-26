@@ -566,7 +566,7 @@ Due to simplicity and having a proper blueprint, the properties are presented as
 # global setting for the service
 # server listening settings
 suggest.server.port=8080
-suggest.server.adress=0.0.0.0
+suggest.server.address=0.0.0.0
 
 # global setting for all indexes
 # how often (in seconds) are the data providers asked if the have new data
@@ -647,6 +647,10 @@ suggest.update-rate=60
 
 # Optional path prefix for the '/health' and '/metrics' endpoint.
 #suggest.service.mgmt-path-prefix=
+
+# Optional Limit for the amount of queries that should be injected by a full query match. 
+# Such sharpened queries must be provided by at least one of the used Suggest-Data-Providers
+#suggest.max-sharpened-queries=12
 
 # If a suggest index is not requested for that time, it will be unloaded.
 # A new request to that index will return an empty list, but restart the loading

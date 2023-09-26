@@ -62,11 +62,14 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 	@Getter
 	private String name;
 
+	private VariantQueryFactory variantQueryFactory;
+
 	@Override
 	public void initialize(String name, Map<QueryBuildingSetting, String> settings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig) {
 		if (name != null) this.name = name;
 		querySettings = settings;
 		weightedFields = fieldWeights;
+		variantQueryFactory = new VariantQueryFactory(fieldConfig);
 	}
 
 	@Override
@@ -117,7 +120,7 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 		}
 
 		return new MasterVariantQuery(esQuery,
-				new VariantQueryFactory().createMatchAnyTermQuery(parsedQuery),
+				variantQueryFactory.createMatchAnyTermQuery(parsedQuery, weightedFields),
 				!"0".equals(fuzzySetting),
 				Boolean.parseBoolean(querySettings.getOrDefault(acceptNoResult, "false")));
 	}

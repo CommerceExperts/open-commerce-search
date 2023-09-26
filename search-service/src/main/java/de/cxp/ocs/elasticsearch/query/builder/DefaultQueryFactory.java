@@ -37,11 +37,13 @@ public class DefaultQueryFactory implements ESQueryFactory {
 	@Getter
 	private String				name	= "defaultQuery";
 	private Map<String, Float>	fields;
+	private VariantQueryFactory	variantQueryFactory;
 
 	@Override
 	public void initialize(String name, Map<QueryBuildingSetting, String> settings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig) {
 		if (name != null) this.name = name;
 		this.fields = fieldWeights;
+		variantQueryFactory = new VariantQueryFactory(fieldConfig);
 	}
 
 	@Override
@@ -59,7 +61,7 @@ public class DefaultQueryFactory implements ESQueryFactory {
 			mainQuery.fields(fields);
 		}
 
-		QueryBuilder variantQuery = new VariantQueryFactory().createMatchAnyTermQuery(parsedQuery);
+		QueryBuilder variantQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery, fields);
 
 		// isWithSpellCorrect=true because we use fuzzy matching
 		return new MasterVariantQuery(mainQuery, variantQuery, true, false);
