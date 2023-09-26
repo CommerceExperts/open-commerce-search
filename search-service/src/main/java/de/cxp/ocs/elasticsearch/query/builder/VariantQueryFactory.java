@@ -55,10 +55,22 @@ public class VariantQueryFactory {
 			queryBuilder.defaultField(defaultSearchField);
 		}
 		else {
+			boolean specificFieldSet = false;
 			for (Entry<String, Float> fieldWeight : weightedFields.entrySet()) {
-				if (fieldConfig.getField(fieldWeight.getKey()).map(Field::isVariantLevel).orElse(false)) {
-					queryBuilder.field(FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + "." + fieldWeight.getKey(), fieldWeight.getValue());
+				String pureFieldName = fieldWeight.getKey();
+				int subFieldDelimiterIndex = pureFieldName.indexOf('.');
+				if (subFieldDelimiterIndex > 0) {
+					pureFieldName = pureFieldName.substring(0, subFieldDelimiterIndex);
 				}
+
+				if (fieldConfig.getField(pureFieldName).map(Field::isVariantLevel).orElse(false)) {
+					// don't use pureFieldName here, since we want to use the subField here
+					queryBuilder.field(FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + "." + fieldWeight.getKey(), fieldWeight.getValue());
+					specificFieldSet = true;
+				}
+			}
+			if (!specificFieldSet) {
+				queryBuilder.defaultField(defaultSearchField);
 			}
 		}
 		return queryBuilder;
