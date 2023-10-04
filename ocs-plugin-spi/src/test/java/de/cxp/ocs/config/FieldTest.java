@@ -3,6 +3,7 @@ package de.cxp.ocs.config;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,15 @@ public class FieldTest {
 	public void setManyUsages() {
 		Field underTest = new Field("all");
 		underTest.setUsage(FieldUsage.RESULT, FieldUsage.FACET);
+		assertFalse(underTest.hasUsage(FieldUsage.SEARCH));
+		assertTrue(underTest.hasUsage(FieldUsage.RESULT));
+		assertTrue(underTest.hasUsage(FieldUsage.FACET));
+	}
+
+	@Test
+	public void setUsageCollection() {
+		Field underTest = new Field("all");
+		underTest.setUsage(Arrays.asList(FieldUsage.RESULT, FieldUsage.FACET));
 		assertFalse(underTest.hasUsage(FieldUsage.SEARCH));
 		assertTrue(underTest.hasUsage(FieldUsage.RESULT));
 		assertTrue(underTest.hasUsage(FieldUsage.FACET));

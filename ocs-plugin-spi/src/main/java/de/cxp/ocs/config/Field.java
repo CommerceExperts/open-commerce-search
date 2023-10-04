@@ -107,7 +107,7 @@ public class Field {
 	}
 
 	public Field setUsage(final Collection<FieldUsage> usages) {
-		__usageSet = usage.isEmpty() ? EnumSet.noneOf(FieldUsage.class) : EnumSet.copyOf(usages);
+		__usageSet = usages == null || usages.isEmpty() ? EnumSet.noneOf(FieldUsage.class) : EnumSet.copyOf(usages);
 		// ensure it's deduplicated
 		usage = new ArrayList<>(__usageSet);
 		return this;
