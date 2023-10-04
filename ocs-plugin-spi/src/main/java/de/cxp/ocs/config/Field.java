@@ -90,7 +90,7 @@ public class Field {
 
 	public boolean hasUsage(FieldUsage searchedUsage) {
 		if (__usageSet == null) {
-			__usageSet = EnumSet.copyOf(usage);
+			__usageSet = usage.isEmpty() ? EnumSet.noneOf(FieldUsage.class) : EnumSet.copyOf(usage);
 		}
 		return __usageSet.contains(searchedUsage);
 	}
@@ -102,12 +102,12 @@ public class Field {
 		if (usages != null && usages.length > 0) {
 			usage.addAll(Arrays.asList(usages));
 		}
-		__usageSet = EnumSet.copyOf(usage);
+		__usageSet = usage.isEmpty() ? EnumSet.noneOf(FieldUsage.class) : EnumSet.copyOf(usage);
 		return this;
 	}
 
 	public Field setUsage(final Collection<FieldUsage> usages) {
-		__usageSet = EnumSet.copyOf(usages);
+		__usageSet = usage.isEmpty() ? EnumSet.noneOf(FieldUsage.class) : EnumSet.copyOf(usages);
 		// ensure it's deduplicated
 		usage = new ArrayList<>(__usageSet);
 		return this;
