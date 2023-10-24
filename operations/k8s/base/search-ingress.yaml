@@ -4,9 +4,8 @@ metadata:
   name: search-ingress
   labels:
     role: ingress
-  annotations:
-    kubernetes.io/ingress.class: "nginx"
 spec:
+  ingressClassName: nginx
   rules:
   - http:
       paths:

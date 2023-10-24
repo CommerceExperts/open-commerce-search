@@ -16,7 +16,7 @@ spec:
     spec:
       affinity:
         podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
+          requiredDuringSchedulingIgnoredDuringExecution:
           - weight: 100
             podAffinityTerm:
               labelSelector:
@@ -48,7 +48,7 @@ spec:
               key: elastic
         - name: ES_AUTH
           value: "elastic:$(ES_AUTH_PW)"
-        - name: JAVA_OPTS
+        - name: JDK_JAVA_OPTIONS
           value: "-XX:MaxRAMPercentage=90.0"
         livenessProbe:
           httpGet:
