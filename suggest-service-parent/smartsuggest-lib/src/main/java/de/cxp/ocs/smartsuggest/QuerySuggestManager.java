@@ -8,6 +8,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.Iterators;
+
 import de.cxp.ocs.smartsuggest.limiter.ConfigurableShareLimiter;
 import de.cxp.ocs.smartsuggest.limiter.CutOffLimiter;
 import de.cxp.ocs.smartsuggest.limiter.GroupedCutOffLimiter;
@@ -22,6 +24,7 @@ import de.cxp.ocs.smartsuggest.spi.standard.DefaultSuggestConfigProvider;
 import de.cxp.ocs.smartsuggest.updater.SuggestionsUpdater;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.search.RequiredSearch;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,6 +43,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class QuerySuggestManager implements AutoCloseable {
+
+	private static final String INDEX_NAME_TAG = "indexName";
 
 	public static final String DEBUG_PROPERTY = "ocs.smartsuggest.debug";
 
@@ -93,6 +98,8 @@ public class QuerySuggestManager implements AutoCloseable {
 		@NonNull
 		private SuggestConfig defaultSuggestConfig = new SuggestConfig();
 
+		private List<SuggestDataProvider> injectedSuggestDataProvider = new ArrayList<>();
+
 		/**
 		 * Sets the root path where the indices for the different tenants
 		 * will be stored. Required for LUCENE engine.
@@ -124,6 +131,18 @@ public class QuerySuggestManager implements AutoCloseable {
 		}
 
 		/**
+		 * set update rate without validation.
+		 * 
+		 * @internal for testing
+		 * @param seconds
+		 * @return builder
+		 */
+		QuerySuggestManagerBuilder updateRateUnbound(int seconds) {
+			updateRate = seconds;
+			return this;
+		}
+
+		/**
 		 * Deprecated! Only Lucene suggester implemented at the moment!
 		 * 
 		 * @param engine
@@ -145,13 +164,26 @@ public class QuerySuggestManager implements AutoCloseable {
 		 * is loaded.
 		 * 
 		 * @param canonicalClassName
-		 *        class name of data provider for which to add configuration
+		 *        class name of all data provider instances that should receive this config.
 		 * @param config
 		 *        the configuration
 		 * @return fluid builder
 		 */
 		public QuerySuggestManagerBuilder addDataProviderConfig(String canonicalClassName, Map<String, Object> config) {
 			dataProviderConfigs.put(canonicalClassName, config);
+			return this;
+		}
+
+		/**
+		 * Same as {@code QuerySuggestManagerBuilder.addDataProviderConfig(String, Map)}
+		 * 
+		 * @param sdpClazz
+		 *        class of all data provider instances that should receive this config.
+		 * @param config
+		 * @return the builder itself
+		 */
+		public QuerySuggestManagerBuilder addDataProviderConfig(Class<? extends SuggestDataProvider> sdpClazz, Map<String, Object> config) {
+			dataProviderConfigs.put(sdpClazz.getCanonicalName(), config);
 			return this;
 		}
 
@@ -254,8 +286,28 @@ public class QuerySuggestManager implements AutoCloseable {
 		 *        default suggest config object
 		 * @return fluid builder
 		 */
-		public QuerySuggestManagerBuilder withDefaultSuggestConfig(@NonNull SuggestConfig defaultSuggestConfig) {
+		public QuerySuggestManagerBuilder withDefaultSuggestConfig(@NonNull
+		SuggestConfig defaultSuggestConfig) {
 			this.defaultSuggestConfig = defaultSuggestConfig;
+			return this;
+		}
+
+		/**
+		 * <p>
+		 * Add a custom {@link SuggestDataProvider}. Several instances of the same class can be added.
+		 * </p>
+		 * <p>
+		 * If the same class is also available via ServiceLoader it is loaded once more!
+		 * </p>
+		 * <p>
+		 * In case a DataProviderConfig (Map) is set, it will be passed to all instances of the according class.
+		 * </p>
+		 * 
+		 * @param additionalSuggestDataProvider
+		 * @return
+		 */
+		public QuerySuggestManagerBuilder withSuggestDataProvider(SuggestDataProvider additionalSuggestDataProvider) {
+			injectedSuggestDataProvider.add(additionalSuggestDataProvider);
 			return this;
 		}
 
@@ -265,10 +317,9 @@ public class QuerySuggestManager implements AutoCloseable {
 		 * @return the manager
 		 */
 		public QuerySuggestManager build() {
-			if (suggestIndexFolder == null) {
-				throw new IllegalArgumentException("required 'indexFolder' not specified");
-			}
-			QuerySuggestManager querySuggestManager = new QuerySuggestManager(Optional.ofNullable(metricsRegistry), dataProviderConfigs, defaultSuggestConfig);
+			suggestIndexFolder = ensureSuggestIndexLoaded();
+
+			QuerySuggestManager querySuggestManager = new QuerySuggestManager(Optional.ofNullable(metricsRegistry), injectedSuggestDataProvider, dataProviderConfigs, defaultSuggestConfig);
 			querySuggestManager.suggestIndexFolder = suggestIndexFolder;
 			querySuggestManager.updateRate = updateRate;
 			querySuggestManager.defaultLimiter = this.defaultLimiter != null ? this.defaultLimiter : new CutOffLimiter();
@@ -280,6 +331,18 @@ public class QuerySuggestManager implements AutoCloseable {
 				CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 			}
 			return querySuggestManager;
+		}
+
+		private Path ensureSuggestIndexLoaded() {
+			if (suggestIndexFolder == null) {
+				try {
+					suggestIndexFolder = Files.createTempDirectory("smartsuggest-");
+				}
+				catch (IOException e) {
+					throw new UncheckedIOException("required suggestIndexFolder not set and cant be created", e);
+				}
+			}
+			return suggestIndexFolder;
 		}
 	}
 
@@ -294,15 +357,15 @@ public class QuerySuggestManager implements AutoCloseable {
 	 * @param meterRegistryAdapter
 	 * @param defaultSuggestConfig
 	 */
-	private QuerySuggestManager(Optional<MeterRegistryAdapter> meterRegistryAdapter, Map<String, Map<String, Object>> dataProviderConfig, SuggestConfig defaultSuggestConfig) {
+	private QuerySuggestManager(Optional<MeterRegistryAdapter> meterRegistryAdapter, List<SuggestDataProvider> additionalSuggestDataProviders, Map<String, Map<String, Object>> dataProviderConfig, SuggestConfig defaultSuggestConfig) {
 		this.defaultSuggestConfig = defaultSuggestConfig;
-		suggestDataProviders = loadDataProviders(meterRegistryAdapter, dataProviderConfig);
+		suggestDataProviders = loadDataProviders(meterRegistryAdapter, additionalSuggestDataProviders, dataProviderConfig);
 		suggestConfigProvider = loadConfigProviders();
 	}
 
-	private List<SuggestDataProvider> loadDataProviders(Optional<MeterRegistryAdapter> meterRegistryAdapter, Map<String, Map<String, Object>> dataProviderConfig) {
+	private List<SuggestDataProvider> loadDataProviders(Optional<MeterRegistryAdapter> meterRegistryAdapter, List<SuggestDataProvider> additionalSuggestDataProviders, Map<String, Map<String, Object>> dataProviderConfig) {
 		ServiceLoader<SuggestDataProvider> serviceLoader = ServiceLoader.load(SuggestDataProvider.class);
-		Iterator<SuggestDataProvider> loadedSDPs = serviceLoader.iterator();
+		Iterator<SuggestDataProvider> loadedSDPs = Iterators.concat(serviceLoader.iterator(), additionalSuggestDataProviders.iterator());
 		List<SuggestDataProvider> dataProviders = new ArrayList<>();
 		if (!loadedSDPs.hasNext()) {
 			throw new IllegalStateException("No SuggestDataProvider found on classpath! Suggest unusable that way."
@@ -310,6 +373,11 @@ public class QuerySuggestManager implements AutoCloseable {
 		}
 		while (loadedSDPs.hasNext()) {
 			try {
+				// due to the possibility to inject additionalSuggestDataProviders it is possible
+				// that two SuggestDataProvider of the same class are injected. We accept this, as
+				// this way it's possible to have a common SuggestDataProvider that can provide
+				// different kind of data or data for different indexes. However we can't deduplicate
+				// the config here. This has to be done at the instantiation of that according SDP
 				SuggestDataProvider sdp = loadedSDPs.next();
 				Map<String, Object> sdpConfig = dataProviderConfig.get(sdp.getClass().getCanonicalName());
 				if (sdpConfig != null) {
@@ -322,9 +390,9 @@ public class QuerySuggestManager implements AutoCloseable {
 				log.info("failed to load a SuggestDataProvider", e);
 			}
 		}
-		
+
 		if (meterRegistryAdapter.isPresent()) {
-			for(SuggestDataProvider sdp : dataProviders) {
+			for (SuggestDataProvider sdp : dataProviders) {
 				if (sdp instanceof Instrumentable) {
 					Iterable<Tag> tags = Tags.of("dataProvider", sdp.getClass().getCanonicalName());
 					((Instrumentable) sdp).instrument(meterRegistryAdapter, tags);
@@ -350,24 +418,6 @@ public class QuerySuggestManager implements AutoCloseable {
 	}
 
 	/**
-	 * internal constructor for testing
-	 * 
-	 * @param dataProvider
-	 */
-	QuerySuggestManager(SuggestConfigProvider configProvider, SuggestDataProvider... dataProvider) {
-		suggestDataProviders = Arrays.asList(dataProvider);
-		suggestConfigProvider = configProvider;
-		defaultSuggestConfig = new SuggestConfig();
-		defaultLimiter = new CutOffLimiter();
-		try {
-			suggestIndexFolder = Files.createTempDirectory(QuerySuggestManager.class.getSimpleName() + "-for-testing-");
-		}
-		catch (IOException iox) {
-			throw new UncheckedIOException(iox);
-		}
-	}
-
-	/**
 	 * Retrieves the query suggester for the given indexName. Initializes a new
 	 * query suggester if non exists yet, for that client.
 	 * A background job ensures the data of that query suggester
@@ -378,11 +428,13 @@ public class QuerySuggestManager implements AutoCloseable {
 	 * @return
 	 *         initialized query suggester
 	 */
-	public QuerySuggester getQuerySuggester(@NonNull String indexName) {
+	public QuerySuggester getQuerySuggester(@NonNull
+	String indexName) {
 		return getQuerySuggester(indexName, false);
 	}
 
-	public QuerySuggester getQuerySuggester(@NonNull String indexName, boolean synchronous) {
+	public QuerySuggester getQuerySuggester(@NonNull
+	String indexName, boolean synchronous) {
 		ScheduledFuture<?> scheduledFuture = scheduledTasks.get(indexName);
 		if (scheduledFuture != null && scheduledFuture.isDone()) {
 			scheduledTasks.remove(indexName);
@@ -392,13 +444,24 @@ public class QuerySuggestManager implements AutoCloseable {
 	}
 
 	public void destroyQuerySuggester(String indexName) {
-		ScheduledFuture<?> scheduledFuture = scheduledTasks.get(indexName);
+		ScheduledFuture<?> scheduledFuture = scheduledTasks.remove(indexName);
 		if (scheduledFuture != null && !scheduledFuture.isDone()) {
 			scheduledFuture.cancel(true);
 		}
 		QuerySuggester removedSuggester = activeQuerySuggesters.remove(indexName);
 		if (removedSuggester != null) {
-			removedSuggester.destroy();	
+			removedSuggester.destroy();
+
+			this.metricsRegistry.ifPresent(a -> {
+				var registry = a.getMetricsRegistry();
+				var foundMeters = RequiredSearch.in(registry)
+						.tag(INDEX_NAME_TAG, indexName)
+						.meters();
+				foundMeters.forEach(m -> {
+					System.out.println("closing meter " + m.getId());
+					registry.remove(m).close();
+				});
+			});
 		}
 		// remove last (?) reference and suggest garbage collection
 		removedSuggester = null;
@@ -502,7 +565,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		}
 
 		Iterable<Tag> tags = Tags
-				.of("indexName", indexName)
+				.of(INDEX_NAME_TAG, indexName)
 				.and("dataProvider", suggestDataProvider.getClass().getCanonicalName());
 
 		QuerySuggesterProxy updateableQuerySuggester = new QuerySuggesterProxy(indexName, suggestDataProvider.getClass().getCanonicalName());

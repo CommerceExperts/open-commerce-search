@@ -119,7 +119,10 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 * @param stopWords
 	 *        optional set of stopwords. may be null
 	 */
-	public LuceneQuerySuggester(@NonNull Path indexFolder, @NonNull SuggestConfig suggestConfig, @NonNull ModifiedTermsService modifiedTermsService, CharArraySet stopWords) {
+	public LuceneQuerySuggester(@NonNull
+	Path indexFolder, @NonNull
+	SuggestConfig suggestConfig, @NonNull
+	ModifiedTermsService modifiedTermsService, CharArraySet stopWords) {
 		this.modifiedTermsService = modifiedTermsService;
 		this.suggestConfig = suggestConfig;
 
@@ -136,8 +139,8 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			// Although the AnalyzingInfixSuggester would still be a bit faster, the BlendedInfixSuggester has better
 			// handling of position match penalties for suggestions with the single weight
 			primarySuggester = new BlendedInfixSuggester(infixDir, basicIndexAnalyzer, basicQueryAnalyzer,
-						AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS, BlendedInfixSuggester.BlenderType.CUSTOM, 1, null,
-						false, AnalyzingInfixSuggester.DEFAULT_ALL_TERMS_REQUIRED, false);
+					AnalyzingInfixSuggester.DEFAULT_MIN_PREFIX_CHARS, BlendedInfixSuggester.BlenderType.CUSTOM, 1, null,
+					false, AnalyzingInfixSuggester.DEFAULT_ALL_TERMS_REQUIRED, false);
 			closeables.add(primarySuggester);
 
 			Analyzer basicIndexAnalyzer2 = setupBasicAnalyzer(true, stopWords);
