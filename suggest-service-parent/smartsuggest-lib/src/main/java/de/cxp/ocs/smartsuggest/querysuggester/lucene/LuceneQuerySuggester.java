@@ -9,7 +9,11 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -52,7 +56,6 @@ import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.Util;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -96,8 +99,8 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 * A fuzzy suggester that is used for search terms longer than 5 characters
 	 * It uses fuzziness=2.
 	 */
-	private final FuzzySuggester		fuzzySuggesterTwoEdits;
-	private final List<Closeable>		closeables	= new ArrayList<>();
+	private final FuzzySuggester fuzzySuggesterTwoEdits;
+
 	private final SuggestConfig			suggestConfig;
 	private final ModifiedTermsService	modifiedTermsService;
 
@@ -105,7 +108,9 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	private long	recordCount		= 0;
 	private long	memUsageBytes	= 0;
 
-	private volatile boolean isClosed = false;
+	private final List<Closeable>	closeables	= new ArrayList<>();
+	private volatile boolean		isClosed	= false;
+	private final Path				indexFolder;
 
 	/**
 	 * Constructor.
@@ -119,12 +124,10 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 * @param stopWords
 	 *        optional set of stopwords. may be null
 	 */
-	public LuceneQuerySuggester(@NonNull
-	Path indexFolder, @NonNull
-	SuggestConfig suggestConfig, @NonNull
-	ModifiedTermsService modifiedTermsService, CharArraySet stopWords) {
+	public LuceneQuerySuggester(Path indexFolder, SuggestConfig suggestConfig, ModifiedTermsService modifiedTermsService, CharArraySet stopWords) {
 		this.modifiedTermsService = modifiedTermsService;
 		this.suggestConfig = suggestConfig;
+		this.indexFolder = indexFolder;
 
 		try {
 			// TODO: extract a AnalyzerProviderInterface to make this
@@ -535,11 +538,6 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 
 	@Override
 	public void close() throws Exception {
-		destroy();
-	}
-
-	@Override
-	public void destroy() {
 		isClosed = true;
 		for (Closeable closeable : closeables) {
 			try {
@@ -548,6 +546,38 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			catch (Exception x) {
 				log.error("An error occurred while closing '{}'", closeable, x);
 			}
+		}
+		cleanupIndexFolder();
+	}
+
+	private void cleanupIndexFolder() throws IOException {
+		try {
+			Files.walkFileTree(indexFolder, new SimpleFileVisitor<Path>() {
+
+				@Override
+				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+						throws IOException {
+					Files.delete(file);
+					return FileVisitResult.CONTINUE;
+				}
+
+				@Override
+				public FileVisitResult postVisitDirectory(Path dir, IOException e)
+						throws IOException {
+					if (e == null) {
+						Files.delete(dir);
+						return FileVisitResult.CONTINUE;
+					}
+					else {
+						// directory iteration failed
+						throw e;
+					}
+				}
+			});
+			Files.deleteIfExists(indexFolder);
+		}
+		catch (Exception e) {
+			log.warn("failed to cleanup and delete index folder {}", indexFolder);
 		}
 	}
 
