@@ -9,14 +9,16 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
-import de.cxp.ocs.config.FacetConfiguration.FacetConfig.ValueOrder;
 import de.cxp.ocs.config.FacetType;
+import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
+import de.cxp.ocs.config.IndexedField;
 import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.util.DefaultLinkBuilder;
+import de.cxp.ocs.util.FacetEntrySorter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -26,8 +28,9 @@ import lombok.extern.slf4j.Slf4j;
 public class TermFacetCreator extends NestedFacetCreator {
 
 	@Setter
-	private int				maxFacetValues	= 100;
-	private final Locale	locale;
+	private int									maxFacetValues	= 100;
+	private final Locale						locale;
+	private final Map<String, FacetEntrySorter>	facetSorters	= new HashMap<>();
 
 	public TermFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider, Locale l) {
 		super(facetConfigs, defaultFacetConfigProvider);
@@ -81,15 +84,17 @@ public class TermFacetCreator extends NestedFacetCreator {
 			// unfiltered facet
 			fillFacet(facet, facetNameBucket, null, facetConfig, linkBuilder);
 		}
-		
-		if (ValueOrder.ALPHANUM_ASC.equals(facetConfig.getValueOrder())) {
-			Collections.sort(facet.entries, Comparator.comparing(entry -> entry.key));
-		}
-		else if (ValueOrder.ALPHANUM_DESC.equals(facetConfig.getValueOrder())) {
-			Collections.sort(facet.entries, Comparator.<FacetEntry, String> comparing(entry -> entry.getKey()).reversed());
-		}
+
+		getFacetSorter(facetConfig, facetFilter.getField()).sort(facet);
 
 		return facet.entries.isEmpty() ? Optional.empty() : Optional.of(facet);
+	}
+
+	private FacetEntrySorter getFacetSorter(FacetConfig facetConfig, Field field) {
+		return facetSorters.computeIfAbsent(field.getName(), fieldName -> {
+			int estimatedFacetValues = field instanceof IndexedField ? ((IndexedField) field).getValueCardinality() : maxFacetValues;
+			return FacetEntrySorter.of(facetConfig.getValueOrder(), estimatedFacetValues);
+		});
 	}
 
 	@Override

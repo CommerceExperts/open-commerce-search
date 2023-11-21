@@ -408,7 +408,7 @@ public class FacetConfiguration {
 		}
 
 		public static enum ValueOrder {
-			COUNT, ALPHANUM_ASC, ALPHANUM_DESC;
+			COUNT, ALPHANUM_ASC, ALPHANUM_DESC, HUMAN_NUMERIC_ASC, HUMAN_NUMERIC_DESC;
 		}
 	}
 }

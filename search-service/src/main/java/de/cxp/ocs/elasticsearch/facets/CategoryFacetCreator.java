@@ -11,17 +11,15 @@ import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
+import de.cxp.ocs.config.*;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
-import de.cxp.ocs.config.FacetConfiguration.FacetConfig.ValueOrder;
-import de.cxp.ocs.config.FacetType;
-import de.cxp.ocs.config.FieldConstants;
-import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
 import de.cxp.ocs.util.DefaultLinkBuilder;
+import de.cxp.ocs.util.FacetEntrySorter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.Accessors;
@@ -33,6 +31,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 
 	@Setter
 	private int maxFacetValues = 250;
+	private final Map<String, FacetEntrySorter>	facetSorters	= new HashMap<>();
 
 	public CategoryFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider) {
 		super(facetConfigs, defaultFacetConfigProvider);
@@ -117,9 +116,16 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 			context.entries.values().forEach(facet.getEntries()::add);
 		}
 
-		sortFacetEntries(facetConfig, facet);
+		getFacetSorter(facetConfig, facetFilter.getField()).sort(facet);
 
 		return Optional.of(facet);
+	}
+
+	private FacetEntrySorter getFacetSorter(FacetConfig facetConfig, Field field) {
+		return facetSorters.computeIfAbsent(field.getName(), fieldName -> {
+			int estimatedFacetValues = field instanceof IndexedField ? ((IndexedField) field).getValueCardinality() : maxFacetValues;
+			return FacetEntrySorter.of(facetConfig.getValueOrder(), estimatedFacetValues);
+		});
 	}
 
 	private CategoryExtract extractCategoryData(Bucket categoryBucket, Map<String, String> idPathIndex) {
@@ -166,7 +172,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		if (facetFilter.getValues().length > 0) {
 			if (facetFilter.isFilterOnId()) {
 				for (String idFilter : facetFilter.getValues()) {
-					if(category != null) {
+					if (category != null) {
 						if ((idFilter.charAt(0) == PATH_SEPARATOR && category.idPathString != null && category.idPathString.equals(idFilter))
 								|| (category.id != null && category.id.equals(idFilter))) {
 							isSelectedPath = true;
@@ -339,26 +345,6 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 			else if (!selectedPaths.contains(child.getPath())) {
 				removeUnselectedChildren(selectedPaths, child);
 			}
-		}
-	}
-
-	private void sortFacetEntries(FacetConfig facetConfig, Facet facet) {
-		if (ValueOrder.ALPHANUM_ASC.equals(facetConfig.getValueOrder())) {
-			Comparator<FacetEntry> ascValueComparator = Comparator.comparing(entry -> entry.key);
-			Collections.sort(facet.entries, ascValueComparator);
-			facet.entries.forEach(parent -> sortChildren(parent, ascValueComparator));
-		}
-		else if (ValueOrder.ALPHANUM_DESC.equals(facetConfig.getValueOrder())) {
-			Comparator<FacetEntry> descValueComparator = Comparator.<FacetEntry, String> comparing(entry -> entry.getKey()).reversed();
-			Collections.sort(facet.entries, descValueComparator);
-			facet.entries.forEach(parent -> sortChildren(parent, descValueComparator));
-		}
-	}
-
-	private void sortChildren(FacetEntry parent, Comparator<FacetEntry> valueComparator) {
-		if (parent instanceof HierarchialFacetEntry && ((HierarchialFacetEntry) parent).getChildren().size() > 0) {
-			Collections.sort(((HierarchialFacetEntry) parent).getChildren(), valueComparator);
-			((HierarchialFacetEntry) parent).getChildren().forEach(subParent -> sortChildren(subParent, valueComparator));
 		}
 	}
 
