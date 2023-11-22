@@ -13,6 +13,12 @@ public enum QueryBuildingSetting {
 	quoteAnalyzer,
 
 	/**
+	 * Setting for a boolean value to enable quoting for term-filters introduced by a query-parser.
+	 * This only makes sense if a different quoteAnalyzer is used. default: false
+	 */
+	isTermFiltersQuoted,
+
+	/**
 	 * Slop value that should be used for the quoted part of the query.
 	 * see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query-phrase.html
 	 */

@@ -69,7 +69,7 @@ public class PredictionQueryFactory implements ESQueryFactory {
 		this.settings.putAll(settings);
 		this.fieldWeights.putAll(fieldWeights);
 		metaFetcher.setAnalyzer(settings.get(QueryBuildingSetting.analyzer));
-		variantQueryFactory = new VariantQueryFactory(fieldConfig);
+		variantQueryFactory = new VariantQueryFactory(fieldWeights, fieldConfig);
 		Optional.ofNullable(settings.get(QueryBuildingSetting.analyzer)).ifPresent(variantQueryFactory::setAnalyzer);
 	}
 
@@ -195,7 +195,7 @@ public class PredictionQueryFactory implements ESQueryFactory {
 		 *
 		 * Now prefer variants with more matching terms
 		 */
-		QueryBuilder variantScoreQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery, fieldWeights);
+		QueryBuilder variantScoreQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery);
 
 		return new MasterVariantQuery(mainQuery, variantScoreQuery, true, unmatchedTerms.size() == 0);
 	}

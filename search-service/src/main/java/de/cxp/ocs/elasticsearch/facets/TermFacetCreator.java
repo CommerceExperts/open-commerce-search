@@ -85,13 +85,13 @@ public class TermFacetCreator extends NestedFacetCreator {
 			fillFacet(facet, facetNameBucket, null, facetConfig, linkBuilder);
 		}
 
-		getFacetSorter(facetConfig, facetFilter.getField()).sort(facet);
+		getFacetSorter(facetConfig, facetFilter == null ? null : facetFilter.getField()).sort(facet);
 
 		return facet.entries.isEmpty() ? Optional.empty() : Optional.of(facet);
 	}
 
 	private FacetEntrySorter getFacetSorter(FacetConfig facetConfig, Field field) {
-		return facetSorters.computeIfAbsent(field.getName(), fieldName -> {
+		return facetSorters.computeIfAbsent(facetConfig.getSourceField(), fieldName -> {
 			int estimatedFacetValues = field instanceof IndexedField ? ((IndexedField) field).getValueCardinality() : maxFacetValues;
 			return FacetEntrySorter.of(facetConfig.getValueOrder(), estimatedFacetValues);
 		});

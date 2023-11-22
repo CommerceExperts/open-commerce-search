@@ -116,13 +116,13 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 			context.entries.values().forEach(facet.getEntries()::add);
 		}
 
-		getFacetSorter(facetConfig, facetFilter.getField()).sort(facet);
+		getFacetSorter(facetConfig, facetFilter == null ? null : facetFilter.getField()).sort(facet);
 
 		return Optional.of(facet);
 	}
 
 	private FacetEntrySorter getFacetSorter(FacetConfig facetConfig, Field field) {
-		return facetSorters.computeIfAbsent(field.getName(), fieldName -> {
+		return facetSorters.computeIfAbsent(facetConfig.getSourceField(), fieldName -> {
 			int estimatedFacetValues = field instanceof IndexedField ? ((IndexedField) field).getValueCardinality() : maxFacetValues;
 			return FacetEntrySorter.of(facetConfig.getValueOrder(), estimatedFacetValues);
 		});

@@ -1,5 +1,6 @@
 package de.cxp.ocs.elasticsearch.query.builder;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -16,14 +17,15 @@ import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.model.visitor.AbstractTermVisitor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
 @Setter
 @Accessors(chain = true)
-@RequiredArgsConstructor
 public class VariantQueryFactory {
+
+	@NonNull
+	private final Map<String, Float> variantSearchFields;
 
 	@NonNull
 	private final FieldConfigAccess fieldConfig;
@@ -36,42 +38,48 @@ public class VariantQueryFactory {
 
 	private float tieBreaker = 0.2f;
 
-	public QueryBuilder createMatchAnyTermQuery(ExtendedQuery searchTerms, Map<String, Float> weightedFields) {
+	public VariantQueryFactory(Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig) {
+		variantSearchFields = extractVariantSearchFields(fieldWeights);
+		this.fieldConfig = fieldConfig;
+	}
+
+	private Map<String, Float> extractVariantSearchFields(Map<String, Float> weightedFields) {
+		Map<String, Float> variantSearchFields = new HashMap<>();
+		for (Entry<String, Float> fieldWeight : weightedFields.entrySet()) {
+			String pureFieldName = fieldWeight.getKey();
+			int subFieldDelimiterIndex = pureFieldName.indexOf('.');
+			if (subFieldDelimiterIndex > 0) {
+				pureFieldName = pureFieldName.substring(0, subFieldDelimiterIndex);
+			}
+
+			if (fieldConfig.getField(pureFieldName).map(Field::isVariantLevel).orElse(false)) {
+				// don't use pureFieldName here, since we want to use the subField here
+				variantSearchFields.put(FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + "." + fieldWeight.getKey(), fieldWeight.getValue());
+			}
+		}
+		return variantSearchFields;
+	}
+
+	public QueryBuilder createMatchAnyTermQuery(ExtendedQuery searchTerms) {
 		BoolQueryBuilder variantQuery = QueryBuilders.boolQuery();
 		searchTerms.getSearchQuery().accept(
 				AbstractTermVisitor.forEachTerm(
-						term -> variantQuery.should(createTermQuery(term, weightedFields))));
+						term -> variantQuery.should(createTermQuery(term))));
 
 		return variantQuery;
 	}
 
-	private QueryBuilder createTermQuery(QueryStringTerm term, Map<String, Float> weightedFields) {
+	private QueryBuilder createTermQuery(QueryStringTerm term) {
 		QueryStringQueryBuilder queryBuilder = QueryBuilders.queryStringQuery(term.toQueryString())
 				.analyzer(analyzer)
 				.type(type)
 				.tieBreaker(tieBreaker)
 				.boost(1f);
-		if (weightedFields == null || weightedFields.isEmpty()) {
+		if (variantSearchFields == null || variantSearchFields.isEmpty()) {
 			queryBuilder.defaultField(defaultSearchField);
 		}
 		else {
-			boolean specificFieldSet = false;
-			for (Entry<String, Float> fieldWeight : weightedFields.entrySet()) {
-				String pureFieldName = fieldWeight.getKey();
-				int subFieldDelimiterIndex = pureFieldName.indexOf('.');
-				if (subFieldDelimiterIndex > 0) {
-					pureFieldName = pureFieldName.substring(0, subFieldDelimiterIndex);
-				}
-
-				if (fieldConfig.getField(pureFieldName).map(Field::isVariantLevel).orElse(false)) {
-					// don't use pureFieldName here, since we want to use the subField here
-					queryBuilder.field(FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + "." + fieldWeight.getKey(), fieldWeight.getValue());
-					specificFieldSet = true;
-				}
-			}
-			if (!specificFieldSet) {
-				queryBuilder.defaultField(defaultSearchField);
-			}
+			queryBuilder.fields(variantSearchFields);
 		}
 		return queryBuilder;
 	}
