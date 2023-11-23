@@ -41,6 +41,7 @@ public class IndexerFactory {
 
 		ExtensionSupplierRegistry<DocumentPreProcessor> docPreProcessorRegistry = new ExtensionSupplierRegistry<DocumentPreProcessor>();
 		docPreProcessorRegistry.register(AsciiFoldingDataProcessor.class, AsciiFoldingDataProcessor::new);
+		docPreProcessorRegistry.register(AttributeToDataFieldConverter.class, AttributeToDataFieldConverter::new);
 		docPreProcessorRegistry.register(ExtractCategoryLevelDataProcessor.class, ExtractCategoryLevelDataProcessor::new);
 		docPreProcessorRegistry.register(FlagFieldDataProcessor.class, FlagFieldDataProcessor::new);
 		docPreProcessorRegistry.register(RemoveFieldContentDelimiterProcessor.class, RemoveFieldContentDelimiterProcessor::new);
