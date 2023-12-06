@@ -1,13 +1,18 @@
 package de.cxp.ocs.indexer;
 
+import static java.util.function.Predicate.isEqual;
+import static java.util.function.Predicate.not;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import de.cxp.ocs.conf.FieldUsageApplier;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
+import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.indexer.model.DataItem;
 import de.cxp.ocs.indexer.model.IndexableItem;
@@ -48,6 +53,10 @@ public class IndexItemConverter {
 		fieldConfigIndex.getFields().values().forEach(field -> {
 			if (field.hasUsage(FieldUsage.FILTER) && field.hasUsage(FieldUsage.FACET)) {
 				log.info("No need to configure a field with usage FILTER and FACET together as done for {}", field.getName());
+			}
+			if (field.hasUsage(FieldUsage.FACET) && FieldType.RAW.equals(field.getType())) {
+				log.warn("Field {} of type RAW can't be used for usage=FACET. Removing usage..", field.getName());
+				field.setUsage(field.getUsage().stream().filter(not(isEqual(FieldType.RAW))).collect(Collectors.toList()));
 			}
 		});
 	}
