@@ -8,7 +8,7 @@ public class EscapeUtil {
 
 	final static char escapeChar = '\\';
 
-	final static Set<Character> charsToEscape = new HashSet<>(Arrays.asList('+', '-', '=', '!', '(', ')', '{', '}', '[', ']', '^', '"', '~', '*', '?',
+	final static Set<Character> charsToEscape = new HashSet<>(Arrays.asList('+', '=', '!', '(', ')', '{', '}', '[', ']', '^', '"', '~', '*', '?',
 			':', escapeChar, '/'));
 
 	public static String escapeReservedESCharacters(String value) {
@@ -19,6 +19,9 @@ public class EscapeUtil {
 		char[] chars = value.toCharArray();
 		for (int i = 0; i < chars.length; i++) {
 			if (charsToEscape.contains(chars[i])) {
+				escaped.append(escapeChar).append(chars[i]);
+			}
+			else if (chars[i] == '-' && (i == 0 || chars[i - 1] == ' ')) {
 				escaped.append(escapeChar).append(chars[i]);
 			}
 			// chars that can't be escaped has to be deleted
