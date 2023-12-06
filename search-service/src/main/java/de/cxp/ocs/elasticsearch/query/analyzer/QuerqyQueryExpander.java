@@ -471,6 +471,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 				weightedWord = new WeightedTerm(term.toString());
 			}
 			weightedWord.setOccur(occur);
+			weightedWord.setQuoted(true);
 			extractedWords.add(weightedWord);
 			return null;
 		}
