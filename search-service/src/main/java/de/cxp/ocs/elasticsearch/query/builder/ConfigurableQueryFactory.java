@@ -54,7 +54,7 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 	public void initialize(String name, Map<QueryBuildingSetting, String> settings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig) {
 		if (name != null) this.name = name;
 		querySettings = settings;
-		mainQueryFactory = new StandardQueryFactory(settings, fieldWeights);
+		mainQueryFactory = new StandardQueryFactory(settings, fieldWeights, fieldConfig);
 		variantQueryFactory = new VariantQueryFactory(fieldWeights, fieldConfig);
 	}
 

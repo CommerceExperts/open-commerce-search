@@ -39,8 +39,8 @@ public class VariantQueryFactory {
 	private float tieBreaker = 0.2f;
 
 	public VariantQueryFactory(Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig) {
-		variantSearchFields = extractVariantSearchFields(fieldWeights);
 		this.fieldConfig = fieldConfig;
+		variantSearchFields = extractVariantSearchFields(fieldWeights);
 	}
 
 	private Map<String, Float> extractVariantSearchFields(Map<String, Float> weightedFields) {

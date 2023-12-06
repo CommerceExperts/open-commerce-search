@@ -54,7 +54,7 @@ public class DefaultQueryFactory implements ESQueryFactory {
 
 		fieldWeights = !fieldWeights.isEmpty() ? fieldWeights : Collections.singletonMap(FieldConstants.SEARCH_DATA + ".*", 1f);
 
-		mainQueryFactory = new StandardQueryFactory(extendedSettings, fieldWeights);
+		mainQueryFactory = new StandardQueryFactory(extendedSettings, fieldWeights, fieldConfig);
 		variantQueryFactory = new VariantQueryFactory(fieldWeights, fieldConfig);
 	}
 

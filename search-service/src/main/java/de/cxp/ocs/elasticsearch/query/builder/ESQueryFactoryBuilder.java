@@ -7,7 +7,8 @@ import java.util.function.Supplier;
 import org.elasticsearch.client.RestHighLevelClient;
 
 import de.cxp.ocs.SearchContext;
-import de.cxp.ocs.config.*;
+import de.cxp.ocs.config.QueryBuildingSetting;
+import de.cxp.ocs.config.QueryConfiguration;
 import de.cxp.ocs.config.QueryConfiguration.QueryCondition;
 import de.cxp.ocs.elasticsearch.model.query.AnalyzedQuery;
 import de.cxp.ocs.elasticsearch.query.builder.ConditionalQueries.*;
@@ -107,8 +108,7 @@ public class ESQueryFactoryBuilder {
 			return null;
 		}
 		ESQueryFactory esQueryFactory = queryFactorySupplier.get();
-		Map<String, Float> fieldWeights = loadFields(queryConf.getWeightedFields());
-		esQueryFactory.initialize(queryConf.getName(), queryConf.getSettings(), fieldWeights, context.getFieldConfigIndex());
+		esQueryFactory.initialize(queryConf.getName(), queryConf.getSettings(), queryConf.getWeightedFields(), context.getFieldConfigIndex());
 
 		// Special case for PredictionQueryFactory.
 		// Not sure if this should be supported generally
@@ -129,39 +129,4 @@ public class ESQueryFactoryBuilder {
 		return Optional.ofNullable(fallbackQueryBuilder);
 	}
 
-	private Map<String, Float> loadFields(Map<String, Float> weightedFields) {
-		Map<String, Float> validatedFields = new HashMap<>();
-		FieldConfigIndex fieldConfig = context.getFieldConfigIndex();
-		Set<String> ignoredFields = new HashSet<>();
-		weightedFields.forEach((fieldNamePattern, weight) -> {
-			if (isSearchableField(fieldConfig, fieldNamePattern)) {
-				validatedFields.put(fieldNamePattern, weight);
-			}
-			else {
-				ignoredFields.add(fieldNamePattern);
-			}
-		});
-		if (ignoredFields.size() > 0) {
-			log.info("Ignored unavailable fields for search: " + ignoredFields.toString());
-		}
-		return validatedFields;
-	}
-
-	private boolean isSearchableField(FieldConfigIndex fieldConfig, String fieldNamePattern) {
-		String fieldName = fieldNamePattern.split("[\\.]")[0];
-		Field fieldConf = null;
-		if (fieldName.endsWith("*")) {
-			for (Field field : fieldConfig.getFieldsByUsage(FieldUsage.SEARCH).values()) {
-				if (field != null && field.getName() != null
-						&& field.getName().startsWith(fieldName.substring(0, fieldName.length() - 1))) {
-					fieldConf = field;
-					break;
-				}
-			}
-		}
-		else {
-			fieldConf = fieldConfig.getField(fieldName).orElse(null);
-		}
-		return (fieldConf != null && fieldConf.hasUsage(FieldUsage.SEARCH));
-	}
 }
