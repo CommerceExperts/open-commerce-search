@@ -2,11 +2,13 @@ package de.cxp.ocs.elasticsearch.query.builder;
 
 import static de.cxp.ocs.config.QueryBuildingSetting.acceptNoResult;
 import static de.cxp.ocs.config.QueryBuildingSetting.allowParallelSpellcheck;
+import static de.cxp.ocs.util.ESQueryUtils.validateSearchFields;
 
 import java.util.Map;
 
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 
+import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
@@ -54,8 +56,8 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 	public void initialize(String name, Map<QueryBuildingSetting, String> settings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig) {
 		if (name != null) this.name = name;
 		querySettings = settings;
-		mainQueryFactory = new StandardQueryFactory(settings, fieldWeights, fieldConfig);
-		variantQueryFactory = new VariantQueryFactory(fieldWeights, fieldConfig);
+		mainQueryFactory = new StandardQueryFactory(settings, validateSearchFields(fieldWeights, fieldConfig, Field::isMasterLevel));
+		variantQueryFactory = new VariantQueryFactory(validateSearchFields(fieldWeights, fieldConfig, Field::isVariantLevel));
 	}
 
 	@Override

@@ -1,12 +1,20 @@
 package de.cxp.ocs.util;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 
+import de.cxp.ocs.config.Field;
+import de.cxp.ocs.config.FieldConfigAccess;
+import de.cxp.ocs.config.FieldConstants;
+import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.elasticsearch.model.term.AssociatedTerm;
 import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
 
@@ -103,5 +111,27 @@ public class ESQueryUtils {
 					.must(q1)
 					.must(q2);
 		}
+	}
+
+	public static Map<String, Float> validateSearchFields(Map<String, Float> weightedFields, FieldConfigAccess fieldConfig, Predicate<Field> additionalPredicate) {
+		Map<String, Float> validatedFields = new HashMap<>();
+		for (Entry<String, Float> fieldWeight : weightedFields.entrySet()) {
+			String fieldName = fieldWeight.getKey();
+			if (fieldName.startsWith(FieldConstants.SEARCH_DATA + ".")) {
+				fieldName = fieldName.substring(FieldConstants.SEARCH_DATA.length() + 1);
+			}
+
+			int subFieldDelimiterIndex = fieldName.indexOf('.');
+			String subField = "";
+			if (!fieldName.endsWith("*") && subFieldDelimiterIndex > 0) {
+				subField = fieldName.substring(subFieldDelimiterIndex);
+				fieldName = fieldName.substring(0, subFieldDelimiterIndex);
+			}
+
+			if (fieldConfig.getMatchingField(fieldName, FieldUsage.SEARCH).map(additionalPredicate::test).orElse(false)) {
+				validatedFields.put(FieldConstants.SEARCH_DATA + "." + fieldName + subField, fieldWeight.getValue());
+			}
+		}
+		return validatedFields;
 	}
 }

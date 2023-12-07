@@ -83,7 +83,7 @@ class QueryPredictor {
 		final Set<QueryStringTerm> actualSearchTerms = new HashSet<>(searchWordsCleaned);
 		shingles.keySet().forEach(shingleWord -> actualSearchTerms.add(new WeightedTerm(shingleWord)));
 
-		final SpellCorrector corrector = getSpellCorrector(fieldWeights.keySet());
+		final SpellCorrector corrector = new SpellCorrector(fieldWeights.keySet());
 		final Map<Float, CountedTerm> predictionWords = new LinkedHashMap<>();
 		final SearchResponse searchResponse = runTermAnalysis(
 				fieldWeights.keySet(),
@@ -261,22 +261,6 @@ class QueryPredictor {
 								.timeout(TimeValue.timeValueMillis(20))),
 						RequestOptions.DEFAULT);
 		return searchResponse;
-	}
-
-	private SpellCorrector getSpellCorrector(final Collection<String> searchFields) {
-		final Set<String> spellCheckFields = new HashSet<>();
-		for (String searchField : searchFields) {
-			if (searchField == null || searchField.contains("*")) {
-				continue;
-			}
-			if (searchField.contains(".")) {
-				searchField = searchField.substring(0, searchField.indexOf('.'));
-			}
-			if (!searchField.isEmpty()) {
-				spellCheckFields.add(searchField);
-			}
-		}
-		return new SpellCorrector(spellCheckFields.toArray(new String[spellCheckFields.size()]));
 	}
 
 	protected QueryBuilder buildTermQuery(final QueryStringTerm term, final Collection<String> searchFields) {

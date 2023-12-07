@@ -10,8 +10,10 @@ import static de.cxp.ocs.config.QueryBuildingSetting.phraseSlop;
 import static de.cxp.ocs.config.QueryBuildingSetting.quoteAnalyzer;
 import static de.cxp.ocs.config.QueryBuildingSetting.tieBreaker;
 
-import java.util.*;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -21,7 +23,7 @@ import org.elasticsearch.index.query.Operator;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 
-import de.cxp.ocs.config.*;
+import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.elasticsearch.model.term.WeightedTerm;
 import de.cxp.ocs.elasticsearch.model.util.EscapeUtil;
@@ -29,39 +31,14 @@ import de.cxp.ocs.elasticsearch.model.util.QueryStringUtil;
 import de.cxp.ocs.elasticsearch.model.visitor.AbstractTermVisitor;
 import de.cxp.ocs.util.Util;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class StandardQueryFactory {
 
 	@NonNull
 	private final Map<QueryBuildingSetting, String>	querySettings;
 	private final Map<String, Float>				fieldWeights;
-
-	public StandardQueryFactory(Map<QueryBuildingSetting, String> querySettings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig) {
-		this.querySettings = querySettings;
-		this.fieldWeights = validateFields(fieldWeights, fieldConfig);
-	}
-
-	private Map<String, Float> validateFields(Map<String, Float> weightedFields, FieldConfigAccess fieldConfig) {
-		Map<String, Float> validatedFields = new HashMap<>();
-		for (Entry<String, Float> fieldWeight : weightedFields.entrySet()) {
-			String fieldName = fieldWeight.getKey();
-			if (fieldName.startsWith(FieldConstants.SEARCH_DATA + ".")) {
-				fieldName = fieldName.substring(FieldConstants.SEARCH_DATA.length() + 1);
-			}
-
-			int subFieldDelimiterIndex = fieldName.indexOf('.');
-			String subField = "";
-			if (!fieldName.endsWith("*") && subFieldDelimiterIndex > 0) {
-				subField = fieldName.substring(subFieldDelimiterIndex);
-				fieldName = fieldName.substring(0, subFieldDelimiterIndex);
-			}
-
-			if (fieldConfig.getMatchingField(fieldName, FieldUsage.SEARCH).map(Field::isMasterLevel).orElse(false)) {
-				validatedFields.put(FieldConstants.SEARCH_DATA + "." + fieldName + subField, fieldWeight.getValue());
-			}
-		}
-		return validatedFields;
-	}
 
 	public QueryStringQueryBuilder create(ExtendedQuery parsedQuery) {
 		String fuzzySetting = querySettings.get(fuzziness);

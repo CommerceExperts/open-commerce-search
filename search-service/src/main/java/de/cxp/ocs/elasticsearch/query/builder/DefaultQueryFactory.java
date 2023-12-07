@@ -1,5 +1,7 @@
 package de.cxp.ocs.elasticsearch.query.builder;
 
+import static de.cxp.ocs.util.ESQueryUtils.validateSearchFields;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,6 +11,7 @@ import org.elasticsearch.index.query.MultiMatchQueryBuilder.Type;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 
+import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.QueryBuildingSetting;
@@ -54,8 +57,8 @@ public class DefaultQueryFactory implements ESQueryFactory {
 
 		fieldWeights = !fieldWeights.isEmpty() ? fieldWeights : Collections.singletonMap(FieldConstants.SEARCH_DATA + ".*", 1f);
 
-		mainQueryFactory = new StandardQueryFactory(extendedSettings, fieldWeights, fieldConfig);
-		variantQueryFactory = new VariantQueryFactory(fieldWeights, fieldConfig);
+		mainQueryFactory = new StandardQueryFactory(extendedSettings, validateSearchFields(fieldWeights, fieldConfig, Field::isMasterLevel));
+		variantQueryFactory = new VariantQueryFactory(validateSearchFields(fieldWeights, fieldConfig, Field::isVariantLevel));
 	}
 
 	@Override

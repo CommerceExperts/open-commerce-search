@@ -141,7 +141,7 @@ public class Searcher {
 		facetApplier = new FacetConfigurationApplyer(searchContext, plugins.getFacetCreators());
 		filtersBuilder = new FiltersBuilder(searchContext);
 		scoringCreator = new ScoringCreator(searchContext);
-		spellCorrector = initSpellCorrection();
+		spellCorrector = new SpellCorrector(fieldIndex.getFieldsByUsage(FieldUsage.SEARCH).keySet());
 		rescorers = SearchPlugins.initialize(config.getRescorers(), plugins.getRescorerProviders(), config.getPluginConfiguration());
 
 		queryBuilder = new ESQueryFactoryBuilder(restClient, searchContext, plugins.getEsQueryFactories()).build();
@@ -155,11 +155,6 @@ public class Searcher {
 				.tag("indexName", indexName)
 				.publishPercentiles(0.5, 0.8, 0.9, 0.95)
 				.register(registry);
-	}
-
-	private SpellCorrector initSpellCorrection() {
-		Set<String> spellCorrectionFields = fieldIndex.getFieldsByUsage(FieldUsage.SEARCH).keySet();
-		return new SpellCorrector(spellCorrectionFields.toArray(new String[spellCorrectionFields.size()]));
 	}
 
 	private Set<String> initVariantHandling() {

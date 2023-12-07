@@ -1,6 +1,7 @@
 package de.cxp.ocs.elasticsearch.query.builder;
 
 import static de.cxp.ocs.config.QueryBuildingSetting.analyzer;
+import static de.cxp.ocs.util.ESQueryUtils.validateSearchFields;
 
 import java.io.IOException;
 import java.util.*;
@@ -8,10 +9,12 @@ import java.util.Map.Entry;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.search.BooleanClause.Occur;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder.Type;
 
+import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.QueryBuildingSetting;
@@ -67,9 +70,9 @@ public class PredictionQueryFactory implements ESQueryFactory {
 	public void initialize(String name, Map<QueryBuildingSetting, String> settings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig) {
 		if (name != null) this.name = name;
 		this.settings.putAll(settings);
-		this.fieldWeights.putAll(fieldWeights);
+		this.fieldWeights.putAll(validateSearchFields(fieldWeights, fieldConfig, Field::isMasterLevel));
 		metaFetcher.setAnalyzer(settings.get(QueryBuildingSetting.analyzer));
-		variantQueryFactory = new VariantQueryFactory(fieldWeights, fieldConfig);
+		variantQueryFactory = new VariantQueryFactory(validateSearchFields(fieldWeights, fieldConfig, Field::isVariantLevel));
 		Optional.ofNullable(settings.get(QueryBuildingSetting.analyzer)).ifPresent(variantQueryFactory::setAnalyzer);
 	}
 
@@ -212,8 +215,8 @@ public class PredictionQueryFactory implements ESQueryFactory {
 		try {
 			queryMetaData = metaFetcher.getQueryMetaData(analyzedQuery, fieldWeights);
 		}
-		catch (final IOException ioe) {
-			log.error("can't build search query, because meta fetch phase failed", ioe);
+		catch (final ElasticsearchException | IOException ex) {
+			log.error("can't build search query, because meta fetch phase failed", ex);
 		}
 
 		if (queryMetaData == null || queryMetaData.isEmpty()) {

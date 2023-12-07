@@ -10,8 +10,6 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 
-import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
@@ -27,9 +25,6 @@ public class VariantQueryFactory {
 	@NonNull
 	private final Map<String, Float> variantSearchFields;
 
-	@NonNull
-	private final FieldConfigAccess fieldConfig;
-
 	private String analyzer = "standard";
 
 	private String defaultSearchField = FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + ".*";
@@ -38,24 +33,19 @@ public class VariantQueryFactory {
 
 	private float tieBreaker = 0.2f;
 
-	public VariantQueryFactory(Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig) {
-		this.fieldConfig = fieldConfig;
-		variantSearchFields = extractVariantSearchFields(fieldWeights);
+	public VariantQueryFactory(Map<String, Float> fieldWeights) {
+		variantSearchFields = ensureVariantPrefix(fieldWeights);
 	}
 
-	private Map<String, Float> extractVariantSearchFields(Map<String, Float> weightedFields) {
+	private Map<String, Float> ensureVariantPrefix(Map<String, Float> weightedFields) {
 		Map<String, Float> variantSearchFields = new HashMap<>();
+		String requiredPrefix = FieldConstants.VARIANTS + ".";
 		for (Entry<String, Float> fieldWeight : weightedFields.entrySet()) {
-			String pureFieldName = fieldWeight.getKey();
-			int subFieldDelimiterIndex = pureFieldName.indexOf('.');
-			if (subFieldDelimiterIndex > 0) {
-				pureFieldName = pureFieldName.substring(0, subFieldDelimiterIndex);
+			String fieldName = fieldWeight.getKey();
+			if (!fieldName.startsWith(requiredPrefix)) {
+				fieldName = requiredPrefix + fieldName;
 			}
-
-			if (fieldConfig.getField(pureFieldName).map(Field::isVariantLevel).orElse(false)) {
-				// don't use pureFieldName here, since we want to use the subField here
-				variantSearchFields.put(FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + "." + fieldWeight.getKey(), fieldWeight.getValue());
-			}
+			variantSearchFields.put(FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + "." + fieldWeight.getKey(), fieldWeight.getValue());
 		}
 		return variantSearchFields;
 	}

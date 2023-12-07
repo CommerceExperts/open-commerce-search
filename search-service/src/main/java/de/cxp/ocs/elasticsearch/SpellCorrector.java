@@ -2,6 +2,7 @@ package de.cxp.ocs.elasticsearch;
 
 import java.util.*;
 
+import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.search.suggest.Suggest;
 import org.elasticsearch.search.suggest.Suggest.Suggestion;
 import org.elasticsearch.search.suggest.Suggest.Suggestion.Entry;
@@ -18,20 +19,41 @@ import de.cxp.ocs.elasticsearch.model.term.AssociatedTerm;
 import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.model.term.WeightedTerm;
 import de.cxp.ocs.elasticsearch.query.builder.CountedTerm;
-import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 public class SpellCorrector {
 
 	private final String[]	spellCorrectionFields;
 	private float			minScore	= 0.75f;
+
+	public SpellCorrector(Collection<String> searchFields) {
+		final Set<String> spellCheckFields = new HashSet<>();
+		for (String searchField : searchFields) {
+			if (searchField == null || searchField.contains("*")) {
+				continue;
+			}
+
+			String[] searchFieldSplit = StringUtils.split(searchField, '.');
+			String actualName;
+			if (searchFieldSplit.length > 1) {
+				actualName = FieldConstants.SEARCH_DATA.equals(searchFieldSplit[0]) ? searchFieldSplit[1] : searchFieldSplit[0];
+			}
+			else {
+				actualName = searchFieldSplit[0];
+			}
+
+			if (!searchField.isEmpty()) {
+				spellCheckFields.add(FieldConstants.SEARCH_DATA + "." + actualName);
+			}
+		}
+		spellCorrectionFields = spellCheckFields.toArray(new String[0]);
+	}
 
 	public SuggestBuilder buildSpellCorrectionQuery(String userQuery) {
 		SuggestBuilder suggestBuilder = new SuggestBuilder().setGlobalText(userQuery);
 		for (String fieldName : spellCorrectionFields) {
 			suggestBuilder.addSuggestion(fieldName,
 					SuggestBuilders
-							.termSuggestion(FieldConstants.SEARCH_DATA + "." + fieldName)
+							.termSuggestion(fieldName)
 							.analyzer("whitespace"));
 		}
 		return suggestBuilder;
