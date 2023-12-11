@@ -22,10 +22,12 @@ import de.cxp.ocs.util.Util;
  * <p>
  * As option for the attribute converter, include or exclude can be defined to
  * restrict the attributes that should be converted.
+ * </p>
  * <ul>
  * <li>include: name1,name2</li>
  * <li>exclude: name3</li>
  * </ul>
+ * <p>
  * If include is defined, only the according attributes are converted. So it does not make sense to defined both options
  * </p>
  * <p>
