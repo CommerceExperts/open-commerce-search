@@ -155,13 +155,13 @@ public class AsciifyQuerqyQueryAnalyzerTest {
 	@Test
 	public void testDiacriticCharTermMatchesAsciifiedFilterRule() throws InterruptedException, ExecutionException {
 		var analyzedQuery = analyze("bùty");
-		assertEquals("(bùty OR booty) OR (buty) -obuwie", analyzedQuery.toQueryString());
+		assertEquals("(bùty OR booty) OR (buty) -\"obuwie\"", analyzedQuery.toQueryString());
 	}
 
 	@Test
 	public void testMultipleTermsMatchesAllKindOfRule() throws InterruptedException, ExecutionException {
 		var analyzedQuery = analyze("dziecięce zimowe bùty");
-		assertEquals("((dziecięce OR dziewczęce^0.5) (zimowe OR śnieg) (bùty OR booty)) OR ((dzieciece OR chłopięce^0.5 OR dzieci) (zimowe OR śnieg) buty) -obuwie", analyzedQuery.toQueryString());
+		assertEquals("((dziecięce OR dziewczęce^0.5) (zimowe OR śnieg) (bùty OR booty)) OR ((dzieciece OR chłopięce^0.5 OR dzieci) (zimowe OR śnieg) buty) -\"obuwie\"", analyzedQuery.toQueryString());
 	}
 
 	@Test
