@@ -250,11 +250,16 @@ public class Searcher {
 
 			searchSourceBuilder.query(buildFinalQuery(searchQuery, heroProductsQuery.orElse(null), filterContext, variantSortings));
 
-			if (log.isTraceEnabled()) {
-				log.trace(QUERY_MARKER, "{ \"user_query\": \"{}\", \"query\": {} }", parameters.userQuery, searchSourceBuilder.toString().replaceAll("[\n\\s]+", " "));
-			}
-			if (parameters.trace.isSet(TraceFlag.EsQuery)) {
-				searchMetaData.put("elasticsearch_query", searchSourceBuilder.toString());
+			if (log.isTraceEnabled() || parameters.trace.isSet(TraceFlag.EsQuery)) {
+				String oneLineQuery = searchSourceBuilder.toString().replaceAll("[\n\\s]+", " ");
+
+				if (parameters.trace.isSet(TraceFlag.EsQuery)) {
+					searchMetaData.put("elasticsearch_query", oneLineQuery);
+					log.info("ES-Query Stage {}:{} for user query '{}': {}", i, stagedQueryBuilder.getName(), parameters.userQuery, oneLineQuery);
+				}
+				else {
+					log.trace(QUERY_MARKER, "{ \"user_query\": \"{}\", \"query\": {} }", parameters.userQuery, oneLineQuery);
+				}
 			}
 
 			searchResponse = executeSearchRequest(searchSourceBuilder);

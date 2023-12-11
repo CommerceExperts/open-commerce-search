@@ -164,8 +164,8 @@ public class SearchController implements SearchService {
 				final InternalSearchParams parameters = extractInternalParams(searchQuery, filters, searchContext);
 
 				if (parameters.trace.isSet(TraceFlag.Request)) {
-					log.info("called search through method={} with searchQuery={}, filters={} and productSet={}",
-							Thread.currentThread().getStackTrace()[2].getMethodName(), searchQuery, filters, heroProducts);
+					log.info("called search for tenant={} on index{} through method={} with searchQuery={}, filters={} and productSet={}",
+							tenant, searchContext.getConfig().getIndexName(), Thread.currentThread().getStackTrace()[2].getMethodName(), searchQuery, filters, heroProducts);
 				}
 
 				final Searcher searcher = searchClientCache.get(tenant, () -> initializeSearcher(searchContext));
