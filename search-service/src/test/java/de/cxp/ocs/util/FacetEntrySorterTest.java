@@ -16,6 +16,7 @@ public class FacetEntrySorterTest {
 			.addEntry(new FacetEntry("28 z", "z28", 82, "", false))
 			.addEntry(new FacetEntry("2 B", "b2", 12, "", false))
 			.addEntry(new FacetEntry("Alpha", "a", 1, "", false))
+			.addEntry(new FacetEntry("Beta", "a", 1, "", false))
 			.addEntry(new FacetEntry("1 A", "a1", 11, "", false))
 			.addEntry(new FacetEntry("1.2 A", "a12", 12, "", false))
 			.addEntry(new FacetEntry("4 D", "d4", 41, "", false));
@@ -37,13 +38,13 @@ public class FacetEntrySorterTest {
 	@Test
 	public void testAlphaNumSorter() {
 		FacetEntrySorter.of(ValueOrder.ALPHANUM_ASC, 12).sort(testFacet);
-		assertEquals("Alpha", testFacet.getEntries().get(0).key);
+		assertEquals("1 A", testFacet.getEntries().get(0).key);
 	}
 
 	@Test
 	public void testAlphaNumDescSorter() {
 		FacetEntrySorter.of(ValueOrder.ALPHANUM_DESC, 12).sort(testFacet);
-		assertEquals("3 D", testFacet.getEntries().get(0).key);
+		assertEquals("Beta", testFacet.getEntries().get(0).key);
 	}
 
 	@Test
@@ -56,5 +57,6 @@ public class FacetEntrySorterTest {
 		assertEquals("4 D", facetEntryIterator.next().getKey());
 		assertEquals("28 z", facetEntryIterator.next().getKey());
 		assertEquals("Alpha", facetEntryIterator.next().getKey());
+		assertEquals("Beta", facetEntryIterator.next().getKey());
 	}
 }
