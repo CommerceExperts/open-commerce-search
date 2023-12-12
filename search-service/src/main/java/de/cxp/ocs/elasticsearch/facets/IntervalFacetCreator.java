@@ -20,6 +20,8 @@ import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.IntervalFacetEntry;
 import de.cxp.ocs.util.DefaultLinkBuilder;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -34,6 +36,7 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 	// TODO: fetch statistics from the numeric ranges of each facet value to
 	// use proper interval
 	@Setter
+	@Getter(AccessLevel.PROTECTED)
 	private int interval = 5;
 
 	/**
