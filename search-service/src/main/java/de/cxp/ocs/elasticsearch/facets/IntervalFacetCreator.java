@@ -31,8 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 @Accessors(chain = true)
 public class IntervalFacetCreator extends NestedFacetCreator {
 
-	private int wishedFacetSize = 5;
-
 	// TODO: fetch statistics from the numeric ranges of each facet value to
 	// use proper interval
 	@Setter
@@ -125,14 +123,21 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 		List<? extends Bucket> valueBuckets = facetValues.getBuckets();
 
 		long variantCount = facetNameBucket.getDocCount();
-		long variantCountPerBucket = variantCount / (wishedFacetSize + 1);
+		int wishedFacetSize = Math.max(1, facetConfig.getOptimalValueCount());
+		int variantCountPerBucket = (int) (variantCount / wishedFacetSize);
 
 		NumericFacetEntryBuilder currentEntryBuilder = new NumericFacetEntryBuilder();
 		long absDocCount = 0;
+		boolean isFirstEntry = true;
 		for (Histogram.Bucket valueBucket : valueBuckets) {
 			if (currentEntryBuilder.currentDocumentCount == 0) {
 				currentEntryBuilder.lowerBound = (Double) valueBucket.getKey();
 			}
+			if (isFirstEntry) {
+				currentEntryBuilder.isFirstEntry = true;
+				isFirstEntry = false;
+			}
+
 			long docCount = nestedFacetCorrector != null
 					? nestedFacetCorrector.getCorrectedDocumentCount(valueBucket)
 					: valueBucket.getDocCount();
@@ -146,7 +151,9 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 				currentEntryBuilder = new NumericFacetEntryBuilder();
 			}
 		}
+
 		if (currentEntryBuilder.currentVariantCount > 0) {
+			currentEntryBuilder.isLastEntry = true;
 			facet.addEntry(createIntervalFacetEntry(currentEntryBuilder, selectedFilter, facetConfig, linkBuilder));
 		}
 
@@ -158,12 +165,57 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 		boolean isSelected = selectedFilter != null
 				&& selectedFilter.getLowerBound().floatValue() == currentValueInterval.lowerBound.floatValue()
 				&& selectedFilter.getUpperBound().floatValue() == currentValueInterval.upperBound.floatValue();
-		return new IntervalFacetEntry(currentValueInterval.lowerBound,
+
+		return new IntervalFacetEntry(
+				getLabel(facetConfig, currentValueInterval),
+				currentValueInterval.lowerBound,
 				currentValueInterval.upperBound,
 				currentValueInterval.currentDocumentCount,
 				isSelected ? linkBuilder.withoutFilterAsLink(facetConfig, currentValueInterval.getFilterValues())
-						: linkBuilder.withFilterAsLink(facetConfig, currentValueInterval.getFilterValues()),
+						   : linkBuilder.withFilterAsLink(facetConfig, currentValueInterval.getFilterValues()),
 				isSelected);
+	}
+
+	/**
+	 * simple label that considers nullable lower or upper bound value.
+	 * 
+	 * @param from
+	 *        lower bound
+	 * @param to
+	 *        upper bound
+	 * @return
+	 */
+	private String getLabel(FacetConfig facetConfig, NumericFacetEntryBuilder currentValueInterval) {
+		Number lowerBound = currentValueInterval.isFirstEntry ? null : currentValueInterval.lowerBound;
+		Number upperBound = currentValueInterval.isLastEntry ? null : currentValueInterval.upperBound;
+
+		boolean showRoundedValues = Boolean.parseBoolean(facetConfig.getMetaData().getOrDefault("showRoundedValues", "false").toString());
+		String noLowerBoundPrefix = facetConfig.getMetaData().getOrDefault("noLowerBoundPrefix", "< ").toString();
+		String noLowerBoundSuffix = facetConfig.getMetaData().getOrDefault("noLowerBoundSuffix", "").toString();
+		String noUpperBoundPrefix = facetConfig.getMetaData().getOrDefault("noUpperBoundPrefix", "> ").toString();
+		String noUpperBoundSuffix = facetConfig.getMetaData().getOrDefault("noUpperBoundSuffix", "").toString();
+		String intervalSeparator = facetConfig.getMetaData().getOrDefault("intervalSeparator", " - ").toString();
+		String unit = facetConfig.getMetaData().getOrDefault("unit", "").toString();
+		if (!unit.isBlank()) unit = " " + unit;
+
+		StringBuilder label = new StringBuilder();
+		if (lowerBound != null) {
+			if (upperBound == null) label.append(noUpperBoundPrefix);
+			label.append(showRoundedValues ? Integer.toString(Math.round(lowerBound.floatValue())) : lowerBound.toString());
+			if (upperBound == null) label.append(unit).append(noUpperBoundSuffix);
+		}
+
+		if (upperBound != null) {
+			if (lowerBound == null) label.append(noLowerBoundPrefix);
+			else label.append(intervalSeparator);
+
+			label.append(showRoundedValues ? Integer.toString(Math.round(upperBound.floatValue())) : upperBound.toString());
+			label.append(unit);
+
+			if (lowerBound == null) label.append(noLowerBoundSuffix);
+		}
+
+		return label.toString();
 	}
 
 	@Override
@@ -180,6 +232,9 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 
 	@NoArgsConstructor
 	protected static class NumericFacetEntryBuilder {
+
+		public boolean	isFirstEntry;
+		public boolean	isLastEntry;
 
 		Number	lowerBound;
 		Number	upperBound;
