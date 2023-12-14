@@ -544,11 +544,9 @@ public class Searcher {
 		}
 	}
 
-	private QueryBuilder buildFinalQuery(MasterVariantQuery searchQuery, @Nullable
-	HeroProductsQuery heroProductsQuery,
-			FilterContext filterContext, List<SortBuilder<?>> variantSortings) {
+	private QueryBuilder buildFinalQuery(MasterVariantQuery searchQuery, @Nullable HeroProductsQuery heroProductsQuery, FilterContext filterContext, List<SortBuilder<?>> variantSortings) {
 		QueryBuilder masterLevelQuery = searchQuery.getMasterLevelQuery();
-
+		
 		FilterFunctionBuilder[] masterScoringFunctions = scoringCreator.getScoringFunctions(false);
 		if (masterScoringFunctions.length > 0) {
 			masterLevelQuery = QueryBuilders.functionScoreQuery(masterLevelQuery, masterScoringFunctions)

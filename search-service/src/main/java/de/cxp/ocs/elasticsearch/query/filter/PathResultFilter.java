@@ -21,7 +21,7 @@ public class PathResultFilter implements InternalResultFilter {
 	private final Field field;
 
 	@Getter
-	private final String[] values;
+	private String[] values;
 
 	@Getter
 	private List<String[]> filterPaths;
@@ -44,6 +44,10 @@ public class PathResultFilter implements InternalResultFilter {
 	public PathResultFilter(Field field, String... inputValues) {
 		this.field = field;
 		values = inputValues;
+		updateValueDerivedProperties(inputValues);
+	}
+
+	private void updateValueDerivedProperties(String[] inputValues) {
 		filterPaths = Arrays.asList(inputValues).stream()
 				.map(s -> StringUtils.split(s, PATH_SEPARATOR))
 				.collect(Collectors.toList());
@@ -60,5 +64,28 @@ public class PathResultFilter implements InternalResultFilter {
 		return fieldPrefix != null;
 	}
 
+	@Override
+	public void appendFilter(InternalResultFilter other) {
+		if (!(other instanceof PathResultFilter)) return;
+		if (isFilterOnId != other.isFilterOnId()) return;
+		if (!field.getName().equals(field.getName())) return;
+
+		PathResultFilter otherPF = (PathResultFilter) other;
+
+		// negated filter can always we replaced with a correct filter
+		if (isNegated && !other.isNegated()) {
+			// replace this filter with the other one
+			isNegated = false;
+			values = otherPF.values;
+			filterPaths = otherPF.filterPaths;
+			leastPathValues = otherPF.leastPathValues;
+			isFilterOnId = otherPF.isFilterOnId;
+		}
+		else if (isNegated == other.isNegated()) {
+			values = InternalResultFilter.unifiyValues(values, other.getValues());
+			updateValueDerivedProperties(values);
+		}
+		// else only the other is negated and can be ignored
+	}
 
 }

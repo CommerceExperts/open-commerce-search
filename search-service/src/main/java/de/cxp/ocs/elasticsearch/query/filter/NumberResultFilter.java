@@ -61,4 +61,24 @@ public class NumberResultFilter implements InternalResultFilter {
 		return false;
 	}
 
+	@Override
+	public void appendFilter(InternalResultFilter other) {
+		if (!(other instanceof NumberResultFilter)) return;
+		if (!field.getName().equals(field.getName())) return;
+
+		NumberResultFilter otherNF = (NumberResultFilter) other;
+
+		// negated filter can always we replaced with a correct filter
+		if (isNegated && !other.isNegated()) {
+			isNegated = false;
+			this.lowerBound = otherNF.getLowerBound();
+			this.upperBound = otherNF.getUpperBound();
+		}
+		else if (isNegated == other.isNegated()) {
+			if (lowerBound == null || (otherNF.lowerBound != null && otherNF.lowerBound.floatValue() < lowerBound.floatValue())) lowerBound = otherNF.lowerBound;
+			if (upperBound == null || (otherNF.upperBound != null && otherNF.upperBound.floatValue() > upperBound.floatValue())) upperBound = otherNF.upperBound;
+		}
+		// else only the other is negated and can be ignored
+	}
+
 }
