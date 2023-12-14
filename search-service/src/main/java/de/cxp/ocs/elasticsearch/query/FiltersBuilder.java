@@ -40,7 +40,12 @@ public class FiltersBuilder {
 	}
 
 	public FilterContext buildFilterContext(List<InternalResultFilter> filters, List<InternalResultFilter> querqyFilters, boolean withFacets) {
-		Map<String, InternalResultFilter> filtersByName = filters.stream().collect(Collectors.toMap(f -> f.getField().getName(), Functions.identity()));
+		Map<String, InternalResultFilter> filtersByName = filters.stream().collect(
+				Collectors.toMap(f -> f.getField().getName(), Functions.identity(),
+						(a, b) -> {
+							a.appendFilter(b);
+							return a;
+						}));
 
 		if (filters.isEmpty() && querqyFilters.isEmpty()) return new FilterContext(filtersByName);
 

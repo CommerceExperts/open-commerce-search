@@ -1,18 +1,23 @@
 package de.cxp.ocs.elasticsearch.query.builder;
 
+import static de.cxp.ocs.util.ESQueryUtils.validateSearchFields;
+
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder.Type;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 
+import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
+import de.cxp.ocs.elasticsearch.query.StandardQueryFactory;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -35,36 +40,32 @@ import lombok.RequiredArgsConstructor;
 public class DefaultQueryFactory implements ESQueryFactory {
 
 	@Getter
-	private String				name	= "defaultQuery";
-	private Map<String, Float>	fields;
-	private VariantQueryFactory	variantQueryFactory;
+	private String					name	= "defaultQuery";
+	private StandardQueryFactory	mainQueryFactory;
+	private VariantQueryFactory		variantQueryFactory;
 
 	@Override
 	public void initialize(String name, Map<QueryBuildingSetting, String> settings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig) {
 		if (name != null) this.name = name;
-		this.fields = fieldWeights;
-		variantQueryFactory = new VariantQueryFactory(fieldConfig);
+
+		Map<QueryBuildingSetting, String> extendedSettings = new HashMap<>(settings);
+		extendedSettings.putIfAbsent(QueryBuildingSetting.analyzer, "standard");
+		extendedSettings.putIfAbsent(QueryBuildingSetting.fuzziness, Fuzziness.AUTO.asString());
+		extendedSettings.putIfAbsent(QueryBuildingSetting.minShouldMatch, "2<80%");
+		extendedSettings.putIfAbsent(QueryBuildingSetting.tieBreaker, "0.8");
+		extendedSettings.putIfAbsent(QueryBuildingSetting.multimatch_type, Type.CROSS_FIELDS.name());
+
+		fieldWeights = !fieldWeights.isEmpty() ? fieldWeights : Collections.singletonMap(FieldConstants.SEARCH_DATA + ".*", 1f);
+
+		mainQueryFactory = new StandardQueryFactory(extendedSettings, validateSearchFields(fieldWeights, fieldConfig, Field::isMasterLevel));
+		variantQueryFactory = new VariantQueryFactory(validateSearchFields(fieldWeights, fieldConfig, Field::isVariantLevel));
 	}
 
 	@Override
 	public MasterVariantQuery createQuery(ExtendedQuery parsedQuery) {
-		QueryStringQueryBuilder mainQuery = QueryBuilders
-				.queryStringQuery(parsedQuery.toQueryString())
-				.defaultField(FieldConstants.SEARCH_DATA + ".*")
-				.analyzer("standard")
-				.fuzziness(Fuzziness.AUTO)
-				.minimumShouldMatch("2<80%")
-				.tieBreaker(0.8f)
-				.type(parsedQuery.getInputTerms().size() == 1 ? Type.BEST_FIELDS : Type.CROSS_FIELDS)
-				.queryName(name);
-		if (fields != null) {
-			mainQuery.fields(fields);
-		}
-
-		QueryBuilder variantQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery, fields);
-
-		// isWithSpellCorrect=true because we use fuzzy matching
-		return new MasterVariantQuery(mainQuery, variantQuery, true, false);
+		QueryStringQueryBuilder mainQuery = mainQueryFactory.create(parsedQuery);
+		QueryBuilder variantQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery);
+		return new MasterVariantQuery(mainQuery, variantQuery, mainQuery.fuzziness().asDistance() > 0, false);
 	}
 
 	@Override

@@ -107,17 +107,18 @@ public class FieldUsageApplier {
 		}
 
 		if (field.getSearchContentPrefix() != null) {
-			if (value instanceof String) {
-				value = field.getSearchContentPrefix() + " " + value;
-			}
-			else {
-				value = field.getSearchContentPrefix() + " " + value.toString();
-			}
+			value = field.getSearchContentPrefix() + " " + value;
 		}
 
-		record.getSearchData().compute(fieldName, joinDataValueFunction(value));
-		if (record instanceof VariantItem) {
-			((VariantItem) record).getMaster().getSearchData().compute(fieldName, joinDataValueFunction(value));
+		// in case a raw field is a map, we won't join it as it can not be joined
+		if (FieldType.RAW.equals(field.getType()) && value instanceof Map) {
+			record.getSearchData().put(fieldName, value);
+		}
+		else {
+			record.getSearchData().compute(fieldName, joinDataValueFunction(value));
+			if (record instanceof VariantItem) {
+				((VariantItem) record).getMaster().getSearchData().compute(fieldName, joinDataValueFunction(value));
+			}
 		}
 	};
 
@@ -129,7 +130,14 @@ public class FieldUsageApplier {
 		value = ensureCorrectValueType(field, value);
 
 		String fieldName = field.getName();
-		record.getResultData().compute(fieldName, joinDataValueFunction(value));
+
+		// in case a raw field is a map, we won't join it as it can not be joined
+		if (FieldType.RAW.equals(field.getType()) && value instanceof Map) {
+			record.getResultData().put(fieldName, value);
+		}
+		else {
+			record.getResultData().compute(fieldName, joinDataValueFunction(value));
+		}
 	};
 
 	private static void handleSortField(final DataItem record, final Field field, Object value) {
@@ -225,6 +233,9 @@ public class FieldUsageApplier {
 			case CATEGORY:
 				handleCategoryFacetData(record, field, value);
 				break;
+			case RAW:
+				// this should never happen, as it should be cleaned up during configuration validation
+				throw new IllegalArgumentException("raw field-type can't be used for facetting! Invalid config for field " + field.getName());
 			default:
 				handleTermFacetData(record, field, value);
 		}
@@ -296,7 +307,10 @@ public class FieldUsageApplier {
 		Optional<Number> numValue;
 		String fieldName = field.getName();
 
-		if (value instanceof Number) {
+		if (FieldType.RAW.equals(field.getType())) {
+			numValue = Optional.empty();
+		}
+		else if (value instanceof Number) {
 			numValue = Optional.of((Number) value);
 		}
 		else if (value instanceof List<?>) {
@@ -321,9 +335,12 @@ public class FieldUsageApplier {
 						.compute(field.getName(), joinScoreDataValue(numValue.get()));
 			}
 		}
+		else if (FieldType.RAW.equals(field.getType()) && value instanceof Map) {
+			record.getScores().put(fieldName, value);
+		}
 		else {
 			// allow non-numeric values - they should be processed by date
-			// detection
+			// detection or mapping for raw-types
 			record.getScores().compute(fieldName, joinDataValueFunction(value));
 		}
 

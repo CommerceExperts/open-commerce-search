@@ -79,8 +79,8 @@ public abstract class ConfigureableDataprocessor<T extends ConfigureableField> i
 	@Override
 	public boolean process(Document sourceDocument, boolean visible) {
 		if (patternConf != null) {
+			BiConsumer<T, Object> biConsumer = getProcessConsumer(sourceDocument, visible);
 			patternConf.forEach(pc -> {
-				BiConsumer<T, Object> biConsumer = getProcessConsumer(sourceDocument, visible);
 				Object value = sourceDocument.getData().get(pc.getFieldName());
 				if (biConsumer != null) {
 					biConsumer.accept(pc, value);

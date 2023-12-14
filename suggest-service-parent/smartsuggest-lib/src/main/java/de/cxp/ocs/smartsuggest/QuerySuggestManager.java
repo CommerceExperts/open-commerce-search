@@ -454,13 +454,10 @@ public class QuerySuggestManager implements AutoCloseable {
 
 			this.metricsRegistry.ifPresent(a -> {
 				var registry = a.getMetricsRegistry();
-				var foundMeters = RequiredSearch.in(registry)
+				RequiredSearch.in(registry)
 						.tag(INDEX_NAME_TAG, indexName)
-						.meters();
-				foundMeters.forEach(m -> {
-					System.out.println("closing meter " + m.getId());
-					registry.remove(m).close();
-				});
+						.meters()
+						.forEach(m -> registry.remove(m).close());
 			});
 		}
 		// remove last (?) reference and suggest garbage collection

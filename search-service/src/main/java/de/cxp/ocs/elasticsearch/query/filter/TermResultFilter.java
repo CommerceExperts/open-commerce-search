@@ -20,7 +20,7 @@ public class TermResultFilter implements InternalResultFilter {
 
 	private final Field field;
 
-	private final String[] values;
+	private String[] values;
 
 	private boolean isFilterOnId = false;
 
@@ -68,5 +68,25 @@ public class TermResultFilter implements InternalResultFilter {
 			return TERM_FACET_DATA;
 		}
 	}
+
+	@Override
+	public void appendFilter(InternalResultFilter other) {
+		if (!(other instanceof TermResultFilter)) return;
+		if (isFilterOnId != other.isFilterOnId()) return;
+		if (!field.getName().equals(field.getName())) return;
+
+		// negated filter can always we replaced with a correct filter
+		if (isNegated && !other.isNegated()) {
+			isNegated = false;
+			this.values = other.getValues();
+			this.isFilterOnId = other.isFilterOnId();
+		}
+		else if (isNegated == other.isNegated()) {
+			values = InternalResultFilter.unifiyValues(values, other.getValues());
+		}
+		// else only the other is negated and can be ignored
+	}
+
+
 
 }

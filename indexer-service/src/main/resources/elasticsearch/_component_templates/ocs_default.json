@@ -190,6 +190,15 @@
           }
         },
         {
+          "scores_date": {
+            "path_match": "*scores.*",
+            "match_mapping_type": "object",
+            "mapping": {
+              "type": "rank_features"
+            }
+          }
+        },
+        {
           "string_sort_data": {
             "path_match": "*sortData.*",
             "match_mapping_type": "string",

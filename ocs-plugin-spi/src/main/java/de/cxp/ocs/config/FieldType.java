@@ -1,8 +1,15 @@
 package de.cxp.ocs.config;
 
 public enum FieldType {
-	// FIXME: "id" and "combi" are no real types. Use other ways to handle that
-	// use case. (FieldUsage.id and direct configuration for
-	// CombiFieldPreprocessor)
-	STRING, NUMBER, CATEGORY, @Deprecated ID, @Deprecated COMBI;
+	STRING, NUMBER, CATEGORY, 
+	/**
+	 * Raw type is just passed to Elasticsearch as is without any validation or transformation.
+	 * If multiple source-fields are used for the same raw target field,
+	 * merging is done as usual. However since no validation is done, the responsibility
+	 * for proper data types is in the hand of the indexer-client. Handle with care.
+	 * With great power comes great responsibility.
+	 */
+	RAW,
+	@Deprecated ID, 
+	@Deprecated COMBI;
 }

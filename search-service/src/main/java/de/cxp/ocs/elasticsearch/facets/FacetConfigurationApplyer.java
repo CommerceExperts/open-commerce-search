@@ -16,11 +16,8 @@ import org.elasticsearch.search.aggregations.bucket.filter.Filter;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
 
 import de.cxp.ocs.SearchContext;
+import de.cxp.ocs.config.*;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
-import de.cxp.ocs.config.FacetType;
-import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldType;
-import de.cxp.ocs.config.IndexedField;
 import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.model.result.Facet;
@@ -57,10 +54,20 @@ public class FacetConfigurationApplyer {
 	private Set<String> excludeFields = Collections.emptySet();
 
 	public FacetConfigurationApplyer(SearchContext context, Set<Supplier<? extends CustomFacetCreator>> customFacetCreatorSupplier) {
-		defaultTermFacetConfigProvider = getDefaultFacetConfigProvider(context.config.getFacetConfiguration().getDefaultTermFacetConfiguration());
-		defaultNumberFacetConfigProvider = getDefaultFacetConfigProvider(context.config.getFacetConfiguration().getDefaultNumberFacetConfiguration());
+		FacetConfiguration facetConfiguration = context.config.getFacetConfiguration();
+		defaultTermFacetConfigProvider = getDefaultFacetConfigProvider(facetConfiguration.getDefaultTermFacetConfiguration());
+		defaultNumberFacetConfigProvider = getDefaultFacetConfigProvider(facetConfiguration.getDefaultNumberFacetConfiguration());
+		maxFacets = facetConfiguration.getMaxFacets();
 
-		maxFacets = context.config.getFacetConfiguration().getMaxFacets();
+		Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreatorsByType = initCustomFacetCreators(facetConfiguration, customFacetCreatorSupplier);
+		facetsBySourceField = loadFacetConfig(context, customFacetCreatorsByType);
+
+		facetFilters.add(new FacetCoverageFilter());
+		facetFilters.add(new FacetSizeFilter());
+		facetFilters.add(new FacetDependencyFilter(facetsBySourceField));
+	}
+
+	private Map<String, Supplier<? extends CustomFacetCreator>> initCustomFacetCreators(FacetConfiguration facetConfiguration, Set<Supplier<? extends CustomFacetCreator>> customFacetCreatorSupplier) {
 
 		Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreatorsByType = new HashMap<>();
 		customFacetCreatorSupplier.forEach(supplier -> {
@@ -71,11 +78,20 @@ public class FacetConfigurationApplyer {
 						customFacetCreator.getFacetType(), customFacetCreator.getClass().getCanonicalName(), previousSupplier.get().getClass().getCanonicalName());
 			}
 		});
-		facetsBySourceField = loadFacetConfig(context, customFacetCreatorsByType);
 
-		facetFilters.add(new FacetCoverageFilter());
-		facetFilters.add(new FacetSizeFilter());
-		facetFilters.add(new FacetDependencyFilter(facetsBySourceField));
+		// generate fixed-configured interval facets:
+		// facets with type 'interval_N' get a special treatment
+		for (FacetConfig facetConfig : facetConfiguration.getFacets()) {
+			String facetType = facetConfig.getType();
+			if (facetType != null && facetType.startsWith("interval_") && facetType.matches("interval_\\d+") && !customFacetCreatorsByType.containsKey(facetType)) {
+				int interval = Integer.parseInt(facetType.substring("interval_".length()));
+				// one instance per interval: different facets with the same interval can be handled by the same
+				ConfiguredIntervalFacetCreator fixedIntervalFacetCreator = new ConfiguredIntervalFacetCreator(interval);
+				customFacetCreatorsByType.put(facetType, () -> fixedIntervalFacetCreator);
+			}
+		}
+
+		return customFacetCreatorsByType;
 	}
 
 	public Map<String, FacetConfig> loadFacetConfig(SearchContext context, Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreators) {

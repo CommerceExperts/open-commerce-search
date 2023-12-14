@@ -122,9 +122,6 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 		validateSession(data.session);
 		List<IndexableItem> bulk = new ArrayList<>();
 		for (Document doc : data.getDocuments()) {
-			// FIXME: document processors should work on indexable item
-			// so they are able to modify only the usage dependent data, e.g.
-			// only searchable data, instead also changing the result data!
 			boolean isIndexable = preProcess(doc);
 			if (isIndexable) bulk.add(indexItemConverter.toIndexableItem(doc));
 		}

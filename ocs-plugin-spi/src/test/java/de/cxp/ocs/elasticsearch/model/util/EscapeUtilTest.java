@@ -6,8 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 
-import de.cxp.ocs.elasticsearch.model.util.EscapeUtil;
-
 public class EscapeUtilTest {
 
 	@Test
@@ -55,7 +53,7 @@ public class EscapeUtilTest {
 
 	@Test
 	public void escapesEverywhere() {
-		assertEquals("\\+my \\\"golden apple\\\"\\^3 \\&& \\!your\\~ \\(mad\\-orange\\) \\= \\{a  b\\} \\* \\[c\\/d\\]  x\\\\y\\?",
-				escapeReservedESCharacters("+my \"golden apple\"^3 && !your~ (mad-orange) = {a > b} * [c/d] < x\\y?"));
+		assertEquals("\\+my \\\"golden apple\\\"\\^3 \\&& \\!your\\~ \\(mad-orange\\) \\-fnord \\= \\{a  b\\} \\* \\[c\\/d\\]  x\\\\y\\?",
+				escapeReservedESCharacters("+my \"golden apple\"^3 && !your~ (mad-orange) -fnord = {a > b} * [c/d] < x\\y?"));
 	}
 }

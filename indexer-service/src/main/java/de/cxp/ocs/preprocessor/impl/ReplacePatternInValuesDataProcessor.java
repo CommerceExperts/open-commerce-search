@@ -82,7 +82,7 @@ public class ReplacePatternInValuesDataProcessor extends
 					doc.set(pc.getDestinationFieldName(), cleandValues.toArray(new String[cleandValues.size()]));
 				}
 			}
-			else {
+			else if (value != null) {
 				OnceInAWhileRunner.runAgainAfter(() -> log.warn(
 						"Value '{}' could not be replaced for field '{}' as the value is not a String or a Collection of Strings",
 						value, pc.getFieldName()), this.getClass().getSimpleName() + pc.getFieldName(),
@@ -90,5 +90,6 @@ public class ReplacePatternInValuesDataProcessor extends
 			}
 		};
 	}
+
 
 }
