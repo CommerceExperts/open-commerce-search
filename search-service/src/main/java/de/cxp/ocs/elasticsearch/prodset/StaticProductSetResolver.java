@@ -61,7 +61,7 @@ public class StaticProductSetResolver implements ProductSetResolver {
 			}
 		}
 		catch (Exception e) {
-			log.error("{} while verifying productSet ids. Won't verify.", e.getMessage());
+			log.error("{}: {} while verifying productSet ids. Won't verify.", e.getClass().getCanonicalName(), e.getMessage());
 		}
 		return staticSet;
 	}

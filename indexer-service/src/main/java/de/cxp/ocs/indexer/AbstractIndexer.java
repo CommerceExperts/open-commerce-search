@@ -122,8 +122,13 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 		validateSession(data.session);
 		List<IndexableItem> bulk = new ArrayList<>();
 		for (Document doc : data.getDocuments()) {
-			boolean isIndexable = preProcess(doc);
-			if (isIndexable) bulk.add(indexItemConverter.toIndexableItem(doc));
+			try {
+				boolean isIndexable = preProcess(doc);
+				if (isIndexable) bulk.add(indexItemConverter.toIndexableItem(doc));
+			}
+			catch (Exception x) {
+				log.info("Dismissed added document {} due to {}: {}", doc.getId(), x.getClass().getCanonicalName(), x.getMessage());
+			}
 		}
 		log.info("converted {} of {} documents", bulk.size(), data.documents.length);
 		if (bulk.size() > 0) {
@@ -187,11 +192,20 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 			patchedDoc = DocumentPatcher.patchDocument(doc, indexedDoc, fieldConfIndex);
 
 		}
-		// XXX for some Preprocessor this might lead to unwanted results,
-		// because we also have data from the index, which were already
-		// preprocessed => Preprocessor should be idempotent!
-		preProcess(patchedDoc);
-		IndexableItem indexableDoc = indexItemConverter.toIndexableItem(patchedDoc);
+
+		IndexableItem indexableDoc;
+		try {
+			// XXX for some Preprocessor this might lead to unwanted results,
+			// because we also have data from the index, which were already
+			// preprocessed => Preprocessor should be idempotent!
+			preProcess(patchedDoc);
+			indexableDoc = indexItemConverter.toIndexableItem(patchedDoc);
+		}
+		catch (Exception x) {
+			log.info("Dismissed patched document {} due to {}: {}", doc.getId(), x.getClass().getCanonicalName(), x.getMessage());
+			return Result.DISMISSED;
+		}
+
 		return _patch(index, indexableDoc);
 	}
 
@@ -211,9 +225,18 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 	}
 
 	public Result putDocument(String indexName, Boolean replaceExisting, Document doc) {
-		boolean isIndexable = preProcess(doc);
-		if (isIndexable) return _put(indexName, replaceExisting, indexItemConverter.toIndexableItem(doc));
-		else return Result.NOOP;
+		Result result = Result.NOOP;
+		try {
+			boolean isIndexable = preProcess(doc);
+			if (isIndexable) {
+				result = _put(indexName, replaceExisting, indexItemConverter.toIndexableItem(doc));
+			}
+		}
+		catch (Exception x) {
+			log.info("Dismissed update of document {} due to {}: {}", doc.getId(), x.getClass().getCanonicalName(), x.getMessage());
+			result = Result.DISMISSED;
+		}
+		return result;
 	}
 
 	protected abstract Result _put(String indexName, Boolean replaceExisting, IndexableItem indexableItem);
