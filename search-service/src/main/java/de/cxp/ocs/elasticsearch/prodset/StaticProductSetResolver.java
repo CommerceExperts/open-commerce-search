@@ -69,8 +69,9 @@ public class StaticProductSetResolver implements ProductSetResolver {
 	private String[] getFilteredInOrder(String[] orderedIds, Set<String> includeIds) {
 		String[] filteredIds = new String[includeIds.size()];
 		int insertIndex = 0;
+		Set<String> checklist = new HashSet<>(includeIds);
 		for (int i = 0; i < orderedIds.length; i++) {
-			if (includeIds.contains(orderedIds[i])) {
+			if (checklist.remove(orderedIds[i])) {
 				filteredIds[insertIndex++] = orderedIds[i];
 			}
 		}
