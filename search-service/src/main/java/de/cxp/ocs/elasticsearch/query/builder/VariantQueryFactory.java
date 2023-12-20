@@ -45,7 +45,7 @@ public class VariantQueryFactory {
 			if (!fieldName.startsWith(requiredPrefix)) {
 				fieldName = requiredPrefix + fieldName;
 			}
-			variantSearchFields.put(FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + "." + fieldWeight.getKey(), fieldWeight.getValue());
+			variantSearchFields.put(FieldConstants.VARIANTS + "." + fieldWeight.getKey(), fieldWeight.getValue());
 		}
 		return variantSearchFields;
 	}
