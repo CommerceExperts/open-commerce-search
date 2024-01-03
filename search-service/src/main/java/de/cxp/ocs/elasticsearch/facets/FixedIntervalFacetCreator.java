@@ -16,7 +16,7 @@ import de.cxp.ocs.config.FacetConfiguration;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.FieldType;
-import de.cxp.ocs.elasticsearch.facets.IntervalFacetCreator.NumericFacetEntryBuilder;
+import de.cxp.ocs.elasticsearch.facets.helper.NumericFacetEntryBuilder;
 import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.model.result.Facet;
@@ -148,7 +148,6 @@ public abstract class FixedIntervalFacetCreator implements CustomFacetCreator {
 			currentEntryBuilder.currentVariantCount += valueBucket.getDocCount();
 			currentEntryBuilder.currentDocumentCount += docCount;
 			currentEntryBuilder.upperBound = (Double) valueBucket.getTo();
-			currentEntryBuilder.key = valueBucket.getKeyAsString();
 
 			absDocCount += docCount;
 
@@ -173,11 +172,15 @@ public abstract class FixedIntervalFacetCreator implements CustomFacetCreator {
 		return absFacetCoverage;
 	}
 
-	protected FacetEntry createIntervalFacetEntry(NumericFacetEntryBuilder currentValueInterval, NumberResultFilter selectedFilter, FacetConfig facetConfig, LinkBuilder linkBuilder) {
+	protected FacetEntry createIntervalFacetEntry(de.cxp.ocs.elasticsearch.facets.helper.NumericFacetEntryBuilder currentValueInterval, NumberResultFilter selectedFilter, FacetConfig facetConfig, LinkBuilder linkBuilder) {
 		boolean isSelected = selectedFilter != null
 				&& selectedFilter.getLowerBound().floatValue() == currentValueInterval.lowerBound.floatValue()
 				&& selectedFilter.getUpperBound().floatValue() == currentValueInterval.upperBound.floatValue();
-		return new IntervalFacetEntry(currentValueInterval.key, currentValueInterval.lowerBound, currentValueInterval.upperBound, currentValueInterval.currentDocumentCount,
+		return new IntervalFacetEntry(
+				currentValueInterval.getLabel(facetConfig),
+				currentValueInterval.lowerBound,
+				currentValueInterval.upperBound,
+				currentValueInterval.currentDocumentCount,
 				isSelected ? linkBuilder.withoutFilterAsLink(facetConfig.getSourceField()) : linkBuilder.withFilterAsLink(facetConfig.getSourceField(), false, currentValueInterval.getFilterValues()),
 				isSelected);
 	}
