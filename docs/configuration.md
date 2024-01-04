@@ -193,8 +193,6 @@ Each single field has the following properites:
   - `number`: data must be parsable as number
   - `category`: a field with this type will be used to handle the 'categories' property inside the indexed data.
   - `id`: This is only used to identify variants inside master-variant documents for partial updates.
-  - `combi`: (deprecated) used to join the values of multiple data fields into one string rather than an array. 
-    It also removes duplicate values. This should rather be extracted into a data-processor.
 
 - `field-level`: Can be set to 'master' (which is the default), 'variant' or 'both'. 
   It is used a criterion whether a data field should be indexed at that partical master/variant level or not.

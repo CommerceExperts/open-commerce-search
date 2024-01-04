@@ -11,11 +11,9 @@ import de.cxp.ocs.api.indexer.FullIndexationService;
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.api.indexer.UpdateIndexService;
 import de.cxp.ocs.config.FieldConfigIndex;
-import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.model.index.BulkImportData;
 import de.cxp.ocs.model.index.Document;
-import de.cxp.ocs.preprocessor.CombiFieldBuilder;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import lombok.AccessLevel;
@@ -33,8 +31,6 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 	@Getter(value = AccessLevel.PROTECTED)
 	@NonNull
 	final FieldConfigIndex fieldConfIndex;
-
-	private final CombiFieldBuilder combiFieldBuilder;
 
 	private final IndexItemConverter indexItemConverter;
 
@@ -54,7 +50,6 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 			@NonNull FieldConfigIndex fieldConfIndex) {
 		this.dataPreProcessors = dataPreProcessors;
 		this.fieldConfIndex = fieldConfIndex;
-		combiFieldBuilder = new CombiFieldBuilder(fieldConfIndex.getFieldsByType(FieldType.COMBI));
 		indexItemConverter = new IndexItemConverter(fieldConfIndex, postProcessors);
 	}
 
@@ -127,7 +122,6 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 	private boolean preProcess(Document doc) {
 		boolean isIndexable = true;
 
-		combiFieldBuilder.build(doc);
 		for (DocumentPreProcessor preProcessor : dataPreProcessors) {
 			isIndexable = preProcessor.process(doc, isIndexable);
 		}

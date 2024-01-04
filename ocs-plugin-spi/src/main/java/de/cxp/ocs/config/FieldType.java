@@ -11,5 +11,4 @@ public enum FieldType {
 	 */
 	RAW,
 	@Deprecated ID, 
-	@Deprecated COMBI;
 }
