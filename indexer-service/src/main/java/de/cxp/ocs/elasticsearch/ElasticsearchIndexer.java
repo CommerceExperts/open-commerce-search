@@ -2,9 +2,7 @@ package de.cxp.ocs.elasticsearch;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.time.Instant;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -95,21 +93,6 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 			Map<String, Set<AliasMetadata>> aliases = getIndexNameRelatedAliases(indexName, locale);
 			return (aliases.size() > 1 || (aliases.size() == 1 && aliases.values().iterator().next().isEmpty()));
 		}
-	}
-
-	@Override
-	public Map<String, Instant> getRunningImportStartTimes(String indexName, String locale) {
-		Map<String, Set<AliasMetadata>> aliases = getIndexNameRelatedAliases(indexName, locale);
-
-		Map<String, Instant> indexCreationTimes = new HashMap<>(aliases.size() - 1);
-		for (Entry<String, Set<AliasMetadata>> alias : aliases.entrySet()) {
-			if (alias.getValue().isEmpty()) {
-				indexClient.getSettings(alias.getKey())
-						.map(s -> Instant.ofEpochMilli(s.getAsLong("index.creation_date", 0L)))
-						.ifPresent(i -> indexCreationTimes.put(alias.getKey(), i));
-			}
-		}
-		return indexCreationTimes;
 	}
 
 	private Map<String, Set<AliasMetadata>> getIndexNameRelatedAliases(String indexName, String locale) {
@@ -426,6 +409,11 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 			default:
 				return UpdateIndexService.Result.DISMISSED;
 		}
+	}
+
+	@Override
+	protected void cleanupAbandonedImports(String indexName, int minAgeSeconds) {
+		new AbandonedIndexCleanupTask(indexClient, indexName, minAgeSeconds).run();
 	}
 
 }

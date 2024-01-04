@@ -7,6 +7,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonCreator.Mode;
@@ -33,6 +34,7 @@ import de.cxp.ocs.util.ProductDeserializer;
 import lombok.extern.slf4j.Slf4j;
 
 @SpringBootApplication
+@EnableScheduling
 @RefreshScope
 @Slf4j
 public class Application {

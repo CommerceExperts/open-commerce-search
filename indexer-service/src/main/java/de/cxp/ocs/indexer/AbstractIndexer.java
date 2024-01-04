@@ -2,14 +2,10 @@ package de.cxp.ocs.indexer;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.commons.lang3.LocaleUtils;
-import org.apache.commons.lang3.time.DurationFormatUtils;
 
 import de.cxp.ocs.api.indexer.FullIndexationService;
 import de.cxp.ocs.api.indexer.ImportSession;
@@ -43,10 +39,14 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 	private final IndexItemConverter indexItemConverter;
 
 	/**
-	 * how old should an index be to be deleted if it still is not assigned to an alias.
+	 * This property defines how old should an index be to be deleted if it still is not assigned to an alias.
+	 * 
+	 * There is also the scheduled AbandonedIndexCleanupTask that takes care for any abandoned index.
+	 * Since that scheduled task won't consider newly started index runs, it has a higher default
+	 * deletion threshold age. That's why we won't use that age setting (injected via property) here.
 	 */
 	@Setter
-	private long abandonedIndexDeletionAgeSeconds = 60 * 60; // 1h default
+	private int abandonedIndexDeletionAgeSeconds = 60 * 60; // 1h default
 
 	public AbstractIndexer(
 			@NonNull List<DocumentPreProcessor> dataPreProcessors,
@@ -65,7 +65,7 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 		}
 		if (isImportRunning(indexName, locale)) {
 			log.warn("Another import for index {} is already running! Will start a new one never the less...", indexName);
-			CompletableFuture.runAsync(() -> this.cleanupAbandonedImports(indexName, locale));
+			CompletableFuture.runAsync(() -> this.cleanupAbandonedImports(indexName, abandonedIndexDeletionAgeSeconds));
 		}
 
 		try {
@@ -78,6 +78,8 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 			throw new UncheckedIOException(e);
 		}
 	}
+
+	protected abstract void cleanupAbandonedImports(String indexName, int minAgeSeconds);
 
 	public abstract boolean indexExists(String indexName, String locale);
 
@@ -97,29 +99,6 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 	public abstract boolean isImportRunning(String indexName, String locale);
 
 	protected abstract String initNewIndex(String indexName, String locale) throws IOException;
-
-	/**
-	 * Get a map of all matching indexes that are not deployed yet (which means
-	 * they are still considered as running.
-	 * Each one with the according index creation time.
-	 * 
-	 * @param indexName
-	 * @return
-	 */
-	public abstract Map<String, Instant> getRunningImportStartTimes(String indexName, String locale);
-
-	private void cleanupAbandonedImports(String indexName, String locale) {
-		Map<String, Instant> activeImportStartTime = getRunningImportStartTimes(indexName, locale);
-		for (Entry<String, Instant> indexStartTimes : activeImportStartTime.entrySet()) {
-			Duration activeImportAge = Duration.between(indexStartTimes.getValue(), Instant.now());
-			if (activeImportAge.toSeconds() >= abandonedIndexDeletionAgeSeconds) {
-				log.info("Deleting index {} which was created {} ago",
-						indexStartTimes.getKey(),
-						DurationFormatUtils.formatDurationWords(activeImportAge.toMillis(), true, true));
-				deleteIndex(indexStartTimes.getKey());
-			}
-		}
-	}
 
 	@Override
 	public int add(BulkImportData data) throws Exception {
