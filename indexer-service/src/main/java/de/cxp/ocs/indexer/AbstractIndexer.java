@@ -25,6 +25,7 @@ import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -41,6 +42,12 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 
 	private final IndexItemConverter indexItemConverter;
 
+	/**
+	 * how old should an index be to be deleted if it still is not assigned to an alias.
+	 */
+	@Setter
+	private long abandonedIndexDeletionAgeSeconds = 60 * 60; // 1h default
+
 	public AbstractIndexer(
 			@NonNull List<DocumentPreProcessor> dataPreProcessors,
 			@NonNull List<DocumentPostProcessor> postProcessors,
@@ -56,7 +63,7 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 		if (!indexName.equals(indexName.toLowerCase(LocaleUtils.toLocale(locale)))) {
 			throw new IllegalArgumentException(String.format("Invalid index name [%s], must be lowercase", indexName));
 		}
-		if (isImportRunning(indexName)) {
+		if (isImportRunning(indexName, locale)) {
 			log.warn("Another import for index {} is already running! Will start a new one never the less...", indexName);
 			CompletableFuture.runAsync(() -> this.cleanupAbandonedImports(indexName, locale));
 		}
@@ -72,7 +79,7 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 		}
 	}
 
-	public abstract boolean indexExists(String indexName);
+	public abstract boolean indexExists(String indexName, String locale);
 
 	/**
 	 * <p>
@@ -82,15 +89,12 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 	 * This could either be the full or minimal/final index name.
 	 * </p>
 	 * <p>
-	 * The locale is not necessary, because you should never use the same
-	 * index-name with different locales and expect two indexes to work in
-	 * parallel.
-	 * </p>
 	 * 
 	 * @param indexName
+	 * @param locale
 	 * @return
 	 */
-	public abstract boolean isImportRunning(String indexName);
+	public abstract boolean isImportRunning(String indexName, String locale);
 
 	protected abstract String initNewIndex(String indexName, String locale) throws IOException;
 
@@ -108,7 +112,7 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 		Map<String, Instant> activeImportStartTime = getRunningImportStartTimes(indexName, locale);
 		for (Entry<String, Instant> indexStartTimes : activeImportStartTime.entrySet()) {
 			Duration activeImportAge = Duration.between(indexStartTimes.getValue(), Instant.now());
-			if (activeImportAge.toHours() > 0) {
+			if (activeImportAge.toSeconds() >= abandonedIndexDeletionAgeSeconds) {
 				log.info("Deleting index {} which was created {} ago",
 						indexStartTimes.getKey(),
 						DurationFormatUtils.formatDurationWords(activeImportAge.toMillis(), true, true));

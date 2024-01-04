@@ -55,7 +55,7 @@ public class UpdateIndexController implements UpdateIndexService {
 		MDC.put("index", indexName);
 		try {
 			AbstractIndexer indexer = indexerManager.getIndexer(indexName);
-			if (!indexer.indexExists(indexName)) {
+			if (!indexer.indexExists(indexName, langCode)) {
 				return putIntoNewIndex(indexer, indexName, replaceExisting, langCode, documents);
 			}
 			else {

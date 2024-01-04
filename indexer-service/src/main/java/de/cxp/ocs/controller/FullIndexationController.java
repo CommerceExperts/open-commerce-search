@@ -6,13 +6,7 @@ import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.indexer.AbstractIndexer;
@@ -74,7 +68,7 @@ public class FullIndexationController {
 		MDC.put("index", data.session.finalIndexName);
 		try {
 			AbstractIndexer indexer = indexerManager.getIndexer(data.getSession().getFinalIndexName());
-			if (!indexer.isImportRunning(data.session.temporaryIndexName)) {
+			if (!indexer.isImportRunning(data.session.temporaryIndexName, null)) {
 				log.warn("Tried to add documents int an index that is not expecting bulk imports: {}", data.session.temporaryIndexName);
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(0);
 			}
@@ -89,7 +83,7 @@ public class FullIndexationController {
 	@PostMapping("/done")
 	public ResponseEntity<Boolean> done(@RequestBody ImportSession session) throws Exception {
 		AbstractIndexer indexer = indexerManager.getIndexer(session.getFinalIndexName());
-		if (!indexer.isImportRunning(session.temporaryIndexName)) {
+		if (!indexer.isImportRunning(session.temporaryIndexName, null)) {
 			log.warn("Called 'done' for an index that is not expecting bulk imports: {}", session.temporaryIndexName);
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 		}
@@ -111,7 +105,7 @@ public class FullIndexationController {
 		MDC.put("index", session.finalIndexName);
 		try {
 			AbstractIndexer indexer = indexerManager.getIndexer(session.getFinalIndexName());
-			if (!indexer.isImportRunning(session.temporaryIndexName)) {
+			if (!indexer.isImportRunning(session.temporaryIndexName, null)) {
 				log.warn("Called 'cancel' for an index that is not expecting bulk imports: {}", session.temporaryIndexName);
 				return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 			}

@@ -74,33 +74,32 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	@Override
-	public boolean indexExists(String indexName) {
+	public boolean indexExists(String indexName, String locale) {
 		if (indexName.startsWith(INDEX_PREFIX)) {
 			Optional<Settings> settings = indexClient.getSettings(indexName);
 			return settings.isPresent();
 		}
 		else {
-			Map<String, Set<AliasMetadata>> aliases = indexClient.getAliases(INDEX_PREFIX + "*" + INDEX_DELIMITER + indexName + "*");
+			Map<String, Set<AliasMetadata>> aliases = getIndexNameRelatedAliases(indexName, locale);
 			return aliases.size() > 0;
 		}
 	}
 
 	@Override
-	public boolean isImportRunning(String indexName) {
-		if (indexName.startsWith(INDEX_PREFIX)) {
+	public boolean isImportRunning(String indexName, String locale) {
+		if (indexName.startsWith(INDEX_PREFIX) && (locale == null || indexName.endsWith(locale))) {
 			Optional<Settings> settings = indexClient.getSettings(indexName);
 			return settings.map(s -> "-1".equals(s.get("index.refresh_interval"))).orElse(false);
 		}
 		else {
-			Map<String, Set<AliasMetadata>> aliases = indexClient.getAliases(INDEX_PREFIX + "*" + INDEX_DELIMITER + indexName + "*");
+			Map<String, Set<AliasMetadata>> aliases = getIndexNameRelatedAliases(indexName, locale);
 			return (aliases.size() > 1 || (aliases.size() == 1 && aliases.values().iterator().next().isEmpty()));
 		}
 	}
 
 	@Override
 	public Map<String, Instant> getRunningImportStartTimes(String indexName, String locale) {
-		String lang = LocaleUtils.toLocale(locale).getLanguage().toLowerCase();
-		Map<String, Set<AliasMetadata>> aliases = indexClient.getAliases(INDEX_PREFIX + "*" + INDEX_DELIMITER + indexName + INDEX_DELIMITER + lang);
+		Map<String, Set<AliasMetadata>> aliases = getIndexNameRelatedAliases(indexName, locale);
 
 		Map<String, Instant> indexCreationTimes = new HashMap<>(aliases.size() - 1);
 		for (Entry<String, Set<AliasMetadata>> alias : aliases.entrySet()) {
@@ -113,13 +112,18 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		return indexCreationTimes;
 	}
 
+	private Map<String, Set<AliasMetadata>> getIndexNameRelatedAliases(String indexName, String locale) {
+		String indexSearchPattern = INDEX_PREFIX + "*" + INDEX_DELIMITER + getLocalizedIndexName(indexName, locale);
+		return indexClient.getAliases(indexSearchPattern);
+	}
+
 	/**
 	 * checks to which actual index this "nice indexName (alias)" points to.
 	 * Expects a indexName ending with a number and will return a new index name
 	 */
 	@Override
 	protected String initNewIndex(final String indexName, String locale) throws IOException {
-		String localizedIndexName = getLocalizedIndexName(indexName, LocaleUtils.toLocale(locale));
+		String localizedIndexName = getLocalizedIndexName(indexName, locale);
 		String finalIndexName = getNextIndexName(indexName, localizedIndexName);
 
 		try {
@@ -141,6 +145,10 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		if (!session.temporaryIndexName.contains(session.finalIndexName)) {
 			throw new IllegalArgumentException("invalid session: names missmatch");
 		}
+	}
+
+	private String getLocalizedIndexName(String basename, String locale) {
+		return getLocalizedIndexName(basename, LocaleUtils.toLocale(locale));
 	}
 
 	private String getLocalizedIndexName(String basename, Locale locale) {
@@ -306,7 +314,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		return result;
 	}
 
-	public void deleteIndex(String indexName) {
+	protected void deleteIndex(String indexName) {
 		indexClient.deleteIndex(indexName, false);
 	}
 

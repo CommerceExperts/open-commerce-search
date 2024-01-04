@@ -14,11 +14,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
-import java.time.Duration;
 import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
-import org.elasticsearch.Version;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -38,9 +36,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -72,7 +68,7 @@ public class ElasticsearchCRUDTest {
 	private ObjectMapper objectMapper;
 
 	private static ElasticsearchContainer	container;
-	private static int						HTTP_TEST_PORT	= 9200 + (int) (100.0 * Math.random());
+	private static int						HTTP_TEST_PORT	= -1;
 
 	@Configuration
 	static class TestConf extends Application {
@@ -89,17 +85,8 @@ public class ElasticsearchCRUDTest {
 
 	@BeforeAll
 	public static void spinUpEs() {
-		System.out.println("starting es container");
-		container = new ElasticsearchContainer(
-				DockerImageName
-						.parse("docker.elastic.co/elasticsearch/elasticsearch")
-						.withTag(Version.CURRENT.toString()));
-		container.addEnv("discovery.type", "single-node");
-		container.addEnv("ES_JAVA_OPTS", "-Xms1024m -Xmx1024m");
-		container.setWaitStrategy(new HttpWaitStrategy().forPort(9200));
-		container.withStartupTimeout(Duration.ofSeconds(60));
-		container.start();
-		HTTP_TEST_PORT = container.getMappedPort(9200);
+		container = ElasticsearchContainerUtil.spinUpEs();
+		HTTP_TEST_PORT = container.getMappedPort(ElasticsearchContainerUtil.ES_PORT);
 	}
 
 	@AfterAll
@@ -258,7 +245,6 @@ public class ElasticsearchCRUDTest {
 				new Document().set("id", "f.v2").set("productUrl", "http://variant/v2_patched")
 		});
 		patchDocument(indexName, patchProduct);
-
 		IndexableItem indexedDoc = getIndexedDocument(indexName, id);
 		assertNotNull(indexedDoc);
 		assertTrue(indexedDoc instanceof MasterItem);
