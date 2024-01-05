@@ -53,32 +53,32 @@ public class ElasticsearchIndexerTest {
 	public void testSuccessfulLifecycle() throws Exception {
 		String indexName = "test1";
 		String locale = "en";
-		assertFalse(underTest.indexExists(indexName, locale));
+		assertFalse(underTest.indexExists(indexName));
 
 		ImportSession importSession = underTest.startImport(indexName, locale);
 		assertEquals("ocs-1-test1-en", importSession.temporaryIndexName);
 
-		assertTrue(underTest.indexExists(indexName, locale));
-		assertTrue(underTest.isImportRunning(indexName, locale));
+		assertTrue(underTest.indexExists(indexName));
+		assertTrue(underTest.isImportRunning(indexName));
 
 		assertTrue(underTest.done(importSession));
 
-		assertTrue(underTest.indexExists(indexName, locale));
-		assertFalse(underTest.isImportRunning(indexName, locale));
+		assertTrue(underTest.indexExists(indexName));
+		assertFalse(underTest.isImportRunning(indexName));
 
 		underTest.deleteIndex(importSession.temporaryIndexName);
-		assertFalse(underTest.indexExists(indexName, locale));
+		assertFalse(underTest.indexExists(indexName));
 	}
 
 	@Test
 	public void testCleanupOfAbandonedIndexes() throws IOException, InterruptedException {
 		String indexName = "test2";
 		String locale = "en";
-		assertFalse(underTest.indexExists(indexName, locale));
+		assertFalse(underTest.indexExists(indexName));
 
 		String abandonedIndex = "ocs-1-" + indexName + "-" + locale;
 		indexClient.indices().create(new CreateIndexRequest(abandonedIndex), RequestOptions.DEFAULT);
-		assertTrue(underTest.indexExists(indexName, locale));
+		assertTrue(underTest.indexExists(indexName));
 
 		underTest.setAbandonedIndexDeletionAgeSeconds(1);
 		Thread.sleep(1000);
@@ -90,7 +90,7 @@ public class ElasticsearchIndexerTest {
 		// cleanup runs async, so wait one more second
 		Thread.sleep(1000);
 		assertFalse(indexClient.indices().exists(new GetIndexRequest().indices(abandonedIndex), RequestOptions.DEFAULT));
-		assertTrue(underTest.indexExists(indexName, locale)); // index 2 still exists
+		assertTrue(underTest.indexExists(indexName)); // index 2 still exists
 	}
 
 }

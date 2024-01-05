@@ -58,7 +58,7 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 		if (!indexName.equals(indexName.toLowerCase(LocaleUtils.toLocale(locale)))) {
 			throw new IllegalArgumentException(String.format("Invalid index name [%s], must be lowercase", indexName));
 		}
-		if (isImportRunning(indexName, locale)) {
+		if (isImportRunning(indexName)) {
 			log.warn("Another import for index {} is already running! Will start a new one never the less...", indexName);
 			CompletableFuture.runAsync(() -> this.cleanupAbandonedImports(indexName, abandonedIndexDeletionAgeSeconds));
 		}
@@ -76,22 +76,22 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 
 	protected abstract void cleanupAbandonedImports(String indexName, int minAgeSeconds);
 
-	public abstract boolean indexExists(String indexName, String locale);
+	public abstract boolean indexExists(String indexName);
 
 	/**
 	 * <p>
 	 * Checks if an active import session exists for that index.
 	 * </p>
 	 * <p>
-	 * This could either be the full or minimal/final index name.
+	 * This could either be the full internal or the minimal/final index name.
 	 * </p>
 	 * <p>
 	 * 
 	 * @param indexName
-	 * @param locale
+	 *        internal or external index name
 	 * @return
 	 */
-	public abstract boolean isImportRunning(String indexName, String locale);
+	public abstract boolean isImportRunning(String indexName);
 
 	protected abstract String initNewIndex(String indexName, String locale) throws IOException;
 
@@ -188,6 +188,19 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 
 	protected abstract Result _patch(String index, IndexableItem indexableItem);
 
+	/**
+	 * Put documents into existing index. langCode is ignored.
+	 * 
+	 * @param indexName
+	 *        name of existing index
+	 * @param replaceExisting
+	 *        set to true, if an existing document with the same ID should be replaced.
+	 * @param langCode
+	 *        ignored
+	 * @param documents
+	 *        list of documents that should be put into index
+	 * @return map of results with one entry per given document, with the document IDs as key
+	 */
 	@Override
 	public Map<String, Result> putDocuments(String indexName, Boolean replaceExisting, String langCode, List<Document> documents) {
 		return putDocuments(indexName, replaceExisting, documents);

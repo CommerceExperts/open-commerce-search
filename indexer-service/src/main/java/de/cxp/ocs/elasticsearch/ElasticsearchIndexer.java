@@ -72,31 +72,35 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	@Override
-	public boolean indexExists(String indexName, String locale) {
-		if (indexName.startsWith(INDEX_PREFIX)) {
+	public boolean indexExists(String indexName) {
+		if (isInternalIndexName(indexName)) {
 			Optional<Settings> settings = indexClient.getSettings(indexName);
 			return settings.isPresent();
 		}
 		else {
-			Map<String, Set<AliasMetadata>> aliases = getIndexNameRelatedAliases(indexName, locale);
+			Map<String, Set<AliasMetadata>> aliases = getIndexNameRelatedAliases(indexName);
 			return aliases.size() > 0;
 		}
 	}
 
 	@Override
-	public boolean isImportRunning(String indexName, String locale) {
-		if (indexName.startsWith(INDEX_PREFIX) && (locale == null || indexName.endsWith(locale))) {
+	public boolean isImportRunning(String indexName) {
+		if (isInternalIndexName(indexName)) {
 			Optional<Settings> settings = indexClient.getSettings(indexName);
 			return settings.map(s -> "-1".equals(s.get("index.refresh_interval"))).orElse(false);
 		}
 		else {
-			Map<String, Set<AliasMetadata>> aliases = getIndexNameRelatedAliases(indexName, locale);
+			Map<String, Set<AliasMetadata>> aliases = getIndexNameRelatedAliases(indexName);
 			return (aliases.size() > 1 || (aliases.size() == 1 && aliases.values().iterator().next().isEmpty()));
 		}
 	}
 
-	private Map<String, Set<AliasMetadata>> getIndexNameRelatedAliases(String indexName, String locale) {
-		String indexSearchPattern = INDEX_PREFIX + "*" + INDEX_DELIMITER + getLocalizedIndexName(indexName, locale);
+	private boolean isInternalIndexName(String indexName) {
+		return indexName.startsWith(INDEX_PREFIX);
+	}
+
+	private Map<String, Set<AliasMetadata>> getIndexNameRelatedAliases(String indexName) {
+		String indexSearchPattern = INDEX_PREFIX + "*" + INDEX_DELIMITER + normalizeIndexName(indexName) + INDEX_DELIMITER + "*";
 		return indexClient.getAliases(indexSearchPattern);
 	}
 
@@ -141,10 +145,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 
 		String lang = locale.getLanguage().toLowerCase();
 
-		String normalizedBasename = StringUtils.strip(
-				basename.toLowerCase(locale)
-						.replaceAll("[^a-z0-9_\\-\\.]+", INDEX_DELIMITER),
-				INDEX_DELIMITER);
+		String normalizedBasename = normalizeIndexName(basename);
 
 		if (lang.isEmpty() || normalizedBasename.endsWith(INDEX_DELIMITER + lang)) {
 			return normalizedBasename;
@@ -152,6 +153,14 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		else {
 			return normalizedBasename + INDEX_DELIMITER + lang;
 		}
+	}
+
+	private String normalizeIndexName(String basename) {
+		String normalizedBasename = StringUtils.strip(
+				basename.toLowerCase(Locale.ROOT)
+						.replaceAll("[^a-z0-9_\\-\\.]+", INDEX_DELIMITER),
+				INDEX_DELIMITER);
+		return normalizedBasename;
 	}
 
 	private String getNextIndexName(String indexName, String localizedIndexName) {
