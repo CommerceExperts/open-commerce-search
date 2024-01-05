@@ -12,33 +12,26 @@ import lombok.Data;
 @AllArgsConstructor
 public class SuggestConfig implements Cloneable {
 
-	@Builder.Default
+	// Do not use @Builder.Default here, since it will break the standard SuggestConfig constructor
+	// I took care of the default values by overriding the builder() method and using the toBuilder() method there.
 	public Locale locale = Locale.ROOT;
 
-	@Builder.Default
 	public boolean alwaysDoFuzzy = Boolean.getBoolean("alwaysDoFuzzy");
 
-	@Builder.Default
 	private SortStrategy sortStrategy = SortStrategy.PrimaryAndSecondaryByWeight;
 
-	@Builder.Default
 	public boolean useDataSourceMerger = false;
 
 	public String groupKey;
 
-	@Builder.Default
 	public Optional<String[]> groupDeduplicationOrder = Optional.empty();
 
-	@Builder.Default
 	public boolean useRelativeShareLimit = false;
 
-	@Builder.Default
 	public int prefetchLimitFactor = 1;
 
-	@Builder.Default
 	public int maxSharpenedQueries = 12;
 
-	@Builder.Default
 	public List<GroupConfig> groupConfig = new ArrayList<>();
 
 	// TODO: Attention: for each added configuration value, also extend
@@ -79,6 +72,10 @@ public class SuggestConfig implements Cloneable {
 		if (System.getProperty("doReorderSecondaryMatches") != null && !Boolean.getBoolean("doReorderSecondaryMatches")) {
 			this.setSortStrategy(SortStrategy.MatchGroupsSeparated);
 		}
+	}
+
+	public static SuggestConfig.SuggestConfigBuilder builder() {
+		return new SuggestConfig().toBuilder();
 	}
 
 	/**
