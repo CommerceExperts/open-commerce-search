@@ -48,6 +48,9 @@ public class DocumentPatcher {
 	}
 
 	public static Document patchDocument(Document patchDocument, Document indexedDocument, @NonNull FieldConfigIndex fieldConfIndex) {
+		// remove combi fields, because they are created from other fields and will be created again
+		removeCombinedFields(indexedDocument, fieldConfIndex);
+
 		if (patchDocument.attributes != null) {
 			Set<String> patchedAttributeNames = patchDocument.attributes.stream().map(Attribute::getName).collect(Collectors.toSet());
 			// first remove all data with same name as the patched attributes
@@ -71,6 +74,21 @@ public class DocumentPatcher {
 		}
 
 		return indexedDocument;
+	}
+
+	private static void removeCombinedFields(final Document indexedDocument, final FieldConfigIndex fieldConfIndex) {
+		for (Field field : fieldConfIndex.getFields().values()) {
+			if (field.getSourceNames().size() > 1) {
+				// this could be done in a single if,
+				// but that would be hardly readable
+				Optional<String> missingSourceField = field.getSourceNames().stream()
+						.filter(sourceName -> !indexedDocument.data.containsKey(sourceName))
+						.findFirst();
+				if (!missingSourceField.isPresent()) {
+					indexedDocument.data.remove(field.getName());
+				}
+			}
+		}
 	}
 
 	private static Document patchVariants(Document patchDocument, Document indexedDocument, FieldConfigIndex fieldConfIndex) {
