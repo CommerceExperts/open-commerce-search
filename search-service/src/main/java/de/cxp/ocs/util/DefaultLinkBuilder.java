@@ -186,12 +186,20 @@ public final class DefaultLinkBuilder implements LinkBuilder {
 	 * Removes the complete filter parameter and returns the link.
 	 * 
 	 * @param facetConfig
-	 * @return
+	 *        config of the facet that filters should be cleared from the current url
+	 * @return link url as string
 	 */
 	public String withoutFilterAsLink(FacetConfig facetConfig) {
 		return withoutFilterAsLink(getFilterName(facetConfig));
 	}
 
+	/**
+	 * Removes the complete filter parameter and returns the link.
+	 * 
+	 * @param filterName
+	 *        parameter that should be removed from the current url
+	 * @return link url as string
+	 */
 	@Override
 	public String withoutFilterAsLink(String filterName) {
 		if (containsParameter(filterName)) {
@@ -277,8 +285,10 @@ public final class DefaultLinkBuilder implements LinkBuilder {
 	 * </p>
 	 * 
 	 * @param facetConfig
+	 *        config of the facet that should be used for filtering
 	 * @param filterInputValues
-	 * @return
+	 *        the filter values
+	 * @return url as string
 	 */
 	public String withExactFilterAsLink(FacetConfig facetConfig, String... filterInputValues) {
 		String filterName = getFilterName(facetConfig);
@@ -311,8 +321,10 @@ public final class DefaultLinkBuilder implements LinkBuilder {
 	 * URL encoded.
 	 * 
 	 * @param paramName
+	 *        the filter name
 	 * @param filterValue
-	 * @return
+	 *        filtered value
+	 * @return true if that filter is active with the given value.
 	 */
 	private boolean isFilterSelected(String paramName, String filterValue) {
 		return searchQueryLink.getQuery() != null && searchQueryLink.getRawQuery().matches("(^|.*?&)"

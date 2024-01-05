@@ -48,11 +48,14 @@ public class NumericFacetEntryBuilder {
 	}
 
 	/**
+	 * <p>
 	 * Sophisticated interval label that considers nullable lower or upper bound value or if this interval is the first
 	 * or last one.
+	 * </p>
 	 * <p>
 	 * The way the label is created is also configurable via meta-data set at the facet config. First the optional
 	 * rounding of the values:
+	 * </p>
 	 * <ul>
 	 * <li>showInclusiveRanges: (true|false) // if set to true, the upper bounds will be reduced by 0.01 so that they
 	 * can be considered as inclusive bounds.</li>
@@ -62,9 +65,9 @@ public class NumericFacetEntryBuilder {
 	 * integral number</li>
 	 * <li>decimals: 0-2 // if set to 0, the numbers will be rounded to a whole number. Defaults to 2</li>
 	 * </ul>
-	 * </p>
 	 * <p>
 	 * Also there is some config to define the binding strings around the values inside the label.
+	 * </p>
 	 * <ul>
 	 * <li>noLowerBoundPrefix: string that should be used as prefix for the first interval when practically no lower
 	 * bound value is defined</li>
@@ -76,13 +79,10 @@ public class NumericFacetEntryBuilder {
 	 * <li>unit: a string that is appended to every value</li>
 	 * <li>unitAsPrefix: set to 'true' to use the unit as a prefix instead, e.g. for £25</li>
 	 * </ul>
-	 * </p>
 	 * 
-	 * @param from
-	 *        lower bound
-	 * @param to
-	 *        upper bound
-	 * @return
+	 * @param facetConfig
+	 *        config of the related facet
+	 * @return a nicely formatted label
 	 */
 	public String getLabel(FacetConfig facetConfig) {
 		Number _lowerBound = isFirstEntry ? null : lowerBound;

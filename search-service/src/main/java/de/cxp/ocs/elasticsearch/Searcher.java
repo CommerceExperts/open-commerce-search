@@ -174,11 +174,13 @@ public class Searcher {
 	 * you can pass additional information into the result or use it for debugging in case of an error.
 	 * 
 	 * @param parameters
+	 *        the parsed and validated parameters
 	 * @param searchMetaData
 	 *        in case an exception occurs, this meta data might already be partially filled with data which might be
 	 *        useful for debugging
-	 * @return
+	 * @return a search result according to the given parameters
 	 * @throws IOException
+	 *         in case of connection errors
 	 */
 	public SearchResult find(InternalSearchParams parameters, Map<String, Object> searchMetaData) throws IOException {
 		Sample findTimerSample = Timer.start(Clock.SYSTEM);

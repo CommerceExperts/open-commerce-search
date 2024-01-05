@@ -55,7 +55,8 @@ public class ESQueryUtils {
 	 * Boolean Query with the query at the MUST clause.
 	 * 
 	 * @param query
-	 * @return
+	 *        the query that should be wrapped into boolean query MUST-clause.
+	 * @return a boolean query
 	 */
 	public static BoolQueryBuilder mapToBoolQueryBuilder(QueryBuilder query) {
 		return mapToBoolQueryBuilder(query, q -> QueryBuilders.boolQuery().must(q));
@@ -66,8 +67,10 @@ public class ESQueryUtils {
 	 * called to wrap the query into a BoolQueryBuilder.
 	 * 
 	 * @param query
+	 *        the query that should be wrapped into boolean query
 	 * @param boolClauseFunction
-	 * @return
+	 *        the wrapper function that is called in case the query is not a boolean-query.
+	 * @return a boolean query
 	 */
 	public static BoolQueryBuilder mapToBoolQueryBuilder(QueryBuilder query, Function<QueryBuilder, BoolQueryBuilder> boolClauseFunction) {
 		if (query instanceof BoolQueryBuilder) {
