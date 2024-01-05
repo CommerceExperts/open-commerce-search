@@ -13,7 +13,6 @@ import lombok.Data;
 public class SuggestConfig implements Cloneable {
 
 	// Do not use @Builder.Default here, since it will break the standard SuggestConfig constructor
-	// I took care of the default values by overriding the builder() method and using the toBuilder() method there.
 	public Locale locale = Locale.ROOT;
 
 	public boolean alwaysDoFuzzy = Boolean.getBoolean("alwaysDoFuzzy");
@@ -72,10 +71,6 @@ public class SuggestConfig implements Cloneable {
 		if (System.getProperty("doReorderSecondaryMatches") != null && !Boolean.getBoolean("doReorderSecondaryMatches")) {
 			this.setSortStrategy(SortStrategy.MatchGroupsSeparated);
 		}
-	}
-
-	public static SuggestConfig.SuggestConfigBuilder builder() {
-		return new SuggestConfig().toBuilder();
 	}
 
 	/**
