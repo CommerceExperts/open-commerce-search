@@ -20,8 +20,7 @@ public final class RestClientBuilderFactory {
 
 	private RestClientBuilderFactory() {}
 
-	public static RestClientBuilder createRestClientBuilder(@NonNull
-	final ConnectionConfiguration connectionConf) {
+	public static RestClientBuilder createRestClientBuilder(@NonNull final ConnectionConfiguration connectionConf) {
 		List<HttpHost> hostsList = new ArrayList<>();
 		for (String hostString : connectionConf.getHosts().split(",")) {
 			if (hostString != null && !hostString.isEmpty()) {

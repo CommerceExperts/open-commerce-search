@@ -52,7 +52,7 @@ import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({ "unchecked", "deprecation" })
 @AutoConfigureMockMvc
 @SpringBootTest
 @ContextConfiguration(classes = { UpdateIndexController.class, IndexerCache.class, IndexerFactory.class, ElasticsearchCRUDTest.TestConf.class })
