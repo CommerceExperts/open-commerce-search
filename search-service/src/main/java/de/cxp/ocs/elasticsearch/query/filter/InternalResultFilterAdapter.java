@@ -14,7 +14,7 @@ public interface InternalResultFilterAdapter<F extends InternalResultFilter> {
 	 *        the prefix to the field name including the separator "."
 	 * @param filter
 	 *        the filter with name and values and all required information.
-	 * @return
+	 * @return an initialized Elasticsearch query builder
 	 */
 	QueryBuilder getAsQuery(String fieldPrefix, F filter);
 

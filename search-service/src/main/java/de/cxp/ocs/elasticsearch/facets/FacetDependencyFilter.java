@@ -26,12 +26,10 @@ public class FacetDependencyFilter implements FacetFilter {
 	private final static char PARAM_NAME_VALUE_DELIMITER = '=';
 	private final static String FILTER_VALUE_WILDCARD = "*";
 
-	private final Map<String, FacetConfig> facetsBySourceField;
 
 	private final Map<String, FacetDisplayCondition> facetDisplayConditionIndex;
 
 	public FacetDependencyFilter(Map<String, FacetConfig> facetsBySourceField) {
-		this.facetsBySourceField = new HashMap<>(facetsBySourceField);
 		facetDisplayConditionIndex = new HashMap<>();
 
 		// check the facet configs for their filter dependencies and index them for

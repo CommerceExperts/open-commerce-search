@@ -147,6 +147,12 @@ public class FacetConfigurationApplyer {
 				}
 			}
 
+			if (facetConfig.getType() == null) {
+				String defaultFacetTypeForField = getDefaultFacetType(facetField.getType()).name();
+				facetConfig.setType(defaultFacetTypeForField);
+				log.info("set default facet type {} for facet {} because of related field type {}", defaultFacetTypeForField, facetConfig.getLabel(), facetField.getType());
+			}
+
 			creatorInit.addFacet(facetField, facetConfig);
 		}
 
@@ -196,7 +202,6 @@ public class FacetConfigurationApplyer {
 				return FacetType.INTERVAL;
 			case CATEGORY:
 				return FacetType.HIERARCHICAL;
-			case COMBI:
 			case ID:
 			case STRING:
 			default:

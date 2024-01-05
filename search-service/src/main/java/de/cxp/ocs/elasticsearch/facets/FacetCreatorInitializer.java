@@ -79,12 +79,7 @@ class FacetCreatorInitializer {
 	}
 
 	void addFacet(Field field, FacetConfig facetConfig) {
-		if (facetConfig.getType() == null) {
-			String defaultFacetTypeForField = getDefaultFacetType(field.getType()).name();
-			facetConfig.setType(defaultFacetTypeForField);
-			log.info("set default facet type {} for facet {} because of related field type {}", defaultFacetTypeForField, facetConfig.getLabel(), field.getType());
-		}
-		else if ("ignore".equalsIgnoreCase(facetConfig.getType())) {
+		if ("ignore".equalsIgnoreCase(facetConfig.getType())) {
 			ignoredFields.add(field);
 			return;
 		}
@@ -139,20 +134,6 @@ class FacetCreatorInitializer {
 		collectedConfigs.computeIfAbsent(new FacetCreatorClassifier(variant, facetConfig.getType()), k -> new ConfigCollector())
 				.setFieldType(facetField.getType())
 				.putFacetConfig(facetField.getName(), facetConfig);
-	}
-
-	private FacetType getDefaultFacetType(FieldType type) {
-		switch (type) {
-			case NUMBER:
-				return FacetType.INTERVAL;
-			case CATEGORY:
-				return FacetType.HIERARCHICAL;
-			case COMBI:
-			case ID:
-			case STRING:
-			default:
-				return FacetType.TERM;
-		}
 	}
 
 	private boolean isCompatibleTypes(FieldType fieldType, FacetType facetType) {

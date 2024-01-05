@@ -1,5 +1,6 @@
 package de.cxp.ocs.plugin;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -18,9 +19,9 @@ public class ExtensionSupplierRegistry<E> {
 		Class<T> clazz = (Class<T>) instance.getClass();
 		register(clazz, () -> {
 			try {
-				return clazz.newInstance();
+				return clazz.getDeclaredConstructor().newInstance();
 			}
-			catch (InstantiationException | IllegalAccessException e) {
+			catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
 				throw new IllegalStateException("Custom class " + clazz + " misses a required default construtor", e);
 			}
 		});

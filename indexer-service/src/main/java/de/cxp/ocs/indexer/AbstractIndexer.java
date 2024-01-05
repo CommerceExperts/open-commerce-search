@@ -2,29 +2,24 @@ package de.cxp.ocs.indexer;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.commons.lang3.LocaleUtils;
-import org.apache.commons.lang3.time.DurationFormatUtils;
 
 import de.cxp.ocs.api.indexer.FullIndexationService;
 import de.cxp.ocs.api.indexer.ImportSession;
 import de.cxp.ocs.api.indexer.UpdateIndexService;
 import de.cxp.ocs.config.FieldConfigIndex;
-import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.indexer.model.IndexableItem;
 import de.cxp.ocs.model.index.BulkImportData;
 import de.cxp.ocs.model.index.Document;
-import de.cxp.ocs.preprocessor.CombiFieldBuilder;
 import de.cxp.ocs.spi.indexer.DocumentPostProcessor;
 import de.cxp.ocs.spi.indexer.DocumentPreProcessor;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -37,9 +32,17 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 	@NonNull
 	final FieldConfigIndex fieldConfIndex;
 
-	private final CombiFieldBuilder combiFieldBuilder;
-
 	private final IndexItemConverter indexItemConverter;
+
+	/**
+	 * This property defines how old should an index be to be deleted if it still is not assigned to an alias.
+	 * 
+	 * There is also the scheduled AbandonedIndexCleanupTask that takes care for any abandoned index.
+	 * Since that scheduled task won't consider newly started index runs, it has a higher default
+	 * deletion threshold age. That's why we won't use that age setting (injected via property) here.
+	 */
+	@Setter
+	private int abandonedIndexDeletionAgeSeconds = 60 * 60; // 1h default
 
 	public AbstractIndexer(
 			@NonNull List<DocumentPreProcessor> dataPreProcessors,
@@ -47,7 +50,6 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 			@NonNull FieldConfigIndex fieldConfIndex) {
 		this.dataPreProcessors = dataPreProcessors;
 		this.fieldConfIndex = fieldConfIndex;
-		combiFieldBuilder = new CombiFieldBuilder(fieldConfIndex.getFieldsByType(FieldType.COMBI));
 		indexItemConverter = new IndexItemConverter(fieldConfIndex, postProcessors);
 	}
 
@@ -58,7 +60,7 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 		}
 		if (isImportRunning(indexName)) {
 			log.warn("Another import for index {} is already running! Will start a new one never the less...", indexName);
-			CompletableFuture.runAsync(() -> this.cleanupAbandonedImports(indexName, locale));
+			CompletableFuture.runAsync(() -> this.cleanupAbandonedImports(indexName, abandonedIndexDeletionAgeSeconds));
 		}
 
 		try {
@@ -72,6 +74,8 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 		}
 	}
 
+	protected abstract void cleanupAbandonedImports(String indexName, int minAgeSeconds);
+
 	public abstract boolean indexExists(String indexName);
 
 	/**
@@ -79,43 +83,17 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 	 * Checks if an active import session exists for that index.
 	 * </p>
 	 * <p>
-	 * This could either be the full or minimal/final index name.
+	 * This could either be the full internal or the minimal/final index name.
 	 * </p>
 	 * <p>
-	 * The locale is not necessary, because you should never use the same
-	 * index-name with different locales and expect two indexes to work in
-	 * parallel.
-	 * </p>
 	 * 
 	 * @param indexName
+	 *        internal or external index name
 	 * @return
 	 */
 	public abstract boolean isImportRunning(String indexName);
 
 	protected abstract String initNewIndex(String indexName, String locale) throws IOException;
-
-	/**
-	 * Get a map of all matching indexes that are not deployed yet (which means
-	 * they are still considered as running.
-	 * Each one with the according index creation time.
-	 * 
-	 * @param indexName
-	 * @return
-	 */
-	public abstract Map<String, Instant> getRunningImportStartTimes(String indexName, String locale);
-
-	private void cleanupAbandonedImports(String indexName, String locale) {
-		Map<String, Instant> activeImportStartTime = getRunningImportStartTimes(indexName, locale);
-		for (Entry<String, Instant> indexStartTimes : activeImportStartTime.entrySet()) {
-			Duration activeImportAge = Duration.between(indexStartTimes.getValue(), Instant.now());
-			if (activeImportAge.toHours() > 0) {
-				log.info("Deleting index {} which was created {} ago",
-						indexStartTimes.getKey(),
-						DurationFormatUtils.formatDurationWords(activeImportAge.toMillis(), true, true));
-				deleteIndex(indexStartTimes.getKey());
-			}
-		}
-	}
 
 	@Override
 	public int add(BulkImportData data) throws Exception {
@@ -144,7 +122,6 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 	private boolean preProcess(Document doc) {
 		boolean isIndexable = true;
 
-		combiFieldBuilder.build(doc);
 		for (DocumentPreProcessor preProcessor : dataPreProcessors) {
 			isIndexable = preProcessor.process(doc, isIndexable);
 		}
@@ -211,6 +188,19 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 
 	protected abstract Result _patch(String index, IndexableItem indexableItem);
 
+	/**
+	 * Put documents into existing index. langCode is ignored.
+	 * 
+	 * @param indexName
+	 *        name of existing index
+	 * @param replaceExisting
+	 *        set to true, if an existing document with the same ID should be replaced.
+	 * @param langCode
+	 *        ignored
+	 * @param documents
+	 *        list of documents that should be put into index
+	 * @return map of results with one entry per given document, with the document IDs as key
+	 */
 	@Override
 	public Map<String, Result> putDocuments(String indexName, Boolean replaceExisting, String langCode, List<Document> documents) {
 		return putDocuments(indexName, replaceExisting, documents);

@@ -85,6 +85,7 @@ public class SearchParamsParser {
 	 * @param fieldConfig
 	 *        the field configuration
 	 * @param locale
+	 *        locale for filter value normalization
 	 * @return validated and enriched filter values for internal usage
 	 */
 	public static List<InternalResultFilter> parseFilters(Map<String, String> filterValues, FieldConfigIndex fieldConfig, Locale locale) {

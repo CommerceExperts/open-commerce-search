@@ -14,6 +14,7 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.FacetType;
 import de.cxp.ocs.config.FieldConstants;
+import de.cxp.ocs.elasticsearch.facets.helper.NumericFacetEntryBuilder;
 import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.model.result.Facet;
@@ -22,7 +23,6 @@ import de.cxp.ocs.model.result.IntervalFacetEntry;
 import de.cxp.ocs.util.DefaultLinkBuilder;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -167,55 +167,13 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 				&& selectedFilter.getUpperBound().floatValue() == currentValueInterval.upperBound.floatValue();
 
 		return new IntervalFacetEntry(
-				getLabel(facetConfig, currentValueInterval),
+				currentValueInterval.getLabel(facetConfig),
 				currentValueInterval.lowerBound,
 				currentValueInterval.upperBound,
 				currentValueInterval.currentDocumentCount,
 				isSelected ? linkBuilder.withoutFilterAsLink(facetConfig, currentValueInterval.getFilterValues())
 						   : linkBuilder.withFilterAsLink(facetConfig, currentValueInterval.getFilterValues()),
 				isSelected);
-	}
-
-	/**
-	 * simple label that considers nullable lower or upper bound value.
-	 * 
-	 * @param from
-	 *        lower bound
-	 * @param to
-	 *        upper bound
-	 * @return
-	 */
-	private String getLabel(FacetConfig facetConfig, NumericFacetEntryBuilder currentValueInterval) {
-		Number lowerBound = currentValueInterval.isFirstEntry ? null : currentValueInterval.lowerBound;
-		Number upperBound = currentValueInterval.isLastEntry ? null : currentValueInterval.upperBound;
-
-		boolean showRoundedValues = Boolean.parseBoolean(facetConfig.getMetaData().getOrDefault("showRoundedValues", "false").toString());
-		String noLowerBoundPrefix = facetConfig.getMetaData().getOrDefault("noLowerBoundPrefix", "< ").toString();
-		String noLowerBoundSuffix = facetConfig.getMetaData().getOrDefault("noLowerBoundSuffix", "").toString();
-		String noUpperBoundPrefix = facetConfig.getMetaData().getOrDefault("noUpperBoundPrefix", "> ").toString();
-		String noUpperBoundSuffix = facetConfig.getMetaData().getOrDefault("noUpperBoundSuffix", "").toString();
-		String intervalSeparator = facetConfig.getMetaData().getOrDefault("intervalSeparator", " - ").toString();
-		String unit = facetConfig.getMetaData().getOrDefault("unit", "").toString();
-		if (!unit.isBlank()) unit = " " + unit;
-
-		StringBuilder label = new StringBuilder();
-		if (lowerBound != null) {
-			if (upperBound == null) label.append(noUpperBoundPrefix);
-			label.append(showRoundedValues ? Integer.toString(Math.round(lowerBound.floatValue())) : lowerBound.toString());
-			if (upperBound == null) label.append(unit).append(noUpperBoundSuffix);
-		}
-
-		if (upperBound != null) {
-			if (lowerBound == null) label.append(noLowerBoundPrefix);
-			else label.append(intervalSeparator);
-
-			label.append(showRoundedValues ? Integer.toString(Math.round(upperBound.floatValue())) : upperBound.toString());
-			label.append(unit);
-
-			if (lowerBound == null) label.append(noLowerBoundSuffix);
-		}
-
-		return label.toString();
 	}
 
 	@Override
@@ -228,39 +186,6 @@ public class IntervalFacetCreator extends NestedFacetCreator {
 		log.warn("Merging Interval facet is hardly possible! Please consider range facet. Will drop facet for field {} with lower coverage.", first.getFieldName());
 
 		return Optional.of(first.absoluteFacetCoverage >= second.absoluteFacetCoverage ? first : second);
-	}
-
-	@NoArgsConstructor
-	protected static class NumericFacetEntryBuilder {
-
-		public boolean	isFirstEntry;
-		public boolean	isLastEntry;
-
-		Number	lowerBound;
-		Number	upperBound;
-		long	currentDocumentCount	= 0;
-		int		currentVariantCount		= 0;
-		String	key;
-
-		NumericFacetEntryBuilder(NumberResultFilter facetFilter) {
-			lowerBound = facetFilter.getLowerBound();
-			upperBound = facetFilter.getUpperBound();
-			
-		}
-
-		String[] getFilterValues() {
-			if (lowerBound == null && upperBound == null) {
-				return null;
-			}
-			if (lowerBound == null) {
-				return new String[] { upperBound.toString() };
-			}
-			if (upperBound == null) {
-				return new String[] { lowerBound.toString() };
-			}
-			return new String[] { lowerBound.toString(), upperBound.toString() };
-		}
-
 	}
 
 }

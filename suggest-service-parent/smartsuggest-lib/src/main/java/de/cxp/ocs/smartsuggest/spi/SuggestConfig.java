@@ -12,6 +12,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class SuggestConfig implements Cloneable {
 
+	// Do not use @Builder.Default here, since it will break the standard SuggestConfig constructor
 	public Locale locale = Locale.ROOT;
 
 	public boolean alwaysDoFuzzy = Boolean.getBoolean("alwaysDoFuzzy");
@@ -20,7 +21,7 @@ public class SuggestConfig implements Cloneable {
 
 	public boolean useDataSourceMerger = false;
 
-	public String groupKey = null;
+	public String groupKey;
 
 	public Optional<String[]> groupDeduplicationOrder = Optional.empty();
 

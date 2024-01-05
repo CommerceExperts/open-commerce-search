@@ -19,7 +19,7 @@ public interface ProductSetResolver {
 	 * single request, all of them could run async in parallel.
 	 * </p>
 	 * 
-	 * @return
+	 * @return true if this product set resolver needs more time and should run async
 	 */
 	@Deprecated
 	default boolean runAsync() {

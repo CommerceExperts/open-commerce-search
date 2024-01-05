@@ -6,9 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.Data;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
  * Configuration wrapper for which Document-Pre/Post-Processors to be used and

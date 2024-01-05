@@ -7,7 +7,6 @@ import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
-import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
