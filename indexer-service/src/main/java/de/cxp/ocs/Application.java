@@ -44,13 +44,13 @@ public class Application {
 	}
 
 	@Bean
-	public ElasticSearchBuilder getESBuilder(RestClientBuilder restClientBuilder) {
-		return new ElasticSearchBuilder(restClientBuilder);
+	public RestClientBuilder getRestClientBuilder(ApplicationProperties properties) {
+		return RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
 	}
 
 	@Bean
-	public RestClientBuilder getRestClientBuilder(ApplicationProperties properties) {
-		return RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
+	public ElasticSearchBuilder getESBuilder(RestClientBuilder restClientBuilder) {
+		return new ElasticSearchBuilder(restClientBuilder);
 	}
 
 	@Bean

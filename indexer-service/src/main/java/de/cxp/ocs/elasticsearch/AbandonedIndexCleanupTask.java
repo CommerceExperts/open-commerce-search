@@ -7,6 +7,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.PostConstruct;
+
 import org.apache.commons.lang3.time.DurationFormatUtils;
 import org.elasticsearch.cluster.metadata.AliasMetadata;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,17 +16,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
-@NoArgsConstructor
 @Slf4j
 public class AbandonedIndexCleanupTask implements Runnable {
 
 	@Autowired
-	ElasticsearchIndexClient indexClient;
+	ElasticSearchBuilder clientBuilder;
+
+	private ElasticsearchIndexClient indexClient;
 
 	@Setter
 	@Value("${ocs.index.cleanup.abandonedIndexDeletionAgeSeconds:21600}")
@@ -32,6 +34,13 @@ public class AbandonedIndexCleanupTask implements Runnable {
 
 	@Setter
 	private String indexNamePattern = "ocs-*";
+
+	public AbandonedIndexCleanupTask() {}
+
+	@PostConstruct
+	public void initClient() {
+		indexClient = new ElasticsearchIndexClient(clientBuilder.getRestHLClient());
+	}
 
 	public AbandonedIndexCleanupTask(ElasticsearchIndexClient indexClient, String indexName, int abandonedIndexDeletionAgeSeconds) {
 		this.indexClient = indexClient;
