@@ -69,7 +69,7 @@ public class NumericFacetEntryBuilderTest {
 
 	@Test
 	public void testWithDecimalsInclusiveRanges() {
-		FacetConfig facetConfig = facetConfig().decimals(1).showInclusiveRanges().build();
+		FacetConfig facetConfig = facetConfig().decimals(1).upperBoundAdjustValue(-0.01).build();
 		assertEquals("< 5.2", new NumericFacetEntryBuilder(null, 5.2).setFirstEntry(true).getLabel(facetConfig));
 		assertEquals("5.2 - 12.7", new NumericFacetEntryBuilder(5.25, 12.75).getLabel(facetConfig));
 		assertEquals("> 12.8", new NumericFacetEntryBuilder(12.75321, null).setLastEntry(true).getLabel(facetConfig));
@@ -94,7 +94,7 @@ public class NumericFacetEntryBuilderTest {
 
 	@Test
 	public void testWithTwoDecimalsAndInclusiveRanges() {
-		FacetConfig facetConfig = facetConfig().decimals(2).showInclusiveRanges().noLowerBoundPrefix("<= ").build();
+		FacetConfig facetConfig = facetConfig().decimals(2).upperBoundAdjustValue(-0.01).noLowerBoundPrefix("<= ").build();
 		assertEquals("<= 5.24", new NumericFacetEntryBuilder(null, 5.25).setFirstEntry(true).getLabel(facetConfig));
 		assertEquals("5.25 - 12.75", new NumericFacetEntryBuilder(5.25, 12.76).getLabel(facetConfig));
 		assertEquals("> 12.76", new NumericFacetEntryBuilder(12.76, null).setLastEntry(true).getLabel(facetConfig));
@@ -102,7 +102,7 @@ public class NumericFacetEntryBuilderTest {
 
 	@Test
 	public void testWithDecimalsInclusiveRangesWithNaturalRounding() {
-		FacetConfig facetConfig = facetConfig().decimals(1).showInclusiveRanges().round().build();
+		FacetConfig facetConfig = facetConfig().decimals(1).upperBoundAdjustValue(-0.01).round().build();
 		assertEquals("< 5", new NumericFacetEntryBuilder(null, 5.2).setFirstEntry(true).getLabel(facetConfig));
 		assertEquals("5 - 13", new NumericFacetEntryBuilder(5.25, 12.75).getLabel(facetConfig));
 		assertEquals("> 13", new NumericFacetEntryBuilder(12.75321, null).setLastEntry(true).getLabel(facetConfig));
@@ -129,8 +129,13 @@ public class NumericFacetEntryBuilderTest {
 
 		Map<String, Object> metaData = new HashMap<>();
 
-		public FacetConfigBuilder showInclusiveRanges() {
-			metaData.put("showInclusiveRanges", "true");
+		public FacetConfigBuilder lowerBoundAdjustValue(double adjust) {
+			metaData.put("lowerBoundAdjustValue", String.valueOf(adjust));
+			return this;
+		}
+
+		public FacetConfigBuilder upperBoundAdjustValue(double adjust) {
+			metaData.put("upperBoundAdjustValue", String.valueOf(adjust));
 			return this;
 		}
 

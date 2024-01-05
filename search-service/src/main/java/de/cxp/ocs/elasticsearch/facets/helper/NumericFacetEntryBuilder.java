@@ -57,8 +57,10 @@ public class NumericFacetEntryBuilder {
 	 * rounding of the values:
 	 * </p>
 	 * <ul>
-	 * <li>showInclusiveRanges: (true|false) // if set to true, the upper bounds will be reduced by 0.01 so that they
-	 * can be considered as inclusive bounds.</li>
+	 * <li>lowerBoundAdjustValue: // a positive or negative decimal value that is added to each lower bound value prior
+	 * to formatting</li>
+	 * <li>upperBoundAdjustValue: // a positive or negative decimal value that is added to each upper bound value prior
+	 * to formatting</li>
 	 * <li>round: (down|true|up) // if set, the numbers will be rounded accordingly: "true" for natural rounding, "down"
 	 * for always floor rounding and "up" for always ceil rounding.
 	 * Using 'showInclusiveRanges:true' and 'round:floor' will practically round down the upper bounds to the next lower
@@ -88,8 +90,14 @@ public class NumericFacetEntryBuilder {
 		Number _lowerBound = isFirstEntry ? null : lowerBound;
 		Number _upperBound = isLastEntry ? null : upperBound;
 
-		if (_upperBound != null && Boolean.parseBoolean(facetConfig.getMetaData().getOrDefault("showInclusiveRanges", "false").toString())) {
-			_upperBound = _upperBound.doubleValue() - 0.01;
+		Object lowerBoundAdjust = facetConfig.getMetaData().get("lowerBoundAdjustValue");
+		if (_lowerBound != null && lowerBoundAdjust != null) {
+			_lowerBound = _lowerBound.doubleValue() + Double.parseDouble(lowerBoundAdjust.toString());
+		}
+
+		Object upperBoundAdjust = facetConfig.getMetaData().get("upperBoundAdjustValue");
+		if (_upperBound != null && upperBoundAdjust != null) {
+			_upperBound = _upperBound.doubleValue() + Double.parseDouble(upperBoundAdjust.toString());
 		}
 
 		int decimals = Integer.parseInt(facetConfig.getMetaData().getOrDefault("decimals", "2").toString());
