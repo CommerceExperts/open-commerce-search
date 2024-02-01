@@ -75,7 +75,9 @@ public class QueryStringParser {
 				.filter(searchWord -> searchWord instanceof QueryFilterTerm || !remainingFilters.add(searchWord))
 				// Generate the filters and add them
 				.map(term -> (QueryFilterTerm) term)
-				.collect(Collectors.toMap(QueryFilterTerm::getField, this::toInternalResultFilter, this::combineInternalFilter));
+				.map(queryFilter -> toInternalResultFilter(queryFilter))
+				.filter(Objects::nonNull)
+				.collect(Collectors.toMap(iField -> iField.getField().getName(), f -> f, this::combineInternalFilter));
 
 		if (filtersAsMap.isEmpty()) {
 			return parsedQuery;
