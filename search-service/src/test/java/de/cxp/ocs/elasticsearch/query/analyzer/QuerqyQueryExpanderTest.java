@@ -174,7 +174,7 @@ public class QuerqyQueryExpanderTest {
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
-		assertEquals(2, result.size(), () -> result.toString());
+		assertEquals(2, result.size(), result::toString);
 		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
 		assertEquals("input", term1.getRawTerm());
 
@@ -188,7 +188,7 @@ public class QuerqyQueryExpanderTest {
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
-		assertEquals(2, result.size(), () -> result.toString());
+		assertEquals(2, result.size(), result::toString);
 		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
 		assertEquals("input", term1.getRawTerm());
 
@@ -205,7 +205,7 @@ public class QuerqyQueryExpanderTest {
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
-		assertEquals(5, result.size(), () -> result.toString());
+		assertEquals(5, result.size(), result::toString);
 		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
 		assertEquals("input", term1.getRawTerm());
 
@@ -234,7 +234,7 @@ public class QuerqyQueryExpanderTest {
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
-		assertEquals(2, result.size(), () -> result.toString());
+		assertEquals(2, result.size(), result::toString);
 		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
 		assertEquals("input", term1.getRawTerm());
 
@@ -249,7 +249,7 @@ public class QuerqyQueryExpanderTest {
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
-		assertEquals(2, result.size(), () -> result.toString());
+		assertEquals(2, result.size(), result::toString);
 		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
 		assertEquals("input", term1.getRawTerm());
 
@@ -265,7 +265,7 @@ public class QuerqyQueryExpanderTest {
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
-		assertEquals(2, result.size(), () -> result.toString());
+		assertEquals(2, result.size(), result::toString);
 		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
 		assertEquals("input", term1.getRawTerm());
 
@@ -281,7 +281,7 @@ public class QuerqyQueryExpanderTest {
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
-		assertEquals(3, result.size(), () -> result.toString());
+		assertEquals(3, result.size(), result::toString);
 		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
 		assertEquals("input", term1.getRawTerm());
 
@@ -302,7 +302,7 @@ public class QuerqyQueryExpanderTest {
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
-		assertEquals(3, result.size(), () -> result.toString());
+		assertEquals(3, result.size(), result::toString);
 		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
 		assertEquals("input", term1.getRawTerm());
 
@@ -323,7 +323,7 @@ public class QuerqyQueryExpanderTest {
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
-		assertEquals(2, result.size(), () -> result.toString());
+		assertEquals(2, result.size(), result::toString);
 		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
 		assertEquals("input", term1.getRawTerm());
 
@@ -340,7 +340,7 @@ public class QuerqyQueryExpanderTest {
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
-		assertEquals(2, result.size(), () -> result.toString());
+		assertEquals(2, result.size(), result::toString);
 		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
 		assertEquals("input", term1.getRawTerm());
 
@@ -348,6 +348,25 @@ public class QuerqyQueryExpanderTest {
 		assertEquals("field2", term2.getField());
 		assertEquals("foo bar", term2.getRawTerm());
 		assertEquals(Occur.MUST_NOT, term2.getOccur());
+	}
+
+	@Test
+	public void testCombinedRawFilter() {
+		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: * -(my ventilátor) -brand:puma");
+		var analyzedQuery = analyze(underTest, "input");
+		List<QueryStringTerm> result = extractTerms(analyzedQuery);
+		assertEquals(3, result.size(), result::toString);
+
+		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
+		assertEquals("input", term1.getRawTerm(), result::toString);
+
+		RawTerm term2 = assertAndCastInstanceOf(result.get(2), RawTerm.class);
+		assertEquals("-(my ventilátor)", term2.toString(), result::toString);
+
+		QueryFilterTerm term3 = assertAndCastInstanceOf(result.get(1), QueryFilterTerm.class);
+		assertEquals("brand", term3.getField());
+		assertEquals("puma", term3.getRawTerm());
+		assertEquals(Occur.MUST_NOT, term3.getOccur());
 	}
 
 	@Test
@@ -357,7 +376,7 @@ public class QuerqyQueryExpanderTest {
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
-		assertEquals(2, result.size(), () -> result.toString());
+		assertEquals(2, result.size(), result::toString);
 		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
 		assertEquals("input", term1.getRawTerm());
 
@@ -367,16 +386,17 @@ public class QuerqyQueryExpanderTest {
 		assertEquals(Occur.MUST_NOT, term2.getOccur());
 	}
 
-	@Disabled("field filters should be passed as raw queries, but if part of a term rule, we can't handle that (yet?)")
 	@Test
-	public void testInvalidExcludeTermAndFieldCombined() {
+	public void testReservedCharsInFilterClause() {
+		// field filters MUST be passed as raw queries, but if part of a term rule,
+		// colons and all reserved chars are considered as the term-content and are escaped
 		QuerqyQueryExpander underTest = loadRule(
 				"input =>",
-				"  FILTER: -excl_term -field3:filter");
+				"  FILTER: -excl_term -field3:filter -(foo/bar)");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
-		assertEquals(3, result.size(), () -> result.toString());
+		assertEquals(4, result.size(), result::toString);
 		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
 		assertEquals("input", term1.getRawTerm());
 
@@ -384,10 +404,13 @@ public class QuerqyQueryExpanderTest {
 		assertEquals("excl_term", term2.getRawTerm());
 		assertEquals(Occur.MUST_NOT, term2.getOccur());
 
-		QueryFilterTerm term3 = assertAndCastInstanceOf(result.get(2), QueryFilterTerm.class);
-		assertEquals("field2", term3.getField());
-		assertEquals("filter", term3.getRawTerm());
+		WeightedTerm term3 = assertAndCastInstanceOf(result.get(2), WeightedTerm.class);
+		assertEquals("-\"field3\\:filter\"", term3.toQueryString());
 		assertEquals(Occur.MUST_NOT, term3.getOccur());
+
+		WeightedTerm term4 = assertAndCastInstanceOf(result.get(3), WeightedTerm.class);
+		assertEquals("-\"\\(foo\\/bar\\)\"", term4.toQueryString());
+		assertEquals(Occur.MUST_NOT, term4.getOccur());
 	}
 
 	@Test
@@ -397,7 +420,7 @@ public class QuerqyQueryExpanderTest {
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
-		assertEquals(2, result.size(), () -> result.toString());
+		assertEquals(2, result.size(), result::toString);
 		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
 		assertEquals("input", term1.getRawTerm());
 
@@ -414,7 +437,7 @@ public class QuerqyQueryExpanderTest {
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
-		assertEquals(3, result.size(), () -> result.toString());
+		assertEquals(3, result.size(), result::toString);
 		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
 		assertEquals("input", term1.getRawTerm());
 
@@ -436,7 +459,7 @@ public class QuerqyQueryExpanderTest {
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
-		assertEquals(4, result.size(), () -> result.toString());
+		assertEquals(4, result.size(), result::toString);
 		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
 		assertEquals("input", term1.getRawTerm());
 

@@ -480,21 +480,19 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 		public Node visit(RawQuery rawQuery) {
 			String rawQueryString = ((StringRawQuery) rawQuery).getQueryString();
 
-			if (rawQueryString.indexOf(':') < rawQueryString.lastIndexOf(':')) {
+			if (rawQueryString.indexOf(':') > 0) {
 				// multiple colons => multiple filters
 
-				Matcher filterMatcher = Pattern.compile("-?\\w+\\:[^:]+(\\s|$)").matcher(rawQueryString);
+				Matcher filterMatcher = Pattern.compile("-?\\w+(\\.id)?\\:[^:]+(\\s|$)").matcher(rawQueryString);
 				while (filterMatcher.find()) {
 					QueryFilterTerm queryFilterTerm = getQueryFilterTerm(filterMatcher.group().trim());
 					extractedWords.add(queryFilterTerm);
 				}
+				rawQueryString = filterMatcher.reset().replaceAll("");
 			}
-			else if (rawQueryString.indexOf(':') > 0) {
-				QueryFilterTerm queryFilterTerm = getQueryFilterTerm(rawQueryString);
-				extractedWords.add(queryFilterTerm);
-			}
-			else {
-				extractedWords.add(new RawTerm(rawQueryString));
+			
+			if (!rawQueryString.isBlank()){
+				extractedWords.add(new RawTerm(rawQueryString.trim()));
 			}
 			return super.visit(rawQuery);
 		}

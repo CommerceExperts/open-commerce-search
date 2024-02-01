@@ -14,8 +14,8 @@ import lombok.*;
 @NoArgsConstructor
 public class WeightedTerm implements QueryStringTerm {
 
-	private final String	QUOTE	= "\"";
-	private final String	EMPTY	= "";
+	private final static String	QUOTE	= "\"";
+	private final static String	EMPTY	= "";
 
 	@NonNull
 	private String	rawTerm;
