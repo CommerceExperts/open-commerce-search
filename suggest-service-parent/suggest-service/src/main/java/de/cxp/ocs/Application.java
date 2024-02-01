@@ -84,6 +84,7 @@ public class Application {
 		On.get(mgmPathPrefix + "/metrics").plain(() -> meterRegistry.scrape().getBytes());
 		On.get(mgmPathPrefix + "/prometheus").plain(() -> meterRegistry.scrape().getBytes());
 		On.get(mgmPathPrefix + "/health").plain("up");
+		On.get(mgmPathPrefix + "/info").json(new InfoReqHandler("git.properties"));
 	}
 
 	private static SuggestServiceProperties loadProperties() {
