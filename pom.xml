@@ -31,8 +31,8 @@
 
 		<elasticsearch.version>7.17.16</elasticsearch.version>
 		<spring.version>5.3.29</spring.version>
-		<spring-boot.version>2.7.15</spring-boot.version>
-		<spring-cloud.version>2021.0.8</spring-cloud.version>
+		<spring-boot.version>2.7.18</spring-boot.version>
+		<spring-cloud.version>2021.0.9</spring-cloud.version>
 		<springdoc.version>1.7.0</springdoc.version>
 		<jackson.version>2.14.1</jackson.version>
 		<junit.jupiter.version>5.7.0</junit.jupiter.version>
