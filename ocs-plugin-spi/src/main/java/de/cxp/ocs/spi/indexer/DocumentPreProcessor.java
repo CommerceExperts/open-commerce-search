@@ -40,4 +40,12 @@ public interface DocumentPreProcessor {
 	 */
 	boolean process(final Document sourceDocument, boolean visible);
 
+	/**
+	 * optional callback about pre-processing done for all documents
+	 * 
+	 * @param success
+	 *        true if a complete indexing was finished successfully or not.
+	 */
+	default void finish(boolean success) {}
+
 }

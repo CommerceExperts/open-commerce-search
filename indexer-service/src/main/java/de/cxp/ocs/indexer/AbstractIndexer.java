@@ -133,6 +133,7 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 	@Override
 	public boolean done(ImportSession session) throws Exception {
 		validateSession(session);
+		dataPreProcessors.forEach(pp -> pp.finish(true));
 		return deploy(session);
 	}
 
@@ -141,6 +142,7 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 	@Override
 	public void cancel(ImportSession session) {
 		validateSession(session);
+		dataPreProcessors.forEach(pp -> pp.finish(false));
 		deleteIndex(session.temporaryIndexName);
 	}
 
