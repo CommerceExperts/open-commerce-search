@@ -5,7 +5,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.57.1</version>
+	<version>0.58.0</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -31,8 +31,8 @@
 
 		<elasticsearch.version>7.17.16</elasticsearch.version>
 		<spring.version>5.3.29</spring.version>
-		<spring-boot.version>2.7.15</spring-boot.version>
-		<spring-cloud.version>2021.0.8</spring-cloud.version>
+		<spring-boot.version>2.7.18</spring-boot.version>
+		<spring-cloud.version>2021.0.9</spring-cloud.version>
 		<springdoc.version>1.7.0</springdoc.version>
 		<jackson.version>2.14.1</jackson.version>
 		<junit.jupiter.version>5.7.0</junit.jupiter.version>
@@ -49,29 +49,29 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-plugin-spi</artifactId>
-				<version>1.10.1</version>
+				<version>1.11.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-commons</artifactId>
-				<version>0.26.1</version>
+				<version>0.27.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>indexer-service</artifactId>
-				<version>0.34.0</version>
+				<version>0.35.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>search-service</artifactId>
-				<version>0.49.1</version>
+				<version>0.50.0</version>
 			</dependency>
 			<!-- only including the suggest-service directly, because it depends on 
 				the other suggest modules -->
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>suggest-service</artifactId>
-				<version>0.26.1</version>
+				<version>0.27.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>

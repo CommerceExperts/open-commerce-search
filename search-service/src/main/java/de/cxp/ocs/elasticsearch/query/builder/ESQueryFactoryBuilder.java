@@ -56,7 +56,10 @@ public class ESQueryFactoryBuilder {
 	public ConditionalQueries build() {
 		queryConfigs = context.config.getQueryConfigs();
 		if (queryConfigs == null || queryConfigs.size() == 0) {
-			return new ConditionalQueries(new DefaultQueryFactory());
+			ESQueryFactory defaultQuery = new DefaultQueryFactory();
+			QueryConfiguration queryConfig = new QueryConfiguration();
+			defaultQuery.initialize("default", queryConfig.getSettings(), queryConfig.getWeightedFields(), context.getFieldConfigIndex());
+			return new ConditionalQueries(defaultQuery);
 		}
 		if (queryConfigs.size() == 1) {
 			return new ConditionalQueries(createQueryFactory(queryConfigs.get(0)));

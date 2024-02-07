@@ -2,6 +2,7 @@ package de.cxp.ocs.elasticsearch.facets.helper;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.function.Function;
 
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
@@ -9,7 +10,9 @@ import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Setter
 @Accessors(chain = true)
 @NoArgsConstructor
@@ -101,9 +104,7 @@ public class NumericFacetEntryBuilder {
 		}
 
 		int decimals = Integer.parseInt(facetConfig.getMetaData().getOrDefault("decimals", "2").toString());
-		if (decimals < 0) decimals = 0;
-		else if (decimals > 2) decimals = 2;
-		NumberFormat format = NUM_FORMATS[decimals];
+		NumberFormat format = loadLocalizedNumberFormat(facetConfig.getMetaData().get("locale"), decimals);
 
 		var rounding = facetConfig.getMetaData().get("round");
 		Function<Float, Number> roundingFn;
@@ -140,6 +141,29 @@ public class NumericFacetEntryBuilder {
 		}
 
 		return label.toString();
+	}
+
+	boolean invalidLocaleLogged = false;
+
+	private NumberFormat loadLocalizedNumberFormat(Object langTag, int decimals) {
+		if (decimals < 0) decimals = 0;
+		else if (decimals > 2) decimals = 2;
+		
+		if (langTag != null) {
+			try {
+				Locale l = Locale.forLanguageTag(langTag.toString());
+				NumberFormat format = NumberFormat.getNumberInstance(l);
+				format.setMaximumFractionDigits(decimals);
+				return format;
+			} catch (Exception e) {
+				if (!invalidLocaleLogged) {
+					log.warn("invalid locale '{}' found at facet config", langTag.toString());
+					invalidLocaleLogged = true;
+				}
+			}
+		}
+		// fall back to standard format in case locale missing or not parsed
+		return NUM_FORMATS[decimals];
 	}
 
 	private final static NumberFormat[] NUM_FORMATS = new NumberFormat[] {

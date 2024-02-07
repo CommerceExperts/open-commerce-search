@@ -5,12 +5,12 @@
     <parent>
         <groupId>de.cxp.ocs</groupId>
         <artifactId>suggest-service-parent</artifactId>
-        <version>0.57.0</version>
+        <version>0.58.0</version>
         <relativePath>../</relativePath>
     </parent>
 
     <artifactId>suggest-service</artifactId>
-    <version>0.26.1</version>
+    <version>0.27.0</version>
     <packaging>jar</packaging>
     <name>smartSuggest RESTful Service</name>
 
@@ -95,6 +95,39 @@
 
     <build>
         <finalName>${project.artifactId}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>4.0.0</version>
+                <executions>
+                    <execution>
+                        <id>get-the-git-infos</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>validate-the-git-infos</id>
+                        <goals>
+                            <goal>validateRevision</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <verbose>true</verbose>
+                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                    <skipPoms>false</skipPoms>
+                    <offline>true</offline>
+                    <includeOnlyProperties>
+                        <includeOnlyProperty>^git.branch$</includeOnlyProperty>
+                        <includeOnlyProperty>^git.commit.id.(full|abbrev)$</includeOnlyProperty>
+                        <includeOnlyProperty>^git.build.(time|version)$</includeOnlyProperty>
+                    </includeOnlyProperties>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 
     <profiles>
