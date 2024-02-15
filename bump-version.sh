@@ -179,4 +179,5 @@ else
     echo "However this script is limited to automatic bump of simple changes! Please verify manually if all is done properly!"
 fi
 
+find . -name pom.properties | while read file; do eval "$(cat $file)"; echo -e "$artifactId\t$version"; done | column -t
 
