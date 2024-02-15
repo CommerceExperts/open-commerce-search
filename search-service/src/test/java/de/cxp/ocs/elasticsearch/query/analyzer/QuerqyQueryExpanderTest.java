@@ -414,6 +414,25 @@ public class QuerqyQueryExpanderTest {
 	}
 
 	@Test
+	public void testReservedCharsInRawFilterClause() {
+		// field filters MUST be passed as raw queries, but if part of a term rule,
+		// colons and all reserved chars are considered as the term-content and are escaped
+		QuerqyQueryExpander underTest = loadRule(
+				"input =>",
+				"  FILTER: * -(foo/bar)");
+		var analyzedQuery = analyze(underTest, "input");
+		List<QueryStringTerm> result = extractTerms(analyzedQuery);
+
+		assertEquals(2, result.size(), result::toString);
+		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
+		assertEquals("input", term1.getRawTerm());
+
+		RawTerm term2 = assertAndCastInstanceOf(result.get(1), RawTerm.class);
+		assertEquals("-(foo/bar)", term2.toQueryString());
+		assertEquals(Occur.MUST_NOT, term2.getOccur());
+	}
+
+	@Test
 	public void testExcludeCategoryPathFilter() {
 		// actually this is invalid lucene syntax, but in this context it's the only thing that makes sense
 		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: * -catPath:Cat1/Sub Category/a, b & c");
