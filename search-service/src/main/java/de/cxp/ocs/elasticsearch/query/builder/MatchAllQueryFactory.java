@@ -2,6 +2,7 @@ package de.cxp.ocs.elasticsearch.query.builder;
 
 import java.util.Map;
 
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 
 import de.cxp.ocs.config.FieldConfigAccess;
@@ -26,8 +27,8 @@ public class MatchAllQueryFactory implements ESQueryFactory {
 	}
 
 	@Override
-	public MasterVariantQuery createQuery(ExtendedQuery parsedQuery) {
-		return new MasterVariantQuery(
+	public MasterVariantQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery) {
+		return new MasterVariantQuery<>(
 				QueryBuilders
 						.matchAllQuery()
 						.queryName(name == null ? "_match_all" : name),

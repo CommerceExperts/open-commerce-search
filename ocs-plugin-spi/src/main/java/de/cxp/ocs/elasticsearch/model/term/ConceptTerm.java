@@ -5,8 +5,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.lucene.search.BooleanClause.Occur;
-
 import lombok.Getter;
 import lombok.Setter;
 

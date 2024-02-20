@@ -56,7 +56,7 @@ public class FiltersBuilder {
 		buildFilterQueries(filters, basicFilterQueries, postFilterQueries, withFacets ? false : true);
 		buildFilterQueries(querqyFilters, basicFilterQueries, postFilterQueries, true);
 
-		MasterVariantQuery postFilterQuery = buildFilters(postFilterQueries);
+		MasterVariantQuery<QueryBuilder> postFilterQuery = buildFilters(postFilterQueries);
 		QueryBuilder joinedPostFilters = mergeQueries(postFilterQuery.getMasterLevelQuery(), postFilterQuery
 				.getVariantLevelQuery());
 

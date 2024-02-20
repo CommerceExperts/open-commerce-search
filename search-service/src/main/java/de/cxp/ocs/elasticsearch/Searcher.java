@@ -222,7 +222,7 @@ public class Searcher {
 			Sample inputWordsSample = Timer.start(registry);
 			ESQueryFactory stagedQueryBuilder = stagedQueryBuildersIterator.next();
 
-			MasterVariantQuery searchQuery = stagedQueryBuilder.createQuery(parsedQuery);
+			MasterVariantQuery<QueryBuilder> searchQuery = stagedQueryBuilder.createQuery(parsedQuery);
 			if (log.isTraceEnabled()) {
 				log.trace("query nr {}: {}: match query = {}", i, stagedQueryBuilder.getName(),
 						searchQuery == null ? "NULL"
@@ -546,7 +546,7 @@ public class Searcher {
 		}
 	}
 
-	private QueryBuilder buildFinalQuery(MasterVariantQuery searchQuery, @Nullable HeroProductsQuery heroProductsQuery, FilterContext filterContext, List<SortBuilder<?>> variantSortings) {
+	private QueryBuilder buildFinalQuery(MasterVariantQuery<QueryBuilder> searchQuery, @Nullable HeroProductsQuery heroProductsQuery, FilterContext filterContext, List<SortBuilder<?>> variantSortings) {
 		QueryBuilder masterLevelQuery = searchQuery.getMasterLevelQuery();
 		
 		FilterFunctionBuilder[] masterScoringFunctions = scoringCreator.getScoringFunctions(false);

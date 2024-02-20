@@ -3,6 +3,7 @@ package de.cxp.ocs.spi.search;
 import java.util.Optional;
 import java.util.function.Function;
 
+// TODO: fix leaky abstraction: remove dependency to Elasticsearch
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;

@@ -6,6 +6,7 @@ import static de.cxp.ocs.util.ESQueryUtils.validateSearchFields;
 
 import java.util.Map;
 
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryStringQueryBuilder;
 
 import de.cxp.ocs.config.Field;
@@ -61,10 +62,10 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 	}
 
 	@Override
-	public MasterVariantQuery createQuery(ExtendedQuery parsedQuery) {
+	public MasterVariantQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery) {
 		QueryStringQueryBuilder esQuery = mainQueryFactory.create(parsedQuery);
 
-		return new MasterVariantQuery(esQuery,
+		return new MasterVariantQuery<>(esQuery,
 				variantQueryFactory.createMatchAnyTermQuery(parsedQuery),
 				esQuery.fuzziness().asDistance() > 0,
 				Boolean.parseBoolean(querySettings.getOrDefault(acceptNoResult, "false")));

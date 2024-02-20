@@ -2,6 +2,8 @@ package de.cxp.ocs.spi.search;
 
 import java.util.Map;
 
+import org.elasticsearch.index.query.QueryBuilder;
+
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
@@ -19,7 +21,7 @@ public interface ESQueryFactory {
 
 	void initialize(String name, Map<QueryBuildingSetting, String> settings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig);
 
-	MasterVariantQuery createQuery(ExtendedQuery parsedQuery);
+	MasterVariantQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery);
 
 	boolean allowParallelSpellcheckExecution();
 

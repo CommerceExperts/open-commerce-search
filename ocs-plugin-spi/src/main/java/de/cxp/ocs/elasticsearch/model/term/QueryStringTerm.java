@@ -1,7 +1,5 @@
 package de.cxp.ocs.elasticsearch.model.term;
 
-import org.apache.lucene.search.BooleanClause.Occur;
-
 /**
  * A single term for a query-string-query
  */

@@ -1,7 +1,6 @@
 package de.cxp.ocs.elasticsearch.model.term;
 
 import org.apache.commons.text.StringEscapeUtils;
-import org.apache.lucene.search.BooleanClause.Occur;
 
 import lombok.*;
 

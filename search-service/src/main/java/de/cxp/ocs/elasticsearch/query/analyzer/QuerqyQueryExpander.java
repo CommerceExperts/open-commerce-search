@@ -312,7 +312,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 
 			// XXX might always be SHOULD - if so, this block can be removed cause useless
 			if (occur != null) {
-				weightedWord.setOccur(org.apache.lucene.search.BooleanClause.Occur.valueOf(occur.name()));
+				weightedWord.setOccur(de.cxp.ocs.elasticsearch.model.term.Occur.valueOf(occur.name()));
 
 				// guard MUST/NOT terms from analyzer
 				if (occur.equals(Occur.MUST) || occur.equals(Occur.MUST_NOT)) {
@@ -453,11 +453,11 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 	static class FilterFetcher extends AbstractNodeVisitor<Node> {
 
 		List<QueryStringTerm>									extractedWords	= new ArrayList<>();
-		private org.apache.lucene.search.BooleanClause.Occur	occur;
+		private de.cxp.ocs.elasticsearch.model.term.Occur	occur;
 
 		@Override
 		public Node visit(DisjunctionMaxQuery disjunctionMaxQuery) {
-			this.occur = org.apache.lucene.search.BooleanClause.Occur.valueOf(disjunctionMaxQuery.getOccur().name());
+			this.occur = de.cxp.ocs.elasticsearch.model.term.Occur.valueOf(disjunctionMaxQuery.getOccur().name());
 			return super.visit(disjunctionMaxQuery);
 		}
 
@@ -505,13 +505,13 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			String fieldName = rawQuerySplit[0];
 			String value = rawQuerySplit[1];
 
-			org.apache.lucene.search.BooleanClause.Occur occur;
+			de.cxp.ocs.elasticsearch.model.term.Occur occur;
 			if (fieldName.startsWith(Occur.MUST_NOT.toString())) {
-				occur = org.apache.lucene.search.BooleanClause.Occur.MUST_NOT;
+				occur = de.cxp.ocs.elasticsearch.model.term.Occur.MUST_NOT;
 				fieldName = fieldName.substring(1);
 			}
 			else {
-				occur = org.apache.lucene.search.BooleanClause.Occur.MUST;
+				occur = de.cxp.ocs.elasticsearch.model.term.Occur.MUST;
 			}
 
 			// quotes are part of the valid Lucene syntax, but since we use the filter values as a whole anyways for a

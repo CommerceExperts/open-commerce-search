@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder.Type;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 
 import de.cxp.ocs.config.FieldConfigAccess;
@@ -80,7 +81,7 @@ public class NgramQueryFactory implements ESQueryFactory {
 	}
 
 	@Override
-	public MasterVariantQuery createQuery(ExtendedQuery parsedQuery) {
+	public MasterVariantQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery) {
 		// TODO: do a ngram tokenization on each term separately and search each
 		// "ngramed word" separately combined with boolean-should-clauses but
 		// each using "best-field" match strategy.
@@ -104,7 +105,7 @@ public class NgramQueryFactory implements ESQueryFactory {
 		variantQuery.queryName("variant-" + queryName);
 
 		// isWithSpellCorrect=true because ngram is kind of a fuzzy matching
-		return new MasterVariantQuery(mainQuery, variantQuery, true,
+		return new MasterVariantQuery<>(mainQuery, variantQuery, true,
 				Boolean.parseBoolean(querySettings.getOrDefault(acceptNoResult, "true")));
 	}
 

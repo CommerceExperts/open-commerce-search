@@ -13,7 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -96,6 +95,7 @@ public class QuerqyQueryExpanderTest {
 		assertEquals("(dzieci OR dziewczece^0.5)", analyzedQuery.toQueryString());
 	}
 
+	@Test
 	public void testLowercasingRules() {
 		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.LOWERCASE), "Kreslo =>", "  SYNONYM(0.82): POLSTER");
 
@@ -103,10 +103,11 @@ public class QuerqyQueryExpanderTest {
 		assertEquals("(kreslo OR polster^0.82)", analyzedQuery2.toQueryString());
 	}
 
+	@Test
 	public void testLowercasingRulesAndInput() {
 		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.LOWERCASE), "Kreslo =>", "  SYNONYM(0.82): POLSTER");
 
-		ExtendedQuery analyzedQuery2 = analyze(underTest, "KRESLOl");
+		ExtendedQuery analyzedQuery2 = analyze(underTest, "KRESLO");
 		assertEquals("(kreslo OR polster^0.82)", analyzedQuery2.toQueryString());
 	}
 

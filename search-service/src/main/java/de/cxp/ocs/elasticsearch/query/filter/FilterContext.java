@@ -19,7 +19,7 @@ public class FilterContext {
 
 	private final static Map<String, QueryBuilder> NO_FILTER = Collections.emptyMap();
 
-	private final static MasterVariantQuery NO_QUERY = new MasterVariantQuery(null, null, false, true);
+	private final static MasterVariantQuery<QueryBuilder> NO_QUERY = new MasterVariantQuery<>(null, null, false, true);
 
 	@Getter
 	private final Map<String, InternalResultFilter> internalFilters;
@@ -31,7 +31,7 @@ public class FilterContext {
 	private final Map<String, QueryBuilder> postFilterQueries;
 
 	@Getter
-	private final MasterVariantQuery joinedBasicFilters;
+	private final MasterVariantQuery<QueryBuilder> joinedBasicFilters;
 
 	@Getter
 	private final QueryBuilder joinedPostFilters;

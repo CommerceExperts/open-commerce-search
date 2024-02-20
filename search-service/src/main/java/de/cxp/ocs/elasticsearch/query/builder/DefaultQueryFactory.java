@@ -62,10 +62,10 @@ public class DefaultQueryFactory implements ESQueryFactory {
 	}
 
 	@Override
-	public MasterVariantQuery createQuery(ExtendedQuery parsedQuery) {
+	public MasterVariantQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery) {
 		QueryStringQueryBuilder mainQuery = mainQueryFactory.create(parsedQuery);
 		QueryBuilder variantQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery);
-		return new MasterVariantQuery(mainQuery, variantQuery, mainQuery.fuzziness().asDistance() > 0, false);
+		return new MasterVariantQuery<>(mainQuery, variantQuery, mainQuery.fuzziness().asDistance() > 0, false);
 	}
 
 	@Override
