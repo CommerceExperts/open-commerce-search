@@ -7,7 +7,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
-import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
+import de.cxp.ocs.elasticsearch.query.TextMatchQuery;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +29,8 @@ public class NoResultQueryFactory implements ESQueryFactory {
 	}
 
 	@Override
-	public MasterVariantQuery<QueryBuilder> createQuery(ExtendedQuery q) {
-		return new MasterVariantQuery<>(null, null,
+	public TextMatchQuery<QueryBuilder> createQuery(ExtendedQuery q) {
+		return new TextMatchQuery<>(null, null,
 				// isWithSpellCorrect=true because we don't want to match anything
 				true,
 				// accept no results, because this is what we want

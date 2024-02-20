@@ -8,7 +8,7 @@ import org.elasticsearch.index.query.QueryBuilders;
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
-import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
+import de.cxp.ocs.elasticsearch.query.TextMatchQuery;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -27,8 +27,8 @@ public class MatchAllQueryFactory implements ESQueryFactory {
 	}
 
 	@Override
-	public MasterVariantQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery) {
-		return new MasterVariantQuery<>(
+	public TextMatchQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery) {
+		return new TextMatchQuery<>(
 				QueryBuilders
 						.matchAllQuery()
 						.queryName(name == null ? "_match_all" : name),

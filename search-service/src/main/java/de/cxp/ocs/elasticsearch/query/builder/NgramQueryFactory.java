@@ -22,7 +22,7 @@ import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.elasticsearch.model.query.AnalyzedQuery;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.elasticsearch.model.util.EscapeUtil;
-import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
+import de.cxp.ocs.elasticsearch.query.TextMatchQuery;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import de.cxp.ocs.util.Util;
 import lombok.Getter;
@@ -81,7 +81,7 @@ public class NgramQueryFactory implements ESQueryFactory {
 	}
 
 	@Override
-	public MasterVariantQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery) {
+	public TextMatchQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery) {
 		// TODO: do a ngram tokenization on each term separately and search each
 		// "ngramed word" separately combined with boolean-should-clauses but
 		// each using "best-field" match strategy.
@@ -105,7 +105,7 @@ public class NgramQueryFactory implements ESQueryFactory {
 		variantQuery.queryName("variant-" + queryName);
 
 		// isWithSpellCorrect=true because ngram is kind of a fuzzy matching
-		return new MasterVariantQuery<>(mainQuery, variantQuery, true,
+		return new TextMatchQuery<>(mainQuery, variantQuery, true,
 				Boolean.parseBoolean(querySettings.getOrDefault(acceptNoResult, "true")));
 	}
 

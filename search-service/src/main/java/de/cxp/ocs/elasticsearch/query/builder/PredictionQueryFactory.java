@@ -22,7 +22,7 @@ import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.elasticsearch.model.query.MultiTermQuery;
 import de.cxp.ocs.elasticsearch.model.term.AssociatedTerm;
 import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
-import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
+import de.cxp.ocs.elasticsearch.query.TextMatchQuery;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import de.cxp.ocs.util.ESQueryUtils;
 import lombok.Getter;
@@ -77,7 +77,7 @@ public class PredictionQueryFactory implements ESQueryFactory {
 	}
 
 	@Override
-	public MasterVariantQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery) {
+	public TextMatchQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery) {
 		final List<PredictedQuery> predictedQueries = predictQueries(parsedQuery);
 
 		if (predictedQueries == null || predictedQueries.isEmpty()) {
@@ -179,7 +179,7 @@ public class PredictionQueryFactory implements ESQueryFactory {
 		// in case we have some terms that are not matched by any query, use
 		// them with the fallback query builder to boost matching records.
 		if (unmatchedTerms.size() > 0 && fallbackQueryBuilder != null) {
-			MasterVariantQuery<QueryBuilder> boostQuery = fallbackQueryBuilder.createQuery(new ExtendedQuery(new MultiTermQuery(unmatchedTerms.values())));
+			TextMatchQuery<QueryBuilder> boostQuery = fallbackQueryBuilder.createQuery(new ExtendedQuery(new MultiTermQuery(unmatchedTerms.values())));
 			mainQuery = QueryBuilders.boolQuery()
 					.must(mainQuery)
 					.should(boostQuery.getMasterLevelQuery())
@@ -200,7 +200,7 @@ public class PredictionQueryFactory implements ESQueryFactory {
 		 */
 		QueryBuilder variantScoreQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery);
 
-		return new MasterVariantQuery(mainQuery, variantScoreQuery, true, unmatchedTerms.size() == 0);
+		return new TextMatchQuery(mainQuery, variantScoreQuery, true, unmatchedTerms.size() == 0);
 	}
 
 	private boolean termHasMatches(QueryStringTerm unknownTerm) {

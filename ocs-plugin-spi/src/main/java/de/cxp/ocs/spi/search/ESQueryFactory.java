@@ -7,7 +7,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
-import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
+import de.cxp.ocs.elasticsearch.query.TextMatchQuery;
 
 /**
  * <p>
@@ -21,7 +21,7 @@ public interface ESQueryFactory {
 
 	void initialize(String name, Map<QueryBuildingSetting, String> settings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig);
 
-	MasterVariantQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery);
+	TextMatchQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery);
 
 	boolean allowParallelSpellcheckExecution();
 

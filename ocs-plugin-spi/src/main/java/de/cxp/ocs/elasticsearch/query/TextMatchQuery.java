@@ -10,7 +10,7 @@ import lombok.Setter;
  */
 @Getter
 @AllArgsConstructor
-public class MasterVariantQuery<Q> {
+public class TextMatchQuery<Q> {
 
 	@Setter
 	private Q masterLevelQuery;
