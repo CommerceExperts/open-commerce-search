@@ -22,7 +22,7 @@ public class SearchQueryContext {
 
 	public FilterContext filters;
 
-	public ScoringQueryCollection scoring;
+	public ScoringContext scoring;
 
 	public List<SortBuilder<?>> variantSortings = new ArrayList<>();
 

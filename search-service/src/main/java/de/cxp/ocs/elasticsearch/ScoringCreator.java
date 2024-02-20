@@ -12,6 +12,7 @@ import org.elasticsearch.script.Script;
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.config.*;
 import de.cxp.ocs.config.ScoringConfiguration.ScoringFunction;
+import de.cxp.ocs.elasticsearch.query.ScoringContext;
 import de.cxp.ocs.util.ConfigurationException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,7 +31,16 @@ public class ScoringCreator {
 		scoreFields = Collections.unmodifiableMap(tempScoreFields);
 	}
 
-	public FilterFunctionBuilder[] getScoringFunctions(boolean isForVariantLevel) {
+	public ScoringContext getScoringContext() {
+		ScoringContext scoringContext = new ScoringContext();
+		scoringContext.setBoostMode(CombineFunction.fromString(scoreConf.getBoostMode().name().toUpperCase()));
+		scoringContext.setScoreMode(ScoreMode.fromString(scoreConf.getScoreMode().name().toUpperCase()));
+		getScoringFunctions(false).forEach(f -> scoringContext.addScoringFunction(f, false));
+		getScoringFunctions(true).forEach(f -> scoringContext.addScoringFunction(f, true));
+		return scoringContext;
+	}
+
+	private List<FilterFunctionBuilder> getScoringFunctions(boolean isForVariantLevel) {
 		List<FilterFunctionBuilder> filterFunctionBuilders = new ArrayList<>();
 		Iterator<ScoringFunction> scoreFunctionIterator = scoreFunctions.iterator();
 		while (scoreFunctionIterator.hasNext()) {
@@ -67,7 +77,7 @@ public class ScoringCreator {
 				scoreFunctionIterator.remove();
 			}
 		}
-		return filterFunctionBuilders.toArray(new FilterFunctionBuilder[filterFunctionBuilders.size()]);
+		return filterFunctionBuilders;
 	}
 
 	private Optional<ScoreFunctionBuilder<?>> buildFieldBasedScoreFunction(ScoringFunction scoringFunction, Field field, boolean isForVariantLevel) throws ConfigurationException {
@@ -182,11 +192,4 @@ public class ScoringCreator {
 				+ FieldConstants.SCORES + "." + scoreField.getName();
 	}
 
-	public CombineFunction getBoostMode() {
-		return CombineFunction.fromString(scoreConf.getBoostMode().name().toUpperCase());
-	}
-
-	public ScoreMode getScoreMode() {
-		return ScoreMode.fromString(scoreConf.getScoreMode().name().toUpperCase());
-	}
 }

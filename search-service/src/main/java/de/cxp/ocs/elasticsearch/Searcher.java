@@ -16,7 +16,6 @@ import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.*;
-import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder.FilterFunctionBuilder;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -191,6 +190,7 @@ public class Searcher {
 		SearchQueryContext queryContext = new SearchQueryContext();
 		queryContext.filters = filtersBuilder.buildFilterContext(parameters.filters, parameters.inducedFilters, parameters.withFacets);
 		queryContext.variantSortings = sortingHandler.getVariantSortings(parameters.sortings);
+		queryContext.scoring = scoringCreator.getScoringContext();
 		HeroProductHandler.getHeroQuery(parameters).ifPresent(queryContext::setHeroProducts);
 
 		// staged search: try each query builder until we get a result
@@ -548,14 +548,8 @@ public class Searcher {
 
 	private QueryBuilder buildFinalQuery(SearchQueryContext queryContext) {
 		QueryBuilder masterLevelQuery = queryContext.text.getMasterLevelQuery();
+		masterLevelQuery = queryContext.scoring.wrapMasterLevelQuery(masterLevelQuery);
 		
-		FilterFunctionBuilder[] masterScoringFunctions = scoringCreator.getScoringFunctions(false);
-		if (masterScoringFunctions.length > 0) {
-			masterLevelQuery = QueryBuilders.functionScoreQuery(masterLevelQuery, masterScoringFunctions)
-					.boostMode(scoringCreator.getBoostMode())
-					.scoreMode(scoringCreator.getScoreMode());
-		}
-
 		QueryBuilder variantFilterQuery = queryContext.filters.getJoinedBasicFilters().getVariantLevelQuery();
 		QueryBuilder variantPostFilters = queryContext.filters.getVariantPostFilters();
 
@@ -579,20 +573,14 @@ public class Searcher {
 
 		if (queryContext.heroProducts != null) {
 			variantsMatchQuery = queryContext.heroProducts.applyToVariantQuery(variantsMatchQuery);
-			if (variantsMatchQuery != null) {
-				variantsOnlyFiltered = false;
-			}
+			variantsOnlyFiltered = variantsMatchQuery != null ? false : variantsOnlyFiltered;
 		}
 
-		FilterFunctionBuilder[] variantScoringFunctions = queryContext.variantSortings.isEmpty() ? scoringCreator.getScoringFunctions(true) : new FilterFunctionBuilder[0];
-		if (variantScoringFunctions.length > 0) {
-			if (variantsMatchQuery == null) variantsMatchQuery = QueryBuilders.matchAllQuery();
-			variantsMatchQuery = QueryBuilders.functionScoreQuery(variantsMatchQuery, variantScoringFunctions)
-					.boostMode(scoringCreator.getBoostMode())
-					.scoreMode(scoringCreator.getScoreMode());
-			variantsOnlyFiltered = false;
+		if (queryContext.variantSortings.isEmpty()) {
+			variantsMatchQuery = queryContext.scoring.wrapVariantLevelQuery(variantsMatchQuery);
+			variantsOnlyFiltered = variantsMatchQuery != null ? false : variantsOnlyFiltered;
 		}
-
+		
 		// variant inner hits are always retrieved in a should clause,
 		// because they may contain optional matchers and post filters
 		// only exception: if the variants are only filtered
