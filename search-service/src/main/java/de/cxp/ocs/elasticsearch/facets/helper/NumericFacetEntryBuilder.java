@@ -27,6 +27,8 @@ public class NumericFacetEntryBuilder {
 	public long	currentDocumentCount	= 0;
 	public int	currentVariantCount		= 0;
 
+	public String label = null;
+
 	public NumericFacetEntryBuilder(NumberResultFilter facetFilter) {
 		lowerBound = facetFilter.getLowerBound();
 		upperBound = facetFilter.getUpperBound();
@@ -90,6 +92,8 @@ public class NumericFacetEntryBuilder {
 	 * @return a nicely formatted label
 	 */
 	public String getLabel(FacetConfig facetConfig) {
+		if (this.label != null) return this.label;
+
 		Number _lowerBound = isFirstEntry ? null : lowerBound;
 		Number _upperBound = isLastEntry ? null : upperBound;
 
@@ -140,7 +144,8 @@ public class NumericFacetEntryBuilder {
 			if (_lowerBound == null) label.append(noLowerBoundSuffix);
 		}
 
-		return label.toString();
+		this.label = label.toString();
+		return this.label;
 	}
 
 	boolean invalidLocaleLogged = false;
