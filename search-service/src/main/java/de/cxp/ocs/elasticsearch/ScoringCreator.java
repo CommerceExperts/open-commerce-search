@@ -35,13 +35,7 @@ public class ScoringCreator {
 		ScoringContext scoringContext = new ScoringContext();
 		scoringContext.setBoostMode(CombineFunction.fromString(scoreConf.getBoostMode().name().toUpperCase()));
 		scoringContext.setScoreMode(ScoreMode.fromString(scoreConf.getScoreMode().name().toUpperCase()));
-		getScoringFunctions(false).forEach(f -> scoringContext.addScoringFunction(f, false));
-		getScoringFunctions(true).forEach(f -> scoringContext.addScoringFunction(f, true));
-		return scoringContext;
-	}
 
-	private List<FilterFunctionBuilder> getScoringFunctions(boolean isForVariantLevel) {
-		List<FilterFunctionBuilder> filterFunctionBuilders = new ArrayList<>();
 		Iterator<ScoringFunction> scoreFunctionIterator = scoreFunctions.iterator();
 		while (scoreFunctionIterator.hasNext()) {
 			ScoringFunction scoringFunction = scoreFunctionIterator.next();
@@ -51,25 +45,32 @@ public class ScoringCreator {
 			// variant-based scoring. All other scoring functions are not used for variant scoring unless defined
 			// explicitly.
 			boolean useForVariants = Boolean.parseBoolean(scoringFunction.getOptions().getOrDefault(ScoreOption.USE_FOR_VARIANTS, Boolean.toString(isVariantScoringField)));
-			if (isForVariantLevel && !useForVariants) continue;
+			if (useForVariants && !isVariantScoringField) {
+				log.warn("score function configured for variant level on field {}, but field does not exist on variant level."
+						+ " Discarding function {}", scoringFunction.getField(), scoringFunction);
+				scoreFunctionIterator.remove();
+				continue;
+			}
+			// FIXME: a scoring function that exists on both level, should also be applied on both levels.
 
 			try {
 				switch (scoringFunction.getType()) {
 					case SCRIPT_SCORE:
 						buildScriptScoreFunction(scoringFunction)
-								.ifPresent(f -> filterFunctionBuilders.add(new FilterFunctionBuilder(f)));
+								.ifPresent(f -> scoringContext.addScoringFunction(new FilterFunctionBuilder(f), useForVariants));
 						break;
 					case WEIGHT:
-						filterFunctionBuilders.add(
-								new FilterFunctionBuilder(ScoreFunctionBuilders.weightFactorFunction(scoringFunction.getWeight())));
+						scoringContext.addScoringFunction(
+								new FilterFunctionBuilder(ScoreFunctionBuilders.weightFactorFunction(scoringFunction.getWeight())),
+								useForVariants);
 						break;
 					case RANDOM_SCORE:
-						buildRandomScoreFunction(scoringFunction, scoreFields.get(scoringFunction.getField()), isForVariantLevel)
-								.ifPresent(f -> filterFunctionBuilders.add(new FilterFunctionBuilder(f)));
+						buildRandomScoreFunction(scoringFunction, scoreFields.get(scoringFunction.getField()), useForVariants)
+								.ifPresent(f -> scoringContext.addScoringFunction(new FilterFunctionBuilder(f), useForVariants));
 						break;
 					default:
-						buildFieldBasedScoreFunction(scoringFunction, scoreFields.get(scoringFunction.getField()), isForVariantLevel)
-								.ifPresent(f -> filterFunctionBuilders.add(new FilterFunctionBuilder(f)));
+						buildFieldBasedScoreFunction(scoringFunction, scoreFields.get(scoringFunction.getField()), useForVariants)
+								.ifPresent(f -> scoringContext.addScoringFunction(new FilterFunctionBuilder(f), useForVariants));
 				}
 			}
 			catch (ConfigurationException configException) {
@@ -77,7 +78,7 @@ public class ScoringCreator {
 				scoreFunctionIterator.remove();
 			}
 		}
-		return filterFunctionBuilders;
+		return scoringContext;
 	}
 
 	private Optional<ScoreFunctionBuilder<?>> buildFieldBasedScoreFunction(ScoringFunction scoringFunction, Field field, boolean isForVariantLevel) throws ConfigurationException {

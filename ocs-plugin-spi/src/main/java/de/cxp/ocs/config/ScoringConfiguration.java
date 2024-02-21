@@ -7,6 +7,7 @@ import java.util.Map;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 /**
  * Configuration that influences how the result hits are scored.
@@ -69,6 +70,7 @@ public class ScoringConfiguration {
 	 */
 	@Getter // write setters with java-doc!
 	@NoArgsConstructor
+	@ToString
 	public static class ScoringFunction {
 
 		private String field;
