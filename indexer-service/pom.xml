@@ -264,6 +264,16 @@
 				</plugins>
 			</build>
 		</profile>
+		<profile>
+		  <id>searchhub</id>
+		  <dependencies>
+		      <dependency>
+    		      <groupId>io.searchhub</groupId>
+                  <artifactId>ocs-smartdata-plugin</artifactId>
+                  <version>1.1.1-SNAPSHOT</version>
+		      </dependency>
+		  </dependencies>
+		</profile>
 	</profiles>
 
 	<!-- copy repos from parent, which is necessary otherwise older versions 
