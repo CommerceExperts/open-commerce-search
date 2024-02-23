@@ -1,10 +1,15 @@
 package de.cxp.ocs.elasticsearch;
 
+import static de.cxp.ocs.util.Util.tryToParseAsNumber;
+
 import java.util.*;
 
 import org.elasticsearch.common.lucene.search.function.CombineFunction;
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.Modifier;
 import org.elasticsearch.common.lucene.search.function.FunctionScoreQuery.ScoreMode;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.RankFeatureQueryBuilder;
+import org.elasticsearch.index.query.RankFeatureQueryBuilders;
 import org.elasticsearch.index.query.functionscore.*;
 import org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder.FilterFunctionBuilder;
 import org.elasticsearch.script.Script;
@@ -14,6 +19,7 @@ import de.cxp.ocs.config.*;
 import de.cxp.ocs.config.ScoringConfiguration.ScoringFunction;
 import de.cxp.ocs.elasticsearch.query.ScoringContext;
 import de.cxp.ocs.util.ConfigurationException;
+import de.cxp.ocs.util.InternalSearchParams;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -23,6 +29,9 @@ public class ScoringCreator {
 	private final List<ScoringFunction>	scoreFunctions;
 	private final Map<String, Field>	scoreFields;
 
+	private final static EnumSet<ScoreType> typesRequireField = EnumSet.of(ScoreType.RANDOM_SCORE, ScoreType.FIELD_VALUE_FACTOR, ScoreType.RANK_FEATURE,
+			ScoreType.DECAY_EXP, ScoreType.DECAY_GAUSS, ScoreType.DECAY_LINEAR);
+
 	public ScoringCreator(SearchContext context) {
 		scoreConf = context.config.getScoring();
 		// copy into array, so that we can remove invalid score definitions
@@ -31,7 +40,7 @@ public class ScoringCreator {
 		scoreFields = Collections.unmodifiableMap(tempScoreFields);
 	}
 
-	public ScoringContext getScoringContext() {
+	public ScoringContext getScoringContext(InternalSearchParams parameters) {
 		ScoringContext scoringContext = new ScoringContext();
 		scoringContext.setBoostMode(CombineFunction.fromString(scoreConf.getBoostMode().name().toUpperCase()));
 		scoringContext.setScoreMode(ScoreMode.fromString(scoreConf.getScoreMode().name().toUpperCase()));
@@ -40,7 +49,21 @@ public class ScoringCreator {
 		while (scoreFunctionIterator.hasNext()) {
 			ScoringFunction scoringFunction = scoreFunctionIterator.next();
 
-			boolean isVariantScoringField = Optional.ofNullable(scoringFunction.getField()).map(scoreFields::get).map(Field::isVariantLevel).orElse(false);
+			Optional<Field> relatedField = Optional.ofNullable(scoringFunction.getField()).map(scoreFields::get);
+			if (relatedField.isEmpty()) {
+				if (scoringFunction.getField() != null) {
+					log.warn("Field {} for scoring does not exist. Will ignore scoring function of type {}", scoringFunction.getField(), scoringFunction.getType());
+					scoreFunctionIterator.remove();
+				}
+				else if (typesRequireField.contains(scoringFunction.getType())) {
+					log.warn("Scoring function of type {} requires field, but non given", scoringFunction.getType());
+					scoreFunctionIterator.remove();
+				}
+				continue;
+			}
+
+			boolean isMasterScoringField = relatedField.map(Field::isMasterLevel).orElse(false);
+			boolean isVariantScoringField = relatedField.map(Field::isVariantLevel).orElse(false);
 			// if this is a scoring function based on a variant field, then it should be used per default for
 			// variant-based scoring. All other scoring functions are not used for variant scoring unless defined
 			// explicitly.
@@ -51,27 +74,10 @@ public class ScoringCreator {
 				scoreFunctionIterator.remove();
 				continue;
 			}
-			// FIXME: a scoring function that exists on both level, should also be applied on both levels.
 
 			try {
-				switch (scoringFunction.getType()) {
-					case SCRIPT_SCORE:
-						buildScriptScoreFunction(scoringFunction)
-								.ifPresent(f -> scoringContext.addScoringFunction(new FilterFunctionBuilder(f), useForVariants));
-						break;
-					case WEIGHT:
-						scoringContext.addScoringFunction(
-								new FilterFunctionBuilder(ScoreFunctionBuilders.weightFactorFunction(scoringFunction.getWeight())),
-								useForVariants);
-						break;
-					case RANDOM_SCORE:
-						buildRandomScoreFunction(scoringFunction, scoreFields.get(scoringFunction.getField()), useForVariants)
-								.ifPresent(f -> scoringContext.addScoringFunction(new FilterFunctionBuilder(f), useForVariants));
-						break;
-					default:
-						buildFieldBasedScoreFunction(scoringFunction, scoreFields.get(scoringFunction.getField()), useForVariants)
-								.ifPresent(f -> scoringContext.addScoringFunction(new FilterFunctionBuilder(f), useForVariants));
-				}
+				if (isMasterScoringField) applyFunction(scoringContext, scoringFunction, parameters, false);
+				if (useForVariants) applyFunction(scoringContext, scoringFunction, parameters, true);
 			}
 			catch (ConfigurationException configException) {
 				log.error("Applying scoring function failed: {}! Will remove it until next configuration reload.", configException.getMessage());
@@ -79,6 +85,76 @@ public class ScoringCreator {
 			}
 		}
 		return scoringContext;
+	}
+
+	private void applyFunction(ScoringContext scoringContext, ScoringFunction scoringFunction, InternalSearchParams parameters, boolean useForVariants) throws ConfigurationException {
+		switch (scoringFunction.getType()) {
+			case SCRIPT_SCORE:
+				buildScriptScoreFunction(scoringFunction)
+						.ifPresent(f -> scoringContext.addScoringFunction(new FilterFunctionBuilder(f), useForVariants));
+				break;
+			case WEIGHT:
+				scoringContext.addScoringFunction(
+						new FilterFunctionBuilder(ScoreFunctionBuilders.weightFactorFunction(scoringFunction.getWeight())),
+						useForVariants);
+				break;
+			case RANDOM_SCORE:
+				buildRandomScoreFunction(scoringFunction, scoreFields.get(scoringFunction.getField()), useForVariants)
+						.ifPresent(f -> scoringContext.addScoringFunction(new FilterFunctionBuilder(f), useForVariants));
+				break;
+			case RANK_FEATURE:
+				if (useForVariants) log.warn("rank-feature not supported for variant-level (on field {})", scoringFunction.getField());
+				else buildRankFeatureQueries(scoringFunction, scoreFields.get(scoringFunction.getField()), parameters, scoringContext);
+				break;
+			default:
+				buildFieldBasedScoreFunction(scoringFunction, scoreFields.get(scoringFunction.getField()), useForVariants)
+						.ifPresent(f -> scoringContext.addScoringFunction(new FilterFunctionBuilder(f), useForVariants));
+		}
+	}
+
+	private void buildRankFeatureQueries(ScoringFunction scoringFunction, Field field, InternalSearchParams parameters, ScoringContext scoringContext) {
+		String function = scoringFunction.getOptions().getOrDefault(ScoreOption.MODIFIER, "saturation").toLowerCase();
+		String fieldName = this.getFullName(field, false);
+		var opts = scoringFunction.getOptions();
+		String dynamicParam = opts.get(ScoreOption.DYNAMIC_PARAM);
+		if (dynamicParam != null) {
+			String dynamicParamValue = parameters.getValueOf(dynamicParam);
+			if (dynamicParamValue == null) return;
+		}
+
+		RankFeatureQueryBuilder rankFeatureQuery;
+		switch (function) {
+			case "linear":
+				rankFeatureQuery = RankFeatureQueryBuilders.linear(fieldName);
+				break;
+			case "log":
+				rankFeatureQuery = RankFeatureQueryBuilders.log(fieldName, tryToParseAsNumber(opts.get(ScoreOption.FACTOR)).orElse(1).floatValue());
+				break;
+			case "sigmoid":
+				rankFeatureQuery = RankFeatureQueryBuilders.sigmoid(fieldName,
+						tryToParseAsNumber(opts.get(ScoreOption.PIVOT)).orElse(0.5).floatValue(),
+						tryToParseAsNumber(opts.get(ScoreOption.EXPONENT)).orElse(0.6).floatValue());
+				break;
+			case "saturation":
+				rankFeatureQuery = tryToParseAsNumber(opts.get(ScoreOption.PIVOT))
+						.map(pivot -> RankFeatureQueryBuilders.saturation(fieldName, pivot.floatValue()))
+						.orElseGet(() -> RankFeatureQueryBuilders.saturation(fieldName));
+				break;
+			default:
+				log.warn("rank_feature score configuration for field {} has invalid function: '{}'. Using 'saturation' instead.", field.getName(), function);
+				rankFeatureQuery = RankFeatureQueryBuilders.saturation(fieldName);
+		}
+
+		scoringContext.addBoostingQuery(rankFeatureQuery);
+		// the missing parameter is used to apply a default score
+		// for all documents that don't match the rank feature query
+		tryToParseAsNumber(opts.get(ScoreOption.MISSING))
+				.filter(defaultScore -> defaultScore.floatValue() > 0f)
+				.ifPresent(defaultScore -> {
+					scoringContext.addBoostingQuery(
+							QueryBuilders.constantScoreQuery(QueryBuilders.boolQuery().mustNot(rankFeatureQuery))
+									.boost(defaultScore.floatValue()));
+				});
 	}
 
 	private Optional<ScoreFunctionBuilder<?>> buildFieldBasedScoreFunction(ScoringFunction scoringFunction, Field field, boolean isForVariantLevel) throws ConfigurationException {

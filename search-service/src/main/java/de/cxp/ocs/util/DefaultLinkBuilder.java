@@ -115,7 +115,7 @@ public final class DefaultLinkBuilder implements LinkBuilder {
 		return (order.equals(SortOrder.DESC) ? "-" + fieldName : fieldName);
 	}
 	
-	private static String getSortingsString(List<Sorting> sortings) {
+	public static String getSortingsString(List<Sorting> sortings) {
 		StringBuilder sortingString = new StringBuilder();
 		for (Sorting sorting : sortings) {
 			if (sortingString.length() > 0)
@@ -127,7 +127,7 @@ public final class DefaultLinkBuilder implements LinkBuilder {
 		return sortingString.toString();
 	}
 
-	private static String joinParameterValues(String... values) {
+	public static String joinParameterValues(String... values) {
 		if (values.length == 1)
 			return escapeValueDelimiter(values[0]);
 

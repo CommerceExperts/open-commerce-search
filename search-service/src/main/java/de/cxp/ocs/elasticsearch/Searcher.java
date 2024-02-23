@@ -190,7 +190,7 @@ public class Searcher {
 		SearchQueryContext queryContext = new SearchQueryContext();
 		queryContext.filters = filtersBuilder.buildFilterContext(parameters.filters, parameters.inducedFilters, parameters.withFacets);
 		queryContext.variantSortings = sortingHandler.getVariantSortings(parameters.sortings);
-		queryContext.scoring = scoringCreator.getScoringContext();
+		queryContext.scoring = scoringCreator.getScoringContext(parameters);
 		HeroProductHandler.getHeroQuery(parameters).ifPresent(queryContext::setHeroProducts);
 
 		// staged search: try each query builder until we get a result
