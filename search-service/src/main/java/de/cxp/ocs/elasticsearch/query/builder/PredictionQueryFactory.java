@@ -8,7 +8,6 @@ import java.util.*;
 import java.util.Map.Entry;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.*;
@@ -21,6 +20,7 @@ import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.elasticsearch.model.query.MultiTermQuery;
 import de.cxp.ocs.elasticsearch.model.term.AssociatedTerm;
+import de.cxp.ocs.elasticsearch.model.term.Occur;
 import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
 import de.cxp.ocs.elasticsearch.query.TextMatchQuery;
 import de.cxp.ocs.spi.search.ESQueryFactory;
