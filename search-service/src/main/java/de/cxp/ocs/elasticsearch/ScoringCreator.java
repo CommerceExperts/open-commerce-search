@@ -49,13 +49,14 @@ public class ScoringCreator {
 		while (scoreFunctionIterator.hasNext()) {
 			ScoringFunction scoringFunction = scoreFunctionIterator.next();
 
+			boolean isFieldRequired = typesRequireField.contains(scoringFunction.getType());
 			Optional<Field> relatedField = Optional.ofNullable(scoringFunction.getField()).map(scoreFields::get);
-			if (relatedField.isEmpty()) {
+			if (isFieldRequired && relatedField.isEmpty()) {
 				if (scoringFunction.getField() != null) {
 					log.warn("Field {} for scoring does not exist. Will ignore scoring function of type {}", scoringFunction.getField(), scoringFunction.getType());
 					scoreFunctionIterator.remove();
 				}
-				else if (typesRequireField.contains(scoringFunction.getType())) {
+				else {
 					log.warn("Scoring function of type {} requires field, but non given", scoringFunction.getType());
 					scoreFunctionIterator.remove();
 				}
@@ -76,7 +77,7 @@ public class ScoringCreator {
 			}
 
 			try {
-				if (isMasterScoringField) applyFunction(scoringContext, scoringFunction, parameters, false);
+				if (isMasterScoringField || !isFieldRequired) applyFunction(scoringContext, scoringFunction, parameters, false);
 				if (useForVariants) applyFunction(scoringContext, scoringFunction, parameters, true);
 			}
 			catch (ConfigurationException configException) {
@@ -114,12 +115,16 @@ public class ScoringCreator {
 
 	private void buildRankFeatureQueries(ScoringFunction scoringFunction, Field field, InternalSearchParams parameters, ScoringContext scoringContext) {
 		String function = scoringFunction.getOptions().getOrDefault(ScoreOption.MODIFIER, "saturation").toLowerCase();
-		String fieldName = this.getFullName(field, false);
+		String fieldName;
 		var opts = scoringFunction.getOptions();
 		String dynamicParam = opts.get(ScoreOption.DYNAMIC_PARAM);
 		if (dynamicParam != null) {
 			String dynamicParamValue = parameters.getValueOf(dynamicParam);
 			if (dynamicParamValue == null) return;
+			fieldName = this.getFullName(field, false) + "." + dynamicParamValue;
+		}
+		else {
+			fieldName = this.getFullName(field, false);
 		}
 
 		RankFeatureQueryBuilder rankFeatureQuery;
