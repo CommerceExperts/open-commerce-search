@@ -25,7 +25,6 @@ public enum ScoreType {
 	 * Similar to a field-value-factor but in the context of Elasticsearch only usable
 	 * for rank_feature/rank_features fields.
 	 * </p>
-	 * <p>
 	 * It supports the following options:
 	 * <ul>
 	 * <li>DYNAMIC_PARAM: name of the parameter that should be used to add a field suffix. Usable only for rank_features
@@ -38,7 +37,6 @@ public enum ScoreType {
 	 * <li>PIVOT: used for 'saturation' or 'sigmoid' function</li>
 	 * <li>EXPONENT: used for 'sigmoid' function</li>
 	 * </ul>
-	 * </p>
 	 * 
 	 * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.17/query-dsl-rank-feature-query.html
 	 */
