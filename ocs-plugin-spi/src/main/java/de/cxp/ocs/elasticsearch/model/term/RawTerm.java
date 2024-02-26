@@ -1,7 +1,5 @@
 package de.cxp.ocs.elasticsearch.model.term;
 
-import org.apache.lucene.search.BooleanClause.Occur;
-
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -27,16 +25,7 @@ public class RawTerm implements QueryStringTerm {
 	@Override
 	public Occur getOccur() {
 		if (rawQueryTerm.length() > 0) {
-			switch (rawQueryTerm.charAt(0)) {
-				case '-':
-					return Occur.MUST_NOT;
-				case '+':
-					return Occur.MUST;
-				case '#':
-					return Occur.FILTER;
-				default:
-					return Occur.SHOULD;
-			}
+			return Occur.fromChar(rawQueryTerm.charAt(0));
 		}
 		return Occur.SHOULD;
 	}

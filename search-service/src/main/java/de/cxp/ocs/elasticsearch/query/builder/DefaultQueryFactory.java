@@ -16,7 +16,7 @@ import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
-import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
+import de.cxp.ocs.elasticsearch.query.TextMatchQuery;
 import de.cxp.ocs.elasticsearch.query.StandardQueryFactory;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import lombok.Getter;
@@ -62,10 +62,10 @@ public class DefaultQueryFactory implements ESQueryFactory {
 	}
 
 	@Override
-	public MasterVariantQuery createQuery(ExtendedQuery parsedQuery) {
+	public TextMatchQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery) {
 		QueryStringQueryBuilder mainQuery = mainQueryFactory.create(parsedQuery);
 		QueryBuilder variantQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery);
-		return new MasterVariantQuery(mainQuery, variantQuery, mainQuery.fuzziness().asDistance() > 0, false);
+		return new TextMatchQuery<>(mainQuery, variantQuery, mainQuery.fuzziness().asDistance() > 0, false);
 	}
 
 	@Override

@@ -148,6 +148,7 @@ public abstract class FixedIntervalFacetCreator implements CustomFacetCreator {
 			currentEntryBuilder.currentVariantCount += valueBucket.getDocCount();
 			currentEntryBuilder.currentDocumentCount += docCount;
 			currentEntryBuilder.upperBound = (Double) valueBucket.getTo();
+			currentEntryBuilder.label = valueBucket.getKeyAsString();
 
 			absDocCount += docCount;
 

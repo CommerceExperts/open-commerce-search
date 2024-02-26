@@ -12,15 +12,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
-import de.cxp.ocs.elasticsearch.model.term.AssociatedTerm;
-import de.cxp.ocs.elasticsearch.model.term.QueryFilterTerm;
-import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
-import de.cxp.ocs.elasticsearch.model.term.WeightedTerm;
+import de.cxp.ocs.elasticsearch.model.term.*;
 import lombok.extern.slf4j.Slf4j;
 
 /**

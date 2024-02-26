@@ -56,7 +56,7 @@ public class FiltersBuilder {
 		buildFilterQueries(filters, basicFilterQueries, postFilterQueries, withFacets ? false : true);
 		buildFilterQueries(querqyFilters, basicFilterQueries, postFilterQueries, true);
 
-		MasterVariantQuery postFilterQuery = buildFilters(postFilterQueries);
+		TextMatchQuery<QueryBuilder> postFilterQuery = buildFilters(postFilterQueries);
 		QueryBuilder joinedPostFilters = mergeQueries(postFilterQuery.getMasterLevelQuery(), postFilterQuery
 				.getVariantLevelQuery());
 
@@ -133,7 +133,7 @@ public class FiltersBuilder {
 		return !postFilterFacets.contains(fieldName);
 	}
 
-	private MasterVariantQuery buildFilters(Map<String, QueryBuilder> filterQueries) {
+	private TextMatchQuery buildFilters(Map<String, QueryBuilder> filterQueries) {
 		// collect filters and combine into master and variant filters
 		QueryBuilder variantFilters = null;
 		QueryBuilder masterFilters = null;
@@ -146,7 +146,7 @@ public class FiltersBuilder {
 			}
 		}
 
-		return new MasterVariantQuery(masterFilters, variantFilters, false, true);
+		return new TextMatchQuery(masterFilters, variantFilters, false, true);
 	}
 
 	private QueryBuilder toFilterQuery(InternalResultFilter filter, String fieldPrefix, InternalResultFilterAdapter<? super InternalResultFilter> filterAdapter) {

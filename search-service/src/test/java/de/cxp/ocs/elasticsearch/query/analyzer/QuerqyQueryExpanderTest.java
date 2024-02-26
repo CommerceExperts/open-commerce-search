@@ -13,7 +13,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -96,6 +95,7 @@ public class QuerqyQueryExpanderTest {
 		assertEquals("(dzieci OR dziewczece^0.5)", analyzedQuery.toQueryString());
 	}
 
+	@Test
 	public void testLowercasingRules() {
 		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.LOWERCASE), "Kreslo =>", "  SYNONYM(0.82): POLSTER");
 
@@ -103,10 +103,11 @@ public class QuerqyQueryExpanderTest {
 		assertEquals("(kreslo OR polster^0.82)", analyzedQuery2.toQueryString());
 	}
 
+	@Test
 	public void testLowercasingRulesAndInput() {
 		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.LOWERCASE), "Kreslo =>", "  SYNONYM(0.82): POLSTER");
 
-		ExtendedQuery analyzedQuery2 = analyze(underTest, "KRESLOl");
+		ExtendedQuery analyzedQuery2 = analyze(underTest, "KRESLO");
 		assertEquals("(kreslo OR polster^0.82)", analyzedQuery2.toQueryString());
 	}
 
@@ -411,6 +412,25 @@ public class QuerqyQueryExpanderTest {
 		WeightedTerm term4 = assertAndCastInstanceOf(result.get(3), WeightedTerm.class);
 		assertEquals("-\"\\(foo\\/bar\\)\"", term4.toQueryString());
 		assertEquals(Occur.MUST_NOT, term4.getOccur());
+	}
+
+	@Test
+	public void testReservedCharsInRawFilterClause() {
+		// field filters MUST be passed as raw queries, but if part of a term rule,
+		// colons and all reserved chars are considered as the term-content and are escaped
+		QuerqyQueryExpander underTest = loadRule(
+				"input =>",
+				"  FILTER: * -(foo/bar)");
+		var analyzedQuery = analyze(underTest, "input");
+		List<QueryStringTerm> result = extractTerms(analyzedQuery);
+
+		assertEquals(2, result.size(), result::toString);
+		WeightedTerm term1 = assertAndCastInstanceOf(result.get(0), WeightedTerm.class);
+		assertEquals("input", term1.getRawTerm());
+
+		RawTerm term2 = assertAndCastInstanceOf(result.get(1), RawTerm.class);
+		assertEquals("-(foo/bar)", term2.toQueryString());
+		assertEquals(Occur.MUST_NOT, term2.getOccur());
 	}
 
 	@Test

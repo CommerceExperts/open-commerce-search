@@ -7,6 +7,7 @@ import org.elasticsearch.search.rescore.RescorerBuilder;
 
 public interface RescorerProvider extends ConfigurableExtension {
 
+	// TODO: fix leaky abstraction: remove dependency to Elasticsearch
 	Optional<RescorerBuilder<?>> get(String userQuery, Map<String, String> customParams);
 
 }

@@ -10,7 +10,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 
 import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
-import de.cxp.ocs.elasticsearch.query.MasterVariantQuery;
+import de.cxp.ocs.elasticsearch.query.TextMatchQuery;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -19,7 +19,7 @@ public class FilterContext {
 
 	private final static Map<String, QueryBuilder> NO_FILTER = Collections.emptyMap();
 
-	private final static MasterVariantQuery NO_QUERY = new MasterVariantQuery(null, null, false, true);
+	private final static TextMatchQuery<QueryBuilder> NO_QUERY = new TextMatchQuery<>(null, null, false, true);
 
 	@Getter
 	private final Map<String, InternalResultFilter> internalFilters;
@@ -31,7 +31,7 @@ public class FilterContext {
 	private final Map<String, QueryBuilder> postFilterQueries;
 
 	@Getter
-	private final MasterVariantQuery joinedBasicFilters;
+	private final TextMatchQuery<QueryBuilder> joinedBasicFilters;
 
 	@Getter
 	private final QueryBuilder joinedPostFilters;

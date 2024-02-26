@@ -4,8 +4,6 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.apache.lucene.search.BooleanClause.Occur;
-
 import lombok.*;
 
 /**

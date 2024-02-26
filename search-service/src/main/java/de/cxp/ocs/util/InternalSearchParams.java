@@ -67,4 +67,29 @@ public class InternalSearchParams {
 		filters.add(filter);
 		return this;
 	}
+
+	public String getValueOf(String name) {
+		if (name == null) return null;
+		if ("q".equals(name) || "query".equals(name)) {
+			return userQuery;
+		}
+		else if ("limit".equals(name)) {
+			return String.valueOf(limit);
+		}
+		else if ("offset".equals(name)) {
+			return String.valueOf(offset);
+		}
+		else if ("sort".equals(name)) {
+			return DefaultLinkBuilder.getSortingsString(sortings);
+		}
+		else {
+			// check if such a filter exists
+			return filters.stream().filter(f -> name.equals(f.getField().getName())).findFirst()
+					// then join filter values
+					.map(f -> DefaultLinkBuilder.joinParameterValues(f.getValues()))
+					// otherwise check custom parameters
+					.orElse(customParams.get(name));
+		}
+
+	}
 }

@@ -35,7 +35,10 @@ public enum ScoreOption {
 	 * Mathematical modifier for the data values.
 	 * With Elasticsearch 7 this is one of the strings
 	 * "none", "log", "log1p", "log2p", "ln", "ln1p", "ln2p", "square", "sqrt",
-	 * or "reciprocal"
+	 * or "reciprocal".
+	 * </p>
+	 * <p>
+	 * For score-type RANK_FEATURE the values 'linear', 'log', 'saturation' and 'sigmoid' are supported.
 	 * </p>
 	 * <p>
 	 * see
@@ -49,6 +52,28 @@ public enum ScoreOption {
 	 * modifier is applied to it.
 	 */
 	FACTOR,
+
+	/**
+	 * Only usable for ScoreType.RANK_FEATURE to boost an according value.
+	 */
+	BOOST,
+
+	/**
+	 * Only usable for ScoreType.RANK_FEATURE to add a field-name suffix.
+	 */
+	DYNAMIC_PARAM,
+
+	/**
+	 * Only usable for ScoreType.RANK_FEATURE and MODIFIER set to 'sigmoid' or 'saturation'.
+	 * See ScoreType.RANK_FEATURE.
+	 */
+	PIVOT,
+
+	/**
+	 * Only usable for ScoreType.RANK_FEATURE and MODIFIER set to 'sigmoid'.
+	 * See ScoreType.RANK_FEATURE.
+	 */
+	EXPONENT,
 
 	/**
 	 * required option for script_score
@@ -103,5 +128,6 @@ public enum ScoreOption {
 	 * 
 	 * Only used for decay_* score types.
 	 */
-	OFFSET
+	OFFSET,
+
 }

@@ -37,12 +37,19 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import de.cxp.ocs.config.*;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RequiredArgsConstructor
 public class FieldConfigFetcher {
 
-	private static final String PROPERTIES_PROPERTY = "properties";
-	private final RestHighLevelClient restHLClient;
+	private static final String			PROPERTIES_PROPERTY	= "properties";
+
+	private final static Set<String>	stringTypes	= Set.of("text", "keyword", "date");
+	private final static Set<String>	numberTypes	= Set.of("float", "long");
+	private final static Set<String>	rawTypes	= Set.of("rank_features");
+
+	private final RestHighLevelClient	restHLClient;
 
 	public FieldConfiguration fetchConfig(String searchIndex) throws IOException {
 		FieldConfiguration result = new FieldConfiguration();
@@ -59,14 +66,14 @@ public class FieldConfigFetcher {
 		modifyFields(resultFields, getPropertyBasedFields(mappings, RESULT_DATA), f -> f.setUsage(FieldUsage.RESULT));
 		modifyFields(resultFields, getPropertyBasedFields(mappings, SORT_DATA), f -> f.setUsage(FieldUsage.SORT));
 		modifyFields(resultFields, getPropertyBasedFields(mappings, FILTER_DATA), f -> f.setUsage(FieldUsage.FILTER));
-		modifyFields(resultFields, getPropertyBasedFields(mappings, SCORES), f -> f.setUsage(FieldUsage.SCORE).setType(FieldType.NUMBER));
+		modifyFields(resultFields, getPropertyBasedFields(mappings, SCORES), f -> f.setUsage(FieldUsage.SCORE));
 
 		Map<String, Object> variantMappings = getProperties(mappings, VARIANTS);
 		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, SEARCH_DATA), f -> f.setUsage(FieldUsage.SEARCH));
 		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, RESULT_DATA), f -> f.setUsage(FieldUsage.RESULT));
 		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, SORT_DATA), f -> f.setUsage(FieldUsage.SORT));
 		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, FILTER_DATA), f -> f.setUsage(FieldUsage.FILTER));
-		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, SCORES), f -> f.setUsage(FieldUsage.SCORE).setType(FieldType.NUMBER));
+		modifyVariantFields(resultFields, getPropertyBasedFields(variantMappings, SCORES), f -> f.setUsage(FieldUsage.SCORE));
 
 		// get facet fields
 		SearchSourceBuilder sourceBuilder = SearchSourceBuilder.searchSource()
@@ -79,13 +86,13 @@ public class FieldConfigFetcher {
 								.subAggregation(valueEstimationAgg(PATH_FACET_DATA))))
 				.aggregation(AggregationBuilders.nested("_master_number_facets", NUMBER_FACET_DATA)
 						.subAggregation(namesAggregation(NUMBER_FACET_DATA)))
-								// no need to check cardinality for number facet
+				// no need to check cardinality for number facet
 				.aggregation(AggregationBuilders.nested("_variant_term_facets", VARIANTS + "." + TERM_FACET_DATA)
 						.subAggregation(namesAggregation(VARIANTS + "." + TERM_FACET_DATA)
 								.subAggregation(valueEstimationAgg(VARIANTS + "." + TERM_FACET_DATA))))
 				.aggregation(AggregationBuilders.nested("_variant_number_facets", VARIANTS + "." + NUMBER_FACET_DATA)
 						.subAggregation(namesAggregation(VARIANTS + "." + NUMBER_FACET_DATA)));
-								// no need to check cardinality for number facet
+		// no need to check cardinality for number facet
 
 		SearchRequest searchRequest = new SearchRequest(searchIndex).source(sourceBuilder);
 		SearchResponse searchResponse = restHLClient.search(searchRequest, RequestOptions.DEFAULT);
@@ -100,13 +107,12 @@ public class FieldConfigFetcher {
 		return result;
 	}
 
-	private final static String VALUE_ESTIMATE_AGG_NAME = "_value_estimate";
-	private final static String FACET_NAME_AGG_NAME = "_names";
+	private final static String	VALUE_ESTIMATE_AGG_NAME	= "_value_estimate";
+	private final static String	FACET_NAME_AGG_NAME		= "_names";
 
 	public TermsAggregationBuilder namesAggregation(String fieldPath) {
 		return AggregationBuilders.terms(FACET_NAME_AGG_NAME).field(fieldPath + ".name").size(1000);
 	}
-
 
 	private AggregationBuilder valueEstimationAgg(String fieldPath) {
 		return AggregationBuilders.cardinality(VALUE_ESTIMATE_AGG_NAME).field(fieldPath + ".value");
@@ -133,9 +139,7 @@ public class FieldConfigFetcher {
 			Consumer<Field> fieldModifier) {
 		for (FacetFetchData fieldData : fieldsData) {
 			IndexedField field = (IndexedField) resultFields.computeIfAbsent(fieldData.name, IndexedField::new);
-			if (fieldData.cardinality > 0) {
-				field.setValueCardinality((int) fieldData.cardinality);
-			}
+			applyFieldDetails(fieldData, field);
 			fieldModifier.accept(field);
 		}
 	}
@@ -148,10 +152,29 @@ public class FieldConfigFetcher {
 			if (field.isMasterLevel()) {
 				field.setFieldLevel(FieldLevel.BOTH);
 			}
-			if (fieldData.cardinality > 0) {
-				field.setValueCardinality((int) fieldData.cardinality);
-			}
+			applyFieldDetails(fieldData, field);
+
 			fieldModifier.accept(field);
+		}
+	}
+
+	private void applyFieldDetails(FacetFetchData fieldData, IndexedField field) {
+		if (fieldData.cardinality > 0) {
+			field.setValueCardinality((int) fieldData.cardinality);
+		}
+		if (fieldData.type != null) {
+			if (stringTypes.contains(fieldData.type)) {
+				field.setType(FieldType.STRING);
+			}
+			else if (numberTypes.contains(fieldData.type)) {
+				field.setType(FieldType.NUMBER);
+			}
+			else if (rawTypes.contains(fieldData.type)) {
+				field.setType(FieldType.RAW);
+			}
+			else {
+				log.debug("unknown fieldData type {} for field {}", fieldData.type, fieldData.name);
+			}
 		}
 	}
 
@@ -164,11 +187,12 @@ public class FieldConfigFetcher {
 		}
 		if (props != null && props instanceof Map) {
 			return ((Map<String, Object>) props);
-		} else {
+		}
+		else {
 			return Collections.emptyMap();
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private Set<FacetFetchData> getPropertyBasedFields(Map<String, Object> mappings, String superFieldName) {
 		Object superField = mappings.get(superFieldName);
@@ -177,19 +201,40 @@ public class FieldConfigFetcher {
 			props = ((Map<String, Object>) superField).get(PROPERTIES_PROPERTY);
 		}
 		if (props != null && props instanceof Map) {
-			return ((Map<String, Object>) props).keySet().stream().map(FacetFetchData::new).collect(Collectors.toSet());
-		} else {
+			return ((Map<String, Object>) props).entrySet().stream().map(entry -> {
+				if (entry.getValue() instanceof Map && ((Map<String, Object>) entry.getValue()).get("type") != null) {
+					return new FacetFetchData(entry.getKey(), ((Map<String, Object>) entry.getValue()).get("type").toString());
+				}
+				else {
+					return new FacetFetchData(entry.getKey());
+				}
+			}).collect(Collectors.toSet());
+		}
+		else {
 			return Collections.emptySet();
 		}
 	}
 
 	@AllArgsConstructor
 	private class FacetFetchData {
-		String name;
-		long cardinality;
+
+		String	name;
+		String	type;
+		long	cardinality;
 
 		FacetFetchData(String name) {
 			this.name = name;
+			cardinality = -1;
+		}
+
+		FacetFetchData(String name, long cardinality) {
+			this.name = name;
+			this.cardinality = cardinality;
+		}
+
+		FacetFetchData(String name, String type) {
+			this.name = name;
+			this.type = type;
 			cardinality = -1;
 		}
 	}
