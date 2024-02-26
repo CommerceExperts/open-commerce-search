@@ -38,7 +38,9 @@ public enum ScoreType {
 	 * <li>EXPONENT: used for 'sigmoid' function</li>
 	 * </ul>
 	 * 
-	 * @see https://www.elastic.co/guide/en/elasticsearch/reference/7.17/query-dsl-rank-feature-query.html
+	 * see <a href=
+	 * "https://www.elastic.co/guide/en/elasticsearch/reference/7.17/query-dsl-rank-feature-query.html">Elasticsearch
+	 * Documentation of Rank-Feature-Query</a>
 	 */
 	RANK_FEATURE,
 
