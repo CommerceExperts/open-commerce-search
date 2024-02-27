@@ -27,6 +27,7 @@ ocs:
         excludeFromFacetLimit: true
       - source-field: color
         label: Color
+        multi-select: true
     scoring-configuration:
       boost-mode: avg
       score-mode: sum

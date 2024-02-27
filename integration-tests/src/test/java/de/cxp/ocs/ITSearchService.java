@@ -3,9 +3,11 @@ package de.cxp.ocs;
 import static de.cxp.ocs.OCSStack.getImportClient;
 import static de.cxp.ocs.OCSStack.getSearchClient;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.type;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -13,10 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.params.SearchQuery;
-import de.cxp.ocs.model.result.HierarchialFacetEntry;
-import de.cxp.ocs.model.result.SearchResult;
-import de.cxp.ocs.model.result.SearchResultSlice;
-import de.cxp.ocs.model.result.SortOrder;
+import de.cxp.ocs.model.result.*;
 
 @ExtendWith({ OCSStack.class })
 public class ITSearchService {
@@ -69,6 +68,57 @@ public class ITSearchService {
 				.anyMatch(hit -> hit.getDocument().id.equals("006"))
 				.anyMatch(hit -> hit.getDocument().id.equals("006")
 						&& ("31".equals(hit.getDocument().data.get("size")) || "31".equals(((Attribute) hit.getDocument().data.get("size")).getValue())));
+	}
+
+	@Test
+	public void testVariant_PickIfDrilledDown_ForMultiSelectAttribute() throws Exception {
+		{
+			SearchResult searchResult = getSearchClient().search(indexName, new SearchQuery().setQ("skirt"), Collections.emptyMap());
+
+			Optional<ResultHit> opt_hit005 = searchResult.slices.get(0).hits.stream().filter(hit -> hit.getDocument().id.equals("005")).findFirst();
+			assertTrue(opt_hit005.isPresent());
+			ResultHit hit005 = opt_hit005.orElse(null);
+
+			// attributes of main product
+			assertThat(hit005.getDocument().data.get("color")).isNull();
+			assertThat(hit005.getDocument().data.get("price")).isEqualTo(25.5);
+		}
+
+		{
+			SearchResult searchResult = getSearchClient().search(indexName, new SearchQuery().setQ("skirt"), Collections.singletonMap("color", "black"));
+			Optional<ResultHit> opt_hit005 = searchResult.slices.get(0).hits.stream().filter(hit -> hit.getDocument().id.equals("005")).findFirst();
+			assertTrue(opt_hit005.isPresent());
+			ResultHit hit005 = opt_hit005.orElse(null);
+
+			assertThat(hit005.getDocument().data.get("color")).asInstanceOf(type(Attribute.class)).extracting("value").isEqualTo("black");
+			assertThat(hit005.getDocument().data.get("price")).isEqualTo(25.5);
+		}
+	}
+
+	@Test
+	public void testVariant_PickAlways_ForMultiSelectAttribute() throws Exception {
+		String searchTenant2 = indexName + "_2";
+
+		{
+			SearchResult searchResult = getSearchClient().search(searchTenant2, new SearchQuery().setQ("skirt"), Collections.emptyMap());
+
+			Optional<ResultHit> opt_hit005 = searchResult.slices.get(0).hits.stream().filter(hit -> hit.getDocument().id.equals("005")).findFirst();
+			assertTrue(opt_hit005.isPresent());
+			ResultHit hit005 = opt_hit005.orElse(null);
+
+			assertThat(hit005.getDocument().data.get("color")).asInstanceOf(type(Attribute.class)).extracting("value").isEqualTo("pink");
+			assertThat(hit005.getDocument().data.get("price")).isEqualTo(20.0);
+		}
+
+		{
+			SearchResult searchResult = getSearchClient().search(searchTenant2, new SearchQuery().setQ("skirt"), Collections.singletonMap("color", "black"));
+			Optional<ResultHit> opt_hit005 = searchResult.slices.get(0).hits.stream().filter(hit -> hit.getDocument().id.equals("005")).findFirst();
+			assertTrue(opt_hit005.isPresent());
+			ResultHit hit005 = opt_hit005.orElse(null);
+
+			assertThat(hit005.getDocument().data.get("color")).asInstanceOf(type(Attribute.class)).extracting("value").isEqualTo("black");
+			assertThat(hit005.getDocument().data.get("price")).isEqualTo(25.5);
+		}
 	}
 
 	@Test

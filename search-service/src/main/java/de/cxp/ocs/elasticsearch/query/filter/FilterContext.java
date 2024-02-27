@@ -25,9 +25,6 @@ public class FilterContext {
 	private final Map<String, InternalResultFilter> internalFilters;
 
 	@Getter
-	private final Map<String, QueryBuilder> basicFilterQueries;
-
-	@Getter
 	private final Map<String, QueryBuilder> postFilterQueries;
 
 	@Getter
@@ -37,10 +34,10 @@ public class FilterContext {
 	private final QueryBuilder joinedPostFilters;
 
 	@Getter
-	private final QueryBuilder variantPostFilters;
+	private final QueryBuilder variantInnerHitFilter;
 
 	public FilterContext(Map<String, InternalResultFilter> internalFilters) {
-		this(internalFilters, NO_FILTER, NO_FILTER, NO_QUERY, null, null);
+		this(internalFilters, NO_FILTER, NO_QUERY, null, null);
 	}
 
 	/**

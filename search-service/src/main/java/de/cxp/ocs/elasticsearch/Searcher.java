@@ -551,7 +551,7 @@ public class Searcher {
 		masterLevelQuery = queryContext.scoring.wrapMasterLevelQuery(masterLevelQuery);
 		
 		QueryBuilder variantFilterQuery = queryContext.filters.getJoinedBasicFilters().getVariantLevelQuery();
-		QueryBuilder variantPostFilters = queryContext.filters.getVariantPostFilters();
+		QueryBuilder innerHitsFilter = queryContext.filters.getVariantInnerHitFilter();
 
 		// build query that picks the best matching variants
 		QueryBuilder variantsMatchQuery = null;
@@ -566,8 +566,8 @@ public class Searcher {
 		if (variantFilterQuery != null) {
 			variantsMatchQuery = variantsMatchQuery == null ? variantFilterQuery : ESQueryUtils.mapToBoolQueryBuilder(variantsMatchQuery).filter(variantFilterQuery);
 		}
-		if (variantPostFilters != null) {
-			variantsMatchQuery = variantsMatchQuery == null ? variantPostFilters : ESQueryUtils.mapToBoolQueryBuilder(variantsMatchQuery).filter(variantPostFilters);
+		if (innerHitsFilter != null) {
+			variantsMatchQuery = variantsMatchQuery == null ? innerHitsFilter : ESQueryUtils.mapToBoolQueryBuilder(variantsMatchQuery).filter(innerHitsFilter);
 			variantsOnlyFiltered = false;
 		}
 
