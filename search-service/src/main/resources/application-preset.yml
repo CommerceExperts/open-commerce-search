@@ -76,6 +76,7 @@ ocs:
           tieBreaker: 0.7
           multimatch_type: "CROSS_FIELDS"
           analyzer: "standard"
+          quoteAnalyzer: "minimal"
           isQueryWithShingles: true
           allowParallelSpellcheck: false
         weightedFields:

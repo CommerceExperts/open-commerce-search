@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.*;
+import de.cxp.ocs.util.DataIndexer;
 
 @ExtendWith({ OCSStack.class })
 public class ITSearchService {

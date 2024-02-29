@@ -28,6 +28,7 @@ import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.model.result.SearchResultSlice;
+import de.cxp.ocs.util.DataIndexer;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
