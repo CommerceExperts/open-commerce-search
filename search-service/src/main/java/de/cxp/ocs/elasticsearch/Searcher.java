@@ -294,7 +294,7 @@ public class Searcher {
 				}
 				correctedWordsSample.stop(correctedWordsTimer);
 			}
-			searchMetaData.put("query_executed", searchQuery.getMasterLevelQuery().queryName());
+			searchMetaData.put("query_executed", searchQuery.getQueryDescription() == null ? searchQuery.getMasterLevelQuery().queryName() : searchQuery.getQueryDescription());
 			searchMetaData.put("query_stage", Optional.ofNullable(parameters.customParams.get("query_stage")).map(Integer::parseInt).orElse(i));
 
 			if (!isResultSufficient && searchQuery.isAcceptNoResult()) {

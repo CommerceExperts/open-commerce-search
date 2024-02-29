@@ -12,6 +12,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class TextMatchQuery<Q> {
 
+	public TextMatchQuery(Q masterQuery, Q variantQuery, boolean isWithSpellCorrection, boolean acceptNoResult) {
+		this(masterQuery, variantQuery, isWithSpellCorrection, acceptNoResult, null);
+	}
+
 	@Setter
 	private Q masterLevelQuery;
 
@@ -26,4 +30,7 @@ public class TextMatchQuery<Q> {
 	// TODO: do this with configuration so it's not necessary to decide at the
 	// builder level
 	private boolean acceptNoResult = false;
+
+	private String queryDescription;
+
 }

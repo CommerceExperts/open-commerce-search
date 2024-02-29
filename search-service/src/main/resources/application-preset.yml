@@ -103,6 +103,7 @@ ocs:
         settings:
           analyzer: "standard"
           fallbackQuery: "relaxed-ngram-query"
+          tieBreaker: 0.2
         weightedFields:
           "[title]": 3
           "[title.standard]": 2.5
