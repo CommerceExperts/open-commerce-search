@@ -46,6 +46,7 @@ public class ESQueryFactoryBuilder {
 		
 		ExtensionSupplierRegistry<ESQueryFactory> esQueryFactoryRegistry = new ExtensionSupplierRegistry<ESQueryFactory>();
 		esQueryFactoryRegistry.register(PredictionQueryFactory.class, () -> new PredictionQueryFactory(new QueryPredictor(restClient, indexName)));
+		esQueryFactoryRegistry.register(RelaxedQueryFactory.class, () -> new RelaxedQueryFactory(new QueryPredictor(restClient, indexName)));
 		esQueryFactoryRegistry.register(ConfigurableQueryFactory.class, ConfigurableQueryFactory::new);
 		esQueryFactoryRegistry.register(NgramQueryFactory.class, NgramQueryFactory::new);
 		esQueryFactoryRegistry.register(DefaultQueryFactory.class, DefaultQueryFactory::new);
