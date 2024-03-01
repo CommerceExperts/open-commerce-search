@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class RelaxedQueryFactory implements ESQueryFactory {
+public class RelaxedQueryFactory implements ESQueryFactory, FallbackConsumer {
 
 	@NonNull
 	private final QueryPredictor metaFetcher;
@@ -137,6 +137,7 @@ public class RelaxedQueryFactory implements ESQueryFactory {
 		// them with the fallback query builder to boost matching records.
 		if (unmatchedTerms.size() > 0 && fallbackQueryBuilder != null) {
 			QueryBuilder boostQuery = fallbackQueryBuilder.createQuery(new ExtendedQuery(new MultiTermQuery(unmatchedTerms.values()))).getMasterLevelQuery();
+			boostQuery.boost(createdQueries.size());
 			mainQuery = QueryBuilders.boolQuery().must(mainQuery).should(boostQuery);
 			// add query-description for label
 			createdQueries.add("boost(" + ESQueryUtils.getQueryLabel(unmatchedTerms.values()) + ")");

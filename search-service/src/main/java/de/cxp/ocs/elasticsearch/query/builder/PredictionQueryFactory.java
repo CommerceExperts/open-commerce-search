@@ -46,7 +46,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class PredictionQueryFactory implements ESQueryFactory {
+public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer {
 
 	@NonNull
 	private final QueryPredictor metaFetcher;

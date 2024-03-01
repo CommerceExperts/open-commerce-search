@@ -116,8 +116,8 @@ public class ESQueryFactoryBuilder {
 
 		// Special case for PredictionQueryFactory.
 		// Not sure if this should be supported generally
-		if (esQueryFactory instanceof PredictionQueryFactory) {
-			getFallbackQueryBuilder(queryConf).ifPresent(((PredictionQueryFactory) esQueryFactory)::setFallbackQueryBuilder);
+		if (esQueryFactory instanceof FallbackConsumer) {
+			getFallbackQueryBuilder(queryConf).ifPresent(((FallbackConsumer) esQueryFactory)::setFallbackQueryBuilder);
 		}
 		
 		return esQueryFactory;
