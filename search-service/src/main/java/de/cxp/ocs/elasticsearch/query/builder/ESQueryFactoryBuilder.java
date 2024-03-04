@@ -46,6 +46,7 @@ public class ESQueryFactoryBuilder {
 		
 		ExtensionSupplierRegistry<ESQueryFactory> esQueryFactoryRegistry = new ExtensionSupplierRegistry<ESQueryFactory>();
 		esQueryFactoryRegistry.register(PredictionQueryFactory.class, () -> new PredictionQueryFactory(new QueryPredictor(restClient, indexName)));
+		esQueryFactoryRegistry.register(RelaxedQueryFactory.class, () -> new RelaxedQueryFactory(new QueryPredictor(restClient, indexName)));
 		esQueryFactoryRegistry.register(ConfigurableQueryFactory.class, ConfigurableQueryFactory::new);
 		esQueryFactoryRegistry.register(NgramQueryFactory.class, NgramQueryFactory::new);
 		esQueryFactoryRegistry.register(DefaultQueryFactory.class, DefaultQueryFactory::new);
@@ -115,8 +116,8 @@ public class ESQueryFactoryBuilder {
 
 		// Special case for PredictionQueryFactory.
 		// Not sure if this should be supported generally
-		if (esQueryFactory instanceof PredictionQueryFactory) {
-			getFallbackQueryBuilder(queryConf).ifPresent(((PredictionQueryFactory) esQueryFactory)::setFallbackQueryBuilder);
+		if (esQueryFactory instanceof FallbackConsumer) {
+			getFallbackQueryBuilder(queryConf).ifPresent(((FallbackConsumer) esQueryFactory)::setFallbackQueryBuilder);
 		}
 		
 		return esQueryFactory;

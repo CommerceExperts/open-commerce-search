@@ -1,27 +1,25 @@
 package de.cxp.ocs.elasticsearch.query.builder;
 
-import static de.cxp.ocs.config.QueryBuildingSetting.analyzer;
 import static de.cxp.ocs.util.ESQueryUtils.validateSearchFields;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.Map.Entry;
 
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.common.unit.Fuzziness;
-import org.elasticsearch.index.query.*;
-import org.elasticsearch.index.query.MultiMatchQueryBuilder.Type;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.Operator;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigAccess;
-import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.elasticsearch.model.query.MultiTermQuery;
-import de.cxp.ocs.elasticsearch.model.term.AssociatedTerm;
 import de.cxp.ocs.elasticsearch.model.term.Occur;
 import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
+import de.cxp.ocs.elasticsearch.query.StandardQueryFactory;
 import de.cxp.ocs.elasticsearch.query.TextMatchQuery;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import de.cxp.ocs.util.ESQueryUtils;
@@ -32,21 +30,15 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * <p>
- * Query factory that analyzes the search keywords and already checks
- * Elasticsearch about which terms hit documents together (including spell
- * correction and term shingles).
- * Based on that analysis a query is built that tries to match most of the
- * terms (magic algorithm ;)).
- * </p>
- * Supported {@link QueryBuildingSetting}s:
- * <ul>
- * <li>'analyzer' that is used to match the configured fields.</li>
- * </ul>
+ * Query factory uses the QueryPredictor to determine, which terms work together.
+ * Based on that a query is built that combines the results for all valid term-combinations including some boosting for
+ * the unknown terms.
+ * 
+ * @author Rudolf Batt
  */
 @Slf4j
 @RequiredArgsConstructor
-public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer {
+public class RelaxedQueryFactory implements ESQueryFactory, FallbackConsumer {
 
 	@NonNull
 	private final QueryPredictor metaFetcher;
@@ -55,10 +47,10 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 
 	private final Map<String, Float> fieldWeights = new HashMap<>();
 
-	private final int desiredResultCount = 12;
-
 	@Setter
 	private ESQueryFactory fallbackQueryBuilder;
+
+	private StandardQueryFactory mainQueryFactory;
 
 	private VariantQueryFactory variantQueryFactory;
 
@@ -72,6 +64,10 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 		this.settings.putAll(settings);
 		this.fieldWeights.putAll(validateSearchFields(fieldWeights, fieldConfig, Field::isMasterLevel));
 		metaFetcher.setAnalyzer(settings.get(QueryBuildingSetting.analyzer));
+		// set recommended default settings
+		settings.putIfAbsent(QueryBuildingSetting.operator, "and");
+		settings.putIfAbsent(QueryBuildingSetting.phraseSlop, "5");
+		mainQueryFactory = new StandardQueryFactory(settings, this.fieldWeights);
 		variantQueryFactory = new VariantQueryFactory(validateSearchFields(fieldWeights, fieldConfig, Field::isVariantLevel));
 		Optional.ofNullable(settings.get(QueryBuildingSetting.analyzer)).ifPresent(variantQueryFactory::setAnalyzer);
 	}
@@ -92,47 +88,16 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 		int minimumTermsMustMatch = -1;
 		QueryBuilder mainQuery = null;
 
-		// all terms of our first/prefered query that do not have a
+		// all terms of our first/preferred query that do not have a
 		// spell-correction alternative, will be collected for later boosting
 		// if all terms are matched (so this map is empty) this query builder
 		// rejects other queries afterwards
 		final Map<String, QueryStringTerm> unmatchedTerms = new HashMap<>();
-		Set<String> createdQueries = new HashSet<>();
-		long expectedMatchCount = 0;
+		Set<String> createdQueries = new LinkedHashSet<>();
+
 		int i = 0;
 		for (final PredictedQuery pQuery : predictedQueries) {
 			int matchingTermCount = pQuery.getOriginalTermCount();
-			List<String> queryStrings = new ArrayList<>();
-			queryStrings.add("(" + pQuery.getQueryString() + ")^" + pQuery.getOriginalTermCount());
-
-			// if any word of the predicted query has spell corrections, the
-			// prediction is not precise enough. In that case we use all terms
-			// with matches as required terms
-			if (pQuery.getCorrectedTermCount() > 0) {
-				final Iterator<QueryStringTerm> unknownTermIterator = pQuery.getUnknownTerms().iterator();
-				while (unknownTermIterator.hasNext()) {
-					final QueryStringTerm unknownTerm = unknownTermIterator.next();
-					if (termHasMatches(unknownTerm)) {
-						queryStrings.add(unknownTerm.toQueryString());
-						pQuery.termsUnique.put(unknownTerm.getRawTerm(), unknownTerm);
-
-						// ..and increment the matching term count
-						matchingTermCount++;
-						unknownTermIterator.remove();
-					}
-					else if (i == 0) {
-						unmatchedTerms.put(unknownTerm.getRawTerm(), unknownTerm);
-					}
-				}
-			}
-			else if (i == 0) {
-				pQuery.unknownTerms.forEach(term -> unmatchedTerms.put(term.getRawTerm(), term));
-			}
-
-			String queryLabel = ESQueryUtils.getQueryLabel(pQuery.getTermsUnique().values());
-			// the label represents the complete query! if the label already
-			// exists, the query also already exists
-			if (mainQuery != null && createdQueries.add(queryLabel)) continue;
 
 			// remember how many terms at least must match..
 			if (minimumTermsMustMatch < 1) {
@@ -144,46 +109,38 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 				break;
 			}
 
-			// check how many unmatched queries are matched
-			int consideredUnmatchedQueries = 0;
-			if (unmatchedTerms.size() > 0) {
-				consideredUnmatchedQueries = unmatchedTerms.size();
+
+			String queryLabel = ESQueryUtils.getQueryLabel(pQuery.getTermsUnique().values());
+			// the label represents the complete query! if the label already
+			// exists, the query also already exists
+			if (!createdQueries.add(queryLabel)) continue;
+
+			// fetch unmatched terms from first query
+			if (i == 0) {
+				pQuery.unknownTerms.forEach(term -> unmatchedTerms.put(term.getRawTerm(), term));
+			}
+			// for all others, check if they match one of those unmatched ones
+			else if (unmatchedTerms.size() > 0) {
 				pQuery.getTermsUnique().keySet().forEach(unmatchedTerms::remove);
-				consideredUnmatchedQueries -= unmatchedTerms.size();
 			}
 
-			// Use the query if it requires all terms to match
-			if (matchingTermCount == parsedQuery.getTermCount()
-					// ..OR..
-					// use the query if it contains any of the unmatched terms
-					// => TODO: put and use QueryMetaFetcher.containsAny method
-					// into utils
-					|| consideredUnmatchedQueries > 0
-					// ..OR..
-					// use the query if the desired result count was not
-					// reached yet
-					|| expectedMatchCount < desiredResultCount) {
-				expectedMatchCount += pQuery.getMatchCount();
 
-				final QueryBuilder allTermsMustMatch = buildAllQueriesMustMatchQuery(queryStrings);
-				allTermsMustMatch.boost(pQuery.originalTermCount);
-				allTermsMustMatch.queryName(queryLabel);
-				mainQuery = mergeToBoolShouldQuery(mainQuery, allTermsMustMatch);
-			}
-			else {
-				break;
-			}
+			QueryBuilder matchQuery = mainQueryFactory.create(new ExtendedQuery(new MultiTermQuery(pQuery.getTermsUnique().values())));
+			matchQuery.boost(pQuery.originalTermCount);
+			matchQuery.queryName(queryLabel);
+			mainQuery = mergeToBoolShouldQuery(mainQuery, matchQuery);
+
 			i++;
 		}
 
 		// in case we have some terms that are not matched by any query, use
 		// them with the fallback query builder to boost matching records.
 		if (unmatchedTerms.size() > 0 && fallbackQueryBuilder != null) {
-			TextMatchQuery<QueryBuilder> boostQuery = fallbackQueryBuilder.createQuery(new ExtendedQuery(new MultiTermQuery(unmatchedTerms.values())));
-			mainQuery = QueryBuilders.boolQuery()
-					.must(mainQuery)
-					.should(boostQuery.getMasterLevelQuery())
-					.queryName("boost(" + ESQueryUtils.getQueryLabel(unmatchedTerms.values()) + ")");
+			QueryBuilder boostQuery = fallbackQueryBuilder.createQuery(new ExtendedQuery(new MultiTermQuery(unmatchedTerms.values()))).getMasterLevelQuery();
+			boostQuery.boost(createdQueries.size());
+			mainQuery = QueryBuilders.boolQuery().must(mainQuery).should(boostQuery);
+			// add query-description for label
+			createdQueries.add("boost(" + ESQueryUtils.getQueryLabel(unmatchedTerms.values()) + ")");
 		}
 
 		for (QueryStringTerm term : parsedQuery.getFilters()) {
@@ -200,14 +157,9 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 		 */
 		QueryBuilder variantScoreQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery);
 
-		return new TextMatchQuery<>(mainQuery, variantScoreQuery, true, unmatchedTerms.size() == 0);
+		return new TextMatchQuery<>(mainQuery, variantScoreQuery, true, unmatchedTerms.size() == 0, StringUtils.join(createdQueries, " + "));
 	}
 
-	private boolean termHasMatches(QueryStringTerm unknownTerm) {
-		if (unknownTerm instanceof AssociatedTerm) return ((AssociatedTerm) unknownTerm).getRelatedTerms().size() > 0;
-		if (unknownTerm instanceof CountedTerm) return ((CountedTerm) unknownTerm).getTermFrequency() > 0;
-		else return false;
-	}
 
 	private List<PredictedQuery> predictQueries(final @NonNull ExtendedQuery analyzedQuery) {
 		List<PredictedQuery> queryMetaData = null;
@@ -252,37 +204,6 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 
 		});
 		return queryMetaData;
-	}
-
-	private QueryBuilder buildAllQueriesMustMatchQuery(final List<String> queryStrings) {
-		String queryString;
-		if (queryStrings.size() == 1) {
-			queryString = queryStrings.get(0);
-		}
-		else {
-			queryString = "(" + StringUtils.join(queryStrings, ") AND (") + ")";
-		}
-
-		return buildQueryStringQuery(queryString);
-	}
-
-	private QueryBuilder buildQueryStringQuery(String queryString) {
-		final QueryStringQueryBuilder multiMatchQuery = QueryBuilders
-				.queryStringQuery(queryString)
-				.analyzer(settings.getOrDefault(analyzer, null))
-				.defaultOperator(Operator.AND)
-				.fuzziness(Fuzziness.ZERO);
-		multiMatchQuery.type(Type.CROSS_FIELDS);
-
-		for (final Entry<String, Float> fieldWeight : fieldWeights.entrySet()) {
-			String fieldName = fieldWeight.getKey();
-			if (!fieldName.startsWith(FieldConstants.SEARCH_DATA)) {
-				fieldName = FieldConstants.SEARCH_DATA + "." + fieldName;
-			}
-			multiMatchQuery.field(fieldName, fieldWeight.getValue());
-		}
-
-		return multiMatchQuery;
 	}
 
 	private QueryBuilder exactMatchQuery(String word) {

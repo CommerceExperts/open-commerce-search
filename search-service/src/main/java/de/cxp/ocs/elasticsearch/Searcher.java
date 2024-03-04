@@ -294,7 +294,7 @@ public class Searcher {
 				}
 				correctedWordsSample.stop(correctedWordsTimer);
 			}
-			searchMetaData.put("query_executed", searchQuery.getMasterLevelQuery().queryName());
+			searchMetaData.put("query_executed", searchQuery.getQueryDescription() == null ? searchQuery.getMasterLevelQuery().queryName() : searchQuery.getQueryDescription());
 			searchMetaData.put("query_stage", Optional.ofNullable(parameters.customParams.get("query_stage")).map(Integer::parseInt).orElse(i));
 
 			if (!isResultSufficient && searchQuery.isAcceptNoResult()) {
@@ -551,7 +551,7 @@ public class Searcher {
 		masterLevelQuery = queryContext.scoring.wrapMasterLevelQuery(masterLevelQuery);
 		
 		QueryBuilder variantFilterQuery = queryContext.filters.getJoinedBasicFilters().getVariantLevelQuery();
-		QueryBuilder variantPostFilters = queryContext.filters.getVariantPostFilters();
+		QueryBuilder innerHitsFilter = queryContext.filters.getVariantInnerHitFilter();
 
 		// build query that picks the best matching variants
 		QueryBuilder variantsMatchQuery = null;
@@ -566,8 +566,8 @@ public class Searcher {
 		if (variantFilterQuery != null) {
 			variantsMatchQuery = variantsMatchQuery == null ? variantFilterQuery : ESQueryUtils.mapToBoolQueryBuilder(variantsMatchQuery).filter(variantFilterQuery);
 		}
-		if (variantPostFilters != null) {
-			variantsMatchQuery = variantsMatchQuery == null ? variantPostFilters : ESQueryUtils.mapToBoolQueryBuilder(variantsMatchQuery).filter(variantPostFilters);
+		if (innerHitsFilter != null) {
+			variantsMatchQuery = variantsMatchQuery == null ? innerHitsFilter : ESQueryUtils.mapToBoolQueryBuilder(variantsMatchQuery).filter(innerHitsFilter);
 			variantsOnlyFiltered = false;
 		}
 

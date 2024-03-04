@@ -1,6 +1,7 @@
 package de.cxp.ocs;
 
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestExecutionExceptionHandler;
 import org.testcontainers.Testcontainers;
+import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
@@ -132,8 +134,16 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 			searchService.addExposedPort(SEARCH_DEFAULT_PORT);
 			// searchService.setCommand("-Dspring.cloud.config.enabled=false",
 			// "-Dspring.profiles.active=preset");
-			searchService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,trace-searches");
+			searchService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,trace-searches,test");
 
+			URL hostPath = OCSStack.class.getClassLoader().getResource("application-test.yml");
+			if (hostPath != null) {
+				searchService.addFileSystemBind(hostPath.getPath(), "/app/resources/application-test.yml", BindMode.READ_ONLY);
+			}
+			else {
+				throw new IllegalStateException("application-test.yml not found");
+			}
+			
 			if (elasticsearch != null) {
 				searchService.setNetwork(elasticsearch.getNetwork());
 				searchService.addEnv("ES_HOSTS", "http://elasticsearch:9200");

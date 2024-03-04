@@ -27,6 +27,7 @@ ocs:
         excludeFromFacetLimit: true
       - source-field: color
         label: Color
+        multi-select: true
     scoring-configuration:
       boost-mode: avg
       score-mode: sum
@@ -75,6 +76,7 @@ ocs:
           tieBreaker: 0.7
           multimatch_type: "CROSS_FIELDS"
           analyzer: "standard"
+          quoteAnalyzer: "minimal"
           isQueryWithShingles: true
           allowParallelSpellcheck: false
         weightedFields:
@@ -93,14 +95,15 @@ ocs:
           "[category_lvl_3]": 1.3
           "[category_lvl_3.standard]": 1
       # pre fetch query
-      standard-pre-fetch:
-        strategy: "PredictionQuery"
+      relaxed-query:
+        strategy: "RelaxedQuery"
         condition:
           minTermCount: 2
           maxTermCount: 10
         settings:
           analyzer: "standard"
           fallbackQuery: "relaxed-ngram-query"
+          tieBreaker: 0.2
         weightedFields:
           "[title]": 3
           "[title.standard]": 2.5

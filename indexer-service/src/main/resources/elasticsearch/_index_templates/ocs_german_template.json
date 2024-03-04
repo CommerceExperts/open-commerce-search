@@ -46,7 +46,8 @@
             ],
             "char_filter": [
               "html",
-              "irrelevant_chars"
+              "irrelevant_chars",
+              "german_special_letters"
             ],
             "type": "custom",
             "tokenizer": "standard"

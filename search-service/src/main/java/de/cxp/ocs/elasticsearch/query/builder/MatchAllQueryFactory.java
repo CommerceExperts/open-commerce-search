@@ -37,7 +37,8 @@ public class MatchAllQueryFactory implements ESQueryFactory {
 				true,
 				// accept no results, because if "matchAll" matches nothing, no
 				// query will
-				true);
+				true,
+				name);
 	}
 
 	@Override

@@ -101,6 +101,8 @@ class QueryPredictor {
 			final PredictedQuery predictedQuery = new PredictedQuery();
 			final LinkedHashMap<String, QueryStringTerm> matchingTerms = getMatchingTerms(predictionWords, scoreBucket);
 			if (matchingTerms.size() == 0) continue;
+
+			// set term-frequency of single match terms
 			if (matchingTerms.size() == 1) {
 				String matchedTerm = matchingTerms.keySet().iterator().next();
 				predictionWords.values().stream()

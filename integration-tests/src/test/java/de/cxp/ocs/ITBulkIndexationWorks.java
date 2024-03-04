@@ -18,6 +18,7 @@ import de.cxp.ocs.client.SuggestClient;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.model.suggest.Suggestion;
+import de.cxp.ocs.util.DataIndexer;
 
 @ExtendWith({ OCSStack.class })
 public class ITBulkIndexationWorks {

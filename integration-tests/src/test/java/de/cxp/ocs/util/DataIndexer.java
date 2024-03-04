@@ -1,11 +1,15 @@
-package de.cxp.ocs;
+package de.cxp.ocs.util;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.cxp.ocs.api.indexer.ImportSession;
@@ -15,6 +19,7 @@ import de.cxp.ocs.model.index.BulkImportData;
 import de.cxp.ocs.model.index.Document;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -26,25 +31,75 @@ public class DataIndexer {
 
 	private final ObjectMapper mapper = ObjectMapperFactory.createObjectMapper();
 
+	// for testing purposes use bulks of 3 documents, but these can
+	// be many more, depending of the desired request size
+	@Setter
+	private int bulkSize = 3;
+
+	@Setter
+	private String langcode = "en";
+
 	public boolean indexTestData(String indexName) throws Exception {
+		return this.indexTestData(indexName, "testdata.jsonl");
+	}
+
+	public boolean indexTestData(String indexName, String resourceName) throws Exception {
+		InputStream testDataStream = DataIndexer.class.getClassLoader().getResourceAsStream(resourceName);
+		if (testDataStream == null) {
+			throw new Exception("resource not found: " + resourceName);
+		}
+
+		try (final BufferedReader reader = new BufferedReader(new InputStreamReader(testDataStream))) {
+			var resourceIterator = new Iterator<Document>() {
+
+				String docSource;
+
+				@Override
+				public boolean hasNext() {
+					try {
+						return (docSource = reader.readLine()) != null;
+					}
+					catch (IOException e) {
+						log.error("Failed to read from resource {}", resourceName, e);
+						return false;
+					}
+				}
+
+				@Override
+				public Document next() {
+					if (docSource == null) {
+						throw new NoSuchElementException();
+					}
+					try {
+						return mapper.readValue(docSource, Document.class);
+					}
+					catch (JsonProcessingException e) {
+						log.error("Failed to deserialize document '{}'", docSource, e);
+						if (hasNext()) return next();
+						else return null;
+					}
+				}
+			};
+
+			return indexTestData(indexName, resourceIterator);
+		}
+	}
+
+	public boolean indexTestData(String indexName, Iterator<Document> documentProvider) throws Exception {
 		log.info("indexing data into index {}", indexName);
-		InputStream testDataStream = DataIndexer.class.getClassLoader().getResourceAsStream("testdata.jsonl");
-		assert testDataStream != null;
 
 		// start a new import session for a new index to bulk-index data into it
-		ImportSession importSession = importClient.startImport(indexName, "en");
+		ImportSession importSession = importClient.startImport(indexName, langcode);
 
-		try (BufferedReader reader = new BufferedReader(new InputStreamReader(testDataStream))) {
+		try {
 			List<Document> bulkedDocs = new ArrayList<>();
-			String docSource;
-			while ((docSource = reader.readLine()) != null) {
+
+			while (documentProvider.hasNext()) {
 				// here we simply deserialize proper documents, but they can
 				// also be assembled from other data sources
-				bulkedDocs.add(mapper.readValue(docSource, Document.class));
+				bulkedDocs.add(documentProvider.next());
 
-				// for testing purposes use bulks of 3 documents, but these can
-				// be many more, depending of the desired request size
-				if (bulkedDocs.size() == 3) {
+				if (bulkedDocs.size() == bulkSize) {
 					sendBulk(indexName, importSession, bulkedDocs);
 					bulkedDocs.clear();
 				}
