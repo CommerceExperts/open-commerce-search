@@ -150,7 +150,10 @@ public class ScoringCreator {
 				rankFeatureQuery = RankFeatureQueryBuilders.saturation(fieldName);
 		}
 
+		tryToParseAsNumber(opts.get(ScoreOption.BOOST)).ifPresent(boost -> rankFeatureQuery.boost(boost.floatValue()));
+
 		scoringContext.addBoostingQuery(rankFeatureQuery);
+
 		// the missing parameter is used to apply a default score
 		// for all documents that don't match the rank feature query
 		tryToParseAsNumber(opts.get(ScoreOption.MISSING))

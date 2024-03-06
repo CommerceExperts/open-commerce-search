@@ -4,13 +4,14 @@ main_modules=("open-commerce-search-api" "ocs-plugin-spi" "ocs-commons" "indexer
 suggest_modules=("smartsuggest-lib" "ocs-suggest-data-provider" "suggest-service")
 
 echo "Choose bump level: "
-echo " 1) incremental (for bug fixes etc)"
+echo " 1) fix (incremental version for bug fixes etc)"
 echo " 2) minor (for new non-breaking features)"
 read -r BL
 
 case "$BL" in
     1) bump_level="incremental" ;;
     incremental) bump_level="incremental" ;;
+    fix) bump_level="incremental" ;;
     2) bump_level="minor" ;;
     minor) bump_level="minor" ;;
     *) echo "Invalid bump level: $BL" && exit 1 ;;
