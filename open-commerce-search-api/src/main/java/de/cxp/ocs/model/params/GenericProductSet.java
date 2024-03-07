@@ -22,4 +22,5 @@ public class GenericProductSet extends ProductSet {
 	private int			size	= 0;
 
 	private Map<String, String> parameters;
+
 }

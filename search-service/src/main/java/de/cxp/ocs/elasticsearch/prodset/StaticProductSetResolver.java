@@ -8,12 +8,16 @@ import java.util.stream.StreamSupport;
 
 import org.apache.lucene.search.TotalHits;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.IdsQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 
 import de.cxp.ocs.SearchContext;
+import de.cxp.ocs.config.Field;
+import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.elasticsearch.Searcher;
 import de.cxp.ocs.model.params.ProductSet;
 import de.cxp.ocs.model.params.StaticProductSet;
@@ -22,48 +26,81 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class StaticProductSetResolver implements ProductSetResolver {
 
+	private final static String FN_PREFIX = "field:";
+
 	@Override
 	public StaticProductSet resolve(final ProductSet productSet, Set<String> excludedIds, Searcher searcher, SearchContext searchContext) {
 		StaticProductSet staticSet = (StaticProductSet) productSet;
 
-		IdsQueryBuilder requestedIds;
-		if (excludedIds != null && excludedIds.size() > 0) {
-			Set<String> filteredIds = new HashSet<String>(staticSet.getIds().length);
-			for (String id : staticSet.getIds()) {
-				if (!excludedIds.contains(id)) {
-					filteredIds.add(id);
-				}
-			}
-			requestedIds = QueryBuilders.idsQuery().addIds(filteredIds.toArray(new String[filteredIds.size()]));
+		int expectedHitCount = staticSet.getSize();
+		Set<String> requestedIds = null;
+		QueryBuilder requestIdsQuery;
+		if (staticSet.name != null && staticSet.name.startsWith(FN_PREFIX)) {
+			String searchFieldName = staticSet.name.substring(FN_PREFIX.length());
+			requestIdsQuery = searchContext.fieldConfigIndex.getField(searchFieldName)
+					.map(searchField -> buildNumberSearchQuery(searchField, staticSet.getIds()))
+					.orElseThrow(() -> new IllegalArgumentException("StaticProductSetResolver: requested number field '" + searchFieldName + "' not searchable"));
+			// requestedIds stays null
 		}
 		else {
-			requestedIds = QueryBuilders.idsQuery().addIds(staticSet.getIds());
+			if (excludedIds != null && excludedIds.size() > 0) {
+				Set<String> filteredIds = new HashSet<String>(staticSet.getIds().length);
+				for (String id : staticSet.getIds()) {
+					if (!excludedIds.contains(id)) {
+						filteredIds.add(id);
+					}
+				}
+				requestIdsQuery = QueryBuilders.idsQuery().addIds(filteredIds.toArray(new String[filteredIds.size()]));
+			}
+			else {
+				requestIdsQuery = QueryBuilders.idsQuery().addIds(staticSet.getIds());
+			}
+			requestedIds = ((IdsQueryBuilder) requestIdsQuery).ids();
+			expectedHitCount = requestedIds.size();
 		}
 
 		try {
 			SearchResponse searchResponse = searcher.executeSearchRequest(SearchSourceBuilder.searchSource()
-					.query(requestedIds)
+					.query(requestIdsQuery)
 					.fetchSource(false)
-					.size(requestedIds.ids().size()));
+					.size(expectedHitCount));
 			if (searchResponse.getHits().getTotalHits().value == 0) {
 				staticSet.setIds(new String[0]);
 			}
-			else if (searchResponse.getHits().getTotalHits().value < requestedIds.ids().size() && searchResponse.getHits().getTotalHits().relation.equals(TotalHits.Relation.EQUAL_TO)) {
+			else if (requestedIds == null) {
+				String[] foundIds = StreamSupport.stream(searchResponse.getHits().spliterator(), false)
+						.map(SearchHit::getId)
+						.toArray(String[]::new);
+				staticSet.setIds(foundIds);
+			}
+			else if (searchResponse.getHits().getTotalHits().value < expectedHitCount && searchResponse.getHits().getTotalHits().relation.equals(TotalHits.Relation.EQUAL_TO)) {
 				Set<String> foundIds = StreamSupport.stream(searchResponse.getHits().spliterator(), false)
 						.map(SearchHit::getId)
 						.collect(Collectors.toSet());
 				// some ids are invalid are not part of response. remove them from set but keep order
 				staticSet.setIds(getFilteredInOrder(staticSet.getIds(), foundIds));
 			}
-			else if (requestedIds.ids().size() < staticSet.getSize()) {
+			else if (expectedHitCount < staticSet.getSize()) {
 				// some ids were deduplicated with the request, remove them from set but keep order
-				staticSet.setIds(getFilteredInOrder(staticSet.getIds(), requestedIds.ids()));
+				staticSet.setIds(getFilteredInOrder(staticSet.getIds(), requestedIds));
 			}
 		}
 		catch (Exception e) {
 			log.error("{}: {} while verifying productSet ids. Won't verify.", e.getClass().getCanonicalName(), e.getMessage());
 		}
 		return staticSet;
+	}
+
+	private QueryBuilder buildNumberSearchQuery(Field searchField, String[] searchNumbers) {
+		BoolQueryBuilder combinedQuery = QueryBuilders.boolQuery();
+		int boost = searchNumbers.length + 1;
+		for (String number : searchNumbers) {
+			combinedQuery.should(
+					QueryBuilders.termQuery(FieldConstants.SEARCH_DATA + "." + searchField.getName(), number)
+							.boost(boost));
+			boost--;
+		}
+		return combinedQuery;
 	}
 
 	private String[] getFilteredInOrder(String[] orderedIds, Set<String> includeIds) {
