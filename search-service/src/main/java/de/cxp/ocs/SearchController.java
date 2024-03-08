@@ -298,6 +298,15 @@ public class SearchController implements SearchService {
 						.build());
 	}
 
+	@ExceptionHandler({ IllegalArgumentException.class })
+	public ResponseEntity<ExceptionResponse> handleParameterErrors(NotFoundException e) {
+		return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+				.body(ExceptionResponse.builder()
+						.message(e.getMessage())
+						.code(HttpStatus.BAD_REQUEST.value())
+						.build());
+	}
+
 	@ExceptionHandler({ ElasticsearchStatusException.class, ExecutionException.class, IOException.class, UncheckedIOException.class, RuntimeException.class,
 			ClassNotFoundException.class })
 	public ResponseEntity<ExceptionResponse> handleInternalErrors(final HttpServletRequest request, Exception e) {
