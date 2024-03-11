@@ -274,7 +274,7 @@
                 <dependency>
                     <groupId>io.searchhub</groupId>
                     <artifactId>ocs-smartdata-plugin</artifactId>
-                    <version>1.1.1-SNAPSHOT</version>
+                    <version>1.1.1</version>
                 </dependency>
             </dependencies>
         </profile>
