@@ -11,24 +11,16 @@ ocs:
           usage:
             - Result
           field-level: both
-        masterNr:
-          name: masterNr
-          type: string
-          source-names:
-            - MasterArticleNumber
-          usage:
-            - Search
-            - Result
-          field-level: master
         artNr:
           name: artNr
           type: string
           source-names:
             - ArticleNumber
+            - MasterArticleNumber
           usage:
             - Search
             - Result
-          field-level: variant
+          field-level: both
         ean:
           name: ean
           source-names:
