@@ -35,13 +35,18 @@ public class StaticProductSetResolver implements ProductSetResolver {
 		int expectedHitCount = staticSet.getSize();
 		Set<String> requestedIds = null;
 		QueryBuilder requestIdsQuery;
+		// search in a field
 		if (staticSet.name != null && staticSet.name.startsWith(FN_PREFIX)) {
 			String searchFieldName = staticSet.name.substring(FN_PREFIX.length());
 			requestIdsQuery = searchContext.fieldConfigIndex.getField(searchFieldName)
 					.map(searchField -> buildNumberSearchQuery(searchField, staticSet.getIds()))
 					.orElseThrow(() -> new IllegalArgumentException("StaticProductSetResolver: requested number field '" + searchFieldName + "' not searchable"));
+			// since we are searching a non-unique field, we can expect more hits than IDs searched
+			expectedHitCount = 1000;
 			// requestedIds stays null
 		}
+
+		// these ids are actual unique document IDs
 		else {
 			if (excludedIds != null && excludedIds.size() > 0) {
 				Set<String> filteredIds = new HashSet<String>(staticSet.getIds().length);
