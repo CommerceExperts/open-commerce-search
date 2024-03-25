@@ -66,6 +66,7 @@ public class SearchParamsParser {
 			customParams.remove(f.getField().getName() + SearchParamsParser.ID_FILTER_SUFFIX);
 		});
 		parameters.customParams = customParams;
+		parameters.aggSampling = Optional.ofNullable(customParams.remove("aggSampling")).map(Integer::parseInt).orElse(-1);
 
 		if (searchQuery instanceof ArrangedSearchQuery) {
 			parameters.includeMainResult = ((ArrangedSearchQuery) searchQuery).includeMainResult;

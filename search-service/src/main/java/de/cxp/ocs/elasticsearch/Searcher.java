@@ -363,7 +363,7 @@ public class Searcher {
 		}
 
 		if (parameters.isWithFacets()) {
-			List<AggregationBuilder> aggregators = facetApplier.buildAggregators(queryContext.filters);
+			List<AggregationBuilder> aggregators = facetApplier.buildAggregators(queryContext.filters, parameters.aggSampling);
 			if (aggregators != null && aggregators.size() > 0) {
 				aggregators.forEach(searchSourceBuilder::aggregation);
 			}
@@ -514,7 +514,7 @@ public class Searcher {
 					}
 					searchResultSlice.label = "main";
 					searchResult.slices.add(searchResultSlice);
-					}
+				}
 			});
 		}
 		else {

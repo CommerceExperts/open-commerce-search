@@ -19,6 +19,11 @@ public class InternalSearchParams {
 
 	public int limit = 12;
 
+	/**
+	 * If set to a value &gt; 0, the facets are build only on the top N hits (samples) of the result.
+	 */
+	public int aggSampling = -1;
+
 	public int offset = 0;
 
 	public String userQuery;
