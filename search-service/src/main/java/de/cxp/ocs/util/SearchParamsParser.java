@@ -148,8 +148,15 @@ public class SearchParamsParser {
 						.setNegated(negate);
 				break;
 			case NUMBER:
-				internalFilter = parseNumberFilter(field, paramValues)
+				if (isIdFilter) {
+					internalFilter = new TermResultFilter(locale, field, paramValues)
+							.setFilterOnId(true)
+							.setNegated(negate);
+				}
+				else {
+					internalFilter = parseNumberFilter(field, paramValues)
 						.setNegated(negate);
+				}
 				break;
 			default:
 				if (isIdFilter && !field.hasUsage(FieldUsage.FACET)) {

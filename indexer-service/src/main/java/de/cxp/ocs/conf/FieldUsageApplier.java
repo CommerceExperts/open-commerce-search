@@ -251,7 +251,7 @@ public class FieldUsageApplier {
 			Attribute attr = ((Attribute) value);
 			tryToParseAsNumber(attr.getValue())
 					.map(numVal -> record.getNumberFacetData().add(
-							new FacetEntry<>(field.getName(), null, numVal)));
+							new FacetEntry<>(field.getName(), attr.code, numVal)));
 		}
 		else {
 			Optional<Number> numberValue = tryToParseAsNumber(String.valueOf(value));
