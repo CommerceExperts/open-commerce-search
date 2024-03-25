@@ -16,8 +16,8 @@ import de.cxp.ocs.config.*;
 import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
+import de.cxp.ocs.elasticsearch.query.sort.SortInstruction;
 import de.cxp.ocs.model.result.SortOrder;
-import de.cxp.ocs.model.result.Sorting;
 
 public class SearchParamsParserTest {
 
@@ -92,9 +92,9 @@ public class SearchParamsParserTest {
 	@Test
 	public void testSortParsing() {
 		// "image" should be ignored, because its not sortable
-		List<Sorting> sortings = parseSortings("image,-price", fieldConfIndex);
+		List<SortInstruction> sortings = parseSortings("image,-price", fieldConfIndex);
 		assertEquals(1, sortings.size());
-		assertEquals("price", sortings.get(0).field);
-		assertEquals(SortOrder.DESC, sortings.get(0).sortOrder);
+		assertEquals("price", sortings.get(0).getField().getName());
+		assertEquals(SortOrder.DESC, sortings.get(0).getSortOrder());
 	}
 }
