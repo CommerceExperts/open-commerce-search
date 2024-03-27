@@ -176,7 +176,7 @@ public class SortingHandler {
 				String missingParam = sortConf != null ? sortConf.getMissing() : null;
 				variantSortings.add(
 						SortBuilders
-								.fieldSort(FieldConstants.VARIANTS + "." + FieldConstants.SORT_DATA + "." + sorting.getField())
+								.fieldSort(FieldConstants.VARIANTS + "." + FieldConstants.SORT_DATA + "." + sorting.getField().getName())
 								.order(mapSortOrder(sorting.getSortOrder()))
 								.missing(missingParam));
 			}
