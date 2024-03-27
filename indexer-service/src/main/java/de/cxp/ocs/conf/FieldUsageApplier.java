@@ -190,19 +190,20 @@ public class FieldUsageApplier {
 	}
 
 	private static Object ensureCorrectValueType(final Field field, final Object value) {
+		Object dataValue = value instanceof Attribute ? ((Attribute) value).value : value;
 		Object parsedValue = value;
-		if (FieldType.NUMBER.equals(field.getType()) && !(value instanceof Number)) {
-			if (value instanceof Collection || value.getClass().isArray()) {
+		if (FieldType.NUMBER.equals(field.getType()) && !(dataValue instanceof Number)) {
+			if (dataValue instanceof Collection || dataValue.getClass().isArray()) {
 				parsedValue = toNumberCollection(value);
 				if (!parsedValue.getClass().isArray()) {
 					parsedValue = ((Collection<Number>) parsedValue).toArray(new Number[0]);
 				}
 			}
 			else {
-				parsedValue = tryToParseAsNumber(value.toString()).orElseThrow(
+				parsedValue = tryToParseAsNumber(dataValue.toString()).orElseThrow(
 						() -> new IllegalArgumentException("value for numeric field " + field.getName()
 								+ " is not numeric: "
-								+ (value.toString().length() > 15 ? value.toString().substring(0, 12) + "..." : value.toString())));
+								+ (dataValue.toString().length() > 15 ? dataValue.toString().substring(0, 12) + "..." : dataValue.toString())));
 			}
 		}
 		else if (FieldType.CATEGORY.equals(field.getType())) {
