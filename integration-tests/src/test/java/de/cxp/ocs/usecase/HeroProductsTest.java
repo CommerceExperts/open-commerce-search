@@ -30,7 +30,7 @@ public class HeroProductsTest {
 	public static void setup() throws Exception {
 		// we can use the same index for all our arranged-search tests
 		DataIndexer dataIndexer = new DataIndexer(getImportClient());
-		assertTrue(dataIndexer.indexTestData(indexName));
+		assertTrue(dataIndexer.indexTestData(indexName) > 0);
 	}
 
 	@Test

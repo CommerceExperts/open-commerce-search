@@ -27,7 +27,7 @@ public class ITBulkIndexationWorks {
 
 	@Test
 	public void testDefaultIndexation() throws Exception {
-		assertThat(new DataIndexer(OCSStack.getImportClient()).indexTestData(indexName)).isTrue();
+		assertThat(new DataIndexer(OCSStack.getImportClient()).indexTestData(indexName)).isGreaterThan(0);
 
 		flushIndex();
 
