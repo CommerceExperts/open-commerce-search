@@ -42,7 +42,7 @@ public class QueryRelaxation {
 		documents.add(new Document("5").set("title", "makita drill").set("brand", "makita"));
 		documents.add(new Document("6").set("title", "bosch sabre saw").set("brand", "bosch"));
 
-		assert dataIndexer.indexTestData(indexName, documents.iterator());
+		assertEquals(documents.size(), dataIndexer.indexTestData(indexName, documents.iterator()));
 		{
 			SearchResult result = getSearchClient().search(indexName, new SearchQuery().setQ(query), null);
 			assertEquals(3L, result.getSlices().get(0).getMatchCount());

@@ -39,7 +39,7 @@ public class ITPartialUpdates {
 
 	@BeforeAll
 	public static void prepareData() throws Exception {
-		assert new DataIndexer(getImportClient()).indexTestData(indexName);
+		assertTrue(new DataIndexer(getImportClient()).indexTestData(indexName) > 0);
 	}
 
 	@Test

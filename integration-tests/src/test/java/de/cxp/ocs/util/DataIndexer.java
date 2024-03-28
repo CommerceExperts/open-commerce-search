@@ -39,11 +39,11 @@ public class DataIndexer {
 	@Setter
 	private String langcode = "en";
 
-	public boolean indexTestData(String indexName) throws Exception {
+	public int indexTestData(String indexName) throws Exception {
 		return this.indexTestData(indexName, "testdata.jsonl");
 	}
 
-	public boolean indexTestData(String indexName, String resourceName) throws Exception {
+	public int indexTestData(String indexName, String resourceName) throws Exception {
 		InputStream testDataStream = DataIndexer.class.getClassLoader().getResourceAsStream(resourceName);
 		if (testDataStream == null) {
 			throw new Exception("resource not found: " + resourceName);
@@ -85,12 +85,23 @@ public class DataIndexer {
 		}
 	}
 
-	public boolean indexTestData(String indexName, Iterator<Document> documentProvider) throws Exception {
+	/**
+	 * index given data into specified index using bulk indexation.
+	 * 
+	 * @param indexName
+	 *        name of the index to add
+	 * @param documentProvider
+	 *        documents
+	 * @return the amount of indexed documents, or -1 if indexation failed or was rejected.
+	 * @throws Exception
+	 */
+	public int indexTestData(String indexName, Iterator<Document> documentProvider) throws Exception {
 		log.info("indexing data into index {}", indexName);
 
 		// start a new import session for a new index to bulk-index data into it
 		ImportSession importSession = importClient.startImport(indexName, langcode);
 
+		int addedDocuments = 0;
 		try {
 			List<Document> bulkedDocs = new ArrayList<>();
 
@@ -100,13 +111,13 @@ public class DataIndexer {
 				bulkedDocs.add(documentProvider.next());
 
 				if (bulkedDocs.size() == bulkSize) {
-					sendBulk(indexName, importSession, bulkedDocs);
+					addedDocuments += sendBulk(indexName, importSession, bulkedDocs);
 					bulkedDocs.clear();
 				}
 			}
 
 			if (bulkedDocs.size() > 0) {
-				sendBulk(indexName, importSession, bulkedDocs);
+				addedDocuments += sendBulk(indexName, importSession, bulkedDocs);
 			}
 		}
 		catch (Exception e) {
@@ -121,14 +132,16 @@ public class DataIndexer {
 		// finalize the import session, which makes it available with the
 		// desired index name (using ES alias functionality).
 		log.info("indexing into {} done", indexName);
-		return importClient.done(importSession);
+		return importClient.done(importSession) ? addedDocuments : -1;
 	}
 
-	private void sendBulk(String indexName, ImportSession importSession, List<Document> bulkedDocs) throws Exception {
+	private int sendBulk(String indexName, ImportSession importSession, List<Document> bulkedDocs) throws Exception {
 		BulkImportData data = new BulkImportData();
 		data.session = importSession;
 		data.documents = bulkedDocs.toArray(new Document[0]);
-		log.info("added {} documents to index {}", importClient.add(data), indexName);
+		int addCount = importClient.add(data);
+		log.info("added {} documents to index {}", addCount, indexName);
+		return addCount;
 	}
 
 }

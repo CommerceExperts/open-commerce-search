@@ -14,6 +14,8 @@ import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
 import org.elasticsearch.search.aggregations.bucket.filter.Filter;
 import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.sampler.Sampler;
+import org.elasticsearch.search.aggregations.bucket.sampler.SamplerAggregationBuilder;
 
 import de.cxp.ocs.SearchContext;
 import de.cxp.ocs.config.*;
@@ -32,6 +34,7 @@ public class FacetConfigurationApplyer {
 
 	static final String	EXCLUSIVE_AGG_PREFIX	= "_exclusive_for_";
 	static final String	FILTERED_AGG_NAME		= "_filtered";
+	static final String	SAMPLED_AGG_NAME		= "_sampled";
 
 	/**
 	 * meta key to mark facets that should not be counted into the "max facets"
@@ -94,7 +97,7 @@ public class FacetConfigurationApplyer {
 		return customFacetCreatorsByType;
 	}
 
-	public Map<String, FacetConfig> loadFacetConfig(SearchContext context, Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreators) {
+	private Map<String, FacetConfig> loadFacetConfig(SearchContext context, Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreators) {
 		Map<String, FacetConfig> _facetsBySourceField = new HashMap<>();
 
 		FacetCreatorInitializer creatorInit = new FacetCreatorInitializer(customFacetCreators, context.config, defaultTermFacetConfigProvider, defaultNumberFacetConfigProvider);
@@ -251,11 +254,14 @@ public class FacetConfigurationApplyer {
 	 *
 	 * @param filterContext
 	 *        context that holds the filter queries
+	 * @param totalLimit
+	 *        the total amount of hits that are allowed to be in the result. Since Elasticsearch can't restrict that
+	 *        value with a query, we do that by using sampler aggregation.
 	 * @return
 	 *         list of filtered and/or unfiltered aggregation builders depending
 	 *         on the existance of post filters
 	 */
-	public List<AggregationBuilder> buildAggregators(FilterContext filterContext) {
+	public List<AggregationBuilder> buildAggregators(FilterContext filterContext, int totalLimit) {
 		List<AggregationBuilder> aggregators = new ArrayList<>();
 
 		// if there are no post filters, add aggregations without filters
@@ -286,6 +292,13 @@ public class FacetConfigurationApplyer {
 				fullFilteredAgg.subAggregation(creator.buildExcludeFilteredAggregation(filterContext.getPostFilterQueries().keySet()));
 			}
 			aggregators.add(fullFilteredAgg);
+		}
+
+		if (totalLimit > 0) {
+			SamplerAggregationBuilder samplerAgg = AggregationBuilders.sampler(SAMPLED_AGG_NAME).shardSize(totalLimit);
+			aggregators.forEach(samplerAgg::subAggregation);
+			aggregators.clear();
+			aggregators.add(samplerAgg);
 		}
 
 		return aggregators;
@@ -327,6 +340,10 @@ public class FacetConfigurationApplyer {
 	public List<Facet> getFacets(Aggregations aggregations, long matchCount,
 			FilterContext filterContext, DefaultLinkBuilder linkBuilder) {
 		List<Facet> facets;
+
+		if (aggregations.get(SAMPLED_AGG_NAME) != null) {
+			aggregations = ((Sampler) aggregations.get(SAMPLED_AGG_NAME)).getAggregations();
+		}
 
 		if (filterContext.getPostFilterQueries().isEmpty()) {
 			facets = facetsFromUnfilteredAggregations(aggregations, filterContext, linkBuilder);

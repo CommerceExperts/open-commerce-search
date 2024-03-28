@@ -32,7 +32,7 @@ public class GermanNormalizationTest {
 		documents.add(new Document("1").set("title", "fußballschuhe"));
 		documents.add(new Document("2").set("title", "fussballschuhe"));
 
-		assert dataIndexer.indexTestData(indexName, documents.iterator());
+		assertEquals(documents.size(), dataIndexer.indexTestData(indexName, documents.iterator()));
 
 		ResultHit firstResultFirstHit;
 		ResultHit secondResultFirstHit;

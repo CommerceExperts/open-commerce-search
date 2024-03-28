@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.Set;
 
 import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.query.sort.SortInstruction;
 import de.cxp.ocs.model.params.StaticProductSet;
-import de.cxp.ocs.model.result.Sorting;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
@@ -18,6 +18,11 @@ import lombok.experimental.Accessors;
 public class InternalSearchParams {
 
 	public int limit = 12;
+
+	/**
+	 * If set to a value &gt; 0, the facets are build only on the top N hits (samples) of the result.
+	 */
+	public int aggSampling = -1;
 
 	public int offset = 0;
 
@@ -41,7 +46,7 @@ public class InternalSearchParams {
 	 */
 	public boolean includeMainResult = true;
 
-	public List<Sorting> sortings = new ArrayList<>();
+	public List<SortInstruction> sortings = new ArrayList<>();
 
 	public List<InternalResultFilter> filters = new ArrayList<>();
 
@@ -58,7 +63,7 @@ public class InternalSearchParams {
 
 	public TraceOptions trace;
 
-	public InternalSearchParams withSorting(Sorting sorting) {
+	public InternalSearchParams withSorting(SortInstruction sorting) {
 		sortings.add(sorting);
 		return this;
 	}

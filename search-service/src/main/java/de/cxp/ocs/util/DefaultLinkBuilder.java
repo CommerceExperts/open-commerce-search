@@ -18,8 +18,8 @@ import com.google.common.collect.Sets;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
+import de.cxp.ocs.elasticsearch.query.sort.SortInstruction;
 import de.cxp.ocs.model.result.SortOrder;
-import de.cxp.ocs.model.result.Sorting;
 
 public final class DefaultLinkBuilder implements LinkBuilder {
 
@@ -115,14 +115,14 @@ public final class DefaultLinkBuilder implements LinkBuilder {
 		return (order.equals(SortOrder.DESC) ? "-" + fieldName : fieldName);
 	}
 	
-	public static String getSortingsString(List<Sorting> sortings) {
+	public static String getSortingsString(List<SortInstruction> sortings) {
 		StringBuilder sortingString = new StringBuilder();
-		for (Sorting sorting : sortings) {
-			if (sortingString.length() > 0)
-				sortingString.append(VALUE_DELIMITER);
-			if (SortOrder.DESC.equals(sorting.sortOrder))
-				sortingString.append(SORT_DESC_PREFIX);
-			sortingString.append(sorting.field);
+		for (SortInstruction sorting : sortings) {
+			// if (sortingString.length() > 0)
+			// sortingString.append(VALUE_DELIMITER);
+			// if (SortOrder.DESC.equals(sorting.sortOrder))
+			// sortingString.append(SORT_DESC_PREFIX);
+			sortingString.append(sorting.getRawSortValue());
 		}
 		return sortingString.toString();
 	}

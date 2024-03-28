@@ -19,10 +19,10 @@ import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.NumberResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.PathResultFilter;
 import de.cxp.ocs.elasticsearch.query.filter.TermResultFilter;
+import de.cxp.ocs.elasticsearch.query.sort.SortInstruction;
 import de.cxp.ocs.model.params.ArrangedSearchQuery;
 import de.cxp.ocs.model.params.SearchQuery;
 import de.cxp.ocs.model.result.SortOrder;
-import de.cxp.ocs.model.result.Sorting;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -66,6 +66,7 @@ public class SearchParamsParser {
 			customParams.remove(f.getField().getName() + SearchParamsParser.ID_FILTER_SUFFIX);
 		});
 		parameters.customParams = customParams;
+		parameters.aggSampling = Optional.ofNullable(customParams.remove("aggSampling")).map(Integer::parseInt).orElse(-1);
 
 		if (searchQuery instanceof ArrangedSearchQuery) {
 			parameters.includeMainResult = ((ArrangedSearchQuery) searchQuery).includeMainResult;
@@ -147,8 +148,15 @@ public class SearchParamsParser {
 						.setNegated(negate);
 				break;
 			case NUMBER:
-				internalFilter = parseNumberFilter(field, paramValues)
+				if (isIdFilter) {
+					internalFilter = new TermResultFilter(locale, field, paramValues)
+							.setFilterOnId(true)
+							.setNegated(negate);
+				}
+				else {
+					internalFilter = parseNumberFilter(field, paramValues)
 						.setNegated(negate);
+				}
 				break;
 			default:
 				if (isIdFilter && !field.hasUsage(FieldUsage.FACET)) {
@@ -254,21 +262,24 @@ public class SearchParamsParser {
 	 *        the field configuration
 	 * @return list of validated sortings
 	 */
-	public static List<Sorting> parseSortings(String paramValue, FieldConfigIndex fields) {
+	public static List<SortInstruction> parseSortings(String paramValue, FieldConfigIndex fields) {
 		String[] paramValueSplit = split(paramValue, VALUE_DELIMITER);
-		List<Sorting> sortings = new ArrayList<>(paramValueSplit.length);
+		List<SortInstruction> sortings = new ArrayList<>(paramValueSplit.length);
 		for (String rawSortValue : paramValueSplit) {
 			String fieldName = rawSortValue;
-			SortOrder sortOrder = SortOrder.ASC;
-
+			SortOrder sortOrder;
 			if (rawSortValue.startsWith(SORT_DESC_PREFIX)) {
 				fieldName = rawSortValue.substring(1);
 				sortOrder = SortOrder.DESC;
+			} else {
+				sortOrder = SortOrder.ASC;
 			}
 
-			if (fields.getMatchingField(fieldName, FieldUsage.SORT).isPresent()) {
-				sortings.add(new Sorting(null, fieldName, sortOrder, true, null));
-			}
+			String lookupFieldName = fieldName.indexOf('.') > 0 ? fieldName.substring(0, fieldName.indexOf('.')) : fieldName;
+			fields.getMatchingField(lookupFieldName, FieldUsage.SORT)
+					.or(() -> fields.getMatchingField(lookupFieldName, FieldUsage.FACET))
+					.map(field -> new SortInstruction(field, rawSortValue, sortOrder))
+					.ifPresent(sortings::add);
 		}
 		return sortings;
 	}
