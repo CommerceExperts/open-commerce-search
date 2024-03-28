@@ -98,7 +98,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **tenant** | **String**| tenant name | [default to null]
  **searchQuery** | [**SearchQuery**](../Models/.md)| the query that describes the wished result | [default to null]
- **filters** | [**Map**](../Models/String.md)| Any other parameters are used as filters. They are validated according to the actual data and configuration. Each filter can have multiple values, separated by comma. Commas inside the values have to be double-URL encoded. Depending on the configured backend type these values are used differently. | [optional] [default to null]
+ **filters** | [**Map**](../Models/String.md)| Any other parameter is considered as filter. Each one is validated according to the actual data and configuration. Each filter can have multiple values, separated by comma. Commas inside the values have to be double-URL encoded. Depending on the configured filter type these values are used differently (see examples). | [optional] [default to null]
 
 ### Return type
 
