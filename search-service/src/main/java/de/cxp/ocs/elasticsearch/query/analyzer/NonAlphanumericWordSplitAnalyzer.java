@@ -28,7 +28,7 @@ public class NonAlphanumericWordSplitAnalyzer implements UserQueryAnalyzer {
 		if (terms.isEmpty()) {
 			return ExtendedQuery.MATCH_ALL;
 		}
-		AnalyzedQuery termsQuery = terms.size() == 1 ? new SingleTermQuery(userQuery, terms.get(0)) : new MultiTermQuery(terms);
+		AnalyzedQuery termsQuery = terms.size() == 1 ? new SingleTermQuery(terms.get(0)) : new MultiTermQuery(terms);
 		return new ExtendedQuery(termsQuery);
 	}
 
