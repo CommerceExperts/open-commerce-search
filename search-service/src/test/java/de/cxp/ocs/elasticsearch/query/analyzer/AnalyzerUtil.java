@@ -27,4 +27,5 @@ public class AnalyzerUtil {
 		result.addAll(analyzedQuery.getFilters());
 		return result;
 	}
+
 }

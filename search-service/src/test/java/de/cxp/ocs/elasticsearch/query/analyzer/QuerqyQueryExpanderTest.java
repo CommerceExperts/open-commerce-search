@@ -6,21 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.opentest4j.TestAbortedException;
 
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
 import de.cxp.ocs.elasticsearch.model.term.*;
 import de.cxp.ocs.elasticsearch.model.util.QueryStringUtil;
+import de.cxp.ocs.elasticsearch.query.analyzer.QuerqyQueryExpanderBuilder.RuleLoadingFlags;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -29,53 +25,25 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class QuerqyQueryExpanderTest {
 
-	private File						deleteAfterTest;
+	private QuerqyQueryExpanderBuilder qqBuilder = new QuerqyQueryExpanderBuilder();
 
 	@AfterEach
 	public void cleanupTempRuleFile() {
-		if (deleteAfterTest != null) {
+		qqBuilder.createdTempFiles.forEach(file -> {
 			try {
-				deleteAfterTest.delete();
+				file.delete();
 			}
 			catch (Exception e) {
-				// ignore
+				log.info("failed to delete file {}", file, e);
 			}
-			deleteAfterTest = null;
-		}
+		});
 	}
 
-	public QuerqyQueryExpander loadRule(String... instructions) {
-		return this.loadRule(EnumSet.noneOf(RuleLoadingFlags.class), instructions);
-	}
-
-	enum RuleLoadingFlags {
-		ASCIIFY, LOWERCASE
-	}
-
-	public QuerqyQueryExpander loadRule(EnumSet<RuleLoadingFlags> loadingFlags, String... instructions) {
-		QuerqyQueryExpander underTest = new QuerqyQueryExpander();
-		Path querqyRulesFile;
-		try {
-			querqyRulesFile = Files.createTempFile("querqy_rules_test.", ".txt");
-			Files.write(querqyRulesFile, Arrays.asList(instructions), StandardCharsets.UTF_8);
-
-			Map<String, String> options = new HashMap<>();
-			options.put(QuerqyQueryExpander.RULES_URL_PROPERTY_NAME, querqyRulesFile.toAbsolutePath().toString());
-			options.put(QuerqyQueryExpander.DO_ASCIIFY_RULES_PROPERTY_NAME, Boolean.toString(loadingFlags.contains(RuleLoadingFlags.ASCIIFY)));
-			options.put(QuerqyQueryExpander.DO_LOWERCASE_RULES_PROPERTY_NAME, Boolean.toString(loadingFlags.contains(RuleLoadingFlags.LOWERCASE)));
-			underTest.initialize(options);
-			deleteAfterTest = querqyRulesFile.toFile();
-		}
-		catch (IOException e) {
-			throw new TestAbortedException("could not write querqy rules file", e);
-		}
-		return underTest;
-	}
 
 	@Test
 	public void testAsciifiedRule() {
 		// rules are asciified
-		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.ASCIIFY), "dziecięce =>", "  SYNONYM(0.5): dziewczęce");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules(EnumSet.of(RuleLoadingFlags.ASCIIFY), "dziecięce =>", "  SYNONYM(0.5): dziewczęce");
 		// so that a ascii input triggers them
 		var analyzedQuery = analyze(underTest, "dzieciece");
 		assertEquals("(dzieciece OR dziewczece^0.5)", analyzedQuery.toQueryString());
@@ -83,21 +51,21 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testAsciifiedAndLowercasedRules() {
-		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.ASCIIFY, RuleLoadingFlags.LOWERCASE), "Dzięci =>", "  SYNONYM(0.5): Dziewczęce");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules(EnumSet.of(RuleLoadingFlags.ASCIIFY, RuleLoadingFlags.LOWERCASE), "Dzięci =>", "  SYNONYM(0.5): Dziewczęce");
 		ExtendedQuery analyzedQuery = analyze(underTest, "dzieci");
 		assertEquals("(dzieci OR dziewczece^0.5)", analyzedQuery.toQueryString());
 	}
 
 	@Test
 	public void testAsciifiedAndLowercasedRulesAndInput() {
-		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.ASCIIFY, RuleLoadingFlags.LOWERCASE), "Dzięci =>", "  SYNONYM(0.5): Dziewczęce");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules(EnumSet.of(RuleLoadingFlags.ASCIIFY, RuleLoadingFlags.LOWERCASE), "Dzięci =>", "  SYNONYM(0.5): Dziewczęce");
 		ExtendedQuery analyzedQuery = analyze(underTest, "Dzięci");
 		assertEquals("(dzieci OR dziewczece^0.5)", analyzedQuery.toQueryString());
 	}
 
 	@Test
 	public void testLowercasingRules() {
-		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.LOWERCASE), "Kreslo =>", "  SYNONYM(0.82): POLSTER");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules(EnumSet.of(RuleLoadingFlags.LOWERCASE), "Kreslo =>", "  SYNONYM(0.82): POLSTER");
 
 		ExtendedQuery analyzedQuery2 = analyze(underTest, "kreslo");
 		assertEquals("(kreslo OR polster^0.82)", analyzedQuery2.toQueryString());
@@ -105,7 +73,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testLowercasingRulesAndInput() {
-		QuerqyQueryExpander underTest = loadRule(EnumSet.of(RuleLoadingFlags.LOWERCASE), "Kreslo =>", "  SYNONYM(0.82): POLSTER");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules(EnumSet.of(RuleLoadingFlags.LOWERCASE), "Kreslo =>", "  SYNONYM(0.82): POLSTER");
 
 		ExtendedQuery analyzedQuery2 = analyze(underTest, "KRESLO");
 		assertEquals("(kreslo OR polster^0.82)", analyzedQuery2.toQueryString());
@@ -113,7 +81,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testNonWordInputQuery() {
-		QuerqyQueryExpander underTest = loadRule("input =>", "  SYNONYM: synonym");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  SYNONYM: synonym");
 		var analyzedQuery = analyze(underTest, "<");
 		assertTrue(analyzedQuery.isEmpty());
 
@@ -124,7 +92,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testTwoSynonymsInOneRule() {
-		QuerqyQueryExpander underTest = loadRule("input =>", "  SYNONYM: word1 word2");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  SYNONYM: word1 word2");
 		var analyzedQuery = analyze(underTest, "input more");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -144,7 +112,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testTwoSynonymsInTwoRule() {
-		QuerqyQueryExpander underTest = loadRule("input =>", "  SYNONYM: word1", "  SYNONYM: word2");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  SYNONYM: word1", "  SYNONYM: word2");
 		var analyzedQuery = analyze(underTest, "input more");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -171,7 +139,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testExcludeQueryTerm() {
-		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: -remove");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  FILTER: -remove");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -185,7 +153,7 @@ public class QuerqyQueryExpanderTest {
 	}
 
 	public void testCombinedTermFilter() {
-		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: (everything match together)");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  FILTER: (everything match together)");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -202,7 +170,7 @@ public class QuerqyQueryExpanderTest {
 	@Disabled("TODO: not supported yet, because simplified implementation only done for combined term in brackets")
 	@Test
 	public void testMultipleTermFilter() {
-		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: -remove +must should^0.8 fuzzy~");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  FILTER: -remove +must should^0.8 fuzzy~");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -231,7 +199,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testExcludeMultiTermFilter() {
-		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: * -(a whole phrase)");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  FILTER: * -(a whole phrase)");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -246,7 +214,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testExcludeQueryPhrase() {
-		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: * -\"phrase to exclude\"");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  FILTER: * -\"phrase to exclude\"");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -262,7 +230,7 @@ public class QuerqyQueryExpanderTest {
 	@Test
 	public void testExcludeFieldFilter() {
 		// field filters have to be specified as raw queries (filter instruction starting with the *)
-		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: * -field1:remove");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  FILTER: * -field1:remove");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -278,7 +246,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testTwoFieldFilter() {
-		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: * -field1:removeA field2:removeB");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  FILTER: * -field1:removeA field2:removeB");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -299,7 +267,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testSameFieldTwoFilter() {
-		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: * -field:removeA -field:removeB");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  FILTER: * -field:removeA -field:removeB");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -320,7 +288,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testExcludeFieldIDFilter() {
-		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: * -category.id:111222000");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  FILTER: * -category.id:111222000");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -337,7 +305,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testValidExcludeFieldMultiWordFilter() {
-		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: * -field2:\"foo bar\"");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  FILTER: * -field2:\"foo bar\"");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -353,7 +321,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testCombinedRawFilter() {
-		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: * -(my ventilátor) -brand:puma");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  FILTER: * -(my ventilátor) -brand:puma");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 		assertEquals(3, result.size(), result::toString);
@@ -373,7 +341,7 @@ public class QuerqyQueryExpanderTest {
 	@Test
 	public void testInvalidExcludeFieldMultiWordFilter() {
 		// actually this is invalid lucene syntax, but in this context it's the only thing that makes sense
-		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: * -field2:foo bar");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  FILTER: * -field2:foo bar");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -391,7 +359,7 @@ public class QuerqyQueryExpanderTest {
 	public void testReservedCharsInFilterClause() {
 		// field filters MUST be passed as raw queries, but if part of a term rule,
 		// colons and all reserved chars are considered as the term-content and are escaped
-		QuerqyQueryExpander underTest = loadRule(
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules(
 				"input =>",
 				"  FILTER: -excl_term -field3:filter -(foo/bar)");
 		var analyzedQuery = analyze(underTest, "input");
@@ -418,7 +386,7 @@ public class QuerqyQueryExpanderTest {
 	public void testReservedCharsInRawFilterClause() {
 		// field filters MUST be passed as raw queries, but if part of a term rule,
 		// colons and all reserved chars are considered as the term-content and are escaped
-		QuerqyQueryExpander underTest = loadRule(
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules(
 				"input =>",
 				"  FILTER: * -(foo/bar)");
 		var analyzedQuery = analyze(underTest, "input");
@@ -436,7 +404,7 @@ public class QuerqyQueryExpanderTest {
 	@Test
 	public void testExcludeCategoryPathFilter() {
 		// actually this is invalid lucene syntax, but in this context it's the only thing that makes sense
-		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: * -catPath:Cat1/Sub Category/a, b & c");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  FILTER: * -catPath:Cat1/Sub Category/a, b & c");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -453,7 +421,7 @@ public class QuerqyQueryExpanderTest {
 	@Test
 	public void testExcludeMultipleCategoryPathFilters() {
 		// actually this is invalid lucene syntax, but in this context it's the only thing that makes sense
-		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: * -catPath:Cat1/Sub Category/a, b & c -catPath:Cat2/Sub Cat/x, y & z");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  FILTER: * -catPath:Cat1/Sub Category/a, b & c -catPath:Cat2/Sub Cat/x, y & z");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -475,7 +443,7 @@ public class QuerqyQueryExpanderTest {
 	@Test
 	public void testInsaneMultipleFilters() {
 		// actually this is invalid lucene syntax, but in this context it's the only thing that makes sense
-		QuerqyQueryExpander underTest = loadRule("input =>", "  FILTER: * -catPath:Cat1/Sub Category/a, b & c brand:\"Awesome Stuff\" price:12-100.23");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  FILTER: * -catPath:Cat1/Sub Category/a, b & c brand:\"Awesome Stuff\" price:12-100.23");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -505,7 +473,7 @@ public class QuerqyQueryExpanderTest {
 	 */
 	@Test
 	public void testMultiTermSynonymInBrackets() {
-		QuerqyQueryExpander underTest = loadRule("input =>", "  SYNONYM(0.2): (two words)");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  SYNONYM(0.2): (two words)");
 		var analyzedQuery = analyze(underTest, "input");
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
 
@@ -523,7 +491,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testMultiTermSynonymForMultiTermInput() {
-		QuerqyQueryExpander underTest = loadRule("fer à repasser =>", "  SYNONYM(0.7): centrale vapeur");
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("fer à repasser =>", "  SYNONYM(0.7): centrale vapeur");
 		var analyzedQuery = analyze(underTest, "fer à repasser philips");
 
 		List<QueryStringTerm> result = extractTerms(analyzedQuery);
@@ -538,7 +506,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testOverlappingTermSynonymsForMultiTermInput() {
-		QuerqyQueryExpander underTest = loadRule(
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules(
 				"e bike =>",
 				"  SYNONYM: pedelec",
 				"bike shirt =>",
@@ -549,7 +517,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testMultipleSynonymsForMultiTermInput() {
-		QuerqyQueryExpander underTest = loadRule(
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules(
 				"fer à repasser =>",
 				"  SYNONYM: centrale vapeur",
 				"fer =>",
@@ -560,7 +528,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testMultipleMultiTermSynonymsForSingleTermInput() {
-		QuerqyQueryExpander underTest = loadRule(
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules(
 				"in1 =>",
 				"  SYNONYM: out1",
 				"  SYNONYM: out2 out3");
@@ -570,7 +538,7 @@ public class QuerqyQueryExpanderTest {
 
 	@Test
 	public void testMultipleMultiTermSynonymsForMultiTermInput() {
-		QuerqyQueryExpander underTest = loadRule(
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules(
 				"in1 in2 =>",
 				"  SYNONYM: out1 out2",
 				"  SYNONYM: out3 out4");
@@ -582,7 +550,7 @@ public class QuerqyQueryExpanderTest {
 	public void testOverlappingMultiTermSynonymsForMultiTermInput() {
 		// this is such a brain-fuck, that it's hardly recommended to avoid such rules at any cost,
 		// but if it's possible, customers will do it
-		QuerqyQueryExpander underTest = loadRule(
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules(
 				"in1 in2 =>",
 				"  SYNONYM: out1 out2",
 				"in2 in3 =>",
