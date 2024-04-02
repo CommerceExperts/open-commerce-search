@@ -18,12 +18,12 @@ public class StandardQueryFactoryTest {
 	public void testMultiTermSynonyms() {
 		StandardQueryFactory underTest = new StandardQueryFactory(Map.of(), Map.of());
 
-		QuerqyQueryExpander analyzer = qqBuilder.loadWithRules("parkside performance =>", "  SYNONYM(1.6): baumarkt", "  SYNONYM(1.3): garten & balkon");
-		ExtendedQuery analyzedQuery = analyzer.analyze("parkside performance");
+		QuerqyQueryExpander analyzer = qqBuilder.loadWithRules("super performance =>", "  SYNONYM(1.6): akku", "  SYNONYM(1.3): speicher & balkon");
+		ExtendedQuery analyzedQuery = analyzer.analyze("super performance");
 		System.out.println(analyzedQuery);
 
 		QueryStringQueryBuilder esQuery = underTest.create(analyzedQuery);
-		assertEquals("((((parkside OR baumarkt^1.6) (performance OR baumarkt^1.6)) OR \"garten & balkon\"^1.3)) OR \"parkside performance\"^1.5", esQuery.queryString());
+		assertEquals("((((super OR akku^1.6) (performance OR akku^1.6)) OR \"speicher & balkon\"^1.3)) OR \"super performance\"^1.5", esQuery.queryString());
 	}
 
 }
