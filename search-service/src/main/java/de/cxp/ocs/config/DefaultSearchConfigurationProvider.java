@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import de.cxp.ocs.config.SearchConfiguration.ProductSetType;
 import de.cxp.ocs.spi.search.SearchConfigurationProvider;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ public class DefaultSearchConfigurationProvider implements SearchConfigurationPr
 		mergedConfig.getQueryConfigs().addAll(getQueryConfiguration(tenant));
 		mergedConfig.getSortConfigs().addAll(getSortConfigs(tenant));
 		mergedConfig.getRescorers().addAll(getRescorers(tenant));
+		mergedConfig.setHeroProductResolver(getCustomResolvers(tenant));
 
 		// merge plugin configuration
 		// (tenant specific may overwrite default config)
@@ -96,6 +98,12 @@ public class DefaultSearchConfigurationProvider implements SearchConfigurationPr
 		return getSubConfiguration(tenant, ApplicationSearchProperties::getRescorers,
 				tenantConfig -> tenantConfig == null)
 						.orElseGet(Collections::emptyList);
+	}
+
+	private Map<ProductSetType, String> getCustomResolvers(String tenant) {
+		return getSubConfiguration(tenant, ApplicationSearchProperties::getCustomProductSetResolver,
+				tenantConfig -> tenantConfig == null)
+						.orElseGet(Collections::emptyMap);
 	}
 
 	private <T> Optional<T> getSubConfiguration(String tenant, Function<ApplicationSearchProperties, T> getter, Predicate<ApplicationSearchProperties> useDefault) {

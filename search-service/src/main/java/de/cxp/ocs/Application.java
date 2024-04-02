@@ -22,6 +22,7 @@ import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.RestClientBuilderFactory;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.params.DynamicProductSet;
+import de.cxp.ocs.model.params.GenericProductSet;
 import de.cxp.ocs.model.params.ProductSet;
 import de.cxp.ocs.model.params.StaticProductSet;
 import de.cxp.ocs.plugin.PluginManager;
@@ -66,7 +67,7 @@ public class Application {
 
 		module.setMixInAnnotation(ProductSet.class, WithTypeInfo.class);
 		module.setMixInAnnotation(Document.class, NoNullValues.class);
-		module.registerSubtypes(new NamedType(DynamicProductSet.class, "dynamic"), new NamedType(StaticProductSet.class, "static"));
+		module.registerSubtypes(new NamedType(DynamicProductSet.class, "dynamic"), new NamedType(StaticProductSet.class, "static"), new NamedType(GenericProductSet.class, "generic"));
 
 		return module;
 	}
