@@ -60,6 +60,13 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 	private static final String PROPERTY_ALWAYS_DO_FUZZY = "always-do-fuzzy";
 
 	/**
+	 * Expects boolean value. Default: true
+	 * 
+	 * @see {@link SuggestConfig::setIndexConcurrently}
+	 */
+	private static final String PROPERTY_CONCURRENT_INDEXATION = "concurrent-indexation";
+
+	/**
 	 * Expects string which is literally one of:
 	 * <ul>
 	 * <li>MatchGroupsSeparated</li>
@@ -142,7 +149,8 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 		this.getEnvAccess = getEnvAccess;
 	}
 
-	public SuggestServiceProperties(@NonNull InputStream stream) {
+	public SuggestServiceProperties(@NonNull
+	InputStream stream) {
 		getEnvAccess = System::getenv;
 		properties = new Properties(System.getProperties());
 		try {
@@ -204,6 +212,10 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 		getPropertyValue(PROPERTY_SORT_STRATEGY, customPropertyInfix)
 				.map(SortStrategy::valueOf)
 				.ifPresent(baseConfig::setSortStrategy);
+
+		getPropertyValue(PROPERTY_CONCURRENT_INDEXATION, customPropertyInfix)
+				.map(Boolean::parseBoolean)
+				.ifPresent(baseConfig::setIndexConcurrently);
 
 		return baseConfig;
 	}

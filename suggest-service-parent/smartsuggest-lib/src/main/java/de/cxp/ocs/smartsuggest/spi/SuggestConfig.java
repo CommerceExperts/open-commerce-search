@@ -32,9 +32,11 @@ public class SuggestConfig implements Cloneable {
 	public int maxSharpenedQueries = 12;
 
 	public List<GroupConfig> groupConfig = new ArrayList<>();
+	
+	public boolean isIndexConcurrently = true;
 
 	// TODO: Attention: for each added configuration value, also extend
-	// de.cxp.ocs.suggest.SuggestProperties in the suggest-service
+	// de.cxp.ocs.suggest.SuggestServiceProperties in the suggest-service
 
 	/**
 	 * If suggestions are grouped by a certain value of their payload (e.g.
@@ -252,6 +254,18 @@ public class SuggestConfig implements Cloneable {
 	 */
 	public void setPrefetchLimitFactor(int prefetchLimitFactor) {
 		this.prefetchLimitFactor = prefetchLimitFactor;
+	}
+
+
+	/**
+	 * If set to false, the indexation of the received data will be done sequentially. This means it will take longer
+	 * until
+	 * the service is ready for usage and will spare computational power that might be used for others.
+	 * 
+	 * @return
+	 */
+	public boolean isIndexConcurrently() {
+		return isIndexConcurrently;
 	}
 
 	@Override

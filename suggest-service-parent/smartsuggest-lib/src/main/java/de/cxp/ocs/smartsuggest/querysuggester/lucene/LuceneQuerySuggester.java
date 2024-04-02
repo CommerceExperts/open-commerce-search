@@ -466,18 +466,39 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 
 	@Override
 	public CompletableFuture<Void> index(Iterable<SuggestRecord> suggestions) {
-		CompletableFuture<Void> infixFuture = CompletableFuture.runAsync(indexAsync(primarySuggester, suggestions, false));
-		CompletableFuture<Void> typoInfixFuture = CompletableFuture.runAsync(indexAsync(secondarySuggester, suggestions, true));
-		CompletableFuture<Void> fuzzyShortFuture = CompletableFuture.runAsync(indexAsync(fuzzySuggesterOneEdit, suggestions, false));
-		CompletableFuture<Void> fuzzyLongFuture = CompletableFuture.runAsync(indexAsync(fuzzySuggesterTwoEdits, suggestions, false));
-		CompletableFuture<Void> shingleFuture = CompletableFuture.runAsync(indexAsync(shingleSuggester, suggestions, true));
-		return CompletableFuture
-				.allOf(infixFuture, typoInfixFuture, fuzzyShortFuture, fuzzyLongFuture, shingleFuture)
-				.thenRun(() -> {
-					lastIndexTime = Instant.now();
-					recordCount = getRecordCount(suggestions);
-					memUsageBytes = ramBytesUsed();
-				});
+		Runnable primaryIndexJob = indexAsync(primarySuggester, suggestions, false);
+		Runnable secondaryIndexJob = indexAsync(secondarySuggester, suggestions, true);
+		Runnable fuzzyShortIndexJob = indexAsync(fuzzySuggesterOneEdit, suggestions, false);
+		Runnable fuzzyLongIndexJob = indexAsync(fuzzySuggesterTwoEdits, suggestions, false);
+		Runnable shingleIndexJob = indexAsync(shingleSuggester, suggestions, true);
+
+		if (suggestConfig.isIndexConcurrently()) {
+			CompletableFuture<Void> infixFuture = CompletableFuture.runAsync(primaryIndexJob);
+			CompletableFuture<Void> typoInfixFuture = CompletableFuture.runAsync(secondaryIndexJob);
+			CompletableFuture<Void> fuzzyShortFuture = CompletableFuture.runAsync(fuzzyShortIndexJob);
+			CompletableFuture<Void> fuzzyLongFuture = CompletableFuture.runAsync(fuzzyLongIndexJob);
+			CompletableFuture<Void> shingleFuture = CompletableFuture.runAsync(shingleIndexJob);
+			return CompletableFuture
+					.allOf(infixFuture, typoInfixFuture, fuzzyShortFuture, fuzzyLongFuture, shingleFuture)
+					.thenRun(() -> finalizeIndexation(suggestions));
+		}
+		else {
+			// this runs as a part of the SuggestionsUpdater inside a ThreadPoolExecutor, so no need to shift that work
+			// into common thread-pool
+			primaryIndexJob.run();
+			secondaryIndexJob.run();
+			fuzzyShortIndexJob.run();
+			fuzzyLongIndexJob.run();
+			shingleIndexJob.run();
+			finalizeIndexation(suggestions);
+			return CompletableFuture.completedFuture(null);
+		}
+	}
+
+	private void finalizeIndexation(Iterable<SuggestRecord> suggestions) {
+		lastIndexTime = Instant.now();
+		recordCount = getRecordCount(suggestions);
+		memUsageBytes = ramBytesUsed();
 	}
 
 	private long getRecordCount(Iterable<SuggestRecord> suggestions) {
