@@ -1,6 +1,7 @@
 ocs:
   tenant-config:
     searcher_test:
+      use-default-query-config: true
       maxFacets: 12
       index-name: searcher_test
       variantPickingStrategy: "pickIfDrilledDown"
@@ -19,6 +20,7 @@ ocs:
           label: Color
           multi-select: true
     searcher_test_2:
+      use-default-query-config: true
       index-name: searcher_test
       variantPickingStrategy: "pickAlways"
       facet-configuration:
