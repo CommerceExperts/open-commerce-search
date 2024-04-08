@@ -4,6 +4,7 @@ import java.util.*;
 
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
+import de.cxp.ocs.config.SearchConfiguration.ProductSetType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -50,13 +51,15 @@ public class ApplicationSearchProperties {
 	@NestedConfigurationProperty
 	private ScoringConfiguration scoringConfiguration = new ScoringConfiguration();
 
-	private List<String> rescorers = new ArrayList<>();
-
 	@NestedConfigurationProperty
 	private final Map<String, QueryConfiguration> queryConfiguration = new LinkedHashMap<>();
 
 	@NestedConfigurationProperty
 	private final List<SortOptionConfiguration> sortConfiguration = new ArrayList<>();
+
+	private List<String> rescorers = new ArrayList<>();
+
+	private Map<ProductSetType, String> customProductSetResolver = new HashMap<>();
 
 	private final Map<String, Map<String, String>> pluginConfiguration = new LinkedHashMap<>();
 

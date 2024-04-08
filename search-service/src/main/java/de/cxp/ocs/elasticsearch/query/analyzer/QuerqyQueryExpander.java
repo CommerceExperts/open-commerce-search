@@ -288,7 +288,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 		}
 
 		private AnalyzedQuery toAnalyzedQuery(Collection<QueryStringTerm> terms) {
-			return terms.size() == 1 ? new SingleTermQuery(terms.iterator().next()) : new MultiTermQuery(terms);
+			return terms.size() == 1 ? new SingleTermQuery(org.apache.commons.lang3.StringUtils.join(inputTerms.keySet(), " "), terms.iterator().next()) : new MultiTermQuery(inputTerms.keySet(), terms);
 		}
 
 		public void reset() {

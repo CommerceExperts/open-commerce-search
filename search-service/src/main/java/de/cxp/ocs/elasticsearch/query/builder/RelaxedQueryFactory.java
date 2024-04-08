@@ -125,7 +125,7 @@ public class RelaxedQueryFactory implements ESQueryFactory, FallbackConsumer {
 			}
 
 
-			QueryBuilder matchQuery = mainQueryFactory.create(new ExtendedQuery(new MultiTermQuery(pQuery.getTermsUnique().values())));
+			QueryBuilder matchQuery = mainQueryFactory.create(new ExtendedQuery(new MultiTermQuery(pQuery.termsUnique.keySet(), pQuery.getTermsUnique().values())));
 			matchQuery.boost(pQuery.originalTermCount);
 			matchQuery.queryName(queryLabel);
 			mainQuery = mergeToBoolShouldQuery(mainQuery, matchQuery);
@@ -136,7 +136,7 @@ public class RelaxedQueryFactory implements ESQueryFactory, FallbackConsumer {
 		// in case we have some terms that are not matched by any query, use
 		// them with the fallback query builder to boost matching records.
 		if (unmatchedTerms.size() > 0 && fallbackQueryBuilder != null) {
-			QueryBuilder boostQuery = fallbackQueryBuilder.createQuery(new ExtendedQuery(new MultiTermQuery(unmatchedTerms.values()))).getMasterLevelQuery();
+			QueryBuilder boostQuery = fallbackQueryBuilder.createQuery(new ExtendedQuery(new MultiTermQuery(unmatchedTerms.keySet(), unmatchedTerms.values()))).getMasterLevelQuery();
 			boostQuery.boost(createdQueries.size());
 			mainQuery = QueryBuilders.boolQuery().must(mainQuery).should(boostQuery);
 			// add query-description for label

@@ -106,7 +106,7 @@ public class SpellCorrector {
 			}
 		}
 
-		AnalyzedQuery alternativeQuery = relatedWords.size() == 1 ? new SingleTermQuery(relatedWords.get(0)) : new MultiTermQuery(relatedWords);
+		AnalyzedQuery alternativeQuery = relatedWords.size() == 1 ? new SingleTermQuery(relatedWords.get(0).getRawTerm(), relatedWords.get(0)) : new MultiTermQuery(analyzedQuery.getInputTerms(), relatedWords);
 		return new MultiVariantQuery(analyzedQuery.getInputTerms(), Arrays.asList(analyzedQuery, alternativeQuery));
 	}
 }
