@@ -19,10 +19,14 @@ public class FacetFactory {
 	}
 
 	public static Facet create(FacetConfig facetConfig, FacetType type) {
+		return create(facetConfig, type.name().toLowerCase());
+	}
+
+	public static Facet create(FacetConfig facetConfig, String type) {
 		Facet facet = new Facet(facetConfig.getSourceField());
 		facet.getMeta().putAll(facetConfig.getMetaData());
 
-		facet.setType(type.name().toLowerCase());
+		facet.setType(type);
 		facet.meta.put(MetaDataValues.label.name(), facetConfig.getLabel() == null ? facetConfig.getSourceField() : facetConfig.getLabel());
 		facet.meta.put(MetaDataValues.multiSelect.name(), facetConfig.isMultiSelect());
 		facet.meta.put(MetaDataValues.order.name(), facetConfig.getOrder());

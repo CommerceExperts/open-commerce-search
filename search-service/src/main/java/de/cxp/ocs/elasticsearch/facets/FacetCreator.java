@@ -18,7 +18,7 @@ public interface FacetCreator {
 	 * 
 	 * @return configured aggregation-builder
 	 */
-	AggregationBuilder buildAggregation();
+	AggregationBuilder buildAggregation(FilterContext filterContext);
 
 	/**
 	 * Build aggregation that is necessary to create the facets specified by the
@@ -28,7 +28,7 @@ public interface FacetCreator {
 	 *        names of data fields for which the aggregations should be built
 	 * @return configured aggregation-builder
 	 */
-	AggregationBuilder buildIncludeFilteredAggregation(Set<String> includeNames);
+	AggregationBuilder buildIncludeFilteredAggregation(FilterContext filterContext, Set<String> includeNames);
 
 	/**
 	 * Build aggregation that is necessary to create the facets, but not the
@@ -38,7 +38,7 @@ public interface FacetCreator {
 	 *        names of data fields that MUST NOT be part of this aggregation
 	 * @return configured aggregation-builder
 	 */
-	AggregationBuilder buildExcludeFilteredAggregation(Set<String> excludeNames);
+	AggregationBuilder buildExcludeFilteredAggregation(FilterContext filterContext, Set<String> excludeNames);
 
 	/**
 	 * create facets from aggregation result.

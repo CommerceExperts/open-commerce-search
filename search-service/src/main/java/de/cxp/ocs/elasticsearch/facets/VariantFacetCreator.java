@@ -32,16 +32,16 @@ public class VariantFacetCreator implements FacetCreator {
 	}
 
 	@Override
-	public AggregationBuilder buildAggregation() {
-		return _buildAggregation(FacetCreator::buildAggregation);
+	public AggregationBuilder buildAggregation(FilterContext filterContext) {
+		return _buildAggregation(creator -> creator.buildAggregation(filterContext));
 	}
 
-	public AggregationBuilder buildIncludeFilteredAggregation(Set<String> includeNames) {
-		return _buildAggregation(creator -> creator.buildIncludeFilteredAggregation(includeNames));
+	public AggregationBuilder buildIncludeFilteredAggregation(FilterContext filterContext, Set<String> includeNames) {
+		return _buildAggregation(creator -> creator.buildIncludeFilteredAggregation(filterContext, includeNames));
 	}
 
-	public AggregationBuilder buildExcludeFilteredAggregation(Set<String> excludeNames) {
-		return _buildAggregation(creator -> creator.buildExcludeFilteredAggregation(excludeNames));
+	public AggregationBuilder buildExcludeFilteredAggregation(FilterContext filterContext, Set<String> excludeNames) {
+		return _buildAggregation(creator -> creator.buildExcludeFilteredAggregation(filterContext, excludeNames));
 	}
 
 	public AggregationBuilder _buildAggregation(Function<FacetCreator, AggregationBuilder> subAggCreatorCall) {

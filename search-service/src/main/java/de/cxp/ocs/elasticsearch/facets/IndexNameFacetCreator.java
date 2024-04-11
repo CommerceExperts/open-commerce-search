@@ -24,20 +24,20 @@ public class IndexNameFacetCreator implements FacetCreator {
 	private final FacetConfig indexFacetConfig;
 
 	@Override
-	public AggregationBuilder buildAggregation() {
+	public AggregationBuilder buildAggregation(FilterContext filterContext) {
 		return AggregationBuilders.terms("_indexes").field("_index");
 	}
 
 	@Override
-	public AggregationBuilder buildIncludeFilteredAggregation(Set<String> includeNames) {
+	public AggregationBuilder buildIncludeFilteredAggregation(FilterContext filterContext, Set<String> includeNames) {
 		// no filtering possible
-		return buildAggregation();
+		return buildAggregation(filterContext);
 	}
 
 	@Override
-	public AggregationBuilder buildExcludeFilteredAggregation(Set<String> excludeNames) {
+	public AggregationBuilder buildExcludeFilteredAggregation(FilterContext filterContext, Set<String> excludeNames) {
 		// no filtering possible
-		return buildAggregation();
+		return buildAggregation(filterContext);
 	}
 
 	@Override

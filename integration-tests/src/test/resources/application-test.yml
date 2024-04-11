@@ -28,3 +28,11 @@ ocs:
         - source-field: color
           label: Color
           multi-select: true
+    test_campaign_indexing:
+      use-default-query-config: true
+      facet-configuration:
+        facets:
+        - source-field: campaign
+          label: _campaign
+          type: RANGE
+          isFilterSensitive: true
