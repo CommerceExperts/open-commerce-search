@@ -1,5 +1,7 @@
 package de.cxp.ocs.elasticsearch.facets;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -82,11 +84,15 @@ public class RangeFacetCreator extends NestedFacetCreator {
 			return Optional.empty();
 		}
 		else {
-			RangeFacetEntry rangeFacetEntry = new RangeFacetEntry(stats.getMin(), stats.getMax(), stats.getCount(), linkBuilder.toString(), facetFilter != null);
+			// work around floating-point imprecision that might lead to ugly values
+			BigDecimal lowerBound = new BigDecimal(stats.getMin()).setScale(2, RoundingMode.HALF_DOWN);
+			BigDecimal upperBound = new BigDecimal(stats.getMax()).setScale(2, RoundingMode.HALF_UP);
+			RangeFacetEntry rangeFacetEntry = new RangeFacetEntry(lowerBound.doubleValue(), upperBound.doubleValue(), stats.getCount(), linkBuilder.toString(), facetFilter != null);
 			if (facetFilter != null && !facetFilter.isNegated() && facetFilter instanceof NumberResultFilter) {
 				rangeFacetEntry.setSelectedMin(((NumberResultFilter) facetFilter).getLowerBound());
 				rangeFacetEntry.setSelectedMax(((NumberResultFilter) facetFilter).getUpperBound());
 			}
+
 			return Optional.of(
 					FacetFactory.create(facetConfig, FacetType.RANGE)
 							.setAbsoluteFacetCoverage(stats.getCount())

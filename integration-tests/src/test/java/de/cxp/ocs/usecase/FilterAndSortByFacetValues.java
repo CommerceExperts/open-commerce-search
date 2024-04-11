@@ -3,9 +3,11 @@ package de.cxp.ocs.usecase;
 import static de.cxp.ocs.OCSStack.getImportClient;
 import static de.cxp.ocs.OCSStack.getSearchClient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.elasticsearch.core.Map;
 import org.junit.jupiter.api.BeforeAll;
@@ -33,10 +35,10 @@ public class FilterAndSortByFacetValues {
 		 * campaign c1: p2, p3, p1
 		 * campaign c2: p2, p1 */
 		List<Document> documents = List.of(
-				new Document("p1").set("title", "product 1").addAttribute(new Attribute("campaign", "1", "3")).addAttribute(new Attribute("campaign", "2", "20")),
-				new Document("p2").set("title", "product 2").addAttribute(new Attribute("campaign", "1", "1")).addAttribute(new Attribute("campaign", "2", "10")),
-				new Document("p3").set("title", "product 3").addAttribute(new Attribute("campaign", "1", "2")),
-				new Document("p4").set("title", "product 4"));
+				new Document("p1").set("title", "product 1").set("price", "12.99").addAttribute(new Attribute("campaign", "1", "3")).addAttribute(new Attribute("campaign", "2", "20")),
+				new Document("p2").set("title", "product 2").set("price", "22.99").addAttribute(new Attribute("campaign", "1", "1")).addAttribute(new Attribute("campaign", "2", "10")),
+				new Document("p3").set("title", "product 3").set("price", "32.99").addAttribute(new Attribute("campaign", "1", "2")),
+				new Document("p4").set("title", "product 4").set("price", "42.99"));
 		assertEquals(documents.size(), dataIndexer.indexTestData(indexName, documents.iterator()));
 	}
 
@@ -70,9 +72,14 @@ public class FilterAndSortByFacetValues {
 
 			FacetEntry entry1 = campaignFacet.getEntries().get(0);
 			assertTrue(entry1 instanceof RangeFacetEntry, "instead: " + entry1.getClass().getCanonicalName());
-
 			assertEquals(1.0, ((RangeFacetEntry) entry1).getLowerBound());
 			assertEquals(3.0, ((RangeFacetEntry) entry1).getUpperBound());
+
+			Facet priceFacet = facets.stream().filter(f -> "price".equals(f.getFieldName())).findFirst().orElseThrow();
+			FacetEntry priceEntry = priceFacet.getEntries().get(0);
+			assertTrue(priceEntry instanceof RangeFacetEntry, "instead: " + priceEntry.getClass().getCanonicalName());
+			assertEquals(12.99, ((RangeFacetEntry) priceEntry).getLowerBound());
+			assertEquals(32.99, ((RangeFacetEntry) priceEntry).getUpperBound());
 		}
 
 		{
@@ -87,6 +94,54 @@ public class FilterAndSortByFacetValues {
 			assertEquals(10.0, ((RangeFacetEntry) entry1).getLowerBound());
 			assertEquals(20.0, ((RangeFacetEntry) entry1).getUpperBound());
 		}
+	}
 
+	@Test
+	public void testFilteredRangeFacetForTwoRangeFilters() throws Exception {
+		{
+			SearchResult result_c1 = getSearchClient().search(indexName, new SearchQuery(), Map.of("campaign.id", "1", "price", "10-25"));
+
+			List<ResultHit> hits_c1 = result_c1.slices.get(0).hits;
+			assertEquals(2, hits_c1.size());
+
+			List<Facet> facets = result_c1.slices.get(0).getFacets();
+
+			Facet campaignFacet = facets.stream().filter(f -> "campaign".equals(f.getFieldName())).findFirst().orElseThrow();
+			assertEquals(1, campaignFacet.getEntries().size());
+			FacetEntry entry1 = campaignFacet.getEntries().get(0);
+			assertTrue(entry1 instanceof RangeFacetEntry, "instead: " + entry1.getClass().getCanonicalName());
+
+			// both products in result have value 1 and 3 for campaign.id=1, so expect full range of those values
+			assertEquals(1.0, ((RangeFacetEntry) entry1).getLowerBound());
+			assertEquals(3.0, ((RangeFacetEntry) entry1).getUpperBound());
+
+			Facet priceFacet = facets.stream().filter(f -> "price".equals(f.getFieldName())).findFirst().orElseThrow();
+			FacetEntry priceEntry = priceFacet.getEntries().get(0);
+			assertTrue(priceEntry instanceof RangeFacetEntry, "instead: " + priceEntry.getClass().getCanonicalName());
+
+			// expect total range, since price is not filter-sensitive
+			assertEquals(12.99, ((RangeFacetEntry) priceEntry).getLowerBound());
+			assertEquals(32.99, ((RangeFacetEntry) priceEntry).getUpperBound());
+		}
+
+		{
+			// use different price filter here, so we can assert, that documents with campaign.id=2 are filtered
+			SearchResult result_c2 = getSearchClient().search(indexName, new SearchQuery(), Map.of("campaign.id", "2", "price", "15-25"));
+			List<ResultHit> hits_c2 = result_c2.slices.get(0).hits;
+			assertEquals(1, hits_c2.size());
+
+			List<Facet> facets = result_c2.slices.get(0).getFacets();
+			Optional<Facet> campaignFacet = facets.stream().filter(f -> "campaign".equals(f.getFieldName())).findFirst();
+			// single document matches, so there is no campaign facet expected anymore
+			assertFalse(campaignFacet.isPresent());
+
+			Facet priceFacet = facets.stream().filter(f -> "price".equals(f.getFieldName())).findFirst().orElseThrow();
+			FacetEntry priceEntry = priceFacet.getEntries().get(0);
+			assertTrue(priceEntry instanceof RangeFacetEntry, "instead: " + priceEntry.getClass().getCanonicalName());
+
+			// expect total range, since price is not filter-sensitive
+			assertEquals(12.99, ((RangeFacetEntry) priceEntry).getLowerBound());
+			assertEquals(22.99, ((RangeFacetEntry) priceEntry).getUpperBound());
+		}
 	}
 }

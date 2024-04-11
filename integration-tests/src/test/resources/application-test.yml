@@ -36,3 +36,6 @@ ocs:
           label: _campaign
           type: RANGE
           isFilterSensitive: true
+        - source-field: price
+          label: _price
+          type: RANGE
