@@ -153,7 +153,7 @@ public class FacetCreatorInitializerTest {
 		NestedCustomFacetCreator nestedCustomFC = assertInstanceOfAndGet(customFacetCreator, NestedCustomFacetCreator.class);
 
 		// top level aggregation
-		AggregationBuilder aggregation = nestedCustomFC.buildAggregation();
+		AggregationBuilder aggregation = nestedCustomFC.buildAggregation(null);
 		// ensure it has a non-conflicting name
 		assertEquals("CustomFacetAgg_" + CUSTOM_FACET_TYPE + "_m", aggregation.getName(), aggregation::toString);
 

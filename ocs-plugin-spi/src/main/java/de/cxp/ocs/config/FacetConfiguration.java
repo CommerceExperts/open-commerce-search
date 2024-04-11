@@ -99,6 +99,8 @@ public class FacetConfiguration {
 
 		private int minValueCount = 2;
 
+		private boolean isFilterSensitive = false;
+
 		private String[] filterDependencies = new String[0];
 
 		/**
@@ -211,6 +213,23 @@ public class FacetConfiguration {
 		}
 
 		/**
+		 * Set to true if the attributes for a facet can have multiple values per document, but the facet should only
+		 * return the filtered one.
+		 * 
+		 * @param isFilterSensitive
+		 * @return
+		 */
+		public FacetConfig setFilterSensitive(boolean isFilterSensitive) {
+			this.isFilterSensitive = isFilterSensitive;
+			return this;
+		}
+
+		public FacetConfig setIsFilterSensitive(boolean isFilterSensitive) {
+			this.isFilterSensitive = isFilterSensitive;
+			return this;
+		}
+
+		/**
 		 * Optional index, to put the facets in a consistent order.
 		 * 
 		 * @param order
@@ -292,8 +311,9 @@ public class FacetConfiguration {
 		 * Per default that value is set to 0.1.
 		 * </p>
 		 * 
-		 * @param minFacetCoverage value between 0 and 1, defining the ratio of a
-		 *                         facet's result coverate.
+		 * @param minFacetCoverage
+		 *        value between 0 and 1, defining the ratio of a
+		 *        facet's result coverate.
 		 * @return self
 		 */
 		public FacetConfig setMinFacetCoverage(double minFacetCoverage) {
@@ -318,7 +338,8 @@ public class FacetConfiguration {
 		 * automatically reduced to exactly that determined total value count.
 		 * </p>
 		 * 
-		 * @param minValueCount value equals or greater than 0
+		 * @param minValueCount
+		 *        value equals or greater than 0
 		 * @return self
 		 */
 		public FacetConfig setMinValueCount(int minValueCount) {
@@ -399,7 +420,8 @@ public class FacetConfiguration {
 		 * [<code>/,=&amp;%</code>] that appear inside values.
 		 * </p>
 		 * 
-		 * @param filterDependencies list of filter dependencies
+		 * @param filterDependencies
+		 *        list of filter dependencies
 		 * @return self
 		 */
 		public FacetConfig setFilterDependencies(String... filterDependencies) {

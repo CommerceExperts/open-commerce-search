@@ -268,7 +268,7 @@ public class FacetConfigurationApplyer {
 		// => at the getFacets method this has to be considered
 		if (filterContext.getPostFilterQueries().isEmpty()) {
 			for (FacetCreator creator : facetCreators) {
-				aggregators.add(creator.buildAggregation());
+				aggregators.add(creator.buildAggregation(filterContext));
 			}
 		}
 		else {
@@ -280,7 +280,7 @@ public class FacetConfigurationApplyer {
 				FilterAggregationBuilder filterAgg = AggregationBuilders.filter(EXCLUSIVE_AGG_PREFIX + postFilterName, exclusiveFilterQuery);
 
 				getResponsibleFacetCreators(internalFilter)
-						.forEach(facetCreator -> filterAgg.subAggregation(facetCreator.buildIncludeFilteredAggregation(Collections.singleton(postFilterName))));
+						.forEach(facetCreator -> filterAgg.subAggregation(facetCreator.buildIncludeFilteredAggregation(filterContext, Collections.singleton(postFilterName))));
 
 				aggregators.add(filterAgg);
 			}
@@ -289,7 +289,7 @@ public class FacetConfigurationApplyer {
 			// that are not specialized for all the post filters
 			FilterAggregationBuilder fullFilteredAgg = AggregationBuilders.filter(FILTERED_AGG_NAME, filterContext.getJoinedPostFilters());
 			for (FacetCreator creator : facetCreators) {
-				fullFilteredAgg.subAggregation(creator.buildExcludeFilteredAggregation(filterContext.getPostFilterQueries().keySet()));
+				fullFilteredAgg.subAggregation(creator.buildExcludeFilteredAggregation(filterContext, filterContext.getPostFilterQueries().keySet()));
 			}
 			aggregators.add(fullFilteredAgg);
 		}
