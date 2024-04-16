@@ -112,19 +112,35 @@ public class QuerqyQueryExpanderTest {
 	}
 
 	@Test
+	public void testDefaultBoostingWeight() {
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>"
+				, "  UP: * field:word1"
+				, "  DOWN: word2");
+
+		ExtendedQuery analyzedQuery = analyze(underTest, "input more");
+
+		assertEquals(2, analyzedQuery.getBoostings().size());
+		List<QueryBoosting> expectedBoostings = List.of(
+				new QueryBoosting("field", "word1", UP, 1),
+				new QueryBoosting(null, "word2", DOWN, 1));
+
+		expectedBoostings.forEach(boosting -> assertTrue(analyzedQuery.getBoostings().contains(boosting)));
+	}
+
+	@Test
 	public void testSingleFieldBoosting() {
 		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  UP(10): * field:word1");
 		var analyzedQuery = analyze(underTest, "input more");
 
 		assertEquals(1, analyzedQuery.getBoostings().size());
-		QueryBoosting expected = new QueryBoosting("field", "word1", new QueryBoosting.Boosting(UP, 10));
+		QueryBoosting expected = new QueryBoosting("field", "word1", UP, 10);
 		assertEquals(expected, analyzedQuery.getBoostings().get(0));
 
 		underTest = qqBuilder.loadWithRules("input =>", "  DOWN(11): * field:word1");
 		analyzedQuery = analyze(underTest, "input more");
 
 		assertEquals(1, analyzedQuery.getBoostings().size());
-		expected = new QueryBoosting("field", "word1", new QueryBoosting.Boosting(DOWN, 11));
+		expected = new QueryBoosting("field", "word1", DOWN, 11);
 		assertEquals(expected, analyzedQuery.getBoostings().get(0));
 	}
 
@@ -134,14 +150,14 @@ public class QuerqyQueryExpanderTest {
 		ExtendedQuery analyzedQuery = analyze(underTest, "input more");
 
 		assertEquals(1, analyzedQuery.getBoostings().size());
-		QueryBoosting expected = new QueryBoosting(null, "word1", new QueryBoosting.Boosting(UP, 10));
+		QueryBoosting expected = new QueryBoosting(null, "word1", UP, 10);
 		assertEquals(expected, analyzedQuery.getBoostings().get(0));
 
 		underTest = qqBuilder.loadWithRules("input =>", "  DOWN(11): word1");
 		analyzedQuery = analyze(underTest, "input more");
 
 		assertEquals(1, analyzedQuery.getBoostings().size());
-		expected = new QueryBoosting(null, "word1", new QueryBoosting.Boosting(DOWN, 11));
+		expected = new QueryBoosting(null, "word1", DOWN, 11);
 		assertEquals(expected, analyzedQuery.getBoostings().get(0));
 	}
 
@@ -156,10 +172,10 @@ public class QuerqyQueryExpanderTest {
 
 		assertEquals(4, analyzedQuery.getBoostings().size());
 		List<QueryBoosting> expectedBoostings = List.of(
-				new QueryBoosting("field1", "word1", new QueryBoosting.Boosting(UP, 10)),
-				new QueryBoosting("field2", "word2", new QueryBoosting.Boosting(DOWN, 11)),
-				new QueryBoosting(null, "word1", new QueryBoosting.Boosting(UP, 10)),
-				new QueryBoosting(null, "word2", new QueryBoosting.Boosting(DOWN, 11)));
+				new QueryBoosting("field1", "word1", UP, 10),
+				new QueryBoosting("field2", "word2", DOWN, 11),
+				new QueryBoosting(null, "word1", UP, 10),
+				new QueryBoosting(null, "word2", DOWN, 11));
 
 		expectedBoostings.forEach(boosting -> assertTrue(analyzedQuery.getBoostings().contains(boosting)));
 	}

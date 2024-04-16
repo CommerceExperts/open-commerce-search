@@ -13,22 +13,14 @@ public class QueryBoosting {
     private String field;
 
     @NonNull
-    private String rawTerm;
+    private final String rawTerm;
 
     @NonNull
 	private final BoostType type;
 
-	private float weight = 1f;
+	private final float weight;
 
-    public enum BoostType {
-        UP, DOWN;
-    }
-
-	public QueryBoosting(String term, BoostType boostType, float boostWeight) {
-		rawTerm = term;
-		type = boostType;
-		weight = boostWeight;
-	}
+    public enum BoostType { UP, DOWN }
 
 	public boolean isUpBoosting() {
 		return BoostType.UP.equals(type);
