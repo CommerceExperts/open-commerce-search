@@ -1,6 +1,9 @@
 package de.cxp.ocs.elasticsearch.model.query;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 @Data
 @AllArgsConstructor
@@ -13,25 +16,22 @@ public class QueryBoosting {
     private String rawTerm;
 
     @NonNull
-    private Boosting boosting;
+	private final BoostType type;
+
+	private float weight = 1f;
 
     public enum BoostType {
         UP, DOWN;
     }
 
-    @Data
-    @ToString
-    @RequiredArgsConstructor
-    public static class Boosting {
-        private final BoostType type;
-        private final float weight;
-    }
+	public QueryBoosting(String term, BoostType boostType, float boostWeight) {
+		rawTerm = term;
+		type = boostType;
+		weight = boostWeight;
+	}
 
 	public boolean isUpBoosting() {
-		return BoostType.UP.equals(boosting.type);
+		return BoostType.UP.equals(type);
 	}
 
-	public float getWeight() {
-		return boosting.weight;
-	}
 }

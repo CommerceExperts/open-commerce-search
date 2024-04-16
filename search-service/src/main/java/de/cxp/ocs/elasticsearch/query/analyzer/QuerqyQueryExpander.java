@@ -175,15 +175,14 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
         return new ExtendedQuery(searchQuery, filters, boostings);
     }
 
-    private static QueryBoosting extractQueryBoosting(BoostQuery boosting, QueryBoosting.BoostType type) {
+    private static QueryBoosting extractQueryBoosting(BoostQuery querqyBoostQuery, QueryBoosting.BoostType type) {
         FilterFetcher fetcher = new FilterFetcher();
-        QuerqyQuery<?> querqyQuery = boosting.getQuery();
+        QuerqyQuery<?> querqyQuery = querqyBoostQuery.getQuery();
         querqyQuery.accept(fetcher);
         QueryStringTerm extractedQuerqyQuery = new ArrayList<>(fetcher.extractedWords)
                 .stream()
                 .findFirst().orElse(null);
-        QueryBoosting.Boosting ocsInnerBoosting = new QueryBoosting.Boosting(type, boosting.getBoost());
-        QueryBoosting ocsBoosting = new QueryBoosting(extractedQuerqyQuery.getRawTerm(), ocsInnerBoosting);
+		QueryBoosting ocsBoosting = new QueryBoosting(extractedQuerqyQuery.getRawTerm(), type, querqyBoostQuery.getBoost());
         ocsBoosting.setField((extractedQuerqyQuery instanceof QueryFilterTerm) ? ((QueryFilterTerm) extractedQuerqyQuery).getField() : null);
         return ocsBoosting;
     }
