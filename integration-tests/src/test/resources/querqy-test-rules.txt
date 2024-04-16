@@ -1,0 +1,3 @@
+"bike" =>
+    DOWN(0.5): accessories
+    UP(2): carbon

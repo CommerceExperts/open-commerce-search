@@ -1,10 +1,6 @@
 package de.cxp.ocs.elasticsearch.model.query;
 
-import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
 import lombok.*;
-import org.apache.commons.text.StringEscapeUtils;
-
-import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -30,4 +26,12 @@ public class QueryBoosting {
         private final BoostType type;
         private final float weight;
     }
+
+	public boolean isUpBoosting() {
+		return BoostType.UP.equals(boosting.type);
+	}
+
+	public float getWeight() {
+		return boosting.weight;
+	}
 }

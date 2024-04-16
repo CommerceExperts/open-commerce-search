@@ -67,7 +67,7 @@ public class RelaxedQueryFactory implements ESQueryFactory, FallbackConsumer {
 		// set recommended default settings
 		settings.putIfAbsent(QueryBuildingSetting.operator, "and");
 		settings.putIfAbsent(QueryBuildingSetting.phraseSlop, "5");
-		mainQueryFactory = new StandardQueryFactory(settings, this.fieldWeights);
+		mainQueryFactory = new StandardQueryFactory(settings, this.fieldWeights, fieldConfig);
 		variantQueryFactory = new VariantQueryFactory(validateSearchFields(fieldWeights, fieldConfig, Field::isVariantLevel));
 		Optional.ofNullable(settings.get(QueryBuildingSetting.analyzer)).ifPresent(variantQueryFactory::setAnalyzer);
 	}
@@ -125,10 +125,11 @@ public class RelaxedQueryFactory implements ESQueryFactory, FallbackConsumer {
 			}
 
 
-			QueryBuilder matchQuery = mainQueryFactory.create(new ExtendedQuery(new MultiTermQuery(pQuery.termsUnique.keySet(), pQuery.getTermsUnique().values())));
-			matchQuery.boost(pQuery.originalTermCount);
-			matchQuery.queryName(queryLabel);
-			mainQuery = mergeToBoolShouldQuery(mainQuery, matchQuery);
+			ExtendedQuery extendedQuery = new ExtendedQuery(new MultiTermQuery(pQuery.termsUnique.keySet(), pQuery.getTermsUnique().values()));
+			QueryBuilder extendedQueryBuilder = mainQueryFactory.create(extendedQuery).getQueryBuilder();
+			extendedQueryBuilder.boost(pQuery.originalTermCount);
+			extendedQueryBuilder.queryName(queryLabel);
+			mainQuery = mergeToBoolShouldQuery(mainQuery, extendedQueryBuilder);
 
 			i++;
 		}

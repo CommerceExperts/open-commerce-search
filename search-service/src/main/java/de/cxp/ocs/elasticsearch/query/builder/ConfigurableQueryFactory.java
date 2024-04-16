@@ -7,12 +7,12 @@ import static de.cxp.ocs.util.ESQueryUtils.validateSearchFields;
 import java.util.Map;
 
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
+import de.cxp.ocs.elasticsearch.query.SearchQueryWrapper;
 import de.cxp.ocs.elasticsearch.query.StandardQueryFactory;
 import de.cxp.ocs.elasticsearch.query.TextMatchQuery;
 import de.cxp.ocs.spi.search.ESQueryFactory;
@@ -57,17 +57,17 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 	public void initialize(String name, Map<QueryBuildingSetting, String> settings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig) {
 		if (name != null) this.name = name;
 		querySettings = settings;
-		mainQueryFactory = new StandardQueryFactory(settings, validateSearchFields(fieldWeights, fieldConfig, Field::isMasterLevel));
+		mainQueryFactory = new StandardQueryFactory(settings, validateSearchFields(fieldWeights, fieldConfig, Field::isMasterLevel), fieldConfig);
 		variantQueryFactory = new VariantQueryFactory(validateSearchFields(fieldWeights, fieldConfig, Field::isVariantLevel));
 	}
 
 	@Override
 	public TextMatchQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery) {
-		QueryStringQueryBuilder esQuery = mainQueryFactory.create(parsedQuery);
+		SearchQueryWrapper mainQuery = mainQueryFactory.create(parsedQuery);
 
-		return new TextMatchQuery<>(esQuery,
+		return new TextMatchQuery<>(mainQuery.getQueryBuilder(),
 				variantQueryFactory.createMatchAnyTermQuery(parsedQuery),
-				esQuery.fuzziness().asDistance() > 0,
+				mainQuery.getFuzziness().asDistance() > 0,
 				Boolean.parseBoolean(querySettings.getOrDefault(acceptNoResult, "false")));
 	}
 
