@@ -7,6 +7,8 @@ import org.apache.commons.text.StringEscapeUtils;
 import java.util.List;
 
 @Data
+@AllArgsConstructor
+@RequiredArgsConstructor
 public class QueryBoosting {
 
     private String field;
@@ -21,7 +23,7 @@ public class QueryBoosting {
         UP, DOWN;
     }
 
-    @Getter
+    @Data
     @ToString
     @RequiredArgsConstructor
     public static class Boosting {

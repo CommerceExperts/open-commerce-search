@@ -1,14 +1,15 @@
 package de.cxp.ocs.elasticsearch.query.analyzer;
 
+import static de.cxp.ocs.elasticsearch.model.query.QueryBoosting.BoostType.DOWN;
+import static de.cxp.ocs.elasticsearch.model.query.QueryBoosting.BoostType.UP;
 import static de.cxp.ocs.elasticsearch.query.analyzer.AnalyzerUtil.extractTerms;
 import static de.cxp.ocs.util.TestUtils.assertAndCastInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.EnumSet;
 import java.util.List;
 
+import de.cxp.ocs.elasticsearch.model.query.QueryBoosting;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -108,6 +109,59 @@ public class QuerqyQueryExpanderTest {
 
 		// expect multi-term synonym in quotes to consider them as a phrase
 		assertEquals("(input OR \"word1 word2\") more", QueryStringUtil.buildQueryString(result, " "));
+	}
+
+	@Test
+	public void testSingleFieldBoosting() {
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  UP(10): * field:word1");
+		var analyzedQuery = analyze(underTest, "input more");
+
+		assertEquals(1, analyzedQuery.getBoostings().size());
+		QueryBoosting expected = new QueryBoosting("field", "word1", new QueryBoosting.Boosting(UP, 10));
+		assertEquals(expected, analyzedQuery.getBoostings().get(0));
+
+		underTest = qqBuilder.loadWithRules("input =>", "  DOWN(11): * field:word1");
+		analyzedQuery = analyze(underTest, "input more");
+
+		assertEquals(1, analyzedQuery.getBoostings().size());
+		expected = new QueryBoosting("field", "word1", new QueryBoosting.Boosting(DOWN, 11));
+		assertEquals(expected, analyzedQuery.getBoostings().get(0));
+	}
+
+	@Test
+	public void testSingleQueryBoosting() {
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  UP(10): word1");
+		ExtendedQuery analyzedQuery = analyze(underTest, "input more");
+
+		assertEquals(1, analyzedQuery.getBoostings().size());
+		QueryBoosting expected = new QueryBoosting(null, "word1", new QueryBoosting.Boosting(UP, 10));
+		assertEquals(expected, analyzedQuery.getBoostings().get(0));
+
+		underTest = qqBuilder.loadWithRules("input =>", "  DOWN(11): word1");
+		analyzedQuery = analyze(underTest, "input more");
+
+		assertEquals(1, analyzedQuery.getBoostings().size());
+		expected = new QueryBoosting(null, "word1", new QueryBoosting.Boosting(DOWN, 11));
+		assertEquals(expected, analyzedQuery.getBoostings().get(0));
+	}
+
+	@Test
+	public void testMultiQueryFieldBoosting() {
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>"
+				, "  UP(10): * field1:word1"
+				, "  DOWN(11): * field2:word2"
+				, "  UP(10): word1"
+				, "  DOWN(11): word2");
+		ExtendedQuery analyzedQuery = analyze(underTest, "input more");
+
+		assertEquals(4, analyzedQuery.getBoostings().size());
+		List<QueryBoosting> expectedBoostings = List.of(
+				new QueryBoosting("field1", "word1", new QueryBoosting.Boosting(UP, 10)),
+				new QueryBoosting("field2", "word2", new QueryBoosting.Boosting(DOWN, 11)),
+				new QueryBoosting(null, "word1", new QueryBoosting.Boosting(UP, 10)),
+				new QueryBoosting(null, "word2", new QueryBoosting.Boosting(DOWN, 11)));
+
+		expectedBoostings.forEach(boosting -> assertTrue(analyzedQuery.getBoostings().contains(boosting)));
 	}
 
 	@Test
