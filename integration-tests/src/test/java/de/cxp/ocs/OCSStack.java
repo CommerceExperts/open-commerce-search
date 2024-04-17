@@ -136,13 +136,8 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 			// "-Dspring.profiles.active=preset");
 			searchService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,trace-searches,test");
 
-			URL hostPath = OCSStack.class.getClassLoader().getResource("application-test.yml");
-			if (hostPath != null) {
-				searchService.addFileSystemBind(hostPath.getPath(), "/app/resources/application-test.yml", BindMode.READ_ONLY);
-			}
-			else {
-				throw new IllegalStateException("application-test.yml not found");
-			}
+			bindFile(searchService, "application-test.yml");
+			bindFile(searchService, "querqy-test-rules.txt");
 			
 			if (elasticsearch != null) {
 				searchService.setNetwork(elasticsearch.getNetwork());
@@ -159,6 +154,16 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 			});
 		}
 		return searchServiceHost;
+	}
+
+	private static void bindFile(GenericContainer<?> container, String resourceName) {
+		URL hostPath = OCSStack.class.getClassLoader().getResource(resourceName);
+		if (hostPath != null) {
+			container.addFileSystemBind(hostPath.getPath(), "/app/resources/" + resourceName, BindMode.READ_ONLY);
+		}
+		else {
+			throw new IllegalStateException("resource '" + resourceName + "' not found");
+		}
 	}
 
 	private CompletableFuture<String> startSuggestService(CompletableFuture<HttpHost> esHost) throws InterruptedException, ExecutionException {
