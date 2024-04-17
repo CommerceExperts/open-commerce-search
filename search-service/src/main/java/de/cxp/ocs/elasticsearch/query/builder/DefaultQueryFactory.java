@@ -9,15 +9,15 @@ import java.util.Map;
 import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder.Type;
 import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
 
 import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
-import de.cxp.ocs.elasticsearch.query.TextMatchQuery;
+import de.cxp.ocs.elasticsearch.query.SearchQueryWrapper;
 import de.cxp.ocs.elasticsearch.query.StandardQueryFactory;
+import de.cxp.ocs.elasticsearch.query.TextMatchQuery;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -57,15 +57,15 @@ public class DefaultQueryFactory implements ESQueryFactory {
 
 		fieldWeights = !fieldWeights.isEmpty() ? fieldWeights : Collections.singletonMap(FieldConstants.SEARCH_DATA + ".*", 1f);
 
-		mainQueryFactory = new StandardQueryFactory(extendedSettings, validateSearchFields(fieldWeights, fieldConfig, Field::isMasterLevel));
+		mainQueryFactory = new StandardQueryFactory(extendedSettings, validateSearchFields(fieldWeights, fieldConfig, Field::isMasterLevel), fieldConfig);
 		variantQueryFactory = new VariantQueryFactory(validateSearchFields(fieldWeights, fieldConfig, Field::isVariantLevel));
 	}
 
 	@Override
 	public TextMatchQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery) {
-		QueryStringQueryBuilder mainQuery = mainQueryFactory.create(parsedQuery);
+		SearchQueryWrapper mainQuery = mainQueryFactory.create(parsedQuery);
 		QueryBuilder variantQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery);
-		return new TextMatchQuery<>(mainQuery, variantQuery, mainQuery.fuzziness().asDistance() > 0, false);
+		return new TextMatchQuery<>(mainQuery.getQueryBuilder(), variantQuery, mainQuery.getFuzziness().asDistance() > 0, false);
 	}
 
 	@Override

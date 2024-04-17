@@ -6,6 +6,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import de.cxp.ocs.elasticsearch.model.query.*;
 import de.cxp.ocs.elasticsearch.model.term.*;
@@ -164,8 +165,27 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			filters = Collections.emptyList();
 		}
 
-		return new ExtendedQuery(searchQuery, filters);
-	}
+        List<QueryBoosting> boostings = Stream.concat(
+                Optional.ofNullable(expandedQuery.getBoostUpQueries()).orElse(Collections.emptyList()).stream()
+                        .map(boosting -> extractQueryBoosting(boosting, QueryBoosting.BoostType.UP)),
+                Optional.ofNullable(expandedQuery.getBoostDownQueries()).orElse(Collections.emptyList()).stream()
+                        .map(boosting -> extractQueryBoosting(boosting, QueryBoosting.BoostType.DOWN))
+        ).collect(Collectors.toList());
+
+        return new ExtendedQuery(searchQuery, filters, boostings);
+    }
+
+    private static QueryBoosting extractQueryBoosting(BoostQuery querqyBoostQuery, QueryBoosting.BoostType type) {
+        FilterFetcher fetcher = new FilterFetcher();
+        QuerqyQuery<?> querqyQuery = querqyBoostQuery.getQuery();
+        querqyQuery.accept(fetcher);
+        QueryStringTerm extractedQuerqyQuery = new ArrayList<>(fetcher.extractedWords)
+                .stream()
+                .findFirst().orElse(null);
+		QueryBoosting ocsBoosting = new QueryBoosting(extractedQuerqyQuery.getRawTerm(), type, querqyBoostQuery.getBoost());
+        ocsBoosting.setField((extractedQuerqyQuery instanceof QueryFilterTerm) ? ((QueryFilterTerm) extractedQuerqyQuery).getField() : null);
+        return ocsBoosting;
+    }
 
 	@NoArgsConstructor
 	static class TermCollector {

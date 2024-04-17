@@ -18,17 +18,21 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.common.unit.Fuzziness;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.MultiMatchQueryBuilder.Type;
 import org.elasticsearch.index.query.Operator;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.QueryStringQueryBuilder;
 
+import de.cxp.ocs.config.FieldConfigAccess;
 import de.cxp.ocs.config.QueryBuildingSetting;
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
+import de.cxp.ocs.elasticsearch.model.query.QueryBoosting;
 import de.cxp.ocs.elasticsearch.model.term.WeightedTerm;
 import de.cxp.ocs.elasticsearch.model.util.EscapeUtil;
 import de.cxp.ocs.elasticsearch.model.util.QueryStringUtil;
 import de.cxp.ocs.elasticsearch.model.visitor.AbstractTermVisitor;
+import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.Util;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -39,8 +43,35 @@ public class StandardQueryFactory {
 	@NonNull
 	private final Map<QueryBuildingSetting, String>	querySettings;
 	private final Map<String, Float>				fieldWeights;
+	private final FieldConfigAccess					fieldConfig;
 
-	public QueryStringQueryBuilder create(ExtendedQuery parsedQuery) {
+	private String defaultAnalyzer = "whitespace";
+
+	public SearchQueryWrapper create(ExtendedQuery parsedQuery) {
+		String defaultOperator = querySettings.getOrDefault(operator, "OR");
+		String queryString = buildQueryString(parsedQuery);
+		Fuzziness fuzziness = determineFuzziness(parsedQuery);
+		QueryBuilder esQuery = QueryBuilders.queryStringQuery(queryString)
+				.minimumShouldMatch(querySettings.getOrDefault(minShouldMatch, null))
+				.analyzer(querySettings.getOrDefault(analyzer, null))
+				.quoteAnalyzer(querySettings.getOrDefault(quoteAnalyzer, defaultAnalyzer))
+				.fuzziness(fuzziness)
+				.defaultOperator(Operator.fromString(defaultOperator))
+				.phraseSlop(Util.tryToParseAsNumber(querySettings.getOrDefault(phraseSlop, "0")).orElse(0).intValue())
+				.tieBreaker(Util.tryToParseAsNumber(querySettings.getOrDefault(tieBreaker, "0")).orElse(0).floatValue())
+				.autoGenerateSynonymsPhraseQuery(false)
+				.fields(fieldWeights)
+				.queryName(queryString)
+				.type(Type.valueOf(querySettings.getOrDefault(multimatch_type, Type.CROSS_FIELDS.name()).toUpperCase()));
+
+		if (!parsedQuery.getBoostings().isEmpty()) {
+			esQuery = applyBoostings(esQuery, parsedQuery.getBoostings());
+		}
+
+		return new SearchQueryWrapper(esQuery, fuzziness);
+	}
+
+	private Fuzziness determineFuzziness(ExtendedQuery parsedQuery) {
 		String fuzzySetting = querySettings.get(fuzziness);
 		Fuzziness fuzziness = Fuzziness.AUTO;
 		if (fuzzySetting != null) {
@@ -56,27 +87,7 @@ public class StandardQueryFactory {
 				}
 			}));
 		}
-
-		String defaultOperator = querySettings.getOrDefault(operator, "OR");
-		String queryString = buildQueryString(parsedQuery);
-		QueryStringQueryBuilder esQuery = QueryBuilders.queryStringQuery(queryString)
-				.minimumShouldMatch(querySettings.getOrDefault(minShouldMatch, null))
-				.analyzer(querySettings.getOrDefault(analyzer, null))
-				.quoteAnalyzer(querySettings.getOrDefault(quoteAnalyzer, "whitespace"))
-				.fuzziness(fuzziness)
-				.defaultOperator(Operator.fromString(defaultOperator))
-				.phraseSlop(Util.tryToParseAsNumber(querySettings.getOrDefault(phraseSlop, "0")).orElse(0).intValue())
-				.tieBreaker(Util.tryToParseAsNumber(querySettings.getOrDefault(tieBreaker, "0")).orElse(0).floatValue())
-				.autoGenerateSynonymsPhraseQuery(false)
-				.fields(fieldWeights)
-				.queryName(queryString);
-
-		// set type
-		Type searchType = Type.valueOf(querySettings.getOrDefault(multimatch_type, Type.CROSS_FIELDS.name())
-				.toUpperCase());
-		esQuery.type(searchType);
-
-		return esQuery;
+		return fuzziness;
 	}
 
 	private String buildQueryString(ExtendedQuery parsedQuery) {
@@ -151,6 +162,62 @@ public class StandardQueryFactory {
 			// than the original terms
 			queryStringBuilder.append(")^0.9");
 		}
+	}
+
+	private QueryBuilder applyBoostings(QueryBuilder queryBuilder, List<QueryBoosting> boostings) {
+		float negBoostWeightSum = 0;
+		List<QueryBuilder> negativeBoostQueries = new ArrayList<>();
+
+		for (QueryBoosting boosting : boostings) {
+			QueryBuilder boostQuery = getBoostingQuery(boosting);
+			if (boosting.isUpBoosting()) {
+				boostQuery.boost(boosting.getWeight());
+				queryBuilder = ESQueryUtils.mapToBoolQueryBuilder(queryBuilder).should(boostQuery).minimumShouldMatch(0);
+			}
+			else {
+				negBoostWeightSum += boosting.getWeight();
+				negativeBoostQueries.add(boostQuery);
+			}
+		}
+
+		if (!negativeBoostQueries.isEmpty()) {
+			QueryBuilder negativeBoostQuery;
+			if (negativeBoostQueries.size() == 1) {
+				negativeBoostQuery = negativeBoostQueries.get(0);
+			}
+			else {
+				negativeBoostQuery = QueryBuilders.boolQuery();
+				StringBuilder queryName = new StringBuilder();
+				for (QueryBuilder q : negativeBoostQueries) {
+					((BoolQueryBuilder) negativeBoostQuery).should(q);
+					queryName.append(" ").append(q.queryName());
+				}
+				negativeBoostQuery.queryName(queryName.toString().trim());
+			}
+			// in case different negative boost values were specified, we use the average of them, since we cannot
+			// apply separate negative boost values
+			float negativeBoost = negBoostWeightSum / negativeBoostQueries.size();
+			// if DOWN-boosts were specified with bigger values like "10", we simply use the reciprocal value
+			if (negativeBoost > 1f) negativeBoost = 1 / negativeBoost;
+			queryBuilder = QueryBuilders.boostingQuery(queryBuilder, negativeBoostQuery).negativeBoost(negativeBoost);
+		}
+		return queryBuilder;
+	}
+
+	private QueryBuilder getBoostingQuery(QueryBoosting boosting) {
+		QueryBuilder matchBoostQuery;
+		Optional<SearchField> searchField = ESQueryUtils.validateSearchField(boosting.getField(), fieldConfig);
+		String namePrefix = boosting.isUpBoosting() ? "++" : "--";
+		if (searchField.isPresent()) {
+			matchBoostQuery = QueryBuilders.matchQuery(searchField.get().getFullName(), boosting.getRawTerm()).analyzer(defaultAnalyzer)
+					.queryName(namePrefix + boosting.getField() + ":" + boosting.getRawTerm());
+		}
+		else {
+			matchBoostQuery = QueryBuilders.multiMatchQuery(boosting.getRawTerm()).fields(fieldWeights).analyzer(defaultAnalyzer)
+					.queryName(namePrefix + boosting.getRawTerm());
+		}
+
+		return matchBoostQuery;
 	}
 
 }

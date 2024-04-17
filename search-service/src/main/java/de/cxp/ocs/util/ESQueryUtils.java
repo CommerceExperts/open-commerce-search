@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -17,6 +18,7 @@ import de.cxp.ocs.config.FieldConstants;
 import de.cxp.ocs.config.FieldUsage;
 import de.cxp.ocs.elasticsearch.model.term.AssociatedTerm;
 import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
+import de.cxp.ocs.elasticsearch.query.SearchField;
 
 public class ESQueryUtils {
 
@@ -120,21 +122,33 @@ public class ESQueryUtils {
 		Map<String, Float> validatedFields = new HashMap<>();
 		for (Entry<String, Float> fieldWeight : weightedFields.entrySet()) {
 			String fieldName = fieldWeight.getKey();
-			if (fieldName.startsWith(FieldConstants.SEARCH_DATA + ".")) {
-				fieldName = fieldName.substring(FieldConstants.SEARCH_DATA.length() + 1);
-			}
+			Optional<SearchField> searchField = validateSearchField(fieldName, fieldConfig);
 
-			int subFieldDelimiterIndex = fieldName.indexOf('.');
-			String subField = "";
-			if (!fieldName.endsWith("*") && subFieldDelimiterIndex > 0) {
-				subField = fieldName.substring(subFieldDelimiterIndex);
-				fieldName = fieldName.substring(0, subFieldDelimiterIndex);
-			}
-
-			if (fieldConfig.getMatchingField(fieldName, FieldUsage.SEARCH).map(additionalPredicate::test).orElse(false)) {
-				validatedFields.put(FieldConstants.SEARCH_DATA + "." + fieldName + subField, fieldWeight.getValue());
+			if (searchField.map(SearchField::getField).map(additionalPredicate::test).orElse(false)) {
+				validatedFields.put(searchField.get().getFullName(), fieldWeight.getValue());
 			}
 		}
 		return validatedFields;
+	}
+
+	public static Optional<SearchField> validateSearchField(String fieldName, FieldConfigAccess fieldConfig) {
+		if (fieldName == null || fieldName.isBlank()) return Optional.empty();
+
+		if (fieldName.startsWith(FieldConstants.SEARCH_DATA + ".")) {
+			fieldName = fieldName.substring(FieldConstants.SEARCH_DATA.length() + 1);
+		}
+
+		final String subField;
+		int subFieldDelimiterIndex = fieldName.indexOf('.');
+		if (!fieldName.endsWith("*") && subFieldDelimiterIndex > 0) {
+			subField = fieldName.substring(subFieldDelimiterIndex + 1);
+			fieldName = fieldName.substring(0, subFieldDelimiterIndex);
+		}
+		else {
+			subField = null;
+		}
+
+		return fieldConfig.getMatchingField(fieldName, FieldUsage.SEARCH).map(f -> new SearchField(f, subField));
+
 	}
 }
