@@ -39,3 +39,12 @@ ocs:
         - source-field: price
           label: _price
           type: RANGE
+    querqy_rules_test:
+      use-default-query-config: true
+      # don't use scoring, to test the effect of the rules isolated
+      use-default-scoring-config: false
+      query-processing:
+        user-query-analyzer: "de.cxp.ocs.elasticsearch.query.analyzer.QuerqyQueryExpander"
+      plugin-configuration:
+        "[de.cxp.ocs.elasticsearch.query.analyzer.QuerqyQueryExpander]":
+          "common_rules_url": "querqy-test-rules.txt"

@@ -27,13 +27,20 @@ public class ExtendedQuery implements AnalyzedQuery {
 	@NonNull
 	private final List<QueryStringTerm> filters;
 
-	// Coming Soon: boosted query
+	@NonNull
+	private final List<QueryBoosting> boostings;
 
 	public ExtendedQuery(AnalyzedQuery searchQuery) {
 		this.searchQuery = searchQuery;
+		boostings = Collections.emptyList();
 		filters = Collections.emptyList();
 	}
 
+	public ExtendedQuery(AnalyzedQuery searchQuery, List<QueryStringTerm> filters) {
+		this.searchQuery = searchQuery;
+		this.filters = filters;
+		boostings = Collections.emptyList();
+	}
 	public boolean isEmpty() {
 		return searchQuery.getTermCount() == 0 && filters.size() == 0;
 	}
