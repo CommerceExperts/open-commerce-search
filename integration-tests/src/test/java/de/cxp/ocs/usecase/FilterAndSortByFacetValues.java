@@ -11,6 +11,7 @@ import java.util.Optional;
 
 import org.elasticsearch.core.Map;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -93,6 +94,33 @@ public class FilterAndSortByFacetValues {
 
 			assertEquals(10.0, ((RangeFacetEntry) entry1).getLowerBound());
 			assertEquals(20.0, ((RangeFacetEntry) entry1).getUpperBound());
+		}
+	}
+
+	/* Due to aggSampling=2, we expect only the first two products being used for facet creation, even though all 3
+	 * products should be in the result */
+	@Disabled("agg sampling ignores sorting, so without a query and scores it's unpredictable which documents are used for aggregation")
+	@Test
+	public void testFilteredRangeFacetWithAggSampling() throws Exception {
+		{
+			SearchResult result_c1 = getSearchClient().search(indexName, new SearchQuery().setSort("campaign.id.1"), Map.of("campaign.id", "1", "aggSampling", "2"));
+			List<ResultHit> hits_c1 = result_c1.slices.get(0).hits;
+			assertEquals(3, hits_c1.size());
+
+			List<Facet> facets = result_c1.slices.get(0).getFacets();
+
+			Facet campaignFacet = facets.stream().filter(f -> "campaign".equals(f.getFieldName())).findFirst().orElseThrow();
+			assertEquals(1, campaignFacet.getEntries().size());
+			FacetEntry entry1 = campaignFacet.getEntries().get(0);
+			assertTrue(entry1 instanceof RangeFacetEntry, "instead: " + entry1.getClass().getCanonicalName());
+			assertEquals(1.0, ((RangeFacetEntry) entry1).getLowerBound());
+			assertEquals(2.0, ((RangeFacetEntry) entry1).getUpperBound());
+
+			Facet priceFacet = facets.stream().filter(f -> "price".equals(f.getFieldName())).findFirst().orElseThrow();
+			FacetEntry priceEntry = priceFacet.getEntries().get(0);
+			assertTrue(priceEntry instanceof RangeFacetEntry, "instead: " + priceEntry.getClass().getCanonicalName());
+			assertEquals(22.99, ((RangeFacetEntry) priceEntry).getLowerBound());
+			assertEquals(32.99, ((RangeFacetEntry) priceEntry).getUpperBound());
 		}
 	}
 

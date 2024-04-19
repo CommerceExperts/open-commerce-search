@@ -34,7 +34,7 @@ public class FiltersBuilder {
 
 	public FiltersBuilder(SearchContext context) {
 		for (FacetConfig facet : context.config.getFacetConfiguration().getFacets()) {
-			if (facet.isMultiSelect() || facet.isShowUnselectedOptions()) postFilterFacets.add(facet.getSourceField());
+			if ((facet.isMultiSelect() || facet.isShowUnselectedOptions()) && !facet.isFilterSensitive()) postFilterFacets.add(facet.getSourceField());
 		}
 		indexedFieldConfig = context.getFieldConfigIndex();
 	}
