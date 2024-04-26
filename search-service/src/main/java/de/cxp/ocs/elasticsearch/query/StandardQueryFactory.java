@@ -211,11 +211,14 @@ public class StandardQueryFactory {
 		Optional<SearchField> searchField = ESQueryUtils.validateSearchField(boosting.getField(), fieldConfig);
 		String namePrefix = boosting.isUpBoosting() ? "++" : "--";
 		if (searchField.isPresent()) {
-			matchBoostQuery = QueryBuilders.matchQuery(searchField.get().getFullName(), boosting.getRawTerm()).analyzer(defaultAnalyzer)
+			matchBoostQuery = QueryBuilders.matchQuery(searchField.get().getFullName(), boosting.getRawTerm())
+					.operator(Operator.AND)
+					.analyzer(defaultAnalyzer)
 					.queryName(namePrefix + boosting.getField() + ":" + boosting.getRawTerm() + "(" + boosting.getWeight() + ")");
 		}
 		else {
 			matchBoostQuery = QueryBuilders.multiMatchQuery(boosting.getRawTerm()).fields(fieldWeights).analyzer(defaultAnalyzer)
+					.operator(Operator.AND)
 					.queryName(namePrefix + boosting.getRawTerm());
 		}
 
