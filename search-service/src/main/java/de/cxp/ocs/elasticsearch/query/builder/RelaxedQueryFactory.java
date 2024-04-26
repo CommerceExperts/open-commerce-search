@@ -109,7 +109,6 @@ public class RelaxedQueryFactory implements ESQueryFactory, FallbackConsumer {
 				break;
 			}
 
-
 			String queryLabel = ESQueryUtils.getQueryLabel(pQuery.getTermsUnique().values());
 			// the label represents the complete query! if the label already
 			// exists, the query also already exists
@@ -123,7 +122,6 @@ public class RelaxedQueryFactory implements ESQueryFactory, FallbackConsumer {
 			else if (unmatchedTerms.size() > 0) {
 				pQuery.getTermsUnique().keySet().forEach(unmatchedTerms::remove);
 			}
-
 
 			ExtendedQuery extendedQuery = new ExtendedQuery(new MultiTermQuery(pQuery.termsUnique.keySet(), pQuery.getTermsUnique().values()));
 			QueryBuilder extendedQueryBuilder = mainQueryFactory.create(extendedQuery).getQueryBuilder();
@@ -144,10 +142,17 @@ public class RelaxedQueryFactory implements ESQueryFactory, FallbackConsumer {
 			createdQueries.add("boost(" + ESQueryUtils.getQueryLabel(unmatchedTerms.values()) + ")");
 		}
 
+		StringBuilder queryDescription = new StringBuilder(StringUtils.join(createdQueries, " || "));
 		for (QueryStringTerm term : parsedQuery.getFilters()) {
 			if (term.getOccur().equals(Occur.MUST_NOT)) {
 				mainQuery = ESQueryUtils.mapToBoolQueryBuilder(mainQuery).mustNot(exactMatchQuery(term.getRawTerm()));
+				queryDescription.append(" must_not:" + term.getRawTerm()).append(" ");
 			}
+		}
+
+		if (!parsedQuery.getBoostings().isEmpty()) {
+			parsedQuery.getBoostings().forEach(b -> queryDescription.append(" ").append(b));
+			mainQuery = mainQueryFactory.applyBoostings(mainQuery, parsedQuery.getBoostings());
 		}
 
 		/**
@@ -158,9 +163,8 @@ public class RelaxedQueryFactory implements ESQueryFactory, FallbackConsumer {
 		 */
 		QueryBuilder variantScoreQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery);
 
-		return new TextMatchQuery<>(mainQuery, variantScoreQuery, true, unmatchedTerms.size() == 0, StringUtils.join(createdQueries, " + "));
+		return new TextMatchQuery<>(mainQuery, variantScoreQuery, true, unmatchedTerms.size() == 0, queryDescription.toString());
 	}
-
 
 	private List<PredictedQuery> predictQueries(final @NonNull ExtendedQuery analyzedQuery) {
 		List<PredictedQuery> queryMetaData = null;

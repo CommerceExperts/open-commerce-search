@@ -64,11 +64,13 @@ public class StandardQueryFactory {
 				.queryName(queryString)
 				.type(Type.valueOf(querySettings.getOrDefault(multimatch_type, Type.CROSS_FIELDS.name()).toUpperCase()));
 
+		StringBuilder queryDescription = new StringBuilder(queryString);
 		if (!parsedQuery.getBoostings().isEmpty()) {
+			parsedQuery.getBoostings().forEach(b -> queryDescription.append(" ").append(b));
 			esQuery = applyBoostings(esQuery, parsedQuery.getBoostings());
 		}
 
-		return new SearchQueryWrapper(esQuery, fuzziness);
+		return new SearchQueryWrapper(esQuery, fuzziness, queryDescription.toString());
 	}
 
 	private Fuzziness determineFuzziness(ExtendedQuery parsedQuery) {
@@ -164,7 +166,7 @@ public class StandardQueryFactory {
 		}
 	}
 
-	private QueryBuilder applyBoostings(QueryBuilder queryBuilder, List<QueryBoosting> boostings) {
+	public QueryBuilder applyBoostings(QueryBuilder queryBuilder, List<QueryBoosting> boostings) {
 		float negBoostWeightSum = 0;
 		List<QueryBuilder> negativeBoostQueries = new ArrayList<>();
 
@@ -210,7 +212,7 @@ public class StandardQueryFactory {
 		String namePrefix = boosting.isUpBoosting() ? "++" : "--";
 		if (searchField.isPresent()) {
 			matchBoostQuery = QueryBuilders.matchQuery(searchField.get().getFullName(), boosting.getRawTerm()).analyzer(defaultAnalyzer)
-					.queryName(namePrefix + boosting.getField() + ":" + boosting.getRawTerm());
+					.queryName(namePrefix + boosting.getField() + ":" + boosting.getRawTerm() + "(" + boosting.getWeight() + ")");
 		}
 		else {
 			matchBoostQuery = QueryBuilders.multiMatchQuery(boosting.getRawTerm()).fields(fieldWeights).analyzer(defaultAnalyzer)

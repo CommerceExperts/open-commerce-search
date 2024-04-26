@@ -45,8 +45,7 @@ public class QueryStringParser {
 
 			parsedQuery = userQueryAnalyzer.analyze(preprocessedQuery);
 			parsedQuery = handleFiltersOnFields(parameters, parsedQuery);
-			searchMetaData.put("analyzedQuery", parsedQuery.getSearchQuery().toQueryString() + " " + parsedQuery.getFilters());
-			searchMetaData.put("analyzerFilters", parameters.inducedFilters);
+			searchMetaData.put("analyzedQuery", parsedQuery.getSearchQuery().toQueryString() + " " + parsedQuery.getFilters() + " " + parsedQuery.getBoostings());
 		}
 		else {
 			parsedQuery = ExtendedQuery.MATCH_ALL;
