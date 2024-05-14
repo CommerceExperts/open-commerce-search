@@ -62,15 +62,17 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 
 	public void updateQueryMapper(@NonNull QuerySuggester newSuggester) throws AlreadyClosedException {
 		if (isClosed) throw new AlreadyClosedException("suggester for tenant " + indexName + " closed");
-		if (log.isDebugEnabled()) {
-			log.debug("updating from {} to {} for tenant {} with data from {}",
-					innerQuerySuggester.get().getClass().getSimpleName(),
-					newSuggester.getClass().getSimpleName(),
-					indexName,
-					dataProviderName);
-		}
-		firstLetterCache.asMap().keySet()
-				.forEach(term -> firstLetterCache.put(term, newSuggester.suggest(term)));
+		log.info("updating from {} to {} for tenant {} with data from {}",
+				innerQuerySuggester.get().getClass().getSimpleName(),
+				newSuggester.getClass().getSimpleName(),
+				indexName,
+				dataProviderName);
+
+		long startMs = System.currentTimeMillis();
+		Set<String> cacheKeys = firstLetterCache.asMap().keySet();
+		cacheKeys.forEach(term -> firstLetterCache.put(term, newSuggester.suggest(term)));
+		log.info("refreshed cache with {} entries in {}ms", cacheKeys.size(), (System.currentTimeMillis() - startMs));
+
 		QuerySuggester oldSuggester = innerQuerySuggester.getAndSet(newSuggester);
 		if (oldSuggester != null) {
 			oldSuggester.destroy();
