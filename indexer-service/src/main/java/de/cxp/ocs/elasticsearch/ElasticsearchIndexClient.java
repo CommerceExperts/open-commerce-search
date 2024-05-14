@@ -1,6 +1,7 @@
 package de.cxp.ocs.elasticsearch;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.*;
 
 import org.elasticsearch.ElasticsearchException;
@@ -79,9 +80,9 @@ class ElasticsearchIndexClient {
 			return response.getAliases();
 		}
 		catch (IOException e) {
-			log.info("Could not get alias for index {}", indexName);
+			log.error("Could not get alias for index {} due to {}: {}", indexName, e.getClass().getSimpleName(), e.getMessage());
+			throw new UncheckedIOException(e);
 		}
-		return Collections.emptyMap();
 	}
 
 	public boolean updateAlias(String aliasName, String oldIndexName, String newIndexName) {
