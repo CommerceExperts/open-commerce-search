@@ -1,5 +1,7 @@
 package de.cxp.ocs.controller;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,8 +68,12 @@ public class UpdateIndexController implements UpdateIndexService {
 		catch (IllegalArgumentException e) {
 			throw e;
 		}
+		catch (IOException io) {
+			log.error("IOException during putDocuments: {}", io.getMessage());
+			throw new UncheckedIOException(io);
+		}
 		catch (Exception e) {
-			log.error("failed to get indexer", e);
+			log.error("{} during putDocuments: {}", e, e.getMessage());
 			throw new RuntimeException(e);
 		}
 		finally {
