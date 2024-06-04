@@ -39,9 +39,10 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 	public final static String	DO_ASCIIFY_RULES_PROPERTY_NAME		= "do_asciiy_rules";
 	public final static String	DO_LOWERCASE_RULES_PROPERTY_NAME	= "do_lowercase_rules";
 
-	private QuerqyParser	parser					= new WhiteSpaceQuerqyParser();
-	private RewriteChain	rewriteChain			= null;
-	private boolean			loggedMissingRewriter	= false;
+	private WhiteSpaceQuerqyParser	defaultParser			= new WhiteSpaceQuerqyParser();
+	private QuerqyParser			parser					= defaultParser;
+	private RewriteChain			rewriteChain			= null;
+	private boolean					loggedMissingRewriter	= false;
 
 	@Override
 	public void initialize(Map<String, String> settings) {
@@ -118,15 +119,61 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 		// TODO: add extension point for "QueryExpander" and to be like that
 		// if a different analyzer is used, it should also be possible to
 		// construct an expanded query from a list of QueryStringTerm-s
-		ExpandedQuery expandedQuery = new ExpandedQuery(parser.parse(userQuery));
+		Query originalQuery = null;
+		if (parser != defaultParser) {
+			originalQuery = defaultParser.parse(userQuery);
+		}
+		ExpandedQuery expandedQuery;
 		if (rewriteChain != null) {
+			Query normalizedQuery = parser.parse(userQuery);
+
+			// the transforming parser normalizes the original query terms, to that the original terms are lost.
+			// this is a problem when we actually want Elasticsearch to do the normalization (properly),
+			// e.g. asciify should be done after stemming, otherwise we have different stemming results.
+			// Therefore we restore the original terms here again.
+			// However that is not that easy, since rules can delete terms or add terms.
+			// That's why we link every original term with the normalized term with a runnable which is executed later.
+			List<Runnable> reversions = prepareTermRestoration(originalQuery, normalizedQuery);
+			expandedQuery = new ExpandedQuery(normalizedQuery);
 			rewriteChain.rewrite(expandedQuery, new LocalSearchEngineRequestAdapter(rewriteChain, Collections.emptyMap()));
+			reversions.forEach(Runnable::run);
 		}
-		else if (!loggedMissingRewriter) {
-			log.info("No rewriter initialized, will just analyze/expand but not enrich query.");
-			loggedMissingRewriter = true;
+		else {
+			expandedQuery = new ExpandedQuery(originalQuery != null ? originalQuery : defaultParser.parse(userQuery));
+			if (!loggedMissingRewriter) {
+				log.info("No rewriter initialized, will just analyze/expand but not enrich query.");
+				loggedMissingRewriter = true;
+			}
 		}
+
 		return extractQueryString(expandedQuery);
+	}
+
+	/**
+	 * Prepares a list of restore calls that should be applied after rewriting the query.
+	 * 
+	 * @param originalQuery
+	 * @param normalizedQuery
+	 * @return list of all restoration calls that have to be made. might be empty
+	 */
+	private List<Runnable> prepareTermRestoration(Query originalQuery, Query normalizedQuery) {
+		if (originalQuery == null) return Collections.emptyList();
+
+		List<BooleanClause> origTermClauses = originalQuery.getClauses();
+		List<BooleanClause> normalizedTermClauses = normalizedQuery.getClauses();
+		List<Runnable> reversions = new ArrayList<>(origTermClauses.size());
+		for (int i = 0; i < origTermClauses.size() && i < normalizedTermClauses.size(); i++) {
+			DisjunctionMaxQuery origTermClause = (DisjunctionMaxQuery) origTermClauses.get(i);
+			DisjunctionMaxQuery normTermClause = (DisjunctionMaxQuery) normalizedTermClauses.get(i);
+			if (!origTermClause.getClauses().get(0).equals(normTermClause.getClauses().get(0))) {
+				reversions.add(() -> {
+					if (!normTermClause.getClauses().isEmpty()) {
+						normTermClause.getClauses().set(0, origTermClause.getClauses().get(0));
+					}
+				});
+			}
+		}
+		return reversions;
 	}
 
 	private static ExtendedQuery extractQueryString(ExpandedQuery expandedQuery) {
@@ -165,27 +212,27 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			filters = Collections.emptyList();
 		}
 
-        List<QueryBoosting> boostings = Stream.concat(
-                Optional.ofNullable(expandedQuery.getBoostUpQueries()).orElse(Collections.emptyList()).stream()
-                        .map(boosting -> extractQueryBoosting(boosting, QueryBoosting.BoostType.UP)),
-                Optional.ofNullable(expandedQuery.getBoostDownQueries()).orElse(Collections.emptyList()).stream()
-                        .map(boosting -> extractQueryBoosting(boosting, QueryBoosting.BoostType.DOWN))
-        ).collect(Collectors.toList());
+		List<QueryBoosting> boostings = Stream.concat(
+				Optional.ofNullable(expandedQuery.getBoostUpQueries()).orElse(Collections.emptyList()).stream()
+						.map(boosting -> extractQueryBoosting(boosting, QueryBoosting.BoostType.UP)),
+				Optional.ofNullable(expandedQuery.getBoostDownQueries()).orElse(Collections.emptyList()).stream()
+						.map(boosting -> extractQueryBoosting(boosting, QueryBoosting.BoostType.DOWN)))
+				.collect(Collectors.toList());
 
-        return new ExtendedQuery(searchQuery, filters, boostings);
-    }
+		return new ExtendedQuery(searchQuery, filters, boostings);
+	}
 
-    private static QueryBoosting extractQueryBoosting(BoostQuery querqyBoostQuery, QueryBoosting.BoostType type) {
-        FilterFetcher fetcher = new FilterFetcher();
-        QuerqyQuery<?> querqyQuery = querqyBoostQuery.getQuery();
-        querqyQuery.accept(fetcher);
-        QueryStringTerm extractedQuerqyQuery = new ArrayList<>(fetcher.extractedWords)
-                .stream()
-                .findFirst().orElse(null);
+	private static QueryBoosting extractQueryBoosting(BoostQuery querqyBoostQuery, QueryBoosting.BoostType type) {
+		FilterFetcher fetcher = new FilterFetcher();
+		QuerqyQuery<?> querqyQuery = querqyBoostQuery.getQuery();
+		querqyQuery.accept(fetcher);
+		QueryStringTerm extractedQuerqyQuery = new ArrayList<>(fetcher.extractedWords)
+				.stream()
+				.findFirst().orElse(null);
 		QueryBoosting ocsBoosting = new QueryBoosting(extractedQuerqyQuery.getRawTerm(), type, querqyBoostQuery.getBoost());
-        ocsBoosting.setField((extractedQuerqyQuery instanceof QueryFilterTerm) ? ((QueryFilterTerm) extractedQuerqyQuery).getField() : null);
-        return ocsBoosting;
-    }
+		ocsBoosting.setField((extractedQuerqyQuery instanceof QueryFilterTerm) ? ((QueryFilterTerm) extractedQuerqyQuery).getField() : null);
+		return ocsBoosting;
+	}
 
 	@NoArgsConstructor
 	static class TermCollector {
@@ -472,7 +519,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 
 	static class FilterFetcher extends AbstractNodeVisitor<Node> {
 
-		List<QueryStringTerm>									extractedWords	= new ArrayList<>();
+		List<QueryStringTerm>								extractedWords	= new ArrayList<>();
 		private de.cxp.ocs.elasticsearch.model.term.Occur	occur;
 
 		@Override
@@ -510,8 +557,8 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 				}
 				rawQueryString = filterMatcher.reset().replaceAll("");
 			}
-			
-			if (!rawQueryString.isBlank()){
+
+			if (!rawQueryString.isBlank()) {
 				extractedWords.add(new RawTerm(rawQueryString.trim()));
 			}
 			return super.visit(rawQuery);
