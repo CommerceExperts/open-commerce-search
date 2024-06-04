@@ -208,6 +208,7 @@ public class Searcher {
 
 	private SearchResponse stagedSearch(InternalSearchParams parameters, ExtendedQuery parsedQuery, SearchQueryContext queryContext, Iterator<ESQueryFactory> stagedQueryBuildersIterator, Map<String, Object> searchMetaData) throws IOException {
 		int i = 0;
+		String queryStrategyName = "";
 		SearchResponse searchResponse = null;
 		Map<String, AssociatedTerm> correctedWords = null;
 		Sample sqbSample = Timer.start(registry);
@@ -220,6 +221,7 @@ public class Searcher {
 			sw.start();
 			Sample inputWordsSample = Timer.start(registry);
 			ESQueryFactory stagedQueryBuilder = stagedQueryBuildersIterator.next();
+			queryStrategyName = stagedQueryBuilder.getName();
 
 			TextMatchQuery<QueryBuilder> searchQuery = stagedQueryBuilder.createQuery(parsedQuery);
 			if (log.isTraceEnabled()) {
@@ -300,6 +302,7 @@ public class Searcher {
 			searchMetaData.put("query_boostings", parsedQuery.getBoostings().stream().map(QueryBoosting::toString).collect(Collectors.toList()));
 			searchMetaData.put("query_executed", searchQuery.getQueryDescription() == null ? searchQuery.getMasterLevelQuery().queryName() : searchQuery.getQueryDescription());
 			searchMetaData.put("query_stage", Optional.ofNullable(parameters.customParams.get("query_stage")).map(Integer::parseInt).orElse(i));
+			searchMetaData.put("query_strategy", queryStrategyName);
 
 			if (!isResultSufficient && searchQuery.isAcceptNoResult()) {
 				break;

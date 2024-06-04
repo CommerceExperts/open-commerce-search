@@ -49,8 +49,8 @@ public class StandardQueryFactory {
 
 	public SearchQueryWrapper create(ExtendedQuery parsedQuery) {
 		String defaultOperator = querySettings.getOrDefault(operator, "OR");
-		String queryString = buildQueryString(parsedQuery);
 		Fuzziness fuzziness = determineFuzziness(parsedQuery);
+		String queryString = buildQueryString(parsedQuery);
 		QueryBuilder esQuery = QueryBuilders.queryStringQuery(queryString)
 				.minimumShouldMatch(querySettings.getOrDefault(minShouldMatch, null))
 				.analyzer(querySettings.getOrDefault(analyzer, null))
