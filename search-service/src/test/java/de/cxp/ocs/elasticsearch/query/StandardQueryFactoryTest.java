@@ -46,7 +46,7 @@ public class StandardQueryFactoryTest {
 		System.out.println(analyzedQuery);
 
 		BoostingQueryBuilder esQuery = (BoostingQueryBuilder) underTest.create(analyzedQuery).getQueryBuilder();
-		assertEquals("++brand:lenovo", ((BoolQueryBuilder) esQuery.positiveQuery()).should().get(0).queryName(), esQuery::toString);
+		assertEquals("++brand:lenovo(2.0)", ((BoolQueryBuilder) esQuery.positiveQuery()).should().get(0).queryName(), esQuery::toString);
 		assertEquals("--accessory", esQuery.negativeQuery().queryName(), esQuery::toString);
 	}
 

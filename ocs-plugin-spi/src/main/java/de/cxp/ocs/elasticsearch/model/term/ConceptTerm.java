@@ -7,6 +7,7 @@ import java.util.List;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
  * A concept that consists of several tokens that have a specific meaning in their context.
@@ -17,6 +18,7 @@ import lombok.Setter;
  * 
  * @author Rudolf Batt
  */
+@Accessors(chain = true)
 public class ConceptTerm implements QueryStringTerm {
 
 	private final List<QueryStringTerm> terms = new ArrayList<>();
