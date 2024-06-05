@@ -12,5 +12,6 @@ public class SearchQueryWrapper {
 
 	private final QueryBuilder	queryBuilder;
 	private final Fuzziness		fuzziness;
+	private final String		queryDescription;
 
 }

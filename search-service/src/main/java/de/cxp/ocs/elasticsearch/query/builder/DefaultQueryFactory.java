@@ -65,7 +65,7 @@ public class DefaultQueryFactory implements ESQueryFactory {
 	public TextMatchQuery<QueryBuilder> createQuery(ExtendedQuery parsedQuery) {
 		SearchQueryWrapper mainQuery = mainQueryFactory.create(parsedQuery);
 		QueryBuilder variantQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery);
-		return new TextMatchQuery<>(mainQuery.getQueryBuilder(), variantQuery, mainQuery.getFuzziness().asDistance() > 0, false);
+		return new TextMatchQuery<>(mainQuery.getQueryBuilder(), variantQuery, mainQuery.getFuzziness().asDistance() > 0, false, mainQuery.getQueryDescription());
 	}
 
 	@Override

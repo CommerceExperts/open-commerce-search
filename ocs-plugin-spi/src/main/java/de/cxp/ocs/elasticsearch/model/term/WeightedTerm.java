@@ -2,11 +2,13 @@ package de.cxp.ocs.elasticsearch.model.term;
 
 import de.cxp.ocs.elasticsearch.model.util.EscapeUtil;
 import lombok.*;
+import lombok.experimental.Accessors;
 
 /**
  * A term that accepts a weight and a optional fuzzy operator.
  */
 @Data
+@Accessors(chain = true)
 @AllArgsConstructor
 @RequiredArgsConstructor
 @NoArgsConstructor

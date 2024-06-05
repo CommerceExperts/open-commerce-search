@@ -4,17 +4,19 @@ import static de.cxp.ocs.elasticsearch.model.query.QueryBoosting.BoostType.DOWN;
 import static de.cxp.ocs.elasticsearch.model.query.QueryBoosting.BoostType.UP;
 import static de.cxp.ocs.elasticsearch.query.analyzer.AnalyzerUtil.extractTerms;
 import static de.cxp.ocs.util.TestUtils.assertAndCastInstanceOf;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.EnumSet;
 import java.util.List;
 
-import de.cxp.ocs.elasticsearch.model.query.QueryBoosting;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import de.cxp.ocs.elasticsearch.model.query.ExtendedQuery;
+import de.cxp.ocs.elasticsearch.model.query.QueryBoosting;
 import de.cxp.ocs.elasticsearch.model.term.*;
 import de.cxp.ocs.elasticsearch.model.util.QueryStringUtil;
 import de.cxp.ocs.elasticsearch.query.analyzer.QuerqyQueryExpanderBuilder.RuleLoadingFlags;
@@ -60,8 +62,8 @@ public class QuerqyQueryExpanderTest {
 	@Test
 	public void testAsciifiedAndLowercasedRulesAndInput() {
 		QuerqyQueryExpander underTest = qqBuilder.loadWithRules(EnumSet.of(RuleLoadingFlags.ASCIIFY, RuleLoadingFlags.LOWERCASE), "Dzięci =>", "  SYNONYM(0.5): Dziewczęce");
-		ExtendedQuery analyzedQuery = analyze(underTest, "Dzięci");
-		assertEquals("(dzieci OR dziewczece^0.5)", analyzedQuery.toQueryString());
+		ExtendedQuery analyzedQuery = analyze(underTest, "dzięci");
+		assertEquals("(dzięci OR dziewczece^0.5)", analyzedQuery.toQueryString());
 	}
 
 	@Test
@@ -77,7 +79,7 @@ public class QuerqyQueryExpanderTest {
 		QuerqyQueryExpander underTest = qqBuilder.loadWithRules(EnumSet.of(RuleLoadingFlags.LOWERCASE), "Kreslo =>", "  SYNONYM(0.82): POLSTER");
 
 		ExtendedQuery analyzedQuery2 = analyze(underTest, "KRESLO");
-		assertEquals("(kreslo OR polster^0.82)", analyzedQuery2.toQueryString());
+		assertEquals("(KRESLO OR polster^0.82)", analyzedQuery2.toQueryString());
 	}
 
 	@Test

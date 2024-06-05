@@ -68,7 +68,8 @@ public class ConfigurableQueryFactory implements ESQueryFactory {
 		return new TextMatchQuery<>(mainQuery.getQueryBuilder(),
 				variantQueryFactory.createMatchAnyTermQuery(parsedQuery),
 				mainQuery.getFuzziness().asDistance() > 0,
-				Boolean.parseBoolean(querySettings.getOrDefault(acceptNoResult, "false")));
+				Boolean.parseBoolean(querySettings.getOrDefault(acceptNoResult, "false")),
+				mainQuery.getQueryDescription());
 	}
 
 	@Override

@@ -22,6 +22,7 @@ import de.cxp.ocs.elasticsearch.model.query.MultiTermQuery;
 import de.cxp.ocs.elasticsearch.model.term.AssociatedTerm;
 import de.cxp.ocs.elasticsearch.model.term.Occur;
 import de.cxp.ocs.elasticsearch.model.term.QueryStringTerm;
+import de.cxp.ocs.elasticsearch.query.StandardQueryFactory;
 import de.cxp.ocs.elasticsearch.query.TextMatchQuery;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import de.cxp.ocs.util.ESQueryUtils;
@@ -60,6 +61,7 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 	@Setter
 	private ESQueryFactory fallbackQueryBuilder;
 
+	private StandardQueryFactory	standardQueryFactory;
 	private VariantQueryFactory variantQueryFactory;
 
 	@Getter
@@ -72,6 +74,7 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 		this.settings.putAll(settings);
 		this.fieldWeights.putAll(validateSearchFields(fieldWeights, fieldConfig, Field::isMasterLevel));
 		metaFetcher.setAnalyzer(settings.get(QueryBuildingSetting.analyzer));
+		standardQueryFactory = new StandardQueryFactory(settings, fieldWeights, fieldConfig);
 		variantQueryFactory = new VariantQueryFactory(validateSearchFields(fieldWeights, fieldConfig, Field::isVariantLevel));
 		Optional.ofNullable(settings.get(QueryBuildingSetting.analyzer)).ifPresent(variantQueryFactory::setAnalyzer);
 	}
@@ -97,6 +100,7 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 		// if all terms are matched (so this map is empty) this query builder
 		// rejects other queries afterwards
 		final Map<String, QueryStringTerm> unmatchedTerms = new HashMap<>();
+		StringBuilder queryDescription = new StringBuilder();
 		Set<String> createdQueries = new HashSet<>();
 		long expectedMatchCount = 0;
 		int i = 0;
@@ -169,6 +173,7 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 				allTermsMustMatch.boost(pQuery.originalTermCount);
 				allTermsMustMatch.queryName(queryLabel);
 				mainQuery = mergeToBoolShouldQuery(mainQuery, allTermsMustMatch);
+				queryDescription.append("(").append(StringUtils.join(queryStrings, "+")).append(") ");
 			}
 			else {
 				break;
@@ -180,16 +185,24 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 		// them with the fallback query builder to boost matching records.
 		if (unmatchedTerms.size() > 0 && fallbackQueryBuilder != null) {
 			TextMatchQuery<QueryBuilder> boostQuery = fallbackQueryBuilder.createQuery(new ExtendedQuery(new MultiTermQuery(unmatchedTerms.keySet(), unmatchedTerms.values())));
+			String queryName = "boost(" + ESQueryUtils.getQueryLabel(unmatchedTerms.values()) + ")";
 			mainQuery = QueryBuilders.boolQuery()
 					.must(mainQuery)
 					.should(boostQuery.getMasterLevelQuery())
-					.queryName("boost(" + ESQueryUtils.getQueryLabel(unmatchedTerms.values()) + ")");
+					.queryName(queryName);
+			queryDescription.append(queryName).append(" ");
 		}
 
 		for (QueryStringTerm term : parsedQuery.getFilters()) {
 			if (term.getOccur().equals(Occur.MUST_NOT)) {
 				mainQuery = ESQueryUtils.mapToBoolQueryBuilder(mainQuery).mustNot(exactMatchQuery(term.getRawTerm()));
+				queryDescription.append(" must_not:" + term.getRawTerm()).append(" ");
 			}
+		}
+
+		if (!parsedQuery.getBoostings().isEmpty()) {
+			parsedQuery.getBoostings().forEach(b -> queryDescription.append(" ").append(b));
+			mainQuery = standardQueryFactory.applyBoostings(mainQuery, parsedQuery.getBoostings());
 		}
 
 		/**
@@ -200,7 +213,7 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 		 */
 		QueryBuilder variantScoreQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery);
 
-		return new TextMatchQuery<>(mainQuery, variantScoreQuery, true, unmatchedTerms.size() == 0);
+		return new TextMatchQuery<>(mainQuery, variantScoreQuery, true, unmatchedTerms.size() == 0, queryDescription.toString());
 	}
 
 	private boolean termHasMatches(QueryStringTerm unknownTerm) {

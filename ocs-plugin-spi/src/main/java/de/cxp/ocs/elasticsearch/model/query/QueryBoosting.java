@@ -26,4 +26,9 @@ public class QueryBoosting {
 		return BoostType.UP.equals(type);
 	}
 
+	@Override
+	public String toString() {
+		return "boost:[" + (field == null ? "" : field + ":") + rawTerm + " " + type + "(" + weight + ")]";
+	}
+
 }
