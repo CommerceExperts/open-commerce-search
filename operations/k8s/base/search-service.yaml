@@ -17,15 +17,13 @@ spec:
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: role
-                  operator: In
-                  values:
-                  - search-api
-              topologyKey: kubernetes.io/hostname      
+          - labelSelector:
+              matchExpressions:
+              - key: role
+                operator: In
+                values:
+                - search-api
+            topologyKey: kubernetes.io/hostname
       containers:
       - name: search-service
         image: commerceexperts/ocs-search-service:latest
