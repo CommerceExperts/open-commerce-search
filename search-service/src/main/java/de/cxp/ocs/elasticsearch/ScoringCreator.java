@@ -34,10 +34,10 @@ public class ScoringCreator {
 
 	public ScoringCreator(SearchContext context) {
 		scoreConf = context.config.getScoring();
-		// copy into array, so that we can remove invalid score definitions
-		scoreFunctions = extractValidScoreFunctions(scoreConf.getScoreFunctions());
 		Map<String, Field> tempScoreFields = context.getFieldConfigIndex().getFieldsByUsage(FieldUsage.SCORE);
 		scoreFields = Collections.unmodifiableMap(tempScoreFields);
+		// copy into array, so that we can remove invalid score definitions
+		scoreFunctions = extractValidScoreFunctions(scoreConf.getScoreFunctions());
 	}
 
 	private List<ScoringFunction> extractValidScoreFunctions(List<ScoringFunction> scoringFunctions) {
