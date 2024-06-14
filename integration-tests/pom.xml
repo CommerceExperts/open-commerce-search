@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.65.2</version>
+		<version>0.65.3</version>
 		<relativePath>../</relativePath>
 	</parent>
 
