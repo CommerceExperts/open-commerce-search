@@ -34,10 +34,30 @@ public class ScoringCreator {
 
 	public ScoringCreator(SearchContext context) {
 		scoreConf = context.config.getScoring();
-		// copy into array, so that we can remove invalid score definitions
-		scoreFunctions = new ArrayList<>(scoreConf.getScoreFunctions());
 		Map<String, Field> tempScoreFields = context.getFieldConfigIndex().getFieldsByUsage(FieldUsage.SCORE);
 		scoreFields = Collections.unmodifiableMap(tempScoreFields);
+		// copy into array, so that we can remove invalid score definitions
+		scoreFunctions = extractValidScoreFunctions(scoreConf.getScoreFunctions());
+	}
+
+	private List<ScoringFunction> extractValidScoreFunctions(List<ScoringFunction> scoringFunctions) {
+		List<ScoringFunction> validFunctions = new ArrayList<>();
+		for (ScoringFunction sf : scoringFunctions) {
+			boolean isFieldRequired = typesRequireField.contains(sf.getType());
+			Optional<Field> relatedField = Optional.ofNullable(sf.getField()).map(scoreFields::get);
+			if (isFieldRequired && relatedField.isEmpty()) {
+				if (sf.getField() != null) {
+					log.warn("Field {} for scoring does not exist. Will ignore scoring function of type {}", sf.getField(), sf.getType());
+				}
+				else {
+					log.warn("Scoring function of type {} requires field, but non given", sf.getType());
+				}
+			}
+			else {
+				validFunctions.add(sf);
+			}
+		}
+		return validFunctions;
 	}
 
 	public ScoringContext getScoringContext(InternalSearchParams parameters) {
@@ -48,20 +68,8 @@ public class ScoringCreator {
 		Iterator<ScoringFunction> scoreFunctionIterator = scoreFunctions.iterator();
 		while (scoreFunctionIterator.hasNext()) {
 			ScoringFunction scoringFunction = scoreFunctionIterator.next();
-
 			boolean isFieldRequired = typesRequireField.contains(scoringFunction.getType());
 			Optional<Field> relatedField = Optional.ofNullable(scoringFunction.getField()).map(scoreFields::get);
-			if (isFieldRequired && relatedField.isEmpty()) {
-				if (scoringFunction.getField() != null) {
-					log.warn("Field {} for scoring does not exist. Will ignore scoring function of type {}", scoringFunction.getField(), scoringFunction.getType());
-					scoreFunctionIterator.remove();
-				}
-				else {
-					log.warn("Scoring function of type {} requires field, but non given", scoringFunction.getType());
-					scoreFunctionIterator.remove();
-				}
-				continue;
-			}
 
 			boolean isMasterScoringField = relatedField.map(Field::isMasterLevel).orElse(false);
 			boolean isVariantScoringField = relatedField.map(Field::isVariantLevel).orElse(false);
@@ -81,8 +89,7 @@ public class ScoringCreator {
 				if (useForVariants) applyFunction(scoringContext, scoringFunction, parameters, true);
 			}
 			catch (ConfigurationException configException) {
-				log.error("Applying scoring function failed: {}! Will remove it until next configuration reload.", configException.getMessage());
-				scoreFunctionIterator.remove();
+				log.error("Applying scoring function failed: {}! Ignoring.", configException.getMessage());
 			}
 		}
 		return scoringContext;
