@@ -16,11 +16,8 @@ import java.util.stream.Collectors;
 
 import com.google.common.collect.Streams;
 
+import de.cxp.ocs.config.*;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
-import de.cxp.ocs.config.FacetType;
-import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldType;
-import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.spi.search.CustomFacetCreator;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -66,11 +63,16 @@ class FacetCreatorInitializer {
 		this.customFacetCreatorSupplier = customFacetCreatorSupplier;
 		this.defaultTermFacetConfigProvider = defaultTermFacetConfigProvider;
 		this.defaultNumberFacetConfigProvider = defaultNumberFacetConfigProvider;
-		maxFacets = config.getFacetConfiguration().getMaxFacets();
+		maxFacets = getFacetFetchLimit(config.getFacetConfiguration());
 		locale = config.getLocale();
 	}
 
-	public FacetCreatorInitializer(Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreatorSupplier, Function<String, FacetConfig> defaultTermFacetConfigProvider, Function<String, FacetConfig> defaultNumberFacetConfigProvider, Locale locale, int maxFacets) {
+	private int getFacetFetchLimit(FacetConfiguration facetConfiguration) {
+		return (int) (facetConfiguration.getMaxFacets() + facetConfiguration.getFacets().stream().filter(FacetConfig::isExcludeFromFacetLimit).count());
+	}
+
+	// for internal / testing usage
+	FacetCreatorInitializer(Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreatorSupplier, Function<String, FacetConfig> defaultTermFacetConfigProvider, Function<String, FacetConfig> defaultNumberFacetConfigProvider, Locale locale, int maxFacets) {
 		this.customFacetCreatorSupplier = customFacetCreatorSupplier;
 		this.defaultTermFacetConfigProvider = defaultTermFacetConfigProvider;
 		this.defaultNumberFacetConfigProvider = defaultNumberFacetConfigProvider;
