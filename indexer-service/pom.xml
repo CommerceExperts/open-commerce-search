@@ -76,6 +76,12 @@
         <dependency>
             <groupId>de.cxp.ocs</groupId>
             <artifactId>ocs-plugin-spi</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>de.cxp.ocs</groupId>
