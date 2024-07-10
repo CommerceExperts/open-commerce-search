@@ -25,5 +25,18 @@ class FacetCreatorClassifier {
 
 	@NonNull
 	// not using the FacetType enum here to support custom facet types
-	String facetType;
+	private final String facetType;
+
+	private final boolean isExplicitFacetCreator;
+
+	/**
+	 * Per default a facet creators is used for generic facet creation. Therefore this constructor is a classification
+	 * for such creators.
+	 * 
+	 * @param isOnVariantLevel
+	 * @param facetType
+	 */
+	public FacetCreatorClassifier(boolean isOnVariantLevel, String facetType) {
+		this(isOnVariantLevel, facetType, false);
+	}
 }

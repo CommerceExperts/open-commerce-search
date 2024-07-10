@@ -21,6 +21,7 @@ import de.cxp.ocs.model.result.IntervalFacetEntry;
 import de.cxp.ocs.model.result.RangeFacetEntry;
 import de.cxp.ocs.util.DefaultLinkBuilder;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
  * <p>
@@ -34,6 +35,7 @@ import lombok.Setter;
  * that {@link IntervalFacetEntry}.
  * </p>
  */
+@Accessors(chain = true)
 public class RangeFacetCreator extends NestedFacetCreator {
 
 	public final static String AGGREGATION_NAME = "_stats";

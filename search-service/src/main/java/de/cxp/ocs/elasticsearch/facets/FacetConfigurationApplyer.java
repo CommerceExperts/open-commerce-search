@@ -174,6 +174,9 @@ public class FacetConfigurationApplyer {
 				facetCreators.add(fcEntry.getValue());
 			}
 		}
+		// we are grouping all facet creators that are nested in VariantFacetCreator to one variant facet creators to
+		// have one single variant aggregation, but we keep the single nested VariantFacetCreators for the specific
+		// facet creation from the different sub aggregation!
 		facetCreators.add(new VariantFacetCreator(variantFacetCreators));
 
 		return Collections.unmodifiableMap(_facetsBySourceField);

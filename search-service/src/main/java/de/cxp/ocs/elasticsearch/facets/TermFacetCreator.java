@@ -31,10 +31,16 @@ public class TermFacetCreator extends NestedFacetCreator {
 	private int									maxFacetValues	= 100;
 	private final Locale						locale;
 	private final Map<String, FacetEntrySorter>	facetSorters	= new HashMap<>();
+	private final boolean						isExplicitFacetCreator;
 
 	public TermFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider, Locale l) {
+		this(facetConfigs, defaultFacetConfigProvider, l, false);
+	}
+
+	public TermFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider, Locale l, boolean createConfiguredFacetsOnly) {
 		super(facetConfigs, defaultFacetConfigProvider);
 		this.locale = l;
+		this.isExplicitFacetCreator = createConfiguredFacetsOnly;
 	}
 
 	@Override
@@ -44,7 +50,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 
 	@Override
 	protected boolean onlyFetchAggregationsForConfiguredFacets() {
-		return false;
+		return isExplicitFacetCreator;
 	}
 
 	@Override

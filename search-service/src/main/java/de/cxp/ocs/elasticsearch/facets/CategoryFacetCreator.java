@@ -32,9 +32,15 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 	@Setter
 	private int maxFacetValues = 250;
 	private final Map<String, FacetEntrySorter>	facetSorters	= new HashMap<>();
+	private final boolean						isExplicitFacetCreator;
 
 	public CategoryFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider) {
-		super(facetConfigs, defaultFacetConfigProvider);
+		this(facetConfigs, defaultFacetConfigProvider, false);
+	}
+
+	public CategoryFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider, boolean isExplicitFacetCreator) {
+		super(facetConfigs, defaultFacetConfigProvider == null ? name -> new FacetConfig(name, name).setType(FacetType.HIERARCHICAL.name()) : defaultFacetConfigProvider);
+		this.isExplicitFacetCreator = isExplicitFacetCreator;
 	}
 
 	@Override
@@ -54,7 +60,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 
 	@Override
 	protected boolean onlyFetchAggregationsForConfiguredFacets() {
-		return true;
+		return isExplicitFacetCreator;
 	}
 
 	@Override
