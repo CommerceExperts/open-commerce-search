@@ -28,7 +28,7 @@ for type csv:
 *   -m <mapping>      required: define csv-to-json object mapping in jq style, exmpl: '{title:.[1],brand:.[3]}'
                       if a file is given, but no mapping, the first line is printed with indexed column
 
-generall
+general
     -a <adress>       hostname of OCS indexer. default: $INDEXER_ADDR
     -n <index-name>   target index name. default: $INDEX_NAME
     -l <locale>       locale to use for index. default: $LOCALE
