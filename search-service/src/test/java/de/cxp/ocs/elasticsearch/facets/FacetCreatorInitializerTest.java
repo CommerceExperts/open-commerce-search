@@ -8,7 +8,9 @@ import static de.cxp.ocs.elasticsearch.facets.FacetCreatorClassifier.variantInte
 import static de.cxp.ocs.elasticsearch.facets.FacetCreatorClassifier.variantRangeFacet;
 import static de.cxp.ocs.elasticsearch.facets.FacetCreatorClassifier.variantTermFacet;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -100,6 +102,34 @@ public class FacetCreatorInitializerTest {
 	}
 
 	@Test
+	public void testExplicitFacetCreators() {
+		testExplicitFacetCreator(FacetType.TERM, FieldType.STRING, TermFacetCreator.class);
+		testExplicitFacetCreator(FacetType.HIERARCHICAL, FieldType.CATEGORY, CategoryFacetCreator.class);
+		testExplicitFacetCreator(FacetType.INTERVAL, FieldType.NUMBER, IntervalFacetCreator.class);
+	}
+
+	private <T extends NestedFacetCreator> void testExplicitFacetCreator(FacetType facetType, FieldType fieldType, Class<T> expectedCreatorClass) {
+		FacetCreatorInitializer underTest = new FacetCreatorInitializer(noCustomFacetCreators, defaultTermFacetProvider, defaultNumberFacetProvider, Locale.ROOT, 12);
+		// Definition: A facet with minFacetCoverage=0 and excludeFromFacetLimit=true is considered as a mandatory
+		// facet, that must always be retrieved and shown, as long as it has enough values in the result
+		FacetConfig mandatoryFacetConfig = new FacetConfig("Mandatory", "m").setType(facetType.name()).setMinFacetCoverage(0).setExcludeFromFacetLimit(true);
+		underTest.addFacet(new Field("m").setType(fieldType).setFieldLevel(FieldLevel.MASTER), mandatoryFacetConfig);
+
+		Map<FacetCreatorClassifier, FacetCreator> facetCreators = underTest.init();
+		assertEquals(1, facetCreators.keySet().stream().filter(FacetCreatorClassifier::isExplicitFacetCreator).count());
+
+		// ensure generic and explicit facet creators are different instances
+		T genericFacetCreator = assertInstanceOfAndGet(facetCreators.get(new FacetCreatorClassifier(false, facetType.name(), false)), expectedCreatorClass);
+		T explicitFacetCreator = assertInstanceOfAndGet(facetCreators.get(new FacetCreatorClassifier(false, facetType.name(), true)), expectedCreatorClass);
+		assertNotSame(genericFacetCreator, explicitFacetCreator);
+
+		// ensure they have non-conflicting names
+		AggregationBuilder genericTermAgg = genericFacetCreator.buildAggregation(null);
+		AggregationBuilder explicitTermAgg = explicitFacetCreator.buildAggregation(null);
+		assertNotEquals(genericTermAgg.getName(), explicitTermAgg.getName());
+	}
+
+	@Test
 	public void testCustomConfig() {
 		Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreators = new HashMap<>();
 		final String CUSTOM_FACET_TYPE = "SignificantTerms";
@@ -149,7 +179,7 @@ public class FacetCreatorInitializerTest {
 		assertDefaultFacetCreators(facetCreators);
 
 		// :: verify
-		FacetCreator customFacetCreator = facetCreators.get(new FacetCreatorClassifier(false, CUSTOM_FACET_TYPE));
+		FacetCreator customFacetCreator = facetCreators.get(new FacetCreatorClassifier(false, CUSTOM_FACET_TYPE, true));
 		NestedCustomFacetCreator nestedCustomFC = assertInstanceOfAndGet(customFacetCreator, NestedCustomFacetCreator.class);
 
 		// top level aggregation

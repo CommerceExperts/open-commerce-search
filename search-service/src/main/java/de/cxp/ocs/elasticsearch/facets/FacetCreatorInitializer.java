@@ -98,8 +98,10 @@ class FacetCreatorInitializer {
 
 		if (customFacetCreator != null) {
 			if (field.getType().equals(customFacetCreator.getAcceptibleFieldType())) {
-				addValidatedFacet(field, facetConfig);
+				// add field first to customFacetFields, since that's used as an indicator for the
+				// FacetCreatorClassifier
 				customFacetFields.add(field);
+				addValidatedFacet(field, facetConfig);
 
 				if (field.isMasterLevel()) {
 					customFacetCreators.putIfAbsent(new FacetCreatorClassifier(false, facetConfig.getType(), true), customFacetCreator);
@@ -143,7 +145,9 @@ class FacetCreatorInitializer {
 	private void _addValidatedFacet(Field facetField, boolean variant, FacetConfig facetConfig) {
 		boolean isMandatoryFacet = facetConfig.isExcludeFromFacetLimit() && facetConfig.getMinFacetCoverage() == 0;
 		if (isMandatoryFacet) explicitFacetFields.add(facetField);
-		FacetCreatorClassifier facetCreatorClassifier = new FacetCreatorClassifier(variant, facetConfig.getType(), isMandatoryFacet);
+		FacetCreatorClassifier facetCreatorClassifier = new FacetCreatorClassifier(variant, facetConfig.getType(),
+				// custom facet creators are always considered as explicit creators
+				isMandatoryFacet || customFacetFields.contains(facetField));
 		collectedConfigs.computeIfAbsent(facetCreatorClassifier, k -> new ConfigCollector())
 				.setFieldType(facetField.getType())
 				.putFacetConfig(facetField.getName(), facetConfig);
@@ -324,7 +328,10 @@ class FacetCreatorInitializer {
 			FacetCreatorClassifier facetClassifier = customFacetCreatorEntry.getKey();
 
 			Map<String, FacetConfig> customFacetConfigs = getConfigs(facetClassifier);
-			NestedCustomFacetCreator nestedCustomFacetCreator = new NestedCustomFacetCreator(customFacetConfigs, collectedConfigs.get(facetClassifier).relatedFieldType, facetClassifier.onVariantLevel, customFacetCreatorEntry.getValue());
+			NestedCustomFacetCreator nestedCustomFacetCreator = new NestedCustomFacetCreator(customFacetConfigs,
+					collectedConfigs.get(facetClassifier).relatedFieldType,
+					facetClassifier.onVariantLevel,
+					customFacetCreatorEntry.getValue());
 
 			facetCreatorsByTypes.put(facetClassifier, nestedCustomFacetCreator);
 		}
