@@ -76,6 +76,12 @@
         <dependency>
             <groupId>de.cxp.ocs</groupId>
             <artifactId>ocs-plugin-spi</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.logging.log4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>de.cxp.ocs</groupId>
@@ -274,7 +280,7 @@
                 <dependency>
                     <groupId>io.searchhub</groupId>
                     <artifactId>ocs-smartdata-plugin</artifactId>
-                    <version>1.1.1</version>
+                    <version>1.2.0</version>
                 </dependency>
             </dependencies>
         </profile>

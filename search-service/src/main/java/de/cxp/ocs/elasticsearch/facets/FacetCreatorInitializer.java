@@ -16,16 +16,20 @@ import java.util.stream.Collectors;
 
 import com.google.common.collect.Streams;
 
+import de.cxp.ocs.config.*;
 import de.cxp.ocs.config.FacetConfiguration.FacetConfig;
-import de.cxp.ocs.config.FacetType;
-import de.cxp.ocs.config.Field;
-import de.cxp.ocs.config.FieldType;
-import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.spi.search.CustomFacetCreator;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * This class collects all facet configurations through 'addFacet' and based on the according field and facet type,
+ * the required {@link FacetCreator} and {@link CustomFacetCreator} are initialized during the final call of the
+ * 'init' method.
+ * 
+ * @author rb@commerce-experts.com
+ */
 @Slf4j
 class FacetCreatorInitializer {
 
@@ -58,6 +62,7 @@ class FacetCreatorInitializer {
 
 	private final Map<FacetCreatorClassifier, ConfigCollector>		collectedConfigs	= new HashMap<>();
 	private final Set<Field>										ignoredFields		= new HashSet<>();
+	private final Set<Field>										explicitFacetFields	= new HashSet<>();
 	private final Map<FacetCreatorClassifier, CustomFacetCreator>	customFacetCreators	= new HashMap<>();
 	private final Set<Field>										customFacetFields	= new HashSet<>();
 	private final Locale											locale;
@@ -66,11 +71,16 @@ class FacetCreatorInitializer {
 		this.customFacetCreatorSupplier = customFacetCreatorSupplier;
 		this.defaultTermFacetConfigProvider = defaultTermFacetConfigProvider;
 		this.defaultNumberFacetConfigProvider = defaultNumberFacetConfigProvider;
-		maxFacets = config.getFacetConfiguration().getMaxFacets();
+		maxFacets = getFacetFetchLimit(config.getFacetConfiguration());
 		locale = config.getLocale();
 	}
 
-	public FacetCreatorInitializer(Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreatorSupplier, Function<String, FacetConfig> defaultTermFacetConfigProvider, Function<String, FacetConfig> defaultNumberFacetConfigProvider, Locale locale, int maxFacets) {
+	private int getFacetFetchLimit(FacetConfiguration facetConfiguration) {
+		return (int) (facetConfiguration.getMaxFacets() + facetConfiguration.getFacets().stream().filter(FacetConfig::isExcludeFromFacetLimit).count());
+	}
+
+	// for internal / testing usage
+	FacetCreatorInitializer(Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreatorSupplier, Function<String, FacetConfig> defaultTermFacetConfigProvider, Function<String, FacetConfig> defaultNumberFacetConfigProvider, Locale locale, int maxFacets) {
 		this.customFacetCreatorSupplier = customFacetCreatorSupplier;
 		this.defaultTermFacetConfigProvider = defaultTermFacetConfigProvider;
 		this.defaultNumberFacetConfigProvider = defaultNumberFacetConfigProvider;
@@ -88,14 +98,16 @@ class FacetCreatorInitializer {
 
 		if (customFacetCreator != null) {
 			if (field.getType().equals(customFacetCreator.getAcceptibleFieldType())) {
-				addValidatedFacet(field, facetConfig);
+				// add field first to customFacetFields, since that's used as an indicator for the
+				// FacetCreatorClassifier
 				customFacetFields.add(field);
+				addValidatedFacet(field, facetConfig);
 
 				if (field.isMasterLevel()) {
-					customFacetCreators.putIfAbsent(new FacetCreatorClassifier(false, facetConfig.getType()), customFacetCreator);
+					customFacetCreators.putIfAbsent(new FacetCreatorClassifier(false, facetConfig.getType(), true), customFacetCreator);
 				}
 				if (field.isVariantLevel()) {
-					customFacetCreators.putIfAbsent(new FacetCreatorClassifier(true, facetConfig.getType()), customFacetCreator);
+					customFacetCreators.putIfAbsent(new FacetCreatorClassifier(true, facetConfig.getType(), true), customFacetCreator);
 				}
 			}
 			else {
@@ -131,7 +143,12 @@ class FacetCreatorInitializer {
 	}
 
 	private void _addValidatedFacet(Field facetField, boolean variant, FacetConfig facetConfig) {
-		collectedConfigs.computeIfAbsent(new FacetCreatorClassifier(variant, facetConfig.getType()), k -> new ConfigCollector())
+		boolean isMandatoryFacet = facetConfig.isExcludeFromFacetLimit() && facetConfig.getMinFacetCoverage() == 0;
+		if (isMandatoryFacet) explicitFacetFields.add(facetField);
+		FacetCreatorClassifier facetCreatorClassifier = new FacetCreatorClassifier(variant, facetConfig.getType(),
+				// custom facet creators are always considered as explicit creators
+				isMandatoryFacet || customFacetFields.contains(facetField));
+		collectedConfigs.computeIfAbsent(facetCreatorClassifier, k -> new ConfigCollector())
 				.setFieldType(facetField.getType())
 				.putFacetConfig(facetField.getName(), facetConfig);
 	}
@@ -169,14 +186,9 @@ class FacetCreatorInitializer {
 
 		initNumberFacetCreators(facetCreatorsByTypes, getConfigs(variantIntervalFacet), getConfigs(variantRangeFacet), defaultNumberFacetType, true);
 
-		for (Entry<FacetCreatorClassifier, CustomFacetCreator> customFacetCreatorEntry : customFacetCreators.entrySet()) {
-			FacetCreatorClassifier facetClassifier = customFacetCreatorEntry.getKey();
+		initExplicitFacetCreators(facetCreatorsByTypes);
 
-			Map<String, FacetConfig> customFacetConfigs = getConfigs(facetClassifier);
-			NestedCustomFacetCreator nestedCustomFacetCreator = new NestedCustomFacetCreator(customFacetConfigs, collectedConfigs.get(facetClassifier).relatedFieldType, facetClassifier.onVariantLevel, customFacetCreatorEntry.getValue());
-
-			facetCreatorsByTypes.put(facetClassifier, nestedCustomFacetCreator);
-		}
+		initCustomFacetCreators(facetCreatorsByTypes);
 
 		return facetCreatorsByTypes;
 	}
@@ -272,8 +284,61 @@ class FacetCreatorInitializer {
 		defaultNumberFacetCreator.setGeneralExcludedFields(nonDefaultNumberFacetFields);
 	}
 
+	private void initExplicitFacetCreators(Map<FacetCreatorClassifier, FacetCreator> facetCreatorsByTypes) {
+		for (FacetType facetType : FacetType.values()) {
+			// check for explicit variant and main-level facet creation
+			for (boolean onVariantLevel : new boolean[] { true, false }) {
+				if (onVariantLevel && FacetType.HIERARCHICAL.equals(facetType)) continue; // not supported
+
+				FacetCreatorClassifier facetClassifier = new FacetCreatorClassifier(onVariantLevel, facetType.name(), true);
+				Map<String, FacetConfig> explicitConfigs = getConfigs(facetClassifier);
+				if (!explicitConfigs.isEmpty()) {
+					NestedFacetCreator explicitFacetCreator = createExplicitFacetCreator(facetType, explicitConfigs);
+					if (explicitFacetCreator == null) continue;
+					explicitFacetCreator.setUniqueAggregationName("Explicit" + facetType + "Aggregation");
+					if (onVariantLevel) {
+						facetCreatorsByTypes.put(facetClassifier, new VariantFacetCreator(Collections.singleton(explicitFacetCreator)));
+					}
+					else {
+						facetCreatorsByTypes.put(facetClassifier, explicitFacetCreator);
+					}
+				}
+			}
+		}
+	}
+
+	private NestedFacetCreator createExplicitFacetCreator(FacetType facetType, Map<String, FacetConfig> explicitConfigs) {
+		switch (facetType) {
+			case TERM:
+				return new TermFacetCreator(explicitConfigs, null, locale, true);
+			case INTERVAL:
+				return new IntervalFacetCreator(explicitConfigs, null).setExplicitFacetCreator(true);
+			case RANGE:
+				return new RangeFacetCreator(explicitConfigs, null).setExplicitFacetCreator(true);
+			case HIERARCHICAL:
+				return new CategoryFacetCreator(explicitConfigs, null, true);
+			default:
+				log.warn("Not implemented: there is no support for explicit facet creation on type {} for facets ");
+				return null;
+		}
+	}
+
+	private void initCustomFacetCreators(Map<FacetCreatorClassifier, FacetCreator> facetCreatorsByTypes) {
+		for (Entry<FacetCreatorClassifier, CustomFacetCreator> customFacetCreatorEntry : customFacetCreators.entrySet()) {
+			FacetCreatorClassifier facetClassifier = customFacetCreatorEntry.getKey();
+
+			Map<String, FacetConfig> customFacetConfigs = getConfigs(facetClassifier);
+			NestedCustomFacetCreator nestedCustomFacetCreator = new NestedCustomFacetCreator(customFacetConfigs,
+					collectedConfigs.get(facetClassifier).relatedFieldType,
+					facetClassifier.onVariantLevel,
+					customFacetCreatorEntry.getValue());
+
+			facetCreatorsByTypes.put(facetClassifier, nestedCustomFacetCreator);
+		}
+	}
+
 	private Set<String> getIgnoredFieldsOfType(FieldType fieldType) {
-		return Streams.concat(ignoredFields.stream(), customFacetFields.stream())
+		return Streams.concat(ignoredFields.stream(), customFacetFields.stream(), explicitFacetFields.stream())
 				.filter(f -> fieldType.equals(f.getType()))
 				.map(Field::getName)
 				.collect(Collectors.toSet());
