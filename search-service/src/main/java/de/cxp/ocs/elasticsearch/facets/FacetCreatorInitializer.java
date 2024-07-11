@@ -23,6 +23,13 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * This class collects all facet configurations through 'addFacet' and based on the according field and facet type,
+ * the required {@link FacetCreator} and {@link CustomFacetCreator} are initialized during the final call of the
+ * 'init' method.
+ * 
+ * @author rb@commerce-experts.com
+ */
 @Slf4j
 class FacetCreatorInitializer {
 
@@ -175,33 +182,9 @@ class FacetCreatorInitializer {
 
 		initNumberFacetCreators(facetCreatorsByTypes, getConfigs(variantIntervalFacet), getConfigs(variantRangeFacet), defaultNumberFacetType, true);
 
-		// init explicit facet creators
-		for (FacetType facetType : FacetType.values()) {
-			// check for explicit variant and main-level facet creation
-			for (boolean onVariantLevel : new boolean[] { true, false }) {
-				if (onVariantLevel && FacetType.HIERARCHICAL.equals(facetType)) continue; // not supported
+		initExplicitFacetCreators(facetCreatorsByTypes);
 
-				FacetCreatorClassifier facetClassifier = new FacetCreatorClassifier(onVariantLevel, facetType.name(), true);
-				Map<String, FacetConfig> explicitConfigs = getConfigs(facetClassifier);
-				if (!explicitConfigs.isEmpty()) {
-					FacetCreator explicitFacetCreator = initExplicitFacetCreator(facetType, explicitConfigs);
-					// TODO: optimization: the inner variant facet creator could be attached to the generic
-					// variantFacetCreator of the same type
-					if (onVariantLevel) explicitFacetCreator = new VariantFacetCreator(Collections.singleton(explicitFacetCreator));
-					facetCreatorsByTypes.put(facetClassifier, explicitFacetCreator);
-				}
-			}
-		}
-
-		// init custom facet creators
-		for (Entry<FacetCreatorClassifier, CustomFacetCreator> customFacetCreatorEntry : customFacetCreators.entrySet()) {
-			FacetCreatorClassifier facetClassifier = customFacetCreatorEntry.getKey();
-
-			Map<String, FacetConfig> customFacetConfigs = getConfigs(facetClassifier);
-			NestedCustomFacetCreator nestedCustomFacetCreator = new NestedCustomFacetCreator(customFacetConfigs, collectedConfigs.get(facetClassifier).relatedFieldType, facetClassifier.onVariantLevel, customFacetCreatorEntry.getValue());
-
-			facetCreatorsByTypes.put(facetClassifier, nestedCustomFacetCreator);
-		}
+		initCustomFacetCreators(facetCreatorsByTypes);
 
 		return facetCreatorsByTypes;
 	}
@@ -297,7 +280,30 @@ class FacetCreatorInitializer {
 		defaultNumberFacetCreator.setGeneralExcludedFields(nonDefaultNumberFacetFields);
 	}
 
-	private FacetCreator initExplicitFacetCreator(FacetType facetType, Map<String, FacetConfig> explicitConfigs) {
+	private void initExplicitFacetCreators(Map<FacetCreatorClassifier, FacetCreator> facetCreatorsByTypes) {
+		for (FacetType facetType : FacetType.values()) {
+			// check for explicit variant and main-level facet creation
+			for (boolean onVariantLevel : new boolean[] { true, false }) {
+				if (onVariantLevel && FacetType.HIERARCHICAL.equals(facetType)) continue; // not supported
+
+				FacetCreatorClassifier facetClassifier = new FacetCreatorClassifier(onVariantLevel, facetType.name(), true);
+				Map<String, FacetConfig> explicitConfigs = getConfigs(facetClassifier);
+				if (!explicitConfigs.isEmpty()) {
+					NestedFacetCreator explicitFacetCreator = createExplicitFacetCreator(facetType, explicitConfigs);
+					if (explicitFacetCreator == null) continue;
+					explicitFacetCreator.setUniqueAggregationName("Explicit" + facetType + "Aggregation");
+					if (onVariantLevel) {
+						facetCreatorsByTypes.put(facetClassifier, new VariantFacetCreator(Collections.singleton(explicitFacetCreator)));
+					}
+					else {
+						facetCreatorsByTypes.put(facetClassifier, explicitFacetCreator);
+					}
+				}
+			}
+		}
+	}
+
+	private NestedFacetCreator createExplicitFacetCreator(FacetType facetType, Map<String, FacetConfig> explicitConfigs) {
 		switch (facetType) {
 			case TERM:
 				return new TermFacetCreator(explicitConfigs, null, locale, true);
@@ -310,6 +316,17 @@ class FacetCreatorInitializer {
 			default:
 				log.warn("Not implemented: there is no support for explicit facet creation on type {} for facets ");
 				return null;
+		}
+	}
+
+	private void initCustomFacetCreators(Map<FacetCreatorClassifier, FacetCreator> facetCreatorsByTypes) {
+		for (Entry<FacetCreatorClassifier, CustomFacetCreator> customFacetCreatorEntry : customFacetCreators.entrySet()) {
+			FacetCreatorClassifier facetClassifier = customFacetCreatorEntry.getKey();
+
+			Map<String, FacetConfig> customFacetConfigs = getConfigs(facetClassifier);
+			NestedCustomFacetCreator nestedCustomFacetCreator = new NestedCustomFacetCreator(customFacetConfigs, collectedConfigs.get(facetClassifier).relatedFieldType, facetClassifier.onVariantLevel, customFacetCreatorEntry.getValue());
+
+			facetCreatorsByTypes.put(facetClassifier, nestedCustomFacetCreator);
 		}
 	}
 
