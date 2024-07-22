@@ -40,7 +40,7 @@ public class FacetConfigurationApplyer {
 	 * meta key to mark facets that should not be counted into the "max facets"
 	 * limit
 	 */
-	static final String IS_MANDATORY_META_KEY = "isMandatory";
+	static final String IS_EXCLUDE_FROM_FACET_LIMIT = "isExcludedFromFacetLimit";
 
 	private final Function<String, FacetConfig>				defaultTermFacetConfigProvider;
 	private final Function<String, FacetConfig>				defaultNumberFacetConfigProvider;
@@ -326,13 +326,13 @@ public class FacetConfigurationApplyer {
 		// handle facets that need to be created on master and variant level
 		List<FacetCreator> facetCreators = new ArrayList<>(facetField.isBothLevel() ? 2 : 1);
 		if (facetField.isVariantLevel()) {
-			FacetCreator facetCreator = facetCreatorsByTypes.get(new FacetCreatorClassifier(true, facetType));
+			FacetCreator facetCreator = facetCreatorsByTypes.get(new FacetCreatorClassifier(true, facetType, facetConfig.isMandatoryFacet()));
 			if (facetCreator != null) {
 				facetCreators.add(facetCreator);
 			}
 		}
 		if (facetField.isMasterLevel()) {
-			FacetCreator facetCreator = facetCreatorsByTypes.get(new FacetCreatorClassifier(false, facetType));
+			FacetCreator facetCreator = facetCreatorsByTypes.get(new FacetCreatorClassifier(false, facetType, facetConfig.isMandatoryFacet()));
 			if (facetCreator != null) {
 				facetCreators.add(facetCreator);
 			}
@@ -378,7 +378,7 @@ public class FacetConfigurationApplyer {
 		});
 
 		int actualMaxFacets = maxFacets + (int) facets.stream()
-				.filter(f -> (boolean) f.meta.getOrDefault(IS_MANDATORY_META_KEY, false))
+				.filter(f -> (boolean) f.meta.getOrDefault(IS_EXCLUDE_FROM_FACET_LIMIT, false))
 				.count();
 
 		return facets.size() > actualMaxFacets ? facets.subList(0, actualMaxFacets) : facets;
@@ -465,7 +465,7 @@ public class FacetConfigurationApplyer {
 
 				FacetConfig facetConfig = facetsBySourceField.get(f.getFieldName());
 				if (facetConfig != null && facetConfig.isExcludeFromFacetLimit()) {
-					f.meta.put(IS_MANDATORY_META_KEY, true);
+					f.meta.put(IS_EXCLUDE_FROM_FACET_LIMIT, true);
 				}
 				facets.put(getLabel(f), f);
 			}

@@ -143,11 +143,10 @@ class FacetCreatorInitializer {
 	}
 
 	private void _addValidatedFacet(Field facetField, boolean variant, FacetConfig facetConfig) {
-		boolean isMandatoryFacet = facetConfig.isExcludeFromFacetLimit() && facetConfig.getMinFacetCoverage() == 0;
-		if (isMandatoryFacet) explicitFacetFields.add(facetField);
+		if (facetConfig.isMandatoryFacet()) explicitFacetFields.add(facetField);
 		FacetCreatorClassifier facetCreatorClassifier = new FacetCreatorClassifier(variant, facetConfig.getType(),
 				// custom facet creators are always considered as explicit creators
-				isMandatoryFacet || customFacetFields.contains(facetField));
+				facetConfig.isMandatoryFacet() || customFacetFields.contains(facetField));
 		collectedConfigs.computeIfAbsent(facetCreatorClassifier, k -> new ConfigCollector())
 				.setFieldType(facetField.getType())
 				.putFacetConfig(facetField.getName(), facetConfig);
