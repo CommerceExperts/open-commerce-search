@@ -11,6 +11,8 @@ Models/DynamicProductSet.md
 Models/DynamicProductSet_allOf.md
 Models/Facet.md
 Models/FacetEntry.md
+Models/GenericProductSet.md
+Models/GenericProductSet_allOf.md
 Models/HierarchialFacetEntry.md
 Models/HierarchialFacetEntry_allOf.md
 Models/ImportSession.md

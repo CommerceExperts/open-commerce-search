@@ -66,11 +66,11 @@ null (empty response body)
 
 <a name="putDocuments"></a>
 # **putDocuments**
-> putDocuments(indexName, replaceExisting)
+> putDocuments(indexName, replaceExisting, langCode)
 
 
 
-    Puts a document to the index. If document does not exist, it will be added. An existing product will be overwritten unless the parameter &#39;replaceExisting\&quot; is set to \&quot;false\&quot;. Provided document should be a complete object, partial updates should be  done using the updateDocument method.
+    Puts a document to the index. If document does not exist, it will be added, but in that case the langCode parameter is required. An existing product will be overwritten unless the parameter &#39;replaceExisting\&quot; is set to \&quot;false\&quot;. Provided document should be a complete object, partial updates should be done using the updateDocument method.
 
 ### Parameters
 
@@ -78,6 +78,7 @@ Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **indexName** | **String**|  | [default to null]
  **replaceExisting** | **Boolean**| set to false to avoid overriding a document with that ID. Defaults to &#39;true&#39; | [optional] [default to null]
+ **langCode** | **String**| If this put request targets an index that does not exist yet, that index will be created. To use the correct index template, the language is required for that case. Otherwise its ignored. | [optional] [default to null]
 
 ### Return type
 
