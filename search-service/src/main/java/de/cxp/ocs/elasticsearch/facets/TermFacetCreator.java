@@ -1,6 +1,7 @@
 package de.cxp.ocs.elasticsearch.facets;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -30,7 +31,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 	@Setter
 	private int									maxFacetValues	= 100;
 	private final Locale						locale;
-	private final Map<String, FacetEntrySorter>	facetSorters	= new HashMap<>();
+	private final Map<String, FacetEntrySorter>	facetSorters	= new ConcurrentHashMap<>();
 	private final boolean						isExplicitFacetCreator;
 
 	public TermFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider, Locale l) {
