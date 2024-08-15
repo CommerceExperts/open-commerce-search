@@ -50,6 +50,7 @@ public class ESQueryFactoryBuilder {
 		esQueryFactoryRegistry.register(ConfigurableQueryFactory.class, ConfigurableQueryFactory::new);
 		esQueryFactoryRegistry.register(NgramQueryFactory.class, NgramQueryFactory::new);
 		esQueryFactoryRegistry.register(DefaultQueryFactory.class, DefaultQueryFactory::new);
+		esQueryFactoryRegistry.register(DisMaxQueryFactory.class, DisMaxQueryFactory::new);
 		knownQueryFactories = esQueryFactoryRegistry.getExtensionSuppliers();
 		knownQueryFactories.putAll(esQueryFactorySuppliers);
 	}
