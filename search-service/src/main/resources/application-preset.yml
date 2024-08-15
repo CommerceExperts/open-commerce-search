@@ -42,7 +42,7 @@ ocs:
         strategy: "DisMaxQuery"
         condition:
           minTermCount: 3
-          matchingRegex: "^(\S+\s+){2,}\S{1,4}$" # 3 or more words & last word must have less than 5 characters
+          matchingRegex: "^(\\S+\\s+){2,}\\S{1,4}$" # 3 or more words & last word must have less than 5 characters
         weightedFields:
           "[title]": 1
           "[brand]": 1
