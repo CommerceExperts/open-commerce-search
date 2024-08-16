@@ -35,7 +35,7 @@ public class SearchConfiguration {
 	private String variantPickingStrategy = "pickIfBestScored";
 
 	public enum ProductSetType {
-		Static, Dynamic, Generic;
+		Static, Dynamic, Generic, Querystring;
 
 		public static ProductSetType fromString(String s) {
 			if (s == null || s.isBlank() || s.length() < 2) {
