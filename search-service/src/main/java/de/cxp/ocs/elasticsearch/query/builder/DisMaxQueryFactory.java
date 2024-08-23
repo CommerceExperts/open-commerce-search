@@ -9,7 +9,10 @@ import de.cxp.ocs.elasticsearch.query.TextMatchQuery;
 import de.cxp.ocs.spi.search.ESQueryFactory;
 import lombok.Getter;
 import lombok.Setter;
-import org.elasticsearch.index.query.*;
+import org.elasticsearch.index.query.DisMaxQueryBuilder;
+import org.elasticsearch.index.query.MultiMatchQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +31,7 @@ public class DisMaxQueryFactory implements ESQueryFactory {
 
     @Override
     public void initialize(String name, Map<QueryBuildingSetting, String> settings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig) {
+        this.name = name;
         queryBuildingSettings.putAll(settings);
         masterFields.putAll(validateSearchFields(fieldWeights, fieldConfig, Field::isMasterLevel));
         variantFields.putAll(validateSearchFields(fieldWeights, fieldConfig, Field::isVariantLevel));
@@ -50,13 +54,15 @@ public class DisMaxQueryFactory implements ESQueryFactory {
         MultiMatchQueryBuilder multiMatchQuery = QueryBuilders
                 .multiMatchQuery(searchPhrase)
                 .fields(fields);
-        SimpleQueryStringBuilder matchPhrasePrefixQuery = QueryBuilders
-                .simpleQueryStringQuery(searchPhrase + "*")
+        MultiMatchQueryBuilder matchPhrasePrefixQuery = QueryBuilders
+                .multiMatchQuery(searchPhrase)
+                .type(queryBuildingSettings.getOrDefault(QueryBuildingSetting.multimatch_type, String.valueOf(MultiMatchQueryBuilder.Type.PHRASE_PREFIX)))
                 .fields(fields);
         return QueryBuilders
                 .disMaxQuery()
                 .add(multiMatchQuery)
-                .add(matchPhrasePrefixQuery);
+                .add(matchPhrasePrefixQuery)
+                .tieBreaker(Float.parseFloat(queryBuildingSettings.getOrDefault(QueryBuildingSetting.tieBreaker, "0.0")));
     }
 
     @Override
