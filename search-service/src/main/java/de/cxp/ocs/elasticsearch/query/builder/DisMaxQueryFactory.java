@@ -28,7 +28,6 @@ public class DisMaxQueryFactory implements ESQueryFactory {
 
     @Override
     public void initialize(String name, Map<QueryBuildingSetting, String> settings, Map<String, Float> fieldWeights, FieldConfigAccess fieldConfig) {
-        if (name != null) this.name = name;
         queryBuildingSettings.putAll(settings);
         masterFields.putAll(validateSearchFields(fieldWeights, fieldConfig, Field::isMasterLevel));
         variantFields.putAll(validateSearchFields(fieldWeights, fieldConfig, Field::isVariantLevel));
@@ -41,16 +40,10 @@ public class DisMaxQueryFactory implements ESQueryFactory {
                 .collect(Collectors.joining(" "));
 
         DisMaxQueryBuilder mainQuery = createDisMaxQueryBuilder(searchPhrase, masterFields);
+        QueryBuilder variantQuery = variantFields.isEmpty() ? QueryBuilders.matchAllQuery() : createDisMaxQueryBuilder(searchPhrase, variantFields);
 
-        if (variantFields.isEmpty()) {
-            MatchAllQueryBuilder variantQuery = QueryBuilders.matchAllQuery();
-            return new TextMatchQuery<>(mainQuery, variantQuery, false,
-                    Boolean.parseBoolean(queryBuildingSettings.getOrDefault(acceptNoResult, "true")));
-        } else {
-            DisMaxQueryBuilder variantQuery = createDisMaxQueryBuilder(searchPhrase, variantFields);
-            return new TextMatchQuery<>(mainQuery, variantQuery, false,
-                    Boolean.parseBoolean(queryBuildingSettings.getOrDefault(acceptNoResult, "true")));
-        }
+        return new TextMatchQuery<>(mainQuery, variantQuery, false,
+                Boolean.parseBoolean(queryBuildingSettings.getOrDefault(acceptNoResult, "true")));
     }
 
     private DisMaxQueryBuilder createDisMaxQueryBuilder(String searchPhrase, Map<String, Float> fields) {
