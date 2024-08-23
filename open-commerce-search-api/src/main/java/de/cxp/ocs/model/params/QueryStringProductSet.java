@@ -11,7 +11,7 @@ import javax.validation.constraints.Min;
 import java.util.Map;
 
 /**
- * A product set defined by a simple query string query, filters and optional
+ * A product set defined by a simple query string query, fields with corresponding weights, optional filters and
  * sorting order.
  */
 @Data

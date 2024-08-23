@@ -14,6 +14,7 @@ import de.cxp.ocs.util.SearchParamsParser;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -46,16 +47,13 @@ public class QueryStringProductSetResolver implements ProductSetResolver {
     private StaticProductSet search(QueryStringProductSet set, Searcher searcher, InternalSearchParams productSetParams) {
         try {
             SearchResult searchResult = searcher.queryStringFind(productSetParams, set.getFieldWeights());
-            if (!searchResult.getSlices().isEmpty()) {
-                String[] ids = new String[searchResult.getSlices().get(0).hits.size()];
-                int i = 0;
-                for (ResultHit hit : searchResult.getSlices().get(0).hits) {
-                    ids[i++] = hit.getDocument().id;
-                }
-                return new StaticProductSet(ids, set.getName());
-            } else {
-                return new StaticProductSet(new String[0], set.getName());
-            }
+            List<ResultHit> hits = searchResult.getSlices().get(0).hits;
+
+            String[] ids = hits.stream()
+                    .map(hit -> hit.getDocument().id)
+                    .toArray(String[]::new);
+
+            return new StaticProductSet(ids, set.getName());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
