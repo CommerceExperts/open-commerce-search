@@ -60,6 +60,7 @@ public class HeroProductHandler {
 		resolvers.put(ProductSetType.Dynamic, Optional.ofNullable(productSetResolvers.get(ProductSetType.Dynamic)).orElseGet(DynamicProductSetResolver::new));
 		resolvers.put(ProductSetType.Static, Optional.ofNullable(productSetResolvers.get(ProductSetType.Static)).orElseGet(StaticProductSetResolver::new));
 		resolvers.put(ProductSetType.Generic, Optional.ofNullable(productSetResolvers.get(ProductSetType.Generic)).orElseGet(NoopProductSetResolver::new));
+		resolvers.put(ProductSetType.Querystring, Optional.ofNullable(productSetResolvers.get(ProductSetType.Querystring)).orElseGet(QueryStringProductSetResolver::new));
 	}
 
 	/**

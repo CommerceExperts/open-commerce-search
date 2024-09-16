@@ -2,6 +2,7 @@ package de.cxp.ocs.elasticsearch;
 
 import static de.cxp.ocs.config.FieldConstants.RESULT_DATA;
 import static de.cxp.ocs.config.FieldConstants.VARIANTS;
+import static de.cxp.ocs.util.ESQueryUtils.validateSearchFields;
 
 import java.io.IOException;
 import java.util.*;
@@ -98,22 +99,18 @@ public class Searcher {
 
 	private final List<RescorerProvider> rescorers;
 
-	private final SortingHandler sortingHandler;
-
-	private ScoringCreator scoringCreator;
-
-	private SpellCorrector spellCorrector;
-
+	private final SortingHandler			sortingHandler;
 	private final Set<String>				preferredVariantAttributes;
 	private final VariantPickingStrategy	variantPickingStrategy;
-
-	private final Timer					findTimer;
-	private final Timer					sqbTimer;
-	private final Timer					inputWordsTimer;
-	private final Timer					correctedWordsTimer;
-	private final Timer					resultTimer;
-	private final Timer					searchRequestTimer;
-	private final DistributionSummary	summary;
+	private final Timer						findTimer;
+	private final Timer						sqbTimer;
+	private final Timer						inputWordsTimer;
+	private final Timer						correctedWordsTimer;
+	private final Timer						resultTimer;
+	private final Timer						searchRequestTimer;
+	private final DistributionSummary		summary;
+	private ScoringCreator					scoringCreator;
+	private SpellCorrector					spellCorrector;
 
 	public Searcher(RestHighLevelClient restClient, SearchContext searchContext, final MeterRegistry registry, final SearchPlugins plugins) {
 		this.restClient = restClient;
@@ -170,7 +167,7 @@ public class Searcher {
 	/**
 	 * Compute result based on the given parameters. The searchMetaData are attached to the search-result, so by that
 	 * you can pass additional information into the result or use it for debugging in case of an error.
-	 * 
+	 *
 	 * @param parameters
 	 *        the parsed and validated parameters
 	 * @param searchMetaData
@@ -204,6 +201,27 @@ public class Searcher {
 		findTimerSample.stop(findTimer);
 
 		return searchResult;
+	}
+
+	public SearchResult queryStringFind(InternalSearchParams parameters, Map<String, Float> fieldWeights) throws IOException {
+		SearchQueryContext queryContext = new SearchQueryContext();
+		queryContext.filters = filtersBuilder.buildFilterContext(parameters.filters, parameters.inducedFilters, parameters.withFacets);
+		queryContext.variantSortings = sortingHandler.getVariantSortings(parameters.sortings);
+		queryContext.scoring = scoringCreator.getScoringContext(parameters);
+
+		Map<String, Float> masterFields = validateSearchFields(fieldWeights, this.fieldIndex, Field::isMasterLevel);
+
+		TextMatchQuery<QueryBuilder> searchQuery = new TextMatchQuery<>(
+				QueryBuilders.queryStringQuery(parameters.userQuery).fields(masterFields),
+				QueryBuilders.matchAllQuery(),
+				false, true);
+		queryContext.text = searchQuery;
+
+		SearchSourceBuilder searchSourceBuilder = buildBasicSearchSourceBuilder(parameters, queryContext);
+		searchSourceBuilder.query(buildFinalQuery(queryContext));
+		SearchResponse searchResponse = executeSearchRequest(searchSourceBuilder);
+
+		return buildResult(parameters, queryContext.filters, searchResponse);
 	}
 
 	private SearchResponse stagedSearch(InternalSearchParams parameters, ExtendedQuery parsedQuery, SearchQueryContext queryContext, Iterator<ESQueryFactory> stagedQueryBuildersIterator, Map<String, Object> searchMetaData) throws IOException {
@@ -556,7 +574,7 @@ public class Searcher {
 	private QueryBuilder buildFinalQuery(SearchQueryContext queryContext) {
 		QueryBuilder masterLevelQuery = queryContext.text.getMasterLevelQuery();
 		masterLevelQuery = queryContext.scoring.wrapMasterLevelQuery(masterLevelQuery);
-		
+
 		QueryBuilder variantFilterQuery = queryContext.filters.getJoinedBasicFilters().getVariantLevelQuery();
 		QueryBuilder innerHitsFilter = queryContext.filters.getVariantInnerHitFilter();
 
@@ -587,7 +605,7 @@ public class Searcher {
 			variantsMatchQuery = queryContext.scoring.wrapVariantLevelQuery(variantsMatchQuery);
 			variantsOnlyFiltered = variantsMatchQuery != null ? false : variantsOnlyFiltered;
 		}
-		
+
 		// variant inner hits are always retrieved in a should clause,
 		// because they may contain optional matchers and post filters
 		// only exception: if the variants are only filtered
