@@ -256,7 +256,7 @@
 					<version>3.3.1</version>
 					<configuration>
 						<from>
-							<image>eclipse-temurin:11-alpine</image>
+							<image>eclipse-temurin:17-alpine</image>
 						</from>
 						<to>
 							<image>${docker.repository}/${docker.prefix}${project.artifactId}:${project.version}</image>
