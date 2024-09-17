@@ -74,11 +74,10 @@ public class ElasticsearchCRUDTest {
 	static class TestConf extends Application {
 
 		@Bean
-		public RestHighLevelClient getElasticsearchClient(ApplicationProperties properties) throws Exception {
+		public RestClientBuilder getRestClientBuilder(ApplicationProperties properties) {
 			System.out.println("initializing ES client");
 			properties.getConnectionConfiguration().setHosts("127.0.0.1:" + HTTP_TEST_PORT);
-			RestClientBuilder restClientBuilder = RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
-			return new RestHighLevelClient(restClientBuilder);
+			return RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
 		}
 
 	}
