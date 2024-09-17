@@ -124,8 +124,8 @@ public class TermFacetCreator extends NestedFacetCreator {
 					log.warn("merging term facets with same values but different IDs ({} and {}) might lead to unexpected results!"
 							+ " Consider to reconfigure facet for fields {} and {}", prevEntry.id, additionalEntry.id, first.fieldName, second.fieldName);
 				}
-				long newDocCount = Math.max(prevEntry.docCount, additionalEntry.docCount);
-				first.absoluteFacetCoverage += newDocCount - prevEntry.docCount;
+				long newDocCount = prevEntry.docCount + additionalEntry.docCount;
+				first.absoluteFacetCoverage = newDocCount;
 				prevEntry.docCount = newDocCount;
 			}
 		}
