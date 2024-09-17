@@ -2,6 +2,7 @@ package de.cxp.ocs;
 
 import java.util.Optional;
 
+import de.cxp.ocs.model.params.*;
 import org.elasticsearch.client.RestClientBuilder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -21,10 +22,6 @@ import de.cxp.ocs.config.DefaultSearchConfigurationProvider;
 import de.cxp.ocs.elasticsearch.ElasticSearchBuilder;
 import de.cxp.ocs.elasticsearch.RestClientBuilderFactory;
 import de.cxp.ocs.model.index.Document;
-import de.cxp.ocs.model.params.DynamicProductSet;
-import de.cxp.ocs.model.params.GenericProductSet;
-import de.cxp.ocs.model.params.ProductSet;
-import de.cxp.ocs.model.params.StaticProductSet;
 import de.cxp.ocs.plugin.PluginManager;
 import de.cxp.ocs.spi.search.SearchConfigurationProvider;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +64,7 @@ public class Application {
 
 		module.setMixInAnnotation(ProductSet.class, WithTypeInfo.class);
 		module.setMixInAnnotation(Document.class, NoNullValues.class);
-		module.registerSubtypes(new NamedType(DynamicProductSet.class, "dynamic"), new NamedType(StaticProductSet.class, "static"), new NamedType(GenericProductSet.class, "generic"));
+        module.registerSubtypes(new NamedType(DynamicProductSet.class, "dynamic"), new NamedType(StaticProductSet.class, "static"), new NamedType(GenericProductSet.class, "generic"), new NamedType(QueryStringProductSet.class, "querystring"));
 
 		return module;
 	}

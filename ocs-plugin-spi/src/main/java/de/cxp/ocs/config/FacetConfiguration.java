@@ -31,7 +31,8 @@ public class FacetConfiguration {
 	 *        set full facets list
 	 * @return self
 	 */
-	public FacetConfiguration setFacets(@NonNull List<FacetConfig> facets) {
+	public FacetConfiguration setFacets(@NonNull
+	List<FacetConfig> facets) {
 		this.facets = facets;
 		return this;
 	}
@@ -103,6 +104,8 @@ public class FacetConfiguration {
 
 		private String[] filterDependencies = new String[0];
 
+		private boolean removeOnSingleFullCoverageFacetElement = false;
+
 		/**
 		 * Label of that facet
 		 * 
@@ -168,9 +171,15 @@ public class FacetConfiguration {
 		}
 
 		/**
-		 * Primary used for numeric facets to build according number of value
-		 * ranges.
-		 * Can also be used for advanced displaying term facets.
+		 * <p>
+		 * Primary used for numeric facets to build according number of value ranges / intervals. This value is then
+		 * used to determine how many intervals are created.
+		 * </p>
+		 * <p>
+		 * For Term Facets if set set to a value greater than 1, it leads to facets being removed in case they have a
+		 * single entry with a
+		 * facet-coverage of 100%.
+		 * </p>
 		 * 
 		 * @param optimalValueCount
 		 *        this is a number
@@ -426,6 +435,22 @@ public class FacetConfiguration {
 		 */
 		public FacetConfig setFilterDependencies(String... filterDependencies) {
 			this.filterDependencies = filterDependencies;
+			return this;
+		}
+
+		/**
+		 * <p>
+		 * If set to true, that facet is removed in case it has a single element that covers all result products.
+		 * </p>
+		 * <p>
+		 * Does not apply to numeric interval and range facets.
+		 * </p>
+		 * 
+		 * @param enable
+		 * @return
+		 */
+		public FacetConfig setRemoveOnSingleFullCoverageFacetElement(boolean enable) {
+			this.removeOnSingleFullCoverageFacetElement = enable;
 			return this;
 		}
 

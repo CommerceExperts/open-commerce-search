@@ -143,4 +143,14 @@ public class ITSearchService {
 				.noneMatch(hit -> hit.getDocument().id.equals("005"))
 				.noneMatch(hit -> hit.getDocument().id.equals("006"));
 	}
+
+	@Test
+	public void testRemoveOnSingleFullCoverageFacetElement() throws Exception {
+		SearchResult searchResult = getSearchClient().search(indexName, new SearchQuery().setQ("avarel"), Collections.emptyMap());
+		assertThat(searchResult.slices.get(0).hits)
+				.anyMatch(hit -> hit.getDocument().id.equals("004"))
+				.anyMatch(hit -> hit.getDocument().id.equals("006"));
+
+		assertThat(searchResult.slices.get(0).facets).noneMatch(facet -> "color".equals(facet.fieldName));
+	}
 }

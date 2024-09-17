@@ -1,6 +1,7 @@
 package de.cxp.ocs.elasticsearch.facets;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import org.elasticsearch.search.aggregations.AggregationBuilder;
@@ -30,7 +31,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 	@Setter
 	private int									maxFacetValues	= 100;
 	private final Locale						locale;
-	private final Map<String, FacetEntrySorter>	facetSorters	= new HashMap<>();
+	private final Map<String, FacetEntrySorter>	facetSorters	= new ConcurrentHashMap<>();
 	private final boolean						isExplicitFacetCreator;
 
 	public TermFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider, Locale l) {
@@ -123,8 +124,8 @@ public class TermFacetCreator extends NestedFacetCreator {
 					log.warn("merging term facets with same values but different IDs ({} and {}) might lead to unexpected results!"
 							+ " Consider to reconfigure facet for fields {} and {}", prevEntry.id, additionalEntry.id, first.fieldName, second.fieldName);
 				}
-				long newDocCount = Math.max(prevEntry.docCount, additionalEntry.docCount);
-				first.absoluteFacetCoverage += newDocCount - prevEntry.docCount;
+				long newDocCount = prevEntry.docCount + additionalEntry.docCount;
+				first.absoluteFacetCoverage = newDocCount;
 				prevEntry.docCount = newDocCount;
 			}
 		}

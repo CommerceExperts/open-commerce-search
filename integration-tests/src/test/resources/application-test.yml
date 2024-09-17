@@ -19,6 +19,8 @@ ocs:
         - source-field: color
           label: Color
           multi-select: true
+          minValueCount: 1
+          removeOnSingleFullCoverageFacetElement: true
     searcher_test_2:
       use-default-query-config: true
       index-name: searcher_test

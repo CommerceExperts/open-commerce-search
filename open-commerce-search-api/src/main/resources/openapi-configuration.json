@@ -3,7 +3,7 @@
     "cacheTTL": 0,
     "openAPI": {
         "info": {
-            "version": "0.22.0",
+            "version": "${project.version}",
             "title": "Open Commerce Search Stack API",
             "description": "A common product search API that separates its usage from required search expertise",
             "contact": {

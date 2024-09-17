@@ -5,19 +5,19 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.56.0</version>
+		<version>0.68.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>ocs-java-client</artifactId>
-	<version>0.19.0</version>
+	<version>0.20.0</version>
 	<packaging>jar</packaging>
 
 	<description>A ready to use client for the OCS API</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<feign.version>11.6</feign.version>
+		<feign.version>13.3</feign.version>
 	</properties>
 
 	<dependencies>

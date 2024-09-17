@@ -8,7 +8,7 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Open Commerce Search Stack API
-  version: 0.22.0
+  version: 0.24.0
 paths:
   /indexer-api/v1/full/add:
     post:
@@ -828,6 +828,7 @@ components:
         mapping:
           dynamic: '#/components/schemas/DynamicProductSet'
           generic: '#/components/schemas/GenericProductSet'
+          querystring: '#/components/schemas/QueryStringProductSet'
           static: '#/components/schemas/StaticProductSet'
         propertyName: type
       properties:
@@ -842,6 +843,40 @@ components:
           type: string
         variantBoostTerms:
           type: string
+    QueryStringProductSet:
+      type: object
+      allOf:
+      - $ref: '#/components/schemas/ProductSet'
+      - type: object
+        properties:
+          asSeparateSlice:
+            type: boolean
+          fieldWeights:
+            type: object
+            additionalProperties:
+              type: number
+              format: float
+          filters:
+            type: object
+            additionalProperties:
+              type: string
+          limit:
+            type: integer
+            format: int32
+            minimum: 1
+          name:
+            type: string
+          query:
+            type: string
+          size:
+            type: integer
+            format: int32
+          sort:
+            type: string
+          type:
+            type: string
+          variantBoostTerms:
+            type: string
     RangeFacetEntry:
       type: object
       allOf:
