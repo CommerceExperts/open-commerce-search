@@ -3,6 +3,7 @@ package de.cxp.ocs;
 import java.util.Optional;
 
 import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -46,6 +47,12 @@ public class Application {
 	@Bean
 	public RestClientBuilder getRestClientBuilder(ApplicationProperties properties) {
 		return RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
+	}
+
+	@Bean
+	@SuppressWarnings("deprecation")
+	public RestHighLevelClient getRestHighLevelClient(RestClientBuilder clientBuilder) {
+		return new RestHighLevelClient(clientBuilder);
 	}
 
 	@Bean

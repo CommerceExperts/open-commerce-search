@@ -145,7 +145,7 @@
         <dependency>
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
-            <version>6.4</version>
+            <version>7.4</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -270,6 +270,7 @@
                 </plugins>
             </build>
         </profile>
+        <!--
         <profile>
             <id>searchhub</id>
             <properties>
@@ -284,6 +285,7 @@
                 </dependency>
             </dependencies>
         </profile>
+        -->
     </profiles>
 
     <!-- copy repos from parent, which is necessary otherwise older versions 
