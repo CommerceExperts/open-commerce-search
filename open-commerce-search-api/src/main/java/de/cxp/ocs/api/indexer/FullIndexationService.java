@@ -1,7 +1,5 @@
 package de.cxp.ocs.api.indexer;
 
-import javax.ws.rs.*;
-
 import de.cxp.ocs.model.index.BulkImportData;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -15,6 +13,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
 
 /**
  * Run a full import into a new index.
