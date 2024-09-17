@@ -2,9 +2,6 @@ package de.cxp.ocs.api;
 
 import java.util.List;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-
 import de.cxp.ocs.model.suggest.Suggestion;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,6 +15,8 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 
 @SecurityScheme(name = "basic-auth", type = SecuritySchemeType.HTTP, scheme = "basic")
 @SecurityRequirement(name = "basic-auth")

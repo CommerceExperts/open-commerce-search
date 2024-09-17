@@ -5,12 +5,12 @@
     <parent>
         <groupId>de.cxp.ocs</groupId>
         <artifactId>ocs-parent</artifactId>
-        <version>0.68.0</version>
+        <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>indexer-service</artifactId>
-    <version>0.43.0</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <!-- Import dependency management from Spring Boot -->
@@ -145,7 +145,7 @@
         <dependency>
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
-            <version>6.4</version>
+            <version>7.4</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -270,6 +270,7 @@
                 </plugins>
             </build>
         </profile>
+        <!--
         <profile>
             <id>searchhub</id>
             <properties>
@@ -284,6 +285,7 @@
                 </dependency>
             </dependencies>
         </profile>
+        -->
     </profiles>
 
     <!-- copy repos from parent, which is necessary otherwise older versions 

@@ -2,10 +2,6 @@ package de.cxp.ocs.api.searcher;
 
 import java.util.Map;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.params.ArrangedSearchQuery;
 import de.cxp.ocs.model.params.SearchQuery;
@@ -25,6 +21,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
 
 @SecurityScheme(name = "basic-auth", type = SecuritySchemeType.HTTP, scheme = "basic")
 @SecurityRequirement(name = "basic-auth")
