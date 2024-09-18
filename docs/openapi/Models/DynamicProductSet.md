@@ -3,9 +3,11 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**asSeparateSlice** | **Boolean** |  | [optional] [default to null]
 **name** | **String** |  | [optional] [default to null]
 **size** | **Integer** |  | [optional] [default to null]
 **type** | **String** |  | [optional] [default to null]
+**variantBoostTerms** | **String** |  | [optional] [default to null]
 **filters** | **Map** |  | [optional] [default to null]
 **limit** | **Integer** |  | [optional] [default to null]
 **query** | **String** |  | [optional] [default to null]

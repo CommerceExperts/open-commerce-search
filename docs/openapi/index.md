@@ -16,7 +16,7 @@ Class | Method | HTTP request | Description
 *SuggestApi* | [**suggest**](Apis/SuggestApi.md#suggest) | **GET** /suggest-api/v1/{indexname}/suggest | Autocomplete the user input
 *UpdateApi* | [**deleteDocuments**](Apis/UpdateApi.md#deletedocuments) | **DELETE** /indexer-api/v1/update/{indexName} | Delete existing document. If document does not exist, it returns code 304.
 *UpdateApi* | [**patchDocuments**](Apis/UpdateApi.md#patchdocuments) | **PATCH** /indexer-api/v1/update/{indexName} | Partial update of existing documents. If a document does not exist, no update will be performed and it gets the result status 'NOT_FOUND'. In case a document is a master product with variants, the provided master product may only contain the changed values. However if some of the variants should be updated, all data from all variant products are required, unless you have an ID data-field inside variant - then you can update single variants. Without variant ID field, the missing variants won't be there after the update! This is how single variants can be deleted.
-*UpdateApi* | [**putDocuments**](Apis/UpdateApi.md#putdocuments) | **PUT** /indexer-api/v1/update/{indexName} | Puts a document to the index. If document does not exist, it will be added. An existing product will be overwritten unless the parameter 'replaceExisting\" is set to \"false\". Provided document should be a complete object, partial updates should be  done using the updateDocument method.
+*UpdateApi* | [**putDocuments**](Apis/UpdateApi.md#putdocuments) | **PUT** /indexer-api/v1/update/{indexName} | Puts a document to the index. If document does not exist, it will be added, but in that case the langCode parameter is required. An existing product will be overwritten unless the parameter 'replaceExisting\" is set to \"false\". Provided document should be a complete object, partial updates should be done using the updateDocument method.
 
 
 <a name="documentation-for-models"></a>
@@ -31,6 +31,8 @@ Class | Method | HTTP request | Description
  - [DynamicProductSet_allOf](./Models/DynamicProductSet_allOf.md)
  - [Facet](./Models/Facet.md)
  - [FacetEntry](./Models/FacetEntry.md)
+ - [GenericProductSet](./Models/GenericProductSet.md)
+ - [GenericProductSet_allOf](./Models/GenericProductSet_allOf.md)
  - [HierarchialFacetEntry](./Models/HierarchialFacetEntry.md)
  - [HierarchialFacetEntry_allOf](./Models/HierarchialFacetEntry_allOf.md)
  - [ImportSession](./Models/ImportSession.md)
@@ -39,6 +41,8 @@ Class | Method | HTTP request | Description
  - [Product](./Models/Product.md)
  - [ProductSet](./Models/ProductSet.md)
  - [Product_allOf](./Models/Product_allOf.md)
+ - [QueryStringProductSet](./Models/QueryStringProductSet.md)
+ - [QueryStringProductSet_allOf](./Models/QueryStringProductSet_allOf.md)
  - [RangeFacetEntry](./Models/RangeFacetEntry.md)
  - [RangeFacetEntry_allOf](./Models/RangeFacetEntry_allOf.md)
  - [ResultHit](./Models/ResultHit.md)
