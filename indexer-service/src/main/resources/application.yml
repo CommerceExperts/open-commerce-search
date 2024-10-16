@@ -7,7 +7,7 @@ server:
       - text/css
       - application/javascript
       - application/json
-    
+
 endpoints:
   prometheus:
     sensitive: true
