@@ -124,15 +124,27 @@ public class TermFacetCreator extends NestedFacetCreator {
 					log.warn("merging term facets with same values but different IDs ({} and {}) might lead to unexpected results!"
 							+ " Consider to reconfigure facet for fields {} and {}", prevEntry.id, additionalEntry.id, first.fieldName, second.fieldName);
 				}
-				long newDocCount = prevEntry.docCount + additionalEntry.docCount;
-				first.absoluteFacetCoverage = newDocCount;
-				prevEntry.docCount = newDocCount;
+
+				// facets are merged for fields/attributes that are indexed on both levels.
+				// actually it's not possible to merge those values correct here, since there might be an unknown
+				// intersection of documents having the same attribute-value on both levels
+				// (e.g. color=red might match 10 main documents, and 8 variant documents:
+				// However N of those are variants that are already counted with their main document).
+				// => the count that might come next to reality is the greater one of two same name entries
+				if (prevEntry.docCount < additionalEntry.docCount) {
+					prevEntry.docCount = additionalEntry.docCount;
+					first.absoluteFacetCoverage += additionalEntry.docCount - prevEntry.docCount;
+				}
 			}
 		}
 
 		second.getMeta().forEach(first.getMeta()::putIfAbsent);
 
-		Collections.sort(first.getEntries(), Comparator.comparingLong(FacetEntry::getDocCount).reversed());
+		// facet was created before, so if there was a special sorter configured, it should be in the cache
+		FacetEntrySorter facetEntrySorter = facetSorters.get(first.getFieldName());
+		if (facetEntrySorter != null) facetEntrySorter.sort(first);
+		// otherwise sort by doc-count
+		else Collections.sort(first.getEntries(), Comparator.comparingLong(FacetEntry::getDocCount).reversed());
 
 		return Optional.of(first);
 	}
