@@ -151,6 +151,6 @@ public class ITSearchService {
 				.anyMatch(hit -> hit.getDocument().id.equals("004"))
 				.anyMatch(hit -> hit.getDocument().id.equals("006"));
 
-		assertThat(searchResult.slices.get(0).facets).noneMatch(facet -> "color".equals(facet.fieldName));
+		assertThat(searchResult.slices.get(0).facets).noneMatch(facet -> "brand".equals(facet.fieldName));
 	}
 }
