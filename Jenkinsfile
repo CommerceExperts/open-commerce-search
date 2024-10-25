@@ -65,7 +65,7 @@ pipeline {
 
           // regenerate openapi docs
           sh "mvn $MAVEN_CLI_OPTS process-sources -pl open-commerce-search-api -P sync-openapi-spec"
-          sh 'docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli:v5.3.0 generate -i /local/open-commerce-search-api/src/main/resources/openapi.yaml -g markdown -o /local/docs/openapi/'
+          sh 'docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli:v7.9.0 generate -i /local/open-commerce-search-api/src/main/resources/openapi.yaml -g markdown -o /local/docs/openapi/'
           sh 'sed -i "1,2d" docs/openapi/README.md' // remove first two lines with unnecessary header
           sh 'mv docs/openapi/README.md docs/openapi/index.md'
           sh "grep -RFl 'README.md' docs/openapi/* | xargs -L1 sed -i 's/README.md/index.md/g'"
