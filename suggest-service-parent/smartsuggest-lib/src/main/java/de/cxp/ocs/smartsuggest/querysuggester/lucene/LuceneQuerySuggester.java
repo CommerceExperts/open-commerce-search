@@ -543,10 +543,13 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			Map<String, String> payload = SerializationUtils.deserialize(result.payload.bytes);
 			String label = payload.get(CommonPayloadFields.PAYLOAD_LABEL_KEY);
 			if (label == null) label = result.key.toString();
-			return new Suggestion(label)
+			Suggestion s = new Suggestion(label)
 					.setPayload(payload)
 					.setWeight(result.value)
 					.setContext(result.contexts);
+			s = withPayloadEntry(s, "lookup.key", result.key.toString());
+			s = withPayloadEntry(s, "lookup.weight", String.valueOf(result.value));
+			return s;
 		}
 		catch (Exception e) {
 			if (deserializationFailLogCount % 100 == 0) {
