@@ -2,7 +2,6 @@ package de.cxp.ocs.model.index;
 
 import java.util.*;
 
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NonNull;
@@ -51,11 +50,12 @@ public class Document {
 	@Schema(description = "multiple attributes can be delivered separately from standard data fields")
 	public List<Attribute> attributes;
 
-	@ArraySchema(
-			schema = @Schema(
-			description = "categories are treated in a parent-child relationship,"
-					+ " so a product can be placed into a path within a category tree."
-							+ " Multiple category paths can be defined per document."))
+	@Schema(
+			description = "A category path is a list of Category objects that are defined in a hierarchical parent-child relationship."
+					+ "Multiple category paths can be defined per document, therefor this property is a list of category arrays.",
+			contains = Category.class,
+			contentSchema = Category.class,
+			example = "[[{\"id\":\"7001\",\"name\":\"Electronics\"}, {\"id\":\"7011\",\"name\":\"Notebooks\"}], [{\"id\":\"9000\",\"name\":\"Sale\"}]]")
 	public List<Category[]> categories;
 
 	public Document() {}

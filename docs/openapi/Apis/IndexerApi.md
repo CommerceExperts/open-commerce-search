@@ -2,12 +2,12 @@
 
 All URIs are relative to *http://localhost*
 
-Method | HTTP request | Description
-------------- | ------------- | -------------
-[**add**](IndexerApi.md#add) | **POST** /indexer-api/v1/full/add | 
-[**cancel**](IndexerApi.md#cancel) | **POST** /indexer-api/v1/full/cancel | 
-[**done**](IndexerApi.md#done) | **POST** /indexer-api/v1/full/done | 
-[**startImport**](IndexerApi.md#startImport) | **GET** /indexer-api/v1/full/start/{indexName} | 
+| Method | HTTP request | Description |
+|------------- | ------------- | -------------|
+| [**add**](IndexerApi.md#add) | **POST** /indexer-api/v1/full/add |  |
+| [**cancel**](IndexerApi.md#cancel) | **POST** /indexer-api/v1/full/cancel |  |
+| [**done**](IndexerApi.md#done) | **POST** /indexer-api/v1/full/done |  |
+| [**startImport**](IndexerApi.md#startImport) | **GET** /indexer-api/v1/full/start/{indexName} |  |
 
 
 <a name="add"></a>
@@ -20,9 +20,9 @@ Method | HTTP request | Description
 
 ### Parameters
 
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **BulkImportData** | [**BulkImportData**](../Models/BulkImportData.md)| Data that contains the import session reference and one or more documents that should be added to that session. |
+|Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **BulkImportData** | [**BulkImportData**](../Models/BulkImportData.md)| Data that contains the import session reference and one or more documents that should be added to that session. | |
 
 ### Return type
 
@@ -47,9 +47,9 @@ Name | Type | Description  | Notes
 
 ### Parameters
 
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **ImportSession** | [**ImportSession**](../Models/ImportSession.md)|  |
+|Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **ImportSession** | [**ImportSession**](../Models/ImportSession.md)|  | |
 
 ### Return type
 
@@ -74,9 +74,9 @@ null (empty response body)
 
 ### Parameters
 
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **ImportSession** | [**ImportSession**](../Models/ImportSession.md)|  |
+|Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **ImportSession** | [**ImportSession**](../Models/ImportSession.md)|  | |
 
 ### Return type
 
@@ -101,10 +101,10 @@ null (empty response body)
 
 ### Parameters
 
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **indexName** | **String**| index name, that should match the regular expression &#39;[a-z0-9_-]+&#39; | [default to null]
- **locale** | **String**| used for language dependent settings | [default to null]
+|Name | Type | Description  | Notes |
+|------------- | ------------- | ------------- | -------------|
+| **indexName** | **String**| index name, that should match the regular expression &#39;[a-z0-9_-]+&#39; | [default to null] |
+| **locale** | **String**| used for language dependent settings | [default to null] |
 
 ### Return type
 

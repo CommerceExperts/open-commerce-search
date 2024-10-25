@@ -6,6 +6,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
+@Schema(
+		name = "Category",
+		description = "Model that represents a single category inside a category path.",
+		example = "{\"id\": \"7001\", \"name\": \"Sale\"}")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,7 +19,7 @@ public class Category {
 	@Schema(description = "Optional ID for a consistent filtering")
 	public String id;
 
-	@Schema(required = true)
+	@Schema(required = true, description = "actual category name")
 	public String name;
 
 	public static Category of(String name) {

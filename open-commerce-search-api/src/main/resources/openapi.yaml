@@ -542,6 +542,9 @@ components:
       properties:
         documents:
           type: array
+          description: An array of Documents or Products that should be indexed into
+            the given index.Products have the speciality to contain other documents
+            as variants.
           items:
             $ref: '#/components/schemas/Document'
         session:
@@ -549,19 +552,6 @@ components:
       required:
       - documents
       - session
-    Category:
-      type: object
-      description: "categories are treated in a parent-child relationship, so a product\
-        \ can be placed into a path within a category tree. Multiple category paths\
-        \ can be defined per document."
-      properties:
-        id:
-          type: string
-          description: Optional ID for a consistent filtering
-        name:
-          type: string
-      required:
-      - name
     Document:
       type: object
       description: A data record that contains any data relevant for search. The single
@@ -574,14 +564,7 @@ components:
           items:
             $ref: '#/components/schemas/Attribute'
         categories:
-          type: array
-          items:
-            type: array
-            description: "categories are treated in a parent-child relationship, so\
-              \ a product can be placed into a path within a category tree. Multiple\
-              \ category paths can be defined per document."
-            items:
-              $ref: '#/components/schemas/Category'
+          $ref: '#/components/schemas/Category'
         data:
           type: object
           additionalProperties:
