@@ -2,8 +2,6 @@ package de.cxp.ocs.model.params;
 
 import java.util.Map;
 
-import javax.validation.constraints.Min;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -37,7 +35,7 @@ public class DynamicProductSet extends ProductSet {
 	 * The maximum amount of products to pick into the set. These will be the
 	 * first products provided by the other parameters.
 	 */
-	@Min(1)
+	@Schema(description = "The maximum amount of products to pick based on the given query and filters", minimum = "1")
 	public int limit = 3;
 
 	@Override

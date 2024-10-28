@@ -1,7 +1,5 @@
 package de.cxp.ocs.model.params;
 
-import javax.validation.constraints.Min;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -48,12 +46,10 @@ public class SearchQuery {
 			+ "values using comma.", example = "sort=price,-name (price asc and name descending)")
 	public String sort;
 
-	@Min(1)
-	@Schema(description = "The amount of products to return in the result")
+	@Schema(description = "The amount of products to return in the result", minimum = "1")
 	public int limit = 12;
 
-	@Min(0)
-	@Schema(description = "The amount of products to omit from the whole result to select the returned results.")
+	@Schema(description = "The amount of products to omit from the whole result to select the returned results.", minimum = "0")
 	public int offset = 0;
 
 	/**
