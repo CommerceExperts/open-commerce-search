@@ -547,8 +547,9 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 					.setPayload(payload)
 					.setWeight(result.value)
 					.setContext(result.contexts);
+			if (s.getPayload() == null) s.setPayload(new HashMap<>());
 			s = withPayloadEntry(s, CommonPayloadFields.PAYLOAD_MATCH_KEY, result.key.toString());
-			payload.putIfAbsent(CommonPayloadFields.PAYLOAD_WEIGHT_KEY, String.valueOf(result.value));
+			s = withPayloadEntry(s, CommonPayloadFields.PAYLOAD_WEIGHT_KEY, String.valueOf(result.value));
 			return s;
 		}
 		catch (Exception e) {
