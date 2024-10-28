@@ -14,6 +14,7 @@ public final class CommonPayloadFields {
 	public static final String	PAYLOAD_LABEL_KEY		= "meta.label";
 	public static final String	PAYLOAD_GROUPMATCH_KEY	= "meta.matchGroupName";
 	public static final String	PAYLOAD_WEIGHT_KEY		= "meta.weight";
+	public static final String	PAYLOAD_MATCH_KEY		= "meta.matchKey";
 
 
 	private CommonPayloadFields() {}
