@@ -5,13 +5,14 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.68.2</version>
+	<version>0.69.0</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
 		<module>open-commerce-search-api</module>
 		<module>ocs-plugin-spi</module>
 		<module>ocs-commons</module>
+		<module>config-service</module>
 		<module>indexer-service</module>
 		<module>search-service</module>
 		<module>suggest-service-parent</module>
@@ -30,10 +31,13 @@
 		<dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
 
 		<elasticsearch.version>7.17.23</elasticsearch.version>
-		<spring.version>5.3.29</spring.version>
-		<spring-boot.version>2.7.18</spring-boot.version>
-		<spring-cloud.version>2021.0.9</spring-cloud.version>
-		<springdoc.version>1.7.0</springdoc.version>
+		<spring.version>6.1.13</spring.version>
+		<spring-boot.version>3.3.3</spring-boot.version>
+		<spring-cloud.version>2023.0.3</spring-cloud.version>
+		<springdoc.version>1.8.0</springdoc.version>
+		
+		<slf4j.version>2.0.15</slf4j.version>
+		<logback.version>1.5.8</logback.version>
 		<jackson.version>2.14.1</jackson.version>
 		<junit.jupiter.version>5.7.0</junit.jupiter.version>
 	</properties>
@@ -44,7 +48,7 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>open-commerce-search-api</artifactId>
-				<version>0.24.0</version>
+				<version>0.25.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
@@ -59,19 +63,19 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>indexer-service</artifactId>
-				<version>0.43.1</version>
+				<version>0.44.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>search-service</artifactId>
-				<version>0.60.2</version>
+				<version>0.61.0</version>
 			</dependency>
 			<!-- only including the suggest-service directly, because it depends on 
 				the other suggest modules -->
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>suggest-service</artifactId>
-				<version>0.28.2</version>
+				<version>0.29.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
@@ -158,12 +162,17 @@
 			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-api</artifactId>
-				<version>1.7.29</version>
+				<version>${slf4j.version}</version>
 			</dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-core</artifactId>
+                <version>${logback.version}</version>
+            </dependency>
 			<dependency>
 				<groupId>ch.qos.logback</groupId>
 				<artifactId>logback-classic</artifactId>
-				<version>1.2.13</version>
+				<version>${logback.version}</version>
 			</dependency>
 
 			<!-- dev tooling -->
@@ -248,7 +257,7 @@
 					<version>3.3.1</version>
 					<configuration>
 						<from>
-							<image>eclipse-temurin:11-alpine</image>
+							<image>eclipse-temurin:17-alpine</image>
 						</from>
 						<to>
 							<image>${docker.repository}/${docker.prefix}${project.artifactId}:${project.version}</image>

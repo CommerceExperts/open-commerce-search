@@ -78,11 +78,7 @@ public class SuggestServiceImpl implements SuggestService {
 			if (type != null) {
 				mappedSuggestion.setType(type);
 			}
-			payload.putIfAbsent(CommonPayloadFields.PAYLOAD_WEIGHT_KEY, String.valueOf(suggestion.getWeight()));
 			mappedSuggestion.setPayload(payload);
-		}
-		else {
-			mappedSuggestion.setPayload(Collections.singletonMap(CommonPayloadFields.PAYLOAD_WEIGHT_KEY, String.valueOf(suggestion.getWeight())));
 		}
 
 		return mappedSuggestion;

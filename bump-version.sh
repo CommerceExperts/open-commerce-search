@@ -1,11 +1,12 @@
 #!/bin/bash
 
-main_modules=("open-commerce-search-api" "ocs-plugin-spi" "ocs-commons" "indexer-service" "search-service" "ocs-java-client" "integration-tests")
+main_modules=("open-commerce-search-api" "ocs-plugin-spi" "ocs-commons" "indexer-service" "search-service" "ocs-java-client" "integration-tests", "config-service")
 suggest_modules=("smartsuggest-lib" "ocs-suggest-data-provider" "suggest-service")
 
 echo "Choose bump level: "
 echo " 1) fix (incremental version for bug fixes etc)"
 echo " 2) minor (for new non-breaking features)"
+echo " 3) major (next major version as snapshot"
 read -r BL
 
 case "$BL" in
@@ -14,6 +15,8 @@ case "$BL" in
     fix) bump_level="incremental" ;;
     2) bump_level="minor" ;;
     minor) bump_level="minor" ;;
+    3) bump_level="major" ;;
+    major) bump_level="major" ;;
     *) echo "Invalid bump level: $BL" && exit 1 ;;
 esac
 
@@ -55,6 +58,9 @@ function getRemoteVersion() {
 newVersionPattern='${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.nextIncrementalVersion}'
 if [ "$bump_level" = "minor" ]; then
     newVersionPattern='${parsedVersion.majorVersion}.${parsedVersion.nextMinorVersion}.0'
+fi
+if [ "$bump_level" = "major" ]; then
+    newVersionPattern='${parsedVersion.nextMajorVersion}.0.0-SNAPSHOT'
 fi
 function bumpVersion() {
     mod="$1"

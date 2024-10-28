@@ -3,8 +3,6 @@ package de.cxp.ocs.api.indexer;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.*;
-
 import de.cxp.ocs.model.index.Document;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,6 +14,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.ws.rs.*;
 
 @SecurityScheme(name = "basic-auth", type = SecuritySchemeType.HTTP, scheme = "basic")
 @SecurityRequirement(name = "basic-auth")

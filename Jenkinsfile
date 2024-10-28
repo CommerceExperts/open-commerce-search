@@ -7,7 +7,7 @@ pipeline {
     MAVEN_CLI_OPTS = '--batch-mode --errors --fail-at-end --show-version -U -DdeployAtEnd=false'
     GIT_COMMIT = sh(returnStdout: true, script: "git log -n 1 --pretty=format:'%h'").trim()
     PROJECT_VERSION = readMavenPom().getVersion()
-    JAVA_HOME = '/usr/lib/jvm/adoptopenjdk-11-hotspot-amd64/'
+    JAVA_HOME = '/usr/lib/jvm/adoptium-17-jdk-hotspot/'
   }
 
   stages {
@@ -74,7 +74,9 @@ pipeline {
           withCredentials([usernamePassword(credentialsId: 'github-cxp-bot-credentials', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
             sh 'git config credential.helper store'
             sh 'echo "https://$USERNAME:$PASSWORD@github.com" > ~/.git-credentials'
-            sh 'git add docs/*; git commit -m "Update docs" && git push --force origin HEAD:docs || echo "docs unchanged"'
+            sh 'git add open-commerce-search-api/src/main/resources/openapi.yaml' 
+            sh 'git add docs/*'
+            sh 'git commit -m "Update docs" && git push --force origin HEAD:docs || echo "docs unchanged"'
             sh 'rm ~/.git-credentials'
           }
         }

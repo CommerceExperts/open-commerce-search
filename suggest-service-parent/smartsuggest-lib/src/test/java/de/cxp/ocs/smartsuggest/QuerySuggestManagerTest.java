@@ -101,9 +101,8 @@ class QuerySuggestManagerTest {
 				.build();
 
 		serviceMock.updateSuggestions(testTenant1, singletonList(s("foo", "fnord")));
-		QuerySuggester suggester = querySuggestManager.getQuerySuggester(testTenant1);
+		QuerySuggester suggester = querySuggestManager.getQuerySuggester(testTenant1, true);
 
-		Thread.sleep(UPDATE_LATENCY); // wait shortly until loaded
 		assertThat(suggester.suggest("foo").get(0).getLabel()).isEqualTo("fnord");
 
 		serviceMock.setAvailability(false); // slow service
