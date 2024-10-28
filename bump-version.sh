@@ -1,6 +1,6 @@
 #!/bin/bash
 
-main_modules=("open-commerce-search-api" "ocs-plugin-spi" "ocs-commons" "indexer-service" "search-service" "ocs-java-client" "integration-tests")
+main_modules=("open-commerce-search-api" "ocs-plugin-spi" "ocs-commons" "indexer-service" "search-service" "ocs-java-client" "integration-tests", "config-service")
 suggest_modules=("smartsuggest-lib" "ocs-suggest-data-provider" "suggest-service")
 
 echo "Choose bump level: "

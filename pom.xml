@@ -12,6 +12,7 @@
 		<module>open-commerce-search-api</module>
 		<module>ocs-plugin-spi</module>
 		<module>ocs-commons</module>
+		<module>config-service</module>
 		<module>indexer-service</module>
 		<module>search-service</module>
 		<module>suggest-service-parent</module>
