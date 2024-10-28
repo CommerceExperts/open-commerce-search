@@ -53,12 +53,12 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-plugin-spi</artifactId>
-				<version>1.17.0</version>
+				<version>1.17.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-commons</artifactId>
-				<version>0.33.0</version>
+				<version>0.33.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
