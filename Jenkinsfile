@@ -63,12 +63,13 @@ pipeline {
           sh "mvn $MAVEN_CLI_OPTS javadoc:aggregate"
           sh "rm -rf docs/apidocs && mv -v target/site/apidocs docs/"
 
-          // regenerate openapi docs
-          sh "mvn $MAVEN_CLI_OPTS process-sources -pl open-commerce-search-api -P sync-openapi-spec"
-          sh 'docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli:v7.9.0 generate -i /local/open-commerce-search-api/src/main/resources/openapi.yaml -g markdown -o /local/docs/openapi/'
-          sh 'sed -i "1,2d" docs/openapi/README.md' // remove first two lines with unnecessary header
-          sh 'mv docs/openapi/README.md docs/openapi/index.md'
-          sh "grep -RFl 'README.md' docs/openapi/* | xargs -L1 sed -i 's/README.md/index.md/g'"
+          // stopped 'regenerate openapi docs' because the output are partially broken markdown files
+          // instead the same steps can be done to do a manual update picking the relevant changes only 
+          //sh "mvn $MAVEN_CLI_OPTS process-sources -pl open-commerce-search-api -P sync-openapi-spec"
+          //sh 'docker run --rm -v "${PWD}:/local" openapitools/openapi-generator-cli:v7.9.0 generate -i /local/open-commerce-search-api/src/main/resources/openapi.yaml -g markdown -o /local/docs/openapi/'
+          //sh 'sed -i "1,2d" docs/openapi/README.md' // remove first two lines with unnecessary header
+          //sh 'mv docs/openapi/README.md docs/openapi/index.md'
+          //sh "grep -RFl 'README.md' docs/openapi/* | xargs -L1 sed -i 's/README.md/index.md/g'"
 
           // commit + push changes
           withCredentials([usernamePassword(credentialsId: 'github-cxp-bot-credentials', passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
