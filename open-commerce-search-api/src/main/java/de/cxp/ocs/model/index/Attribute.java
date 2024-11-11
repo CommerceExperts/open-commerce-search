@@ -36,7 +36,8 @@ public class Attribute {
 
 	@Schema(
 			required = true,
-			description = "Human readable representation of that attribute, e.g. 'Red' for the attribute 'Color'")
+			description = "Human readable representation of that attribute, e.g. 'Red' for the attribute 'Color'."
+					+ " Values can be numeric and ")
 	@NonNull
 	public String value;
 
