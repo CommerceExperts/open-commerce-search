@@ -1,6 +1,6 @@
 <configuration>
 
-	<property resource="application.properties" />
+	<property resource="bootstrap.properties" />
 	<contextName>${spring.application.name}</contextName>
 
 	<!-- "This makes it reasonable for real-world applications to use the jul-to-slf4j 
