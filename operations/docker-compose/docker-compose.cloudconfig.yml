@@ -1,0 +1,41 @@
+version: '3.5'
+
+# extends the docker-compose.base.yml
+#> docker compose -f docker-compose.base.yml -f docker-compose.local.yml
+
+services:
+  indexer:
+    environment:
+      # older versions have that property not set correctly
+      - "SPRING_APPLICATION_NAME=indexer-service"
+      - "JAVA_TOOL_OPTIONS=-Dspring.config.import=optional:configserver:http://configservice:8530 -Dmanagement.endpoints.web.exposure.include=health,metrics,prometheus,refresh"
+    depends_on:
+      configservice:
+        condition: service_healthy
+
+  searcher:
+    environment:
+      # older versions have that property not set correctly
+      - "SPRING_APPLICATION_NAME=search-service"
+      - "JAVA_TOOL_OPTIONS=-Dspring.config.import=optional:configserver:http://configservice:8530 -Dmanagement.endpoints.web.exposure.include=health,metrics,prometheus,refresh"
+    depends_on:
+      configservice:
+        condition: service_healthy
+
+  configservice:
+    container_name: ocs_configservice
+    image: commerceexperts/ocs-config-service:latest
+    environment:
+      - "SCCS_GIT_URL=${SCCS_GIT_URL:?error}" # required; sets the 'spring.cloud.config.server.git.uri' property
+      - "SCCS_GIT_USERNAME=${SCCS_GIT_USERNAME}" 
+      - "SCCS_GIT_PASSWORD=${SCCS_GIT_PASSWORD}" # might also be a access-token (e.g. for github)
+    ports:
+      - 8530:8530
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - localhost:8530/actuator/health | grep -q '\"status\":\"UP\"'"]
+      interval: 10s
+      retries: 12
+      start_period: 10s
+      timeout: 5s
+    networks:
+      - ocs

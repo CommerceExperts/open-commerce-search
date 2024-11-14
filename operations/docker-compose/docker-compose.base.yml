@@ -6,11 +6,8 @@ services:
     image: commerceexperts/ocs-indexer-service:latest
     environment:
       - "ES_HOSTS=http://elasticsearch:9200"
-      - "spring_profiles_active=preset,custom"
     ports:
       - 8535:8535
-    volumes:
-      - ./application.indexer-service.yml:/app/resources/application-custom.yml:ro
     depends_on:
       - elasticsearch
     networks:
@@ -21,11 +18,8 @@ services:
     image: commerceexperts/ocs-search-service:latest
     environment:
       - "ES_HOSTS=http://elasticsearch:9200"
-      - "spring_profiles_active=preset,custom"
     ports:
       - 8534:8534
-    volumes:
-      - ./application.search-service.yml:/app/resources/application-custom.yml:ro
     depends_on:
       - elasticsearch
     networks:
@@ -43,10 +37,12 @@ services:
 
   elasticsearch:
     container_name: ocs_elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.8
-    # make sure the ./elasticsearch/docker-entrypoint-es.s file is executable
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.25
+    # to install plugins at elasticsearch, we add a docker-entrypoint.sh that makes sure certain plugins are installed
+    # make sure the ./elasticsearch/docker-entrypoint-es.sh file is executable
     volumes:
       - ./elasticsearch:/mnt
+      - ocs_esdata:/usr/share/elasticsearch/data
     entrypoint: 
       - /mnt/docker-entrypoint-es.sh
     ports:
@@ -74,7 +70,11 @@ services:
       - elasticsearch
     networks:
       - ocs
-  
+
+volumes:
+  ocs_esdata:
+    driver: local
+
 networks:
   ocs:
     name: ocs

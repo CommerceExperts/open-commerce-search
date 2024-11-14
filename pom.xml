@@ -5,7 +5,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.69.1</version>
+	<version>0.69.2</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -28,7 +28,6 @@
 		<docker.prefix>ocs-</docker.prefix>
         <docker.tag>${project.version}</docker.tag>
 		<docker.latest.tag>latest</docker.latest.tag>
-		<dockerfile-maven-plugin.version>1.4.13</dockerfile-maven-plugin.version>
 
 		<elasticsearch.version>7.17.23</elasticsearch.version>
 		<spring.version>6.1.13</spring.version>
@@ -254,10 +253,10 @@
 				<plugin>
 					<groupId>com.google.cloud.tools</groupId>
 					<artifactId>jib-maven-plugin</artifactId>
-					<version>3.3.1</version>
+					<version>3.4.4</version>
 					<configuration>
 						<from>
-							<image>eclipse-temurin:17-alpine</image>
+							<image>eclipse-temurin:17-jre-alpine</image>
 						</from>
 						<to>
 							<image>${docker.repository}/${docker.prefix}${project.artifactId}:${project.version}</image>

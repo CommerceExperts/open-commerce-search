@@ -6,7 +6,7 @@
     <parent>
         <groupId>de.cxp.ocs</groupId>
         <artifactId>ocs-parent</artifactId>
-       <version>0.69.0</version>
+       <version>0.69.2</version>
     </parent>
 
     <artifactId>config-service</artifactId>
@@ -50,5 +50,17 @@
         </dependency>
     </dependencies>
 
-
+    <profiles>
+        <profile>
+            <id>dockerize</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.google.cloud.tools</groupId>
+                        <artifactId>jib-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

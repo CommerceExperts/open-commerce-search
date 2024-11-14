@@ -1,0 +1,11 @@
+SCCS_GIT_URL=https://github.com/<ACCOUNT>/<REPO>.git #github configuration repo url
+SCCS_GIT_USERNAME=
+SCCS_GIT_PASSWORD= #can be a github access token
+
+OCS_FRONTEND_BASEPATH= #optional
+NEXTAUTH_SECRET= #github oauth access token
+NEXTAUTH_URL= #domain the app is reachable from
+
+GITHUB_DEFAULT_CONFIG_OWNER= #github-account of the configuration repo
+GITHUB_DEFAULT_CONFIG_REPO_NAME= #github repo for ocs-configuration
+DEFAULT_TENANT= #optional

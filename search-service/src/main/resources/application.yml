@@ -16,7 +16,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: "health,metrics,prometheus"
+        include: "health,metrics,prometheus,refresh"
   metrics:
     enabled: true
     tags:

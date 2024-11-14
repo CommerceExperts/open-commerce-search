@@ -1,0 +1,34 @@
+version: '3.5'
+
+# extends the docker-compose.base.yml
+#> docker compose -f docker-compose.base.yml -f docker-compose.frontend.yml
+
+services:
+  ocss-frontend:
+    container_name: ocs_frontend
+    image: commerceexperts/ocss-frontend:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - "BASEPATH=${OCS_FRONTEND_BASEPATH}" #optional, in case you want it accessible at http(s)://<host>/<basepath>
+      - "SUGGEST_API_AUTH=${SUGGEST_API_AUTH-}" #optional
+      - "SUGGEST_API_URL=http://suggest:8536"
+      - "SEARCH_API_AUTH=${SEARCH_API_AUTH-}" #optional
+      - "SEARCH_API_URL=http://searcher:8534"
+      - "DEFAULT_TENANT=${DEFAULT_TENANT}" #optional the ocs-tenant the should be searched when accessing the UI
+      # in case the frontend runs behind a proxy/lb potentially with auth, those values have to specified here
+      - "NEXTAUTH_SECRET=${NEXTAUTH_SECRET}"
+      - "NEXTAUTH_URL=${NEXTAUTH_URL}"
+      # in order to use the configuration ability of the UI, provide access to the according ocss-config-* repository via 'GitHub OAuth app'
+      - "GITHUB_OAUTH_ID=${GITHUB_OAUTH_ID}"
+      - "GITHUB_OAUTH_SECRET=${GITHUB_OAUTH_SECRET}"
+      # the UI can configure any OCS related configuration in any accessible repo. But normally it makes sence to only work on the config
+      # that is connected to this stack here. Therefor configure the according default values here. Both values refer to the url https://github.com/<OWNER>/<REPO>.git
+      - "DEFAULT_CONFIG_REPO_OWNER=${GITHUB_DEFAULT_CONFIG_OWNER}"
+      - "DEFAULT_CONFIG_REPO_NAME=${GITHUB_DEFAULT_CONFIG_REPO_NAME}"
+    depends_on:
+      - searcher
+      - suggest
+    networks:
+      - ocs
