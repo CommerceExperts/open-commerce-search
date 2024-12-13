@@ -18,8 +18,8 @@ import de.cxp.ocs.suggest.SuggestServiceImpl;
 import de.cxp.ocs.suggest.SuggestServiceProperties;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.prometheus.PrometheusConfig;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusConfig;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
