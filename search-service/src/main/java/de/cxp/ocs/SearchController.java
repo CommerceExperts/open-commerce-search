@@ -18,6 +18,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -69,6 +70,9 @@ public class SearchController implements SearchService {
 	@Autowired
 	private MeterRegistry registry;
 
+	@Autowired
+	private ContextRefresher contextRefresher;
+
 	private final Map<String, SearchContext> searchContexts = new ConcurrentHashMap<>();
 
 	private final Map<String, String> actualIndexPerTenant = new ConcurrentHashMap<>();
@@ -85,6 +89,7 @@ public class SearchController implements SearchService {
 
 	@Scheduled(fixedDelayString = "${ocs.scheduler.refresh-config-delay-ms:60000}")
 	public void refreshAllConfigs() {
+		contextRefresher.refresh();
 		Set<String> loadedTenants = new HashSet<>(searchContexts.keySet());
 		if (loadedTenants.size() > 0) {
 			log.info("Refreshing {} loaded tenants: {}", loadedTenants.size(), loadedTenants);
