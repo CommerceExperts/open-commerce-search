@@ -94,8 +94,15 @@ public class QuerqyQueryExpanderTest {
 	}
 
 	@Test
-	public void testOneToManySynonym() {
+	public void testOneToManySynonym_Brakets() {
 		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("surpresseur =>", "  SYNONYM: (pompe à immerger)");
+		var analyzedQuery = analyze(underTest, "surpresseur");
+		assertEquals("(surpresseur OR \"pompe à immerger\")", analyzedQuery.toQueryString());
+	}
+
+	@Test
+	public void testOneToManySynonym_Blank() {
+		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("surpresseur =>", "  SYNONYM: pompe à immerger");
 		var analyzedQuery = analyze(underTest, "surpresseur");
 		assertEquals("(surpresseur OR \"pompe à immerger\")", analyzedQuery.toQueryString());
 	}

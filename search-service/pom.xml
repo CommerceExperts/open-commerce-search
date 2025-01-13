@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.69.4</version>
+		<version>0.69.5</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>search-service</artifactId>
-	<version>0.61.2</version>
+	<version>0.61.3</version>
 	<packaging>jar</packaging>
 
 	<!-- Import dependency management from Spring Boot -->
