@@ -38,12 +38,13 @@ public class Document {
 					Long.class,
 					Double.class,
 					String.class,
-					// latest version of swagger-core cannot handle this without NPE
-				 	//  Boolean[].class,
-					//  Integer[].class,
-					//  Long[].class,
-					//  Double[].class,
-					//  String[].class,
+					Category.class,
+					Boolean[].class,
+					Integer[].class,
+					Long[].class,
+					Double[].class,
+					String[].class,
+					Category[].class
 			})
 	public Map<String, Object> data = new HashMap<>();
 

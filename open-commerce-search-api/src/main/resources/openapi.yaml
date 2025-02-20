@@ -8,7 +8,7 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: Open Commerce Search Stack API
-  version: 0.24.0
+  version: 0.26.0
 paths:
   /indexer-api/v1/full/add:
     post:
@@ -18,7 +18,7 @@ paths:
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/BulkImportData'
+              $ref: "#/components/schemas/BulkImportData"
         description: Data that contains the import session reference and one or more
           documents that should be added to that session.
         required: true
@@ -60,7 +60,7 @@ paths:
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/ImportSession'
+              $ref: "#/components/schemas/ImportSession"
         required: true
       responses:
         "400":
@@ -93,7 +93,7 @@ paths:
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/ImportSession'
+              $ref: "#/components/schemas/ImportSession"
         required: true
       responses:
         "200":
@@ -142,7 +142,7 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: '#/components/schemas/ImportSession'
+                $ref: "#/components/schemas/ImportSession"
           description: import session started
         "409":
           description: there is already an import running for that index
@@ -278,7 +278,7 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: '#/components/schemas/Document'
+                $ref: "#/components/schemas/Document"
           description: default response
       security:
       - basic-auth: []
@@ -300,7 +300,7 @@ paths:
         content:
           '*/*':
             schema:
-              $ref: '#/components/schemas/ArrangedSearchQuery'
+              $ref: "#/components/schemas/ArrangedSearchQuery"
         description: A list of all search requests that should be part of a single
           response
         required: true
@@ -309,7 +309,7 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: '#/components/schemas/SearchResult'
+                $ref: "#/components/schemas/SearchResult"
           description: default response
       security:
       - basic-auth: []
@@ -335,7 +335,7 @@ paths:
         name: searchQuery
         required: true
         schema:
-          $ref: '#/components/schemas/SearchQuery'
+          $ref: "#/components/schemas/SearchQuery"
         style: form
       - description: "Any other parameter is considered as filter. Each one is validated\
           \ according to the actual data and configuration. Each filter can have multiple\
@@ -380,13 +380,13 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: '#/components/schemas/SearchResult'
+                $ref: "#/components/schemas/SearchResult"
           description: successful found results
         "204":
           content:
             '*/*':
               schema:
-                $ref: '#/components/schemas/SearchResult'
+                $ref: "#/components/schemas/SearchResult"
           description: Optional response code that represents 'no result'
         "403":
           content:
@@ -450,7 +450,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Suggestion'
+                  $ref: "#/components/schemas/Suggestion"
           description: successful found results
         "404":
           content:
@@ -471,7 +471,7 @@ components:
         arrangedProductSets:
           type: array
           items:
-            $ref: '#/components/schemas/ProductSet'
+            $ref: "#/components/schemas/ProductSet"
         filters:
           type: object
           additionalProperties:
@@ -532,7 +532,7 @@ components:
         value:
           type: string
           description: "Human readable representation of that attribute, e.g. 'Red'\
-            \ for the attribute 'Color'"
+            \ for the attribute 'Color'. Values can be numeric and "
       required:
       - name
       - value
@@ -546,12 +546,27 @@ components:
             the given index.Products have the speciality to contain other documents
             as variants.
           items:
-            $ref: '#/components/schemas/Document'
+            $ref: "#/components/schemas/Document"
         session:
-          $ref: '#/components/schemas/ImportSession'
+          $ref: "#/components/schemas/ImportSession"
       required:
       - documents
       - session
+    Category:
+      type: object
+      description: Model that represents a single category inside a category path.
+      example:
+        id: "7001"
+        name: Sale
+      properties:
+        id:
+          type: string
+          description: Optional ID for a consistent filtering
+        name:
+          type: string
+          description: actual category name
+      required:
+      - name
     Document:
       type: object
       description: A data record that contains any data relevant for search. The single
@@ -562,9 +577,35 @@ components:
           description: multiple attributes can be delivered separately from standard
             data fields
           items:
-            $ref: '#/components/schemas/Attribute'
+            $ref: "#/components/schemas/Attribute"
         categories:
-          $ref: '#/components/schemas/Category'
+          type: array
+          description: "A category path is a list of Category objects that are defined\
+            \ in a hierarchical parent-child relationship.Multiple category paths\
+            \ can be defined per document, therefor this property is a list of category\
+            \ arrays."
+          example:
+          - - id: "7001"
+              name: Electronics
+            - id: "7011"
+              name: Notebooks
+          - - id: "9000"
+              name: Sale
+          items:
+            type: array
+            description: "A category path is a list of Category objects that are defined\
+              \ in a hierarchical parent-child relationship.Multiple category paths\
+              \ can be defined per document, therefor this property is a list of category\
+              \ arrays."
+            example:
+            - - id: "7001"
+                name: Electronics
+              - id: "7011"
+                name: Notebooks
+            - - id: "9000"
+                name: Sale
+            items:
+              $ref: "#/components/schemas/Category"
         data:
           type: object
           additionalProperties:
@@ -578,6 +619,28 @@ components:
             - type: number
               format: double
             - type: string
+            - $ref: "#/components/schemas/Category"
+            - type: array
+              items:
+                type: boolean
+            - type: array
+              items:
+                type: integer
+                format: int32
+            - type: array
+              items:
+                type: integer
+                format: int64
+            - type: array
+              items:
+                type: number
+                format: double
+            - type: array
+              items:
+                type: string
+            - type: array
+              items:
+                $ref: "#/components/schemas/Category"
             description: "The data property should be used for standard fields, such\
               \ as title, description, price. Only values of the following types are\
               \ accepted (others will be dropped silently): Standard primitive types\
@@ -596,7 +659,7 @@ components:
     DynamicProductSet:
       type: object
       allOf:
-      - $ref: '#/components/schemas/ProductSet'
+      - $ref: "#/components/schemas/ProductSet"
       - type: object
         properties:
           asSeparateSlice:
@@ -608,6 +671,8 @@ components:
           limit:
             type: integer
             format: int32
+            description: The maximum amount of products to pick based on the given
+              query and filters
             minimum: 1
           name:
             type: string
@@ -636,7 +701,7 @@ components:
           type: array
           description: The entries of that facet.
           items:
-            $ref: '#/components/schemas/FacetEntry'
+            $ref: "#/components/schemas/FacetEntry"
         fieldName:
           type: string
           description: This is the name coming from the data. Separate label information
@@ -668,10 +733,10 @@ components:
       description: The entries of that facet.
       discriminator:
         mapping:
-          hierarchical: '#/components/schemas/HierarchialFacetEntry'
-          interval: '#/components/schemas/IntervalFacetEntry'
-          range: '#/components/schemas/RangeFacetEntry'
-          term: '#/components/schemas/FacetEntry'
+          hierarchical: "#/components/schemas/HierarchialFacetEntry"
+          interval: "#/components/schemas/IntervalFacetEntry"
+          range: "#/components/schemas/RangeFacetEntry"
+          term: "#/components/schemas/FacetEntry"
         propertyName: type
       properties:
         docCount:
@@ -695,7 +760,7 @@ components:
     GenericProductSet:
       type: object
       allOf:
-      - $ref: '#/components/schemas/ProductSet'
+      - $ref: "#/components/schemas/ProductSet"
       - type: object
         properties:
           asSeparateSlice:
@@ -717,7 +782,7 @@ components:
     HierarchialFacetEntry:
       type: object
       allOf:
-      - $ref: '#/components/schemas/FacetEntry'
+      - $ref: "#/components/schemas/FacetEntry"
       - type: object
         properties:
           children:
@@ -725,7 +790,7 @@ components:
             description: Child facet entries to that particular facet. The child facets
               again could be HierarchialFacetEntries.
             items:
-              $ref: '#/components/schemas/FacetEntry'
+              $ref: "#/components/schemas/FacetEntry"
           docCount:
             type: integer
             format: int64
@@ -760,7 +825,7 @@ components:
     IntervalFacetEntry:
       type: object
       allOf:
-      - $ref: '#/components/schemas/FacetEntry'
+      - $ref: "#/components/schemas/FacetEntry"
       - type: object
         properties:
           docCount:
@@ -791,7 +856,7 @@ components:
     Product:
       type: object
       allOf:
-      - $ref: '#/components/schemas/Document'
+      - $ref: "#/components/schemas/Document"
       - type: object
         properties:
           variants:
@@ -799,7 +864,7 @@ components:
             description: "for products without variants, it can be null or rather\
               \ us a document directly."
             items:
-              $ref: '#/components/schemas/Document'
+              $ref: "#/components/schemas/Document"
       description: Main product containing the data that is common for all variants.
         A product may represent a master-variant relation ship. A variant should be
         associated to a single Product and cannot have variants again - those will
@@ -809,10 +874,10 @@ components:
       type: object
       discriminator:
         mapping:
-          dynamic: '#/components/schemas/DynamicProductSet'
-          generic: '#/components/schemas/GenericProductSet'
-          querystring: '#/components/schemas/QueryStringProductSet'
-          static: '#/components/schemas/StaticProductSet'
+          dynamic: "#/components/schemas/DynamicProductSet"
+          generic: "#/components/schemas/GenericProductSet"
+          querystring: "#/components/schemas/QueryStringProductSet"
+          static: "#/components/schemas/StaticProductSet"
         propertyName: type
       properties:
         asSeparateSlice:
@@ -829,7 +894,7 @@ components:
     QueryStringProductSet:
       type: object
       allOf:
-      - $ref: '#/components/schemas/ProductSet'
+      - $ref: "#/components/schemas/ProductSet"
       - type: object
         properties:
           asSeparateSlice:
@@ -846,6 +911,8 @@ components:
           limit:
             type: integer
             format: int32
+            description: The amount of products to pick from that query-string product
+              set
             minimum: 1
           name:
             type: string
@@ -863,7 +930,7 @@ components:
     RangeFacetEntry:
       type: object
       allOf:
-      - $ref: '#/components/schemas/FacetEntry'
+      - $ref: "#/components/schemas/FacetEntry"
       - type: object
         properties:
           docCount:
@@ -900,7 +967,7 @@ components:
       description: the list of actual hits for that result view.
       properties:
         document:
-          $ref: '#/components/schemas/Document'
+          $ref: "#/components/schemas/Document"
         index:
           type: string
         matchedQueries:
@@ -967,11 +1034,11 @@ components:
             \ slice. At least 1 slice should be expected. If there is no slice, no\
             \ results were found."
           items:
-            $ref: '#/components/schemas/SearchResultSlice'
+            $ref: "#/components/schemas/SearchResultSlice"
         sortOptions:
           type: array
           items:
-            $ref: '#/components/schemas/Sorting'
+            $ref: "#/components/schemas/Sorting"
         tookInMillis:
           type: integer
           format: int64
@@ -994,12 +1061,12 @@ components:
           description: "If facets are part of this slice, they are placed here. By\
             \ default only one slice SHOULD contain facets."
           items:
-            $ref: '#/components/schemas/Facet'
+            $ref: "#/components/schemas/Facet"
         hits:
           type: array
           description: the list of actual hits for that result view.
           items:
-            $ref: '#/components/schemas/ResultHit'
+            $ref: "#/components/schemas/ResultHit"
         label:
           type: string
           description: An identifier for that result slice. Can be used to differentiate
@@ -1044,7 +1111,7 @@ components:
     StaticProductSet:
       type: object
       allOf:
-      - $ref: '#/components/schemas/ProductSet'
+      - $ref: "#/components/schemas/ProductSet"
       - type: object
         properties:
           asSeparateSlice:
