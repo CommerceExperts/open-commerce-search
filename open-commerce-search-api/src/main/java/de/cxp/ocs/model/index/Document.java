@@ -44,7 +44,8 @@ public class Document {
 					Long[].class,
 					Double[].class,
 					String[].class,
-					Category[].class
+					Category[].class,
+					Category[][].class,
 			})
 	public Map<String, Object> data = new HashMap<>();
 
@@ -53,7 +54,8 @@ public class Document {
 
 	@Schema(
 			description = "A category path is a list of Category objects that are defined in a hierarchical parent-child relationship."
-					+ "Multiple category paths can be defined per document, therefor this property is a list of category arrays.",
+					+ "Multiple category paths can be defined per document, therefor this property is a list of category arrays."
+					+ "If you have additional hierarchical data, you can also put it into data as Category[][]. This property is just for convenience.",
 			contains = Category.class,
 			contentSchema = Category.class,
 			example = "[[{\"id\":\"7001\",\"name\":\"Electronics\"}, {\"id\":\"7011\",\"name\":\"Notebooks\"}], [{\"id\":\"9000\",\"name\":\"Sale\"}]]")
@@ -78,6 +80,36 @@ public class Document {
 
 	public Document set(String name, double... values) {
 		data.put(name, values.length == 1 ? values[0] : values);
+		return this;
+	}
+
+	/**
+	 * Add a hierarchical path with a different name. This is usable in case you have multiple different category trees.
+	 * 
+	 * @param name
+	 * @param values
+	 * @return
+	 */
+	public Document addPath(String name, Category... values) {
+		Object previousValue = data.get(name);
+		if (previousValue == null) {
+			data.put(name, values);
+		}
+		else if (previousValue instanceof Category[]) {
+			Category[][] newPaths = new Category[2][];
+			newPaths[0] = (Category[]) previousValue;
+			newPaths[1] = values;
+			data.put(name, newPaths);
+		}
+		else if (previousValue instanceof Category[][] prevPaths) {
+			Category[][] newPaths = new Category[prevPaths.length + 1][];
+			int i = 0;
+			for (Category[] path : prevPaths) {
+				newPaths[i++] = path;
+			}
+			newPaths[i] = values;
+			data.put(name, newPaths);
+		}
 		return this;
 	}
 

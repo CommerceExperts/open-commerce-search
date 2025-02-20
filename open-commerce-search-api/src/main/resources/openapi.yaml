@@ -641,6 +641,11 @@ components:
             - type: array
               items:
                 $ref: "#/components/schemas/Category"
+            - type: array
+              items:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
             description: "The data property should be used for standard fields, such\
               \ as title, description, price. Only values of the following types are\
               \ accepted (others will be dropped silently): Standard primitive types\
