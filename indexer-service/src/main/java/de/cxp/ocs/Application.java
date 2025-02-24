@@ -2,6 +2,8 @@ package de.cxp.ocs;
 
 import java.util.Optional;
 
+import de.cxp.ocs.client.deserializer.DocumentDeserializer;
+import de.cxp.ocs.client.deserializer.ProductDeserializer;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.boot.SpringApplication;
@@ -30,8 +32,6 @@ import de.cxp.ocs.model.result.FacetEntry;
 import de.cxp.ocs.model.result.HierarchialFacetEntry;
 import de.cxp.ocs.plugin.PluginManager;
 import de.cxp.ocs.spi.indexer.IndexerConfigurationProvider;
-import de.cxp.ocs.util.DocumentDeserializer;
-import de.cxp.ocs.util.ProductDeserializer;
 import lombok.extern.slf4j.Slf4j;
 
 @SpringBootApplication

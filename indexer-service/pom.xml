@@ -87,6 +87,10 @@
             <groupId>de.cxp.ocs</groupId>
             <artifactId>ocs-commons</artifactId>
         </dependency>
+        <dependency>
+            <groupId>de.cxp.ocs</groupId>
+            <artifactId>ocs-java-client</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
