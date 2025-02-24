@@ -7,7 +7,7 @@ pipeline {
     MAVEN_CLI_OPTS = '--batch-mode --errors --fail-at-end --show-version -U -DdeployAtEnd=false'
     GIT_COMMIT = sh(returnStdout: true, script: "git log -n 1 --pretty=format:'%h'").trim()
     PROJECT_VERSION = readMavenPom().getVersion()
-    JAVA_HOME = '/usr/lib/jvm/adoptium-17-jdk-hotspot/'
+    JAVA_HOME = '/usr/lib/jvm/java-21-openjdk-amd64'
   }
 
   stages {
