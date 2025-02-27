@@ -1,0 +1,35 @@
+ocs:
+  index-config:
+    multi_category:
+      field-configuration:
+        fields:
+          id:
+            name: id
+            type: id
+            usage:
+              - Result
+            field-level: master
+          title:
+            name: title
+            type: string
+            usage:
+              - Search
+              - Result
+          price:
+            name: price
+            type: number
+            usage:
+              - Facet
+              - Result
+          categories:
+            name: categories
+            type: category
+            usage:
+              - Facet
+              - Result
+          taxonomy:
+            name: taxonomy
+            type: category
+            usage:
+              - Facet
+              - Result
