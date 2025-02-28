@@ -29,6 +29,7 @@ public class MultipleCategoryTreesTest {
 
 	static String indexName = "multi_category";
 
+	@SuppressWarnings("deprecation")
 	@BeforeAll
 	public static void indexData() throws Exception {
 		DataIndexer dataIndexer = new DataIndexer(getImportClient());
@@ -46,7 +47,7 @@ public class MultipleCategoryTreesTest {
 		List<Document> documents = List.of(
 				// only cat path
 				new Document("d1").set("title", "product 1").set("price", "12.99").addCategory(catPath1_L2),
-				new Document("d2").set("title", "product 2").set("price", "22.99").addCategory(catPath2_L3),
+				new Document("d2").set("title", "product 2").set("price", "22.99").addPath("categories", catPath2_L3), //combine new approach with deprecated legacy method
 				// two products have both paths
 				new Document("d3").set("title", "product 3").set("price", "32.99").addCategory(catPath3_L2).addPath("taxonomy", taxonomyPath1),
 				new Document("d4").set("title", "product 4").set("price", "42.99").addCategory(catPath3_L3).addPath("taxonomy", taxonomyPath2),

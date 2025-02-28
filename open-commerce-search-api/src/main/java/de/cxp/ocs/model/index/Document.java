@@ -29,8 +29,10 @@ public class Document {
 
 	@Schema(
 			description = "The data property should be used for standard fields, such as title, description, price."
-					+ " Only values of the following types are accepted (others will be dropped silently):"
+					+ " Values of the following types are accepted (others will be dropped silently):"
 					+ " Standard primitive types (Boolean, String, Integer, Double) and arrays of these types."
+					+ " Additional hierarchical paths (e.g. categories, taxonomy, etc) can inserted as Category[] (single path)"
+					+ " or Category[][] (multiple paths)."
 					+ " Attributes (key-value objects with ID) should be passed to the attributes property.",
 			anyOf = {
 					Boolean.class,
@@ -52,16 +54,19 @@ public class Document {
 	@Schema(description = "multiple attributes can be delivered separately from standard data fields")
 	public List<Attribute> attributes;
 
+	@Deprecated
 	@Schema(
 			description = "A category path is a list of Category objects that are defined in a hierarchical parent-child relationship."
 					+ "Multiple category paths can be defined per document, therefor this property is a list of category arrays."
-					+ "If you have additional hierarchical data, you can also put it into data as Category[][]. This property is just for convenience.",
+					+ "Deprecation Notice: Use data with a specific field name (e.g. 'categories') to put paths as Category[][].",
 			contains = Category.class,
 			contentSchema = Category.class,
+			deprecated = true,
 			example = "[[{\"id\":\"7001\",\"name\":\"Electronics\"}, {\"id\":\"7011\",\"name\":\"Notebooks\"}], [{\"id\":\"9000\",\"name\":\"Sale\"}]]")
 	public List<Category[]> categories;
 
-	public Document() {}
+	public Document() {
+	}
 
 	public Document set(String name, String... values) {
 		data.put(name, values.length == 1 ? values[0] : values);
@@ -84,11 +89,11 @@ public class Document {
 	}
 
 	/**
-	 * Add a hierarchical path with a different name. This is usable in case you have multiple different category trees.
-	 * 
-	 * @param name
-	 * @param values
-	 * @return
+	 * Add a hierarchical path for a given field name. This is usable in case you have multiple different category trees.
+	 *
+	 * @param name field name
+	 * @param values single path hierarchy
+	 * @return the modified document (fluent return)
 	 */
 	public Document addPath(String name, Category... values) {
 		Object previousValue = data.get(name);
@@ -130,6 +135,12 @@ public class Document {
 		return this;
 	}
 
+	/**
+	 * @deprecated use addPath with a specific name. For legacy usage, use the field name used in the according indexer field configuration.
+	 * @param values single path
+	 * @return modified document (fluent return)
+	 */
+	@Deprecated
 	public Document addCategory(Category... values) {
 		if (categories == null) categories = new ArrayList<>();
 		categories.add(values);
