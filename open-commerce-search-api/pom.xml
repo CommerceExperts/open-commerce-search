@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.69.1</version>
+		<version>0.70.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
@@ -16,38 +16,28 @@
 	 upon version bump, don't forget to update src/main/resources/openapi.yaml
      by running 'mvn clean compile; mvn  process-sources -P sync-openapi-spec'
 	-->
-	<version>0.25.2</version>
+	<version>0.26.0</version>
 	<packaging>jar</packaging>
 
 	<description>An open and abstract search API that covers minimal search functionality</description>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<swagger.version>2.2.28</swagger.version>
 	</properties>
-    
-    <dependencyManagement>
-        <dependencies>
-            <!-- fix dependency clash for incompatible swagger libraries -->
-            <dependency>
-                <groupId>jakarta.xml.bind</groupId>
-                <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>2.3.3</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
     
 	<dependencies>
 		<!-- dependencies to generate api spec -->
 		<dependency>
 			<groupId>io.swagger.core.v3</groupId>
-			<artifactId>swagger-jaxrs2</artifactId>
-			<version>2.2.15</version>
+			<artifactId>swagger-jaxrs2-jakarta</artifactId>
+			<version>${swagger.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>io.swagger.core.v3</groupId>
-			<artifactId>swagger-core</artifactId>
-			<version>2.2.15</version>
+			<artifactId>swagger-core-jakarta</artifactId>
+			<version>${swagger.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -106,19 +96,22 @@
 				<plugins>
 					<plugin>
 						<groupId>io.swagger.core.v3</groupId>
-						<artifactId>swagger-maven-plugin</artifactId>
-						<version>2.2.15</version>
+						<artifactId>swagger-maven-plugin-jakarta</artifactId>
+						<version>${swagger.version}</version>
 						<configuration>
 							<configurationFilePath>${project.basedir}/target/classes/openapi-configuration.json</configurationFilePath>
 							<outputFileName>openapi</outputFileName>
 							<outputPath>${project.basedir}/src/main/resources</outputPath>
+							<resourcePackages>
+								<package>de.cxp.ocs</package>
+							</resourcePackages>
 							<outputFormat>YAML</outputFormat>
 							<prettyPrint>TRUE</prettyPrint>
 							<sortOutput>TRUE</sortOutput>
 						</configuration>
 						<executions>
 							<execution>
-								<phase>process-sources</phase>
+								<phase>compile</phase>
 								<goals>
 									<goal>resolve</goal>
 								</goals>

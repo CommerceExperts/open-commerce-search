@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.69.1</version>
+		<version>0.70.0</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>ocs-java-client</artifactId>
-	<version>0.20.1</version>
+	<version>0.21.0</version>
 	<packaging>jar</packaging>
 
 	<description>A ready to use client for the OCS API</description>
@@ -63,6 +63,12 @@
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+            <groupId>org.junit.jupiter</groupId>
+		    <artifactId>junit-jupiter-params</artifactId>
+		    <version>${junit.jupiter.version}</version>
+            <scope>test</scope>
 		</dependency>
 	</dependencies>
 

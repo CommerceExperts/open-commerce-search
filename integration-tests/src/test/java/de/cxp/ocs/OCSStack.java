@@ -105,7 +105,9 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 		else {
 			indexerService = new GenericContainer<>("commerceexperts/ocs-indexer-service:latest");
 			indexerService.addExposedPort(INDEXER_DEFAULT_PORT);
-			indexerService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset");
+			indexerService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,test");
+
+			bindFile(indexerService, "indexer.application-test.yml", "application-test.yml");
 
 			if (elasticsearch != null) {
 				indexerService.setNetwork(elasticsearch.getNetwork());
@@ -136,8 +138,8 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 			// "-Dspring.profiles.active=preset");
 			searchService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,trace-searches,test");
 
-			bindFile(searchService, "application-test.yml");
-			bindFile(searchService, "querqy-test-rules.txt");
+			bindFile(searchService, "searcher.application-test.yml", "application-test.yml");
+			bindFile(searchService, "querqy-test-rules.txt", "querqy-test-rules.txt");
 			
 			if (elasticsearch != null) {
 				searchService.setNetwork(elasticsearch.getNetwork());
@@ -156,10 +158,10 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 		return searchServiceHost;
 	}
 
-	private static void bindFile(GenericContainer<?> container, String resourceName) {
+	private static void bindFile(GenericContainer<?> container, String resourceName, String containerResourceName) {
 		URL hostPath = OCSStack.class.getClassLoader().getResource(resourceName);
 		if (hostPath != null) {
-			container.addFileSystemBind(hostPath.getPath(), "/app/resources/" + resourceName, BindMode.READ_ONLY);
+			container.addFileSystemBind(hostPath.getPath(), "/app/resources/" + containerResourceName, BindMode.READ_ONLY);
 		}
 		else {
 			throw new IllegalStateException("resource '" + resourceName + "' not found");

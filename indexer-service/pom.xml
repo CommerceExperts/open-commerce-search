@@ -5,12 +5,12 @@
     <parent>
         <groupId>de.cxp.ocs</groupId>
         <artifactId>ocs-parent</artifactId>
-        <version>0.69.5</version>
+        <version>0.70.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>indexer-service</artifactId>
-    <version>0.44.4</version>
+    <version>0.45.0</version>
     <packaging>jar</packaging>
 
     <!-- Import dependency management from Spring Boot -->
@@ -86,6 +86,10 @@
         <dependency>
             <groupId>de.cxp.ocs</groupId>
             <artifactId>ocs-commons</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>de.cxp.ocs</groupId>
+            <artifactId>ocs-java-client</artifactId>
         </dependency>
 
         <dependency>
