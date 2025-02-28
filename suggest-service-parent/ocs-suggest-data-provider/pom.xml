@@ -6,12 +6,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>suggest-service-parent</artifactId>
-		<version>0.70.0</version>
+		<version>0.70.1</version>
 		<relativePath>../</relativePath>
 	</parent>
 
 	<artifactId>ocs-suggest-data-provider</artifactId>
-	<version>0.22.0</version>
+	<version>0.22.1</version>
 	<packaging>jar</packaging>
 	<name>OCS Suggest Data Provider</name>
 
