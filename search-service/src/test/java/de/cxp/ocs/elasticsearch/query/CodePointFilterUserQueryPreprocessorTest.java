@@ -8,8 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class CodePointFilterUserQueryPreprocessorTest {
 
-	private static CodePointFilterUserQueryPreprocessor europeanQueryFilter             = new CodePointFilterUserQueryPreprocessor();
-	private static CodePointFilterUserQueryPreprocessor europeanQueryFilterWithCyrillic = new CodePointFilterUserQueryPreprocessor();
+	private final static CodePointFilterUserQueryPreprocessor europeanQueryFilter             = new CodePointFilterUserQueryPreprocessor();
+	private final static CodePointFilterUserQueryPreprocessor europeanQueryFilterWithCyrillic = new CodePointFilterUserQueryPreprocessor();
 
 	static {
 		europeanQueryFilter.initialize(Map.of(
@@ -43,6 +43,18 @@ class CodePointFilterUserQueryPreprocessorTest {
 	public void testChineseLetterFiltering() {
 		String filtered = europeanQueryFilter.preProcess("微信实名号批发");
 		assertEquals("", filtered);
+	}
+
+	@Test
+	public void testFilteringAsianLettersWithEmojis() {
+		String filtered = europeanQueryFilter.preProcess("❤️ ≼인천파트너매칭⚡");
+		assertEquals("", filtered.trim());
+	}
+
+	@Test
+	public void testFilteringAsianLettersWithEmojisAndLatin() {
+		String filtered = europeanQueryFilter.preProcess("❤️ 234≼인천파트너매칭⚡");
+		assertEquals("234", filtered.trim());
 	}
 
 	@Test

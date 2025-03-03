@@ -6,12 +6,15 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
+ * <p>
  * Filters everything that is not in the configured character point range.
  * Characters out of range will be replaced by a single whitespace.
- *
+ * </p>
+ * <pre>
  * default settings:
  *  code_point_lower_bound: 0
  *  code_point_upper_bound: Integer.MAX_VALUE
+ * </pre>
  *
  * @author Gabriel Bauer
  */
@@ -44,11 +47,10 @@ public class CodePointFilterUserQueryPreprocessor implements UserQueryPreprocess
         for (int i = 0; i < userQuery.length(); i++) {
             int codePoint = userQuery.codePointAt(i);
             if (codePoint < codePointLowerBound || codePoint > codePointUpperBound) {
-                if (sb.length() > 0 && sb.charAt(sb.length() - 1) != ' ') {
+                if (!sb.isEmpty() && sb.charAt(sb.length() - 1) != ' ') {
                     sb.append(' ');
-                } else {
-                    continue;
                 }
+                continue;
             }
             sb.append(userQuery.charAt(i));
         }
