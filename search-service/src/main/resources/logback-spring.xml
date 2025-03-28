@@ -23,9 +23,9 @@
 		</filter>
 		<file>searches.log</file>
 		<append>true</append>
-		<layout class="ch.qos.logback.classic.PatternLayout">
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
 			<pattern>%msg%n</pattern>
-		</layout>
+		</encoder>
 	</appender>
 
 	<!-- with docker profile overwrite STDOUT appender to use JSON encoder -->
