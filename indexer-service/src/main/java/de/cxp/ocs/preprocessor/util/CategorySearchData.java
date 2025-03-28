@@ -52,11 +52,11 @@ public class CategorySearchData {
 
 	/**
 	 * Returns a category by level.
-	 * 
+	 *
 	 * @param lvl
 	 *        the level of the category to return.
 	 * @return the category.
-	 * 
+	 *
 	 * @throws IndexOutOfBoundsException
 	 *         if the level is lower than 0 or greater than
 	 *         <code>{@link CategorySearchData#getCategoryLvlDepth()}</code>
@@ -70,7 +70,7 @@ public class CategorySearchData {
 
 	/**
 	 * Returns the leaf entries of each path.
-	 * 
+	 *
 	 * @return the leaf entries.
 	 */
 	public Collection<String> getCategoryLeaf() {
@@ -101,7 +101,7 @@ public class CategorySearchData {
 	}
 
 	private String getFieldLevelName(final String categoryFieldName, int i) {
-		return new StringBuilder(categoryFieldName).append(CATEGORY_LVL_SUFFIX).append(i).toString();
+		return categoryFieldName + CATEGORY_LVL_SUFFIX + i;
 	}
 
 	private String getFieldLeafName(final String categoryFieldName) {
