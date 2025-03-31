@@ -124,6 +124,13 @@ public class ExtractCategoryLevelDataProcessor implements DocumentPreProcessor {
 			case Category[] categories -> {
 				return Collections.singletonList(extractCategoryPathNames(categories));
 			}
+			case Category[][] categoryPaths -> {
+				List<String[]> extractedPaths = new ArrayList<>(categoryPaths.length);
+				for(Category[] path : categoryPaths) {
+					extractedPaths.add(extractCategoryPathNames(path));
+				}
+				return extractedPaths;
+			}
 			default -> OnceInAWhileRunner.runAgainAfter(() -> log.warn(
 							"Expected category path to be a String or Category[], instead got '{}' for document with id '{}'",
 							categoryPathValue.getClass().getName(), document.getId()),

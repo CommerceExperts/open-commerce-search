@@ -36,6 +36,23 @@ class ExtractCategoryLevelDataProcessorTest {
 	}
 
 	@Test
+	public void testMultiplePathFieldExtraction() {
+		var underTest = new ExtractCategoryLevelDataProcessor();
+		underTest.initialize(new FieldConfigIndex(new FieldConfiguration()
+						.addField(new Field("cat").setType(FieldType.CATEGORY))),
+				Map.of());
+
+		var doc = new Document("1")
+				.addPath("cat", new Category("1", "Aaa"), new Category("1.1", "Aaa.aa"))
+				.addPath("cat", new Category("2", "BBb"), new Category("2.1", "BBb.bb"));
+
+		assert underTest.process(doc, true);
+		assertEquals("Aaa BBb", doc.getData().get("cat_lvl_0"));
+		assertEquals("Aaa.aa BBb.bb", doc.getData().get("cat_lvl_1"));
+		assertEquals("Aaa.aa BBb.bb", doc.getData().get("cat_leaf"));
+	}
+
+	@Test
 	public void testCategorySetInData() {
 		var underTest = new ExtractCategoryLevelDataProcessor();
 		underTest.initialize(new FieldConfigIndex(new FieldConfiguration()
