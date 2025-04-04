@@ -1,5 +1,6 @@
 package de.cxp.ocs.smartsuggest.updater;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
@@ -82,50 +83,15 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 	}
 
 	private void update() throws Exception {
-		if (lastUpdate == null && !dataProvider.hasData(indexName)) {
-			throw new IllegalStateException("dataprovider " + dataProvider.getClass().getSimpleName()
-					+ " has no data for index " + indexName);
-		}
-
-		long remoteModTimeMs = dataProvider.getLastDataModTime(indexName);
-		if (remoteModTimeMs < 0) {
-			if (lastUpdate != null) {
-				throw new Exception("dataprovider " + dataProvider.getClass().getSimpleName() + " seems unavailable at the moment");
-			} else {
-				throw new IllegalStateException("dataprovider " + dataProvider.getClass().getSimpleName()
-						+ " states to have data for index " + indexName
-						+ " but lastModTime was " + remoteModTimeMs);
-			}
-		}
-
-		Instant remoteModTime = Instant.ofEpochMilli(remoteModTimeMs);
+		Instant remoteModTime = getRemoteDataModTime();
 		if (lastUpdate == null || remoteModTime.isAfter(lastUpdate)) {
-			log.info("Fetching data for index {}", indexName);
-			SuggestData suggestData = dataProvider.loadData(indexName);
-
-			if (suggestData == null) {
-				log.error("Received NULL suggest data from query api service. Unable to update query suggester for index " + indexName);
-				return;
-			}
-
-			long dataModTimestamp = suggestData.getModificationTime();
-			if (dataModTimestamp > 0L) {
-				Instant dataModTime = Instant.ofEpochMilli(dataModTimestamp);
-				if (!remoteModTime.equals(dataModTime)) {
-					log.warn("Received data for index {} with the wrong modTime '{}' - expected modTime {}! Will try again with the next update.",
-							indexName, dataModTime, remoteModTime);
-					return;
-				}
-			}
-
-			log.info("Received data for index {} with {} records", indexName,
-					suggestData.getSuggestRecords() instanceof Collection ? ((Collection<?>) suggestData.getSuggestRecords()).size() : "?");
+			SuggestData suggestData = fetchSuggestData(remoteModTime);
+			if (suggestData == null) return;
 
 			SuggestConfig suggestConfig = configProvider.getConfig(indexName, defaultSuggestConfig);
 			long startIndexation = System.currentTimeMillis();
 			QuerySuggester querySuggester = factory.getSuggester(suggestData, suggestConfig);
 			final long count = querySuggester.recordCount();
-
 			log.info("Indexed {} suggest records for index {} in {}ms", count, indexName, System.currentTimeMillis() - startIndexation);
 
 			try {
@@ -147,6 +113,50 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 		}
 	}
 
+	private Instant getRemoteDataModTime() throws Exception {
+		if (lastUpdate == null && !dataProvider.hasData(indexName)) {
+			throw new IllegalStateException("dataprovider " + dataProvider.getClass().getSimpleName()
+					+ " has no data for index " + indexName);
+		}
+
+		long remoteModTimeMs = dataProvider.getLastDataModTime(indexName);
+		if (remoteModTimeMs < 0) {
+			if (lastUpdate != null) {
+				throw new Exception("dataprovider " + dataProvider.getClass().getSimpleName() + " seems unavailable at the moment");
+			} else {
+				throw new IllegalStateException("dataprovider " + dataProvider.getClass().getSimpleName()
+						+ " states to have data for index " + indexName
+						+ " but lastModTime was " + remoteModTimeMs);
+			}
+		}
+
+		return Instant.ofEpochMilli(remoteModTimeMs);
+	}
+
+	private SuggestData fetchSuggestData(Instant remoteModTime) throws IOException {
+		log.info("Fetching data for index {}", indexName);
+		SuggestData suggestData = dataProvider.loadData(indexName);
+
+		if (suggestData == null) {
+			log.error("Received NULL suggest data from query api service. Unable to update query suggester for index {}", indexName);
+			return null;
+		}
+
+		long dataModTimestamp = suggestData.getModificationTime();
+		if (dataModTimestamp > 0L) {
+			Instant dataModTime = Instant.ofEpochMilli(dataModTimestamp);
+			if (!remoteModTime.equals(dataModTime)) {
+				log.warn("Received data for index {} with the wrong modTime '{}' - expected modTime {}! Will try again with the next update.",
+						indexName, dataModTime, remoteModTime);
+				return null;
+			}
+		}
+
+		log.info("Received data for index {} with {} records", indexName,
+				suggestData.getSuggestRecords() instanceof Collection ? ((Collection<?>) suggestData.getSuggestRecords()).size() : "?");
+		return suggestData;
+	}
+
 	@Override
 	public void instrument(Optional<MeterRegistryAdapter> metricsRegistryAdapter, Iterable<Tag> tags) {
 		metricsRegistryAdapter.ifPresent(adapter -> this.addSensors(adapter.getMetricsRegistry(), tags));
@@ -156,7 +166,7 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 		reg.gauge(Util.APP_NAME + ".update.fail.count", tags, this, updater -> updater.updateFailCount);
 		reg.more().counter(Util.APP_NAME + ".update.success.count", tags, this, updater -> updater.updateSuccessCount);
 		reg.more().timeGauge(Util.APP_NAME + ".suggestions.age", tags, this, TimeUnit.SECONDS,
-				updater -> (updater.lastUpdate == null ? -1 : System.currentTimeMillis() - updater.lastUpdate.toEpochMilli()) / 1000);
+				updater -> (double) (updater.lastUpdate == null ? -1 : System.currentTimeMillis() - updater.lastUpdate.toEpochMilli()) / 1000);
 		reg.gauge(Util.APP_NAME + ".suggestions.size", tags, this, updater -> updater.suggestionsCount);
 	}
 
