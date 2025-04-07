@@ -4,8 +4,15 @@ import de.cxp.ocs.smartsuggest.monitoring.Instrumentable;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 
-public interface SuggesterFactory extends Instrumentable {
+import java.io.File;
+import java.io.IOException;
 
-	QuerySuggester getSuggester(SuggestData suggestData, SuggestConfig suggestConfig);
+public interface SuggesterFactory<T extends QuerySuggester> extends Instrumentable {
+
+	T getSuggester(SuggestData suggestData, SuggestConfig suggestConfig);
+
+	File persist(T querySuggester) throws IOException;
+
+	T recover(File baseDir);
 
 }

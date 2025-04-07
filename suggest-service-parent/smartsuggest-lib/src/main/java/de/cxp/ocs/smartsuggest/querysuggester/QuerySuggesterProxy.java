@@ -60,7 +60,7 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 		this.maxSuggestionsPerCacheEntry = maxSuggestionsPerCacheEntry;
 	}
 
-	public void updateQueryMapper(@NonNull QuerySuggester newSuggester) throws AlreadyClosedException {
+	public void updateSuggester(@NonNull QuerySuggester newSuggester) throws AlreadyClosedException {
 		if (isClosed) throw new AlreadyClosedException("suggester for tenant " + indexName + " closed");
 		log.info("updating from {} to {} for tenant {} with data from {}",
 				innerQuerySuggester.get().getClass().getSimpleName(),
@@ -75,7 +75,12 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 
 		QuerySuggester oldSuggester = innerQuerySuggester.getAndSet(newSuggester);
 		if (oldSuggester != null) {
-			oldSuggester.destroy();
+			try {
+				oldSuggester.destroy();
+			}
+			catch (Exception e) {
+				log.error("Failed to close/cleanup the old suggester. Ignoring to continue with new suggester.", e);
+			}
 		}
 	}
 

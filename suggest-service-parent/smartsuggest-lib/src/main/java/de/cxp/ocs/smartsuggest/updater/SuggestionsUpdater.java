@@ -43,7 +43,7 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 	private final QuerySuggesterProxy querySuggesterProxy;
 
 	@NonNull
-	private final SuggesterFactory factory;
+	private final SuggesterFactory<?> factory;
 
 	private Instant lastUpdate = null;
 
@@ -95,7 +95,7 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 			log.info("Indexed {} suggest records for index {} in {}ms", count, indexName, System.currentTimeMillis() - startIndexation);
 
 			try {
-				querySuggesterProxy.updateQueryMapper(querySuggester);
+				querySuggesterProxy.updateSuggester(querySuggester);
 			}
 			catch (AlreadyClosedException ace) {
 				log.info("Suggester Update for index {} canceled, because suggester closed", indexName);

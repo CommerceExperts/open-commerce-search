@@ -1,4 +1,4 @@
-package de.cxp.ocs.smartsuggest.querysuggester;
+package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
 import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.BEST_MATCHES_GROUP_NAME;
 import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.FUZZY_MATCHES_ONE_EDIT_GROUP_NAME;
@@ -9,26 +9,21 @@ import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester
 import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.TYPO_MATCHES_GROUP_NAME;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static de.cxp.ocs.smartsuggest.querysuggester.lucene.TestSetupUtil.*;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.util.*;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.lucene.analysis.CharArraySet;
-import org.apache.lucene.analysis.WordlistLoader;
+import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
-import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig.SortStrategy;
@@ -39,9 +34,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 class LuceneQuerySuggesterTest {
 
-	private LuceneQuerySuggester	underTest;
-	private ModifiedTermsService	modifiedTermsService	= mock(ModifiedTermsService.class);
-	private SuggestConfig			suggestConfig;
+	private       LuceneQuerySuggester underTest;
+	private final ModifiedTermsService modifiedTermsService = mock(ModifiedTermsService.class);
+	private       SuggestConfig        suggestConfig;
 
 	@BeforeEach
 	void beforeEach(@TempDir Path indexFolder) throws IOException {
@@ -54,8 +49,7 @@ class LuceneQuerySuggesterTest {
 
 	@AfterEach
 	void close() throws Exception {
-		if (underTest != null)
-		underTest.close();
+		if (underTest != null) underTest.close();
 	}
 
 	@DisplayName("Search for 'user' should return the best matches for both 'user query 1' and 'user query 2', sorted by the weight")
@@ -641,43 +635,8 @@ class LuceneQuerySuggesterTest {
 		assertGroupName(suggestion, expectedGroupName);
 	}
 
-	private SuggestRecord asSuggestRecord(String bestQuery, Set<String> searchData, int weight) {
-		return new SuggestRecord(bestQuery, StringUtils.join(searchData, " "), singletonMap("label", bestQuery), emptySet(), weight);
-	}
-	
-	private SuggestRecord asSuggestRecord(String searchString, String bestQuery, int weight) {
-		return new SuggestRecord(bestQuery, searchString, singletonMap("label", bestQuery), emptySet(), weight);
-	}
-
-	private SuggestRecord asSuggestRecord(String searchString, String bestQuery, int weight, Set<String> tags) {
-		return new SuggestRecord(bestQuery, searchString, singletonMap("label", bestQuery), tags, weight);
-	}
-
 	private Set<String> setOf(String... entries) {
-		Set<String> result = new HashSet<>(asList(entries));
-		return result;
-	}
-
-	private CharArraySet getWordSet(Locale locale) throws IOException {
-		if (locale != null) {
-			final String languageCode = locale.getLanguage();
-			String stopWordsFileName = null;
-			switch (languageCode) {
-				case "de":
-					stopWordsFileName = "de.txt";
-					break;
-				default:
-					log.info("No stopwords file for locale '{}'", locale);
-			}
-
-			if (stopWordsFileName != null) {
-				final InputStream stopWordInputStream = LuceneQuerySuggester.class.getResourceAsStream("/stopwords/" + stopWordsFileName);
-				final CharArraySet stopWordSet = WordlistLoader.getWordSet(new InputStreamReader(stopWordInputStream));
-				return stopWordSet;
-			}
-		}
-
-		return null;
+		return new HashSet<>(asList(entries));
 	}
 
 	/**

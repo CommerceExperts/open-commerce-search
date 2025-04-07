@@ -5,9 +5,7 @@ import static org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester.PRES
 import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_MIN_FUZZY_LENGTH;
 import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_TRANSPOSITIONS;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -164,7 +162,14 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			fuzzySuggesterOneEdit = createFuzzySuggester(indexFolder, "Short", basicIndexAnalyzer, basicQueryAnalyzer, 1);
 			fuzzySuggesterTwoEdits = createFuzzySuggester(indexFolder, "Long", basicIndexAnalyzer, basicQueryAnalyzer, 2);
 
-			index(emptyList()).join();
+			if(primarySuggester.getCount() == 0) {
+				// seems like nothing is initialized => we need to init the analyzers with empty data to avoid "not ready" suggesters
+				index(emptyList()).join();
+			} else {
+				fuzzySuggesterOneEdit.load(new FileInputStream(getFuzzyIndexFile(1)));
+				fuzzySuggesterTwoEdits.load(new FileInputStream(getFuzzyIndexFile(2)));
+				finalizeIndexation(null);
+			}
 		}
 		catch (IOException iox) {
 			throw new SuggestException("An error occurred while initializing the QuerySuggester", iox);
@@ -463,6 +468,18 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	public Instant getLastIndexTime() {
 		return lastIndexTime;
 	}
+	
+	void commit() throws IOException {
+		primarySuggester.commit();
+		secondarySuggester.commit();
+		shingleSuggester.commit();
+		fuzzySuggesterOneEdit.store(new FileOutputStream(getFuzzyIndexFile(1)));
+		fuzzySuggesterTwoEdits.store(new FileOutputStream(getFuzzyIndexFile(2)));
+	}
+
+	private File getFuzzyIndexFile(int fuzzyStage) {
+		return indexFolder.resolve("fuzzy_"+fuzzyStage+".idx").toFile();
+	}
 
 	@Override
 	public CompletableFuture<Void> index(Iterable<SuggestRecord> suggestions) {
@@ -572,12 +589,13 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 				log.error("An error occurred while closing '{}'", closeable, x);
 			}
 		}
-		cleanupIndexFolder();
 	}
 
-	private void cleanupIndexFolder() throws IOException {
+	@Override
+	public void destroy() throws Exception {
+		if (!isClosed) close();
 		try {
-			Files.walkFileTree(indexFolder, new SimpleFileVisitor<Path>() {
+			Files.walkFileTree(indexFolder, new SimpleFileVisitor<>() {
 
 				@Override
 				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)

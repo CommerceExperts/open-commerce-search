@@ -443,7 +443,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		return activeQuerySuggesters.computeIfAbsent(indexName, (_tenant) -> initializeQuerySuggesters(_tenant, synchronous));
 	}
 
-	public void destroyQuerySuggester(String indexName) {
+	public void destroyQuerySuggester(String indexName) throws Exception {
 		ScheduledFuture<?> scheduledFuture = scheduledTasks.remove(indexName);
 		if (scheduledFuture != null && !scheduledFuture.isDone()) {
 			scheduledFuture.cancel(true);
@@ -485,8 +485,9 @@ public class QuerySuggestManager implements AutoCloseable {
 						return hasData;
 					}
 					catch (Exception e) {
+						// FIXME: a single case of a temporary problem (e.g. connection failed) will skip that SDP for the runtime
 						// catch potential Runtime Exceptions
-						log.warn("SuggestDataProvider of type {} caused unexpected Exception: {}", sdp.getClass().getCanonicalName(), e);
+						log.warn("SuggestDataProvider of type {} caused unexpected Exception", sdp.getClass().getCanonicalName(), e);
 						return false;
 					}
 				})
@@ -569,7 +570,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		updateableQuerySuggester.instrument(metricsRegistry, tags);
 
 		Path tenantFolder = suggestIndexFolder.resolve(indexName.toString()).resolve(suggestDataProvider.getClass().getCanonicalName());
-		SuggesterFactory factory = new LuceneSuggesterFactory(tenantFolder);
+		SuggesterFactory<?> factory = new LuceneSuggesterFactory(tenantFolder);
 		factory.instrument(metricsRegistry, tags);
 
 		SuggestionsUpdater updateTask = new SuggestionsUpdater(suggestDataProvider, suggestConfigProvider, suggestConfig, indexName, updateableQuerySuggester, factory);

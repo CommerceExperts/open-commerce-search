@@ -36,7 +36,7 @@ public class CompoundQuerySuggester implements QuerySuggester, Accountable {
 	}
 
 	// for testing purposes
-	CompoundQuerySuggester(String indexName, List<SuggestDataProvider> dataProviders, SuggestConfigProvider configProvider, SuggesterFactory factory, Limiter limiter)
+	CompoundQuerySuggester(String indexName, List<SuggestDataProvider> dataProviders, SuggestConfigProvider configProvider, SuggesterFactory<?> factory, Limiter limiter)
 			throws IOException {
 		suggesterList = new ArrayList<>();
 		for (SuggestDataProvider dataProvider : dataProviders) {

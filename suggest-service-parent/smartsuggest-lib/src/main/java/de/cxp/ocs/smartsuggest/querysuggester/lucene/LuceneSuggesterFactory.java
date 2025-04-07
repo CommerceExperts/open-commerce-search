@@ -1,5 +1,7 @@
 package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
@@ -9,7 +11,6 @@ import java.util.Optional;
 import org.apache.lucene.analysis.CharArraySet;
 
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
-import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.SuggesterFactory;
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
@@ -22,7 +23,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
-public class LuceneSuggesterFactory implements SuggesterFactory {
+public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySuggester> {
 
 	@NonNull
 	private final Path indexFolder;
@@ -31,7 +32,7 @@ public class LuceneSuggesterFactory implements SuggesterFactory {
 	private Iterable<Tag>					tags;
 
 	@Override
-	public QuerySuggester getSuggester(SuggestData suggestData, SuggestConfig suggestConfig) {
+	public LuceneQuerySuggester getSuggester(SuggestData suggestData, SuggestConfig suggestConfig) {
 		LuceneQuerySuggester luceneQuerySuggester = new LuceneQuerySuggester(
 				indexFolder,
 				suggestConfig,
@@ -56,6 +57,18 @@ public class LuceneSuggesterFactory implements SuggesterFactory {
 		log.info("Indexing {} suggestions took: {}ms", luceneQuerySuggester.recordCount(), System.currentTimeMillis() - start);
 
 		return luceneQuerySuggester;
+	}
+
+	@Override
+	public File persist(LuceneQuerySuggester querySuggester) throws IOException {
+		querySuggester.commit();
+		return indexFolder.toFile();
+	}
+
+	@Override
+	public LuceneQuerySuggester recover(File baseDir) {
+		// TODO
+		return null;
 	}
 
 	@Override

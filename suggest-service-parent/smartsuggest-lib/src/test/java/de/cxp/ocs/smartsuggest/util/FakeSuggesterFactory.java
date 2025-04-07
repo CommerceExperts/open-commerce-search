@@ -1,5 +1,6 @@
 package de.cxp.ocs.smartsuggest.util;
 
+import java.io.File;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
@@ -12,10 +13,10 @@ import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import io.micrometer.core.instrument.Tag;
 
-public class FakeSuggesterFactory implements SuggesterFactory {
+public class FakeSuggesterFactory implements SuggesterFactory<FakeSuggester> {
 
 	@Override
-	public QuerySuggester getSuggester(SuggestData suggestData, SuggestConfig config) {
+	public FakeSuggester getSuggester(SuggestData suggestData, SuggestConfig config) {
 		SuggestRecord[] suggestRecords;
 		if (suggestData instanceof List) {
 			suggestRecords = ((List<SuggestRecord>) suggestData.getSuggestRecords()).toArray(new SuggestRecord[0]);
@@ -24,6 +25,16 @@ public class FakeSuggesterFactory implements SuggesterFactory {
 			suggestRecords = StreamSupport.stream(suggestData.getSuggestRecords().spliterator(), false).toArray(SuggestRecord[]::new);
 		}
 		return new FakeSuggester(suggestRecords);
+	}
+
+	@Override
+	public File persist(FakeSuggester querySuggester) {
+		return null;
+	}
+
+	@Override
+	public FakeSuggester recover(File baseDir) {
+		return null;
 	}
 
 	@Override

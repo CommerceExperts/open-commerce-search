@@ -45,7 +45,7 @@ public interface QuerySuggester extends AutoCloseable {
     /**
      * Destroys any resources created by this suggester
      */
-	default void destroy() {
+	default void destroy() throws Exception {
 		try {
 			close();
 		}

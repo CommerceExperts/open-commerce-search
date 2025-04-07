@@ -22,7 +22,7 @@ public class InstrumentationTest {
 	private QuerySuggestManager					querySuggestManager;
 
 	@Test
-	public void testInstrumentationOfReinitializedSuggester() {
+	public void testInstrumentationOfReinitializedSuggester() throws Exception {
 		SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
 
 		querySuggestManager = QuerySuggestManager.builder()
