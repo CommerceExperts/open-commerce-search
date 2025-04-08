@@ -1,13 +1,16 @@
 package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
+import de.cxp.ocs.smartsuggest.util.FileUtils;
 import org.apache.lucene.analysis.CharArraySet;
 
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
@@ -25,14 +28,24 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySuggester> {
 
+	private static final String                  FILENAME_SUGGEST_DATA = "suggest_data.ser";
 	@NonNull
-	private final Path indexFolder;
+	private final        Path                    baseDirectory;
+	private              CompletableFuture<Void> persistJobFuture      = null;
 
-	private Optional<MeterRegistryAdapter>	metricsRegistryAdapter	= Optional.empty();
-	private Iterable<Tag>					tags;
+	private Optional<MeterRegistryAdapter> metricsRegistryAdapter = Optional.empty();
+	private Iterable<Tag>                  tags;
 
 	@Override
 	public LuceneQuerySuggester getSuggester(SuggestData suggestData, SuggestConfig suggestConfig) {
+		final Path indexFolder;
+		try {
+			indexFolder = Files.createDirectory(baseDirectory.resolve(String.valueOf(suggestData.getModificationTime())));
+		}
+		catch (IOException e) {
+			throw new IllegalArgumentException("can't write into base directory '" + baseDirectory + "'", e);
+		}
+
 		LuceneQuerySuggester luceneQuerySuggester = new LuceneQuerySuggester(
 				indexFolder,
 				suggestConfig,
@@ -43,6 +56,8 @@ public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySugge
 				Optional.ofNullable(suggestData.getWordsToIgnore())
 						.map(sw -> new CharArraySet(sw, true))
 						.orElse(null));
+
+		persistJobFuture = CompletableFuture.runAsync(() -> persistNonIndexedData(indexFolder, suggestData, suggestConfig));
 
 		if (metricsRegistryAdapter.isPresent()) {
 			luceneQuerySuggester.instrument(metricsRegistryAdapter, tags);
@@ -59,15 +74,49 @@ public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySugge
 		return luceneQuerySuggester;
 	}
 
-	@Override
-	public File persist(LuceneQuerySuggester querySuggester) throws IOException {
-		querySuggester.commit();
-		return indexFolder.toFile();
+	private void persistNonIndexedData(Path indexFolder, SuggestData data, SuggestConfig config) {
+		// store all but suggest-records
+		SuggestData nonIndexedData = SuggestData.builder()
+				.type(data.getType())
+				.locale(data.getLocale())
+				.modificationTime(data.getModificationTime())
+				.sharpenedQueries(data.getSharpenedQueries())
+				.relaxedQueries(data.getRelaxedQueries())
+				.wordsToIgnore(data.getWordsToIgnore())
+				.build();
+		try {
+			FileUtils.persistSerializable(indexFolder.resolve(FILENAME_SUGGEST_DATA), nonIndexedData);
+			// TODO: check if suggest can be skipped and does not need to be serialized
+			if (config != null) FileUtils.persistSerializable(indexFolder.resolve("suggest_config.ser"), config);
+		}
+		catch (IOException ioe) {
+			throw new UncheckedIOException(ioe);
+		}
 	}
 
 	@Override
-	public LuceneQuerySuggester recover(File baseDir) {
+	public Path persist(LuceneQuerySuggester querySuggester) throws IOException {
+		querySuggester.commit();
+		persistJobFuture.join();
+		return baseDirectory;
+	}
+
+	@Override
+	public LuceneQuerySuggester recover(Path archiveFolder) throws IOException {
+		Path suggestDataFilePath = archiveFolder.resolve(FILENAME_SUGGEST_DATA);
+		if (!Files.exists(suggestDataFilePath)) {
+			throw new IllegalArgumentException("invalid index folder: " + archiveFolder + ". File '" + FILENAME_SUGGEST_DATA + "' does not exist!");
+		}
+		SuggestData suggestData = FileUtils.loadSerializable(suggestDataFilePath, SuggestData.class);
+
+		Path indexFolder = baseDirectory.resolve(String.valueOf(suggestData.getModificationTime()));
+		Files.createDirectory(indexFolder);
+		if (!FileUtils.isEmptyDirectory(indexFolder)) {
+			throw new IllegalStateException("data for that index-state ("+suggestData.getModificationTime()+") already exists!");
+		}
+
 		// TODO
+
 		return null;
 	}
 

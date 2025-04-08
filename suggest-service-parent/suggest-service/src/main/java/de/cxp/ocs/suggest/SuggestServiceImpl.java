@@ -29,7 +29,12 @@ public class SuggestServiceImpl implements SuggestService {
 					@Override
 					public void onRemoval(RemovalNotification<String, Boolean> notification) {
 						log.info("shutting down suggester for index {}", notification.getKey());
-						querySuggestManager.destroyQuerySuggester(notification.getKey());
+						try {
+							querySuggestManager.destroyQuerySuggester(notification.getKey());
+						}
+						catch (Exception e) {
+							log.error("failed to destroy suggester for index {}", notification.getKey(), e);
+						}
 					}
 				})
 				.build(new CacheLoader<String, Boolean>() {

@@ -1,5 +1,6 @@
 package de.cxp.ocs.smartsuggest.spi;
 
+import java.io.Serializable;
 import java.util.*;
 
 import lombok.AllArgsConstructor;
@@ -11,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class SuggestData {
+public class SuggestData implements Serializable {
 
 	/**
 	 * type/name of these suggest data. All suggest data with same type will be

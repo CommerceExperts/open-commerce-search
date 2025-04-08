@@ -6,13 +6,14 @@ import de.cxp.ocs.smartsuggest.spi.SuggestData;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 
 public interface SuggesterFactory<T extends QuerySuggester> extends Instrumentable {
 
 	T getSuggester(SuggestData suggestData, SuggestConfig suggestConfig);
 
-	File persist(T querySuggester) throws IOException;
+	Path persist(T querySuggester) throws IOException;
 
-	T recover(File baseDir);
+	T recover(Path baseDir) throws IOException;
 
 }

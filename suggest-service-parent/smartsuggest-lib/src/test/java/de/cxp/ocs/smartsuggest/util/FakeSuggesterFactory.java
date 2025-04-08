@@ -1,6 +1,7 @@
 package de.cxp.ocs.smartsuggest.util;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
@@ -28,12 +29,12 @@ public class FakeSuggesterFactory implements SuggesterFactory<FakeSuggester> {
 	}
 
 	@Override
-	public File persist(FakeSuggester querySuggester) {
+	public Path persist(FakeSuggester querySuggester) {
 		return null;
 	}
 
 	@Override
-	public FakeSuggester recover(File baseDir) {
+	public FakeSuggester recover(Path baseDir) {
 		return null;
 	}
 

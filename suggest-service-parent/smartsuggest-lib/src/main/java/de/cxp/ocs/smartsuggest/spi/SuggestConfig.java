@@ -1,5 +1,6 @@
 package de.cxp.ocs.smartsuggest.spi;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -10,7 +11,7 @@ import lombok.Data;
 @Data
 @Builder(toBuilder = true)
 @AllArgsConstructor
-public class SuggestConfig implements Cloneable {
+public class SuggestConfig implements Cloneable, Serializable {
 
 	// Do not use @Builder.Default here, since it will break the standard SuggestConfig constructor
 	public Locale locale = Locale.ROOT;

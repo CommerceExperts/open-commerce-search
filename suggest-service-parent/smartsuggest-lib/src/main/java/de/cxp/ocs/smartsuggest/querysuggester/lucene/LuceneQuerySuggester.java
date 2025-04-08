@@ -18,6 +18,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import lombok.AccessLevel;
+import lombok.Getter;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
@@ -99,6 +101,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 */
 	private final FuzzySuggester fuzzySuggesterTwoEdits;
 
+	@Getter(AccessLevel.PACKAGE)
 	private final SuggestConfig			suggestConfig;
 	private final ModifiedTermsService	modifiedTermsService;
 
@@ -108,6 +111,8 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 
 	private final List<Closeable>	closeables	= new ArrayList<>();
 	private volatile boolean		isClosed	= false;
+
+	@Getter(AccessLevel.PACKAGE)
 	private final Path				indexFolder;
 
 	/**
