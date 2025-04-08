@@ -11,6 +11,7 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import lombok.NonNull;
 import org.apache.commons.lang3.StringUtils;
 
 import de.cxp.ocs.config.Field;
@@ -20,7 +21,6 @@ import de.cxp.ocs.indexer.model.*;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Category;
 import de.cxp.ocs.util.MinMaxSet;
-import io.micrometer.core.lang.NonNull;
 
 /**
  * Enum describing the usage of an field that will be indexed.
@@ -144,7 +144,7 @@ public class FieldUsageApplier {
 		value = unwrapValue(field, value);
 		String fieldName = field.getName();
 		Object previousValue = record.getSortData().putIfAbsent(fieldName, MinMaxSet.of(value));
-		if (previousValue != null && previousValue instanceof MinMaxSet<?>) {
+		if (previousValue instanceof MinMaxSet<?>) {
 			addValuesToMinMaxSet((MinMaxSet<Object>) previousValue, value);
 		}
 
@@ -175,17 +175,17 @@ public class FieldUsageApplier {
 	}
 
 	private static void addValuesToMinMaxSet(MinMaxSet<Object> previousValue, Object value) {
-		Object referenceValue = ((MinMaxSet<Object>) previousValue).min();
+		Object referenceValue = previousValue.min();
 		if (value.getClass().isArray()) {
 			for (Object val : (Object[]) value) {
 				value = ensureSameType(referenceValue, val);
-				((MinMaxSet<Object>) previousValue).add(value);
+				previousValue.add(value);
 			}
 		} else if (value instanceof Collection<?>) {
-			((MinMaxSet<Object>) previousValue).addAll((Collection<Object>) value);
+			previousValue.addAll((Collection<Object>) value);
 		} else {
 			value = ensureSameType(referenceValue, value);
-			((MinMaxSet<Object>) previousValue).add(value);
+			previousValue.add(value);
 		}
 	}
 
@@ -248,8 +248,7 @@ public class FieldUsageApplier {
 			Collection<Number> numberValues = toNumberCollection(value);
 			record.getNumberFacetData().add(new FacetEntry<Number>(field.getName(), numberValues));
 		}
-		else if (value instanceof Attribute) {
-			Attribute attr = ((Attribute) value);
+		else if (value instanceof Attribute attr) {
 			tryToParseAsNumber(attr.getValue())
 					.map(numVal -> record.getNumberFacetData().add(
 							new FacetEntry<>(field.getName(), attr.code, numVal)));
@@ -281,6 +280,11 @@ public class FieldUsageApplier {
 			else if (value instanceof Category[]) {
 				categories.addAll(toPathFacetEntries(fieldName, (Category[]) value));
 			}
+			else if (value instanceof Category[][] paths) {
+				for (Category[] path : paths) {
+					categories.addAll(toPathFacetEntries(fieldName, path));
+				}
+			}
 			else if (value instanceof String[]) {
 				categories.addAll(toPathFacetEntry(fieldName, (String[]) value));
 			}
@@ -295,8 +299,7 @@ public class FieldUsageApplier {
 			Collection<String> stringValues = toStringCollection(value);
 			record.getTermFacetData().add(new FacetEntry<String>(field.getName(), stringValues));
 		}
-		else if (value instanceof Attribute) {
-			Attribute attr = (Attribute) value;
+		else if (value instanceof Attribute attr) {
 			record.getTermFacetData().add(new FacetEntry<>(field.getName(), attr.getCode(), attr.getValue()));
 		}
 		else {
@@ -347,12 +350,12 @@ public class FieldUsageApplier {
 
 	};
 
-	protected static BiFunction<? super String, ? super Object, ? extends Object> joinDataValueFunction(
+	protected static BiFunction<? super String, ? super Object, ?> joinDataValueFunction(
 			final Object value) {
 		return (name, oldVal) -> collectObjects(oldVal, value);
 	}
 
-	protected static BiFunction<? super String, ? super Object, ? extends Object> joinScoreDataValue(
+	protected static BiFunction<? super String, ? super Object, ?> joinScoreDataValue(
 			final Number value) {
 		// only keep biggest value
 		// XXX are there cases, where a lower value should be kept?
@@ -369,12 +372,19 @@ public class FieldUsageApplier {
 		if (value instanceof Category[]) {
 			return Collections.singletonList(toStringMethod.apply((Category[]) value));
 		}
+		else if (value instanceof Category[][] paths) {
+			List<String> converted = new ArrayList<>(paths.length);
+			for(Category[] path : paths) {
+				converted.add(toStringMethod.apply(path));
+			}
+			return converted;
+		}
 		else if (value instanceof Collection) {
 			Object elem = ((Collection<?>) value).iterator().next();
 			Set<String> convertedCategories = new HashSet<String>();
 			if (elem instanceof Category[]) {
 				for (Category[] path : (Collection<Category[]>) value) {
-					convertedCategories.add(toStringMethod.apply((Category[]) path));
+					convertedCategories.add(toStringMethod.apply(path));
 				}
 			}
 			else if (elem instanceof String[]) {
@@ -393,8 +403,7 @@ public class FieldUsageApplier {
 			return Collections.singletonList(StringUtils.join((String[]) value, '/'));
 		}
 		else {
-			// FIXME: this does not make much sense for category facets
-			// in case the user wants to filter by category ids only
+			// fallback for unknown type
 			return Collections.singletonList(value.toString());
 		}
 	}

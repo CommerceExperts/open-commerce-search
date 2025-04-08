@@ -4,10 +4,7 @@ import de.cxp.ocs.OCSStack;
 import de.cxp.ocs.client.SearchClient;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.params.SearchQuery;
-import de.cxp.ocs.model.result.Facet;
-import de.cxp.ocs.model.result.ResultHit;
-import de.cxp.ocs.model.result.SearchResult;
-import de.cxp.ocs.model.result.SearchResultSlice;
+import de.cxp.ocs.model.result.*;
 import de.cxp.ocs.util.DataIndexer;
 import de.cxp.ocs.model.index.Category;
 import org.junit.jupiter.api.BeforeAll;
@@ -21,8 +18,7 @@ import java.util.Optional;
 
 import static de.cxp.ocs.OCSStack.getImportClient;
 import static de.cxp.ocs.OCSStack.getSearchClient;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith({ OCSStack.class })
 public class MultipleCategoryTreesTest {
@@ -52,7 +48,7 @@ public class MultipleCategoryTreesTest {
 				new Document("d3").set("title", "product 3").set("price", "32.99").addCategory(catPath3_L2).addPath("taxonomy", taxonomyPath1),
 				new Document("d4").set("title", "product 4").set("price", "42.99").addCategory(catPath3_L3).addPath("taxonomy", taxonomyPath2),
 				// only taxonomy path
-				new Document("d5").set("title", "product 5").set("price", "52.99").addPath("taxonomy", taxonomyPath3));
+				new Document("d5").set("title", "product 5").set("price", "52.99").addPath("taxonomy", taxonomyPath3).addPath("taxonomy", taxonomyPath2));
 		assertEquals(documents.size(), dataIndexer.indexTestData(indexName, documents.iterator()));
 	}
 
@@ -66,7 +62,12 @@ public class MultipleCategoryTreesTest {
 		SearchResultSlice searchResultSlice = result.getSlices().getFirst();
 
 		facetExists(searchResultSlice, "categories", 3);
-		facetExists(searchResultSlice, "taxonomy", 3);
+		Facet taxonomyFacet = facetExists(searchResultSlice, "taxonomy", 3);
+		assertEquals(3, taxonomyFacet.getEntries().size());
+
+		// expecting most popular facet at first position: the facet that is also the secondary path of document d5
+		HierarchialFacetEntry t21entry = assertFacetEntry(taxonomyFacet.getEntries().getFirst(), HierarchialFacetEntry.class, "t2.1", "Sports & Health");
+		assertFacetEntry(t21entry.getChildren().getFirst(), FacetEntry.class, "t2.9", "Apparel");
 	}
 
 	@Test
@@ -102,9 +103,18 @@ public class MultipleCategoryTreesTest {
 		facetExists(searchResultSlice, "taxonomy", 2);
 	}
 
-	private static void facetExists(SearchResultSlice searchResultSlice, String taxonomy, int expectedEntries) {
+	private static Facet facetExists(SearchResultSlice searchResultSlice, String taxonomy, int expectedEntries) {
 		Optional<Facet> taxonomyFacet = searchResultSlice.facets.stream().filter(facet -> taxonomy.equals(facet.getFieldName())).findFirst();
 		assertTrue(taxonomyFacet.isPresent());
 		assertEquals(expectedEntries, taxonomyFacet.get().entries.size());
+		return taxonomyFacet.get();
+	}
+
+	private <T> T assertFacetEntry(FacetEntry entry, Class<T> expectedType, String expectedId, String expectedName) {
+		assertNotNull(entry);
+		expectedType.isAssignableFrom(entry.getClass());
+		assertEquals(expectedId, entry.id);
+		assertEquals(expectedName, entry.key);
+		return expectedType.cast(entry);
 	}
 }
