@@ -67,7 +67,8 @@ public class MultipleCategoryTreesTest {
 
 		// expecting most popular facet at first position: the facet that is also the secondary path of document d5
 		HierarchialFacetEntry t21entry = assertFacetEntry(taxonomyFacet.getEntries().getFirst(), HierarchialFacetEntry.class, "t2.1", "Sports & Health");
-		assertFacetEntry(t21entry.getChildren().getFirst(), FacetEntry.class, "t2.9", "Apparel");
+		FacetEntry t29entry = assertFacetEntry(t21entry.getChildren().getFirst(), FacetEntry.class, "t2.9", "Apparel");
+		assertEquals(2, t29entry.getDocCount());
 	}
 
 	@Test
