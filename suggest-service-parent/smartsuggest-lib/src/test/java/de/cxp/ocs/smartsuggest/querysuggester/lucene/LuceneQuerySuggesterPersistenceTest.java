@@ -11,7 +11,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Path;
 import java.util.*;
 
-import static de.cxp.ocs.smartsuggest.querysuggester.lucene.TestSetupUtil.*;
+import static de.cxp.ocs.smartsuggest.util.TestSetupUtil.*;
 import static java.util.Arrays.asList;
 import static org.mockito.Mockito.mock;
 

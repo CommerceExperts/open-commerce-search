@@ -19,7 +19,7 @@ import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.spi.standard.DefaultSuggestConfigProvider;
-import de.cxp.ocs.smartsuggest.util.FakeSuggestDataProvider;
+import de.cxp.ocs.smartsuggest.util.TestDataProvider;
 import de.cxp.ocs.smartsuggest.util.FakeSuggesterFactory;
 
 public class CompoundQuerySuggesterTest {
@@ -38,10 +38,10 @@ public class CompoundQuerySuggesterTest {
 	@Test
 	public void testWithTwoDataProviders() throws IOException {
 		List<SuggestDataProvider> dataProviders = Arrays.asList(
-				new FakeSuggestDataProvider().putData("index-a",
+				new TestDataProvider().putData("index-a",
 						getSuggestData("type1",
 								new SuggestRecord("foo", "", emptyMap(), emptySet(), 100))),
-				new FakeSuggestDataProvider().putData("index-a",
+				new TestDataProvider().putData("index-a",
 						getSuggestData("type2",
 								new SuggestRecord("fnord", "", emptyMap(), emptySet(), 200))));
 		underTest = new CompoundQuerySuggester("index-a", dataProviders, configProvider, new FakeSuggesterFactory(), limiter);
@@ -51,10 +51,10 @@ public class CompoundQuerySuggesterTest {
 	@Test
 	public void testWithTaggedData() throws IOException {
 		List<SuggestDataProvider> dataProviders = Arrays.asList(
-				new FakeSuggestDataProvider().putData("index-a",
+				new TestDataProvider().putData("index-a",
 						getSuggestData("type1",
 								new SuggestRecord("foo", "", emptyMap(), singleton("x"), 200))),
-				new FakeSuggestDataProvider().putData("index-a",
+				new TestDataProvider().putData("index-a",
 						getSuggestData("type2",
 								new SuggestRecord("fnord", "", emptyMap(), singleton("y"), 100))));
 		underTest = new CompoundQuerySuggester("index-a", dataProviders, configProvider, new FakeSuggesterFactory(), limiter);

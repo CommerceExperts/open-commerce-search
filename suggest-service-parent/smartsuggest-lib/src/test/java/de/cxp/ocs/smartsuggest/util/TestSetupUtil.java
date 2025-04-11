@@ -1,5 +1,6 @@
-package de.cxp.ocs.smartsuggest.querysuggester.lucene;
+package de.cxp.ocs.smartsuggest.util;
 
+import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -16,7 +17,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 
 @Slf4j
-class TestSetupUtil {
+public class TestSetupUtil {
 
 	public static CharArraySet getWordSet(Locale locale) throws IOException {
 		if (locale != null) {
@@ -40,15 +41,15 @@ class TestSetupUtil {
 		return null;
 	}
 
-	static SuggestRecord asSuggestRecord(String bestQuery, Set<String> searchData, int weight) {
+	public static SuggestRecord asSuggestRecord(String bestQuery, Set<String> searchData, int weight) {
 		return new SuggestRecord(bestQuery, StringUtils.join(searchData, " "), singletonMap("label", bestQuery), emptySet(), weight);
 	}
 
-	static SuggestRecord asSuggestRecord(String searchString, String bestQuery, int weight) {
+	public static SuggestRecord asSuggestRecord(String searchString, String bestQuery, int weight) {
 		return new SuggestRecord(bestQuery, searchString, singletonMap("label", bestQuery), emptySet(), weight);
 	}
 
-	static SuggestRecord asSuggestRecord(String searchString, String bestQuery, int weight, Set<String> tags) {
+	public static SuggestRecord asSuggestRecord(String searchString, String bestQuery, int weight, Set<String> tags) {
 		return new SuggestRecord(bestQuery, searchString, singletonMap("label", bestQuery), tags, weight);
 	}
 }

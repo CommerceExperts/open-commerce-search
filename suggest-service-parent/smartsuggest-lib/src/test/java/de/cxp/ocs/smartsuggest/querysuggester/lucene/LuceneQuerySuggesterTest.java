@@ -14,7 +14,7 @@ import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static de.cxp.ocs.smartsuggest.querysuggester.lucene.TestSetupUtil.*;
+import static de.cxp.ocs.smartsuggest.util.TestSetupUtil.*;
 
 import java.io.IOException;
 import java.nio.file.Path;
