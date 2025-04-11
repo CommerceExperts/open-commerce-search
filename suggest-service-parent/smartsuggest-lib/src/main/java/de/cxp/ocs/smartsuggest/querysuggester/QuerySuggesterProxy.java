@@ -98,6 +98,12 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 	}
 
 	@Override
+	public void destroy() throws Exception {
+		close();
+		innerQuerySuggester.get().destroy();
+	}
+
+	@Override
 	public List<Suggestion> suggest(String term, int maxResults, Set<String> tags) throws SuggestException {
 		if (isClosed || isBlank(term)) return emptyList();
 		final String normalizedTerm = term.toLowerCase();
