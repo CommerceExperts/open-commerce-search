@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -19,7 +20,9 @@ import de.cxp.ocs.model.result.Facet;
 
 public class FacetDependencyFilterTest {
 
-	private final FilterContext noFiltersContext = new FilterContext(Collections.emptyMap());
+	private final FilterContext noFiltersContext = new FilterContext(Map.of(), Map.of());
+	// only those parameters are considered as filter parameters in this test. Others are considered custom parameters
+	private final Set<String>   knownFilterParameters = Set.of("brand", "category", "color", "size");
 
 	@Test
 	public void testNoConfigDoesNotRejectFacet() {
@@ -228,15 +231,65 @@ public class FacetDependencyFilterTest {
 		assertTrue(underTest.isVisibleFacet(sizeFacet, sizeFacetConfig, contextOfFilters("category=a/b", "brand=y"), 0));
 		assertTrue(underTest.isVisibleFacet(sizeFacet, sizeFacetConfig, contextOfFilters("category=c", "brand=y"), 0));
 		assertTrue(underTest.isVisibleFacet(sizeFacet, sizeFacetConfig, contextOfFilters("category=a", "brand=x"), 0));
+		assertTrue(underTest.isVisibleFacet(sizeFacet, sizeFacetConfig, contextOfFilters("category=a,c", "brand=x,y"), 0));
+	}
 
+	@Test
+	public void testCustomParameterDependency() {
+		FacetConfig specialConfig = new FacetConfig("Special Category", "category_x")
+				.setFilterDependencies("withSpecialCategory=true");
+		Map<String, FacetConfig> facetConfigs = Collections.singletonMap("category_x", specialConfig);
+		FacetDependencyFilter underTest = new FacetDependencyFilter(facetConfigs);
+		Facet specialFacet = new Facet("category_x");
+
+		assertFalse(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("category=a"), 0));
+		assertFalse(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("brand=y"), 0));
+		assertFalse(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("withSpecialCategory=1"), 0));
+		assertFalse(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("withSpecialCategory=false", "other=true"), 0));
+
+		// custom parameters are not parsed like filters, so the filter value syntax (negate, comma) are not considered
+		assertFalse(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("withSpecialCategory=true,valid"), 0));
+		assertFalse(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("withSpecialCategory=!true"), 0));
+
+		assertTrue(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("withSpecialCategory=true"), 0));
+		assertTrue(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("withSpecialCategory=true", "param=any"), 0));
+		assertTrue(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("category=c", "withSpecialCategory=true"), 0));
+
+	}
+
+	@Test
+	public void testFilterAndCustomParameterDependency() {
+		FacetConfig specialConfig = new FacetConfig("Special Category", "category_x")
+				.setFilterDependencies("withSpecialCategory=true&brand=x");
+		Map<String, FacetConfig> facetConfigs = Collections.singletonMap("category_x", specialConfig);
+		FacetDependencyFilter underTest = new FacetDependencyFilter(facetConfigs);
+		Facet specialFacet = new Facet("category_x");
+
+		assertFalse(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("category=a"), 0));
+		assertFalse(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("brand=x"), 0));
+		assertFalse(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("withSpecialCategory=true"), 0));
+		assertFalse(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("withSpecialCategory=false", "brand=x"), 0));
+
+		// make sure order does not matter
+		assertTrue(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("brand=x", "withSpecialCategory=true"), 0));
+		assertTrue(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("withSpecialCategory=true", "brand=x"), 0));
+
+		// make sure combination with other parameters does not matter
+		assertTrue(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("category=c", "withSpecialCategory=true", "brand=x"), 0));
+		assertTrue(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("brand=x", "category=c", "withSpecialCategory=true"), 0));
+		assertTrue(underTest.isVisibleFacet(specialFacet, specialConfig, contextOfFilters("brand=x,y", "category=c", "withSpecialCategory=true"), 0));
 	}
 
 	private FilterContext contextOfFilters(String... params) {
 		Map<String, InternalResultFilter> internalFilters = new HashMap<>();
+		Map<String, String> customParameters = new HashMap<>();
 		for (String param : params) {
 			String[] paramSplit = param.split("=");
 
-			if (paramSplit[1].contains("/")) {
+			if (!knownFilterParameters.contains(paramSplit[0])) {
+				customParameters.put(paramSplit[0], paramSplit[1]);
+			}
+			else if (paramSplit[1].contains("/")) {
 				internalFilters.put(paramSplit[0],
 						new PathResultFilter(new Field(paramSplit[0]), paramSplit[1].split(",")));
 			} else {
@@ -244,6 +297,6 @@ public class FacetDependencyFilterTest {
 						new TermResultFilter(new Field(paramSplit[0]), paramSplit[1].split(",")));
 			}
 		}
-		return new FilterContext(internalFilters);
+		return new FilterContext(internalFilters, customParameters);
 	}
 }

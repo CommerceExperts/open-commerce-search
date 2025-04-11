@@ -359,7 +359,8 @@ public class FacetConfiguration {
 		/**
 		 * <p>
 		 * Set one or more URL-style filters of other facets that are required to make
-		 * this facet visible.
+		 * this facet visible. This can also refer to custom parameters that don't match
+		 * an existing field/filter.
 		 * </p>
 		 * <p>
 		 * The facet with such dependencies will only be displayed if one of those

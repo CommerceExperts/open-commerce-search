@@ -186,7 +186,7 @@ public class Searcher {
 		Iterator<ESQueryFactory> stagedQueryBuildersIterator = initializeStageQueryBuilders(parameters, parsedQuery, isInvalidUserQuery);
 
 		SearchQueryContext queryContext = new SearchQueryContext();
-		queryContext.filters = filtersBuilder.buildFilterContext(parameters.filters, parameters.inducedFilters, parameters.withFacets);
+		queryContext.filters = filtersBuilder.buildFilterContext(parameters);
 		queryContext.variantSortings = sortingHandler.getVariantSortings(parameters.sortings);
 		queryContext.scoring = scoringCreator.getScoringContext(parameters);
 		HeroProductHandler.getHeroQuery(parameters).ifPresent(queryContext::setHeroProducts);
@@ -205,7 +205,7 @@ public class Searcher {
 
 	public SearchResult queryStringFind(InternalSearchParams parameters, Map<String, Float> fieldWeights) throws IOException {
 		SearchQueryContext queryContext = new SearchQueryContext();
-		queryContext.filters = filtersBuilder.buildFilterContext(parameters.filters, parameters.inducedFilters, parameters.withFacets);
+		queryContext.filters = filtersBuilder.buildFilterContext(parameters);
 		queryContext.variantSortings = sortingHandler.getVariantSortings(parameters.sortings);
 		queryContext.scoring = scoringCreator.getScoringContext(parameters);
 

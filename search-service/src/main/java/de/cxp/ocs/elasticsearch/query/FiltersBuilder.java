@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import de.cxp.ocs.util.InternalSearchParams;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -39,8 +40,11 @@ public class FiltersBuilder {
 		indexedFieldConfig = context.getFieldConfigIndex();
 	}
 
-	public FilterContext buildFilterContext(List<InternalResultFilter> filters, List<InternalResultFilter> querqyFilters, boolean withFacets) {
-		if (filters.isEmpty() && querqyFilters.isEmpty()) return new FilterContext(Collections.emptyMap());
+	public FilterContext buildFilterContext(InternalSearchParams parameters) {
+		List<InternalResultFilter> filters = parameters.filters;
+		List<InternalResultFilter> querqyFilters = parameters.inducedFilters;
+		boolean withFacets = parameters.withFacets;
+		if (filters.isEmpty() && querqyFilters.isEmpty()) return new FilterContext(Collections.emptyMap(), parameters.customParams);
 
 		Map<String, InternalResultFilter> filtersByName = filters.stream().collect(
 				Collectors.toMap(f -> f.getField().getName(), Functions.identity(),
@@ -69,14 +73,14 @@ public class FiltersBuilder {
 				Collections.unmodifiableMap(filterCollector.postFilterQueries),
 				buildFilters(filterCollector.basicFilterQueries),
 				joinedPostFilters,
-				innerHitsFilter);
+				innerHitsFilter,
+				parameters.customParams);
 	}
 
 	/**
 	 *
 	 * @param filters
-	 * @param basicFilterQueries
-	 * @param postFilterQueries
+	 * @param filterCollector
 	 * @param addAllFiltersAsBasicFilters - if externally defined filters are used, they have to be treated as a basic filter
 	 */
 	private void buildFilterQueries(List<InternalResultFilter> filters, FilterCollector filterCollector, boolean addAllFiltersAsBasicFilters) {
