@@ -456,6 +456,8 @@ It contains the following properties:
         prefer-variant-on-filter: <boolean>
         min-facet-coverage: <double>
         min-value-count: <int>
+        filter-dependencies:
+          - <url-parameters>
         meta-data:
           "<key>": "<value>"
       facets:
@@ -495,6 +497,7 @@ Each individual facet config may contain the following properties:
 - `min-value-count`: (default: 2) An absolute number greater than 0. It defines the minimum amount of filter-elements that facet must have in order to be displayed. For example a facet with 3 filter-elements won't be shown if its `min-value-count` is set to 5. This value is reduced if the whole search-index contains less values for that particular facet field. For example if the "sale" field only contains the value "true", then the `min-value-count` is always set to 1, no matter what is set in the configuration.
 - `meta-data`: (default = null) Can be used to add arbitrary data to a facet. The value is a simple string map. This is useful to add configuration values that can be considered at the implementation side. Some internal data is also exposed at that meta-data map (e.g. label and count)
 - `is-filter-sensitive`: (default = false) Set to true if the attributes for a facet can have multiple values per document, but the facet should only return the filtered one.
+- `filter-dependencies`: (default: null) A list of parameters in the default URL style. Only filter parameters and unknown custom parameters are considered, so the reserved parameters (q, limit, offset, sort etc) must not be used. Each entry in the list is considered as a condition for the facet to show up, e.g. a "size" facet can have the dependency set to "category=Clothing", so it will only show up when that category is selected. If multiple parameters are specified in an entry, all of them must be present. If multiple entries are specified, one of them must match. The value can be a wildcard '\*', that means that the according parameter must be present with any value to make the facet to show up.
 
 **Special configuration**
 

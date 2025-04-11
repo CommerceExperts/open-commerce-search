@@ -14,6 +14,7 @@ import de.cxp.ocs.elasticsearch.query.TextMatchQuery;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+@Getter
 @AllArgsConstructor
 public class FilterContext {
 
@@ -21,23 +22,20 @@ public class FilterContext {
 
 	private final static TextMatchQuery<QueryBuilder> NO_QUERY = new TextMatchQuery<>(null, null, false, true);
 
-	@Getter
 	private final Map<String, InternalResultFilter> internalFilters;
 
-	@Getter
 	private final Map<String, QueryBuilder> postFilterQueries;
 
-	@Getter
 	private final TextMatchQuery<QueryBuilder> joinedBasicFilters;
 
-	@Getter
 	private final QueryBuilder joinedPostFilters;
 
-	@Getter
 	private final QueryBuilder variantInnerHitFilter;
 
-	public FilterContext(Map<String, InternalResultFilter> internalFilters) {
-		this(internalFilters, NO_FILTER, NO_QUERY, null, null);
+	private final Map<String, String> customParameters;
+
+	public FilterContext(Map<String, InternalResultFilter> internalFilters, Map<String, String> customParameters) {
+		this(internalFilters, NO_FILTER, NO_QUERY, null, null, customParameters);
 	}
 
 	/**

@@ -47,7 +47,7 @@ public class FacetDependencyFilter implements FacetFilter {
 		FacetDisplayCondition facetDisplayCondition = facetDisplayConditionIndex.get(config.getSourceField());
 
 		return facetDisplayCondition == null
-				|| facetDisplayCondition.isVisibleFacet(filterContext.getInternalFilters());
+				|| facetDisplayCondition.isVisibleFacet(filterContext.getInternalFilters(), filterContext.getCustomParameters());
 	}
 
 	@AllArgsConstructor
@@ -59,13 +59,14 @@ public class FacetDependencyFilter implements FacetFilter {
 	private class FiltersMatchCondition {
 		final Filter[] allMustMatch;
 
-		public boolean test(Map<String, InternalResultFilter> filtersByName) {
+		public boolean test(Map<String, InternalResultFilter> filtersByName, Map<String, String> customParameters) {
 			int expectedFilterMatches = allMustMatch.length;
 			for (Filter filterCondition : allMustMatch) {
 				InternalResultFilter internalResultFilter = filtersByName.get(filterCondition.name);
 				if (internalResultFilter == null) {
-					// filter does not exist
-					return false;
+					// filter does not exist, so check custom parameter
+					String customParameterValue = customParameters.get(filterCondition.name);
+					return customParameterValue != null && filterCondition.values.contains(customParameterValue);
 				}
 				// condition just needs any filter-value
 				if (filterCondition.values.contains(FILTER_VALUE_WILDCARD)) {
@@ -111,17 +112,17 @@ public class FacetDependencyFilter implements FacetFilter {
 		final Set<String> commonRequiredFilters;
 		final List<FiltersMatchCondition> anyMustMatch;
 		
-		public boolean isVisibleFacet(Map<String, InternalResultFilter> filtersByName) {
+		public boolean isVisibleFacet(Map<String, InternalResultFilter> filtersByName, Map<String, String> customParameters) {
 			// fast exit: no filters are set at all
-			if (filtersByName.isEmpty())
+			if (filtersByName.isEmpty() && customParameters.isEmpty())
 				return false;
 
 			// fast exit: common required filters are not available
-			if (!commonRequiredFilters.stream().allMatch(filtersByName::containsKey))
+			if (!commonRequiredFilters.stream().allMatch(f -> filtersByName.containsKey(f) || customParameters.containsKey(f)))
 				return false;
 
 			// the costly part: check if any rule matches
-			return anyMustMatch.stream().anyMatch(condition -> condition.test(filtersByName));
+			return anyMustMatch.stream().anyMatch(condition -> condition.test(filtersByName, customParameters));
 		}
 	}
 
