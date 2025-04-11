@@ -1,4 +1,4 @@
-package de.cxp.ocs.smartsuggest.updater;
+package de.cxp.ocs.smartsuggest.spi;
 
 import java.io.File;
 

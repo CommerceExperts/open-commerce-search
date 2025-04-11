@@ -1,12 +1,23 @@
-package de.cxp.ocs.smartsuggest.updater;
+package de.cxp.ocs.smartsuggest.spi;
 
 import java.io.IOException;
+import java.util.Map;
 
-public interface IndexPersistenceProvider {
+public interface AbstractDataProvider<T> {
+
+	/**
+	 * Optional method that may be called to configure the data provider. If a
+	 * configuration is provided, it will be called once directly after
+	 * instantiation.
+	 *
+	 * @param config
+	 *        specific data provider configuration
+	 */
+	default void configure(Map<String, Object> config) {}
 
 	/**
 	 * <p>
-	 * Respond with 'true' if this provider has a persisted version
+	 * Respond with 'true' if this provider is generally able to provide data
 	 * for the requested index. This is a quick check when initializing the
 	 * suggesters, so it should not take too long.
 	 * </p>
@@ -25,8 +36,8 @@ public interface IndexPersistenceProvider {
 
 	/**
 	 * <p>
-	 * Get the timestamp from when the persisted version was modified the last time.
-	 * For every change of that timestamp, the data will be pulled to build the
+	 * Get the timestamp from when the data was modified the last time. For
+	 * every change of that timestamp, the data will be pulled and indexed into
 	 * suggest index.
 	 * </p>
 	 * <p>
@@ -40,13 +51,19 @@ public interface IndexPersistenceProvider {
 	 *
 	 * @param indexName
 	 *        identifier for the requested data
-	 * @return unix timestamp in millis or -1 if no data exists
+	 * @return unix timestamp in millis
 	 * @throws IOException
 	 *         if resource is not available
 	 */
-	long getLastModTime(String indexName) throws IOException;
+	long getLastDataModTime(String indexName) throws IOException;
 
-	IndexArchive load(String indexName) throws IOException;
+	/**
+	 * @param indexName
+	 *        identifier for the requested data
+	 * @return suggest data
+	 * @throws IOException
+	 *         if data couldn't be loaded
+	 */
+	T loadData(String indexName) throws IOException;
 
-	void store(String indexName, IndexArchive archive) throws IOException;
 }
