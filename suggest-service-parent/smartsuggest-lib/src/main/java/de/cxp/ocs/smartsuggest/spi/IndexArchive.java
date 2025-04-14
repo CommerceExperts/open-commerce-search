@@ -10,6 +10,10 @@ import java.io.File;
  * @param dataModificationTime
  * 		modification time of the data in this archive (not the file creation time).
  */
-public record IndexArchive(File zippedTarFile, long dataModificationTime) {
+public record IndexArchive(File zippedTarFile, long dataModificationTime) implements DatedData {
 
+	@Override
+	public long getModificationTime() {
+		return dataModificationTime;
+	}
 }

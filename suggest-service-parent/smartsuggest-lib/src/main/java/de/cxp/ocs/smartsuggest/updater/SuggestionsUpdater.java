@@ -1,35 +1,35 @@
 package de.cxp.ocs.smartsuggest.updater;
 
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Collection;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.lucene.store.AlreadyClosedException;
-
 import de.cxp.ocs.smartsuggest.monitoring.Instrumentable;
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggesterProxy;
 import de.cxp.ocs.smartsuggest.querysuggester.SuggesterFactory;
-import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
-import de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider;
-import de.cxp.ocs.smartsuggest.spi.SuggestData;
-import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
+import de.cxp.ocs.smartsuggest.spi.*;
+import de.cxp.ocs.smartsuggest.util.FileUtils;
 import de.cxp.ocs.smartsuggest.util.Util;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.lucene.store.AlreadyClosedException;
+
+import java.io.IOException;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @RequiredArgsConstructor
 public class SuggestionsUpdater implements Runnable, Instrumentable {
 
-	@NonNull
-	private final SuggestDataProvider dataProvider;
+	private final SuggestDataProvider  dataProvider;
+	private final IndexArchiveProvider archiveProvider;
 
 	@NonNull
 	private final SuggestConfigProvider configProvider;
@@ -47,9 +47,42 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 
 	private Instant lastUpdate = null;
 
-	private int		updateFailCount		= 0;
-	private int		updateSuccessCount	= 0;
-	private long	suggestionsCount	= -1;
+	private int  updateFailCount    = 0;
+	private int  updateSuccessCount = 0;
+	private long suggestionsCount   = -1;
+
+	public static SuggestionsUpdaterBuilder builder() {
+		return new SuggestionsUpdaterBuilder();
+	}
+
+	@Setter
+	@Accessors(fluent = true)
+	public static class SuggestionsUpdaterBuilder {
+
+		private SuggestDataProvider   dataProvider;
+		private IndexArchiveProvider  archiveProvider;
+		private SuggestConfigProvider configProvider;
+		private SuggestConfig         defaultSuggestConfig;
+		private String                indexName;
+		private QuerySuggesterProxy   querySuggesterProxy;
+		private SuggesterFactory<?>   factory;
+
+		SuggestionsUpdaterBuilder() {
+		}
+
+		public SuggestionsUpdater build() {
+			// actually this is an internal used class, but we don't define module restrictions/exports yet
+			Objects.requireNonNull(indexName, "indexName required");
+			Objects.requireNonNull(configProvider, "configProvider required for index " + indexName);
+			Objects.requireNonNull(querySuggesterProxy, "QuerySuggesterProxy required to setup Updater for index " + indexName);
+			Objects.requireNonNull(factory, "SuggesterFactory required for index " + indexName);
+			if (dataProvider == null && archiveProvider == null) {
+				throw new IllegalArgumentException("Either dataProvider or archiverProvider must be given for index " + indexName);
+			}
+			return new SuggestionsUpdater(dataProvider, archiveProvider, configProvider, defaultSuggestConfig, indexName, querySuggesterProxy, factory);
+		}
+
+	}
 
 	@Override
 	public void run() {
@@ -60,11 +93,6 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 		catch (AlreadyClosedException ace) {
 			log.info("Stopping updates for closed suggester {}", indexName);
 			throw ace;
-		}
-		catch (IllegalStateException unrecoverableEx) {
-			log.error("Stopping background suggestions updates for index {} due to {}:{}",
-					indexName, unrecoverableEx.getClass().getSimpleName(), unrecoverableEx.getMessage());
-			throw unrecoverableEx;
 		}
 		catch (InterruptedException interrupt) {
 			log.info("Updates for index {} interrupted. Stopping Updater now.", indexName);
@@ -83,47 +111,61 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 	}
 
 	private void update() throws Exception {
-		Instant remoteModTime = getRemoteDataModTime();
-		if (lastUpdate == null || remoteModTime.isAfter(lastUpdate)) {
-			SuggestData suggestData = fetchSuggestData(remoteModTime);
-			if (suggestData == null) return;
+		Instant remoteSuggestDataModTime = dataProvider == null ? null : getRemoteDataModTime(dataProvider);
+		Instant remoteArchiveModTime = archiveProvider == null ? null : getRemoteDataModTime(archiveProvider);
 
-			SuggestConfig suggestConfig = configProvider.getConfig(indexName, defaultSuggestConfig);
-			long startIndexation = System.currentTimeMillis();
-			QuerySuggester querySuggester = factory.getSuggester(suggestData, suggestConfig);
-			final long count = querySuggester.recordCount();
-			log.info("Indexed {} suggest records for index {} in {}ms", count, indexName, System.currentTimeMillis() - startIndexation);
-
-			try {
-				querySuggesterProxy.updateSuggester(querySuggester);
+		if (remoteSuggestDataModTime == null && remoteArchiveModTime == null) {
+			log.warn("no data available for index {} from dataprovider {}", indexName, getProviderNames());
+		}
+		else if (remoteSuggestDataModTime == null) {
+			updateFromArchiveProvider(remoteArchiveModTime);
+		}
+		else if (remoteArchiveModTime == null) {
+			updateFromDataProvider(remoteSuggestDataModTime);
+			if (archiveProvider != null) archiveSuggestIndex();
+		}
+		// both providers have data, decide which one to use
+		else if (lastUpdate == null || remoteSuggestDataModTime.isAfter(lastUpdate) || remoteArchiveModTime.isAfter(lastUpdate)) {
+			// only do an update from remote data, if it's really newer than the archive. otherwise prefer archive as it's quicker to process
+			if (remoteSuggestDataModTime.isAfter(remoteArchiveModTime)) {
+				if (updateFromDataProvider(remoteSuggestDataModTime)) archiveSuggestIndex();
 			}
-			catch (AlreadyClosedException ace) {
-				log.info("Suggester Update for index {} canceled, because suggester closed", indexName);
-				querySuggester.destroy();
-				throw ace;
+			else {
+				updateFromArchiveProvider(remoteArchiveModTime);
 			}
-
-			lastUpdate = remoteModTime;
-			updateSuccessCount++;
-			suggestionsCount = count;
 		}
 		else {
-			log.trace("No changes for index {}. last update = {}, remote data mod.time = {}",
-					indexName, lastUpdate, remoteModTime);
+			log.trace("No changes for index {}. last update = {}, remote data mod.time = {}, remote archive mod.time = {}",
+					indexName, lastUpdate, remoteSuggestDataModTime, remoteArchiveModTime);
 		}
 	}
 
-	private Instant getRemoteDataModTime() throws Exception {
+	private void archiveSuggestIndex() throws IOException {
+		IndexArchive archive = factory.createArchive(querySuggesterProxy.getInnerSuggester());
+		archiveProvider.store(indexName, archive);
+	}
+
+	private String getProviderNames() {
+		String providerName = null;
+		if (dataProvider != null) providerName = dataProvider.getClass().getSimpleName();
+		if (archiveProvider != null) {
+			providerName = providerName == null ? "" : " and ";
+			providerName += archiveProvider.getClass().getSimpleName();
+		}
+		return providerName;
+	}
+
+	private Instant getRemoteDataModTime(AbstractDataProvider<?> dataProvider) throws Exception {
 		if (lastUpdate == null && !dataProvider.hasData(indexName)) {
-			throw new IllegalStateException("dataprovider " + dataProvider.getClass().getSimpleName()
-					+ " has no data for index " + indexName);
+			return null;
 		}
 
 		long remoteModTimeMs = dataProvider.getLastDataModTime(indexName);
 		if (remoteModTimeMs < 0) {
 			if (lastUpdate != null) {
 				throw new Exception("dataprovider " + dataProvider.getClass().getSimpleName() + " seems unavailable at the moment");
-			} else {
+			}
+			else {
 				throw new IllegalStateException("dataprovider " + dataProvider.getClass().getSimpleName()
 						+ " states to have data for index " + indexName
 						+ " but lastModTime was " + remoteModTimeMs);
@@ -133,28 +175,65 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 		return Instant.ofEpochMilli(remoteModTimeMs);
 	}
 
-	private SuggestData fetchSuggestData(Instant remoteModTime) throws IOException {
-		log.info("Fetching data for index {}", indexName);
-		SuggestData suggestData = dataProvider.loadData(indexName);
-
-		if (suggestData == null) {
-			log.error("Received NULL suggest data from query api service. Unable to update query suggester for index {}", indexName);
-			return null;
-		}
-
-		long dataModTimestamp = suggestData.getModificationTime();
-		if (dataModTimestamp > 0L) {
-			Instant dataModTime = Instant.ofEpochMilli(dataModTimestamp);
-			if (!remoteModTime.equals(dataModTime)) {
-				log.warn("Received data for index {} with the wrong modTime '{}' - expected modTime {}! Will try again with the next update.",
-						indexName, dataModTime, remoteModTime);
-				return null;
+	private void updateFromArchiveProvider(Instant remoteArchiveModTime) throws Exception {
+		if (lastUpdate == null || remoteArchiveModTime.isAfter(lastUpdate)) {
+			IndexArchive loadedArchive = fetchSuggestData(archiveProvider, remoteArchiveModTime);
+			if (!FileUtils.isTarGz(loadedArchive.zippedTarFile())) {
+				throw new IllegalStateException("Not a tar.gz file: " + loadedArchive.zippedTarFile());
 			}
+			QuerySuggester querySuggester = factory.recover(loadedArchive, configProvider.getConfig(indexName, defaultSuggestConfig));
+			finishUpdate(querySuggester, remoteArchiveModTime);
+		}
+	}
+
+	private boolean updateFromDataProvider(Instant remoteSuggestDataModTime) throws Exception {
+		if (lastUpdate == null || remoteSuggestDataModTime.isAfter(lastUpdate)) {
+			SuggestData suggestData = fetchSuggestData(dataProvider, remoteSuggestDataModTime);
+			log.info("Received data for index {} with {} records", indexName,
+					suggestData.getSuggestRecords() instanceof Collection ? ((Collection<?>) suggestData.getSuggestRecords()).size() : "?");
+
+			SuggestConfig suggestConfig = configProvider.getConfig(indexName, defaultSuggestConfig);
+			long startIndexation = System.currentTimeMillis();
+			QuerySuggester querySuggester = factory.getSuggester(suggestData, suggestConfig);
+			final long count = querySuggester.recordCount();
+			log.info("Indexed {} suggest records for index {} in {}ms", count, indexName, System.currentTimeMillis() - startIndexation);
+
+			finishUpdate(querySuggester, remoteSuggestDataModTime);
+			return true;
+		}
+		// no new changes from remote - don't log this, as it will be logged every N seconds
+		return false;
+	}
+
+	@NonNull
+	private <T extends DatedData> T fetchSuggestData(AbstractDataProvider<T> dataProvider, Instant remoteModTime) throws IOException {
+		log.info("Fetching data for index {}", indexName);
+		T data = dataProvider.loadData(indexName);
+		Objects.requireNonNull(data,
+				"data for index " + indexName + " provided by " + dataProvider.getClass().getCanonicalName() + " is null. Unable to update query suggester.");
+
+		long dataModTimestamp = data.getModificationTime();
+		if (dataModTimestamp > 0L && remoteModTime.toEpochMilli() != dataModTimestamp) {
+			throw new IllegalStateException(
+					"Received data for index " + indexName + " with the wrong modTime (" + data.getModificationTime() + ") - expected modTime " + remoteModTime + "!");
 		}
 
-		log.info("Received data for index {} with {} records", indexName,
-				suggestData.getSuggestRecords() instanceof Collection ? ((Collection<?>) suggestData.getSuggestRecords()).size() : "?");
-		return suggestData;
+		return data;
+	}
+
+	private void finishUpdate(QuerySuggester querySuggester, Instant remoteModTime) throws Exception {
+		try {
+			querySuggesterProxy.updateSuggester(querySuggester);
+			lastUpdate = remoteModTime;
+			updateSuccessCount++;
+			suggestionsCount = querySuggester.recordCount();
+			log.info("Updated suggester for index {} with {} records", indexName, suggestionsCount);
+		}
+		catch (AlreadyClosedException ace) {
+			log.info("Suggester Update for index {} canceled, because suggester closed", indexName);
+			querySuggester.destroy();
+			throw ace;
+		}
 	}
 
 	@Override
@@ -169,5 +248,4 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 				updater -> (double) (updater.lastUpdate == null ? -1 : System.currentTimeMillis() - updater.lastUpdate.toEpochMilli()) / 1000);
 		reg.gauge(Util.APP_NAME + ".suggestions.size", tags, this, updater -> updater.suggestionsCount);
 	}
-
 }

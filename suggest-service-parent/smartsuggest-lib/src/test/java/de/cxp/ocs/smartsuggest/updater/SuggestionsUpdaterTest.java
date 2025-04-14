@@ -2,9 +2,11 @@ package de.cxp.ocs.smartsuggest.updater;
 
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggesterProxy;
 import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneSuggesterFactory;
+import de.cxp.ocs.smartsuggest.spi.IndexArchiveProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.spi.standard.DefaultSuggestConfigProvider;
+import de.cxp.ocs.smartsuggest.updater.SuggestionsUpdater.SuggestionsUpdaterBuilder;
 import de.cxp.ocs.smartsuggest.util.TestDataProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,21 +31,29 @@ class SuggestionsUpdaterTest {
 			asSuggestRecord("search b", "label b", 190),
 			asSuggestRecord("filtered search c", "label c", 180, Set.of("any_tag")));
 
-	private TestDataProvider testDataProvider;
-	private QuerySuggesterProxy suggesterProxy;
-	private SuggestionsUpdater underTest;
+	private TestDataProvider          testDataProvider;
+	private QuerySuggesterProxy       suggesterProxy;
+	private SuggestionsUpdaterBuilder updaterBuilder;
 
 	@BeforeEach
 	public void basicSetup(@TempDir Path indexBaseDir) {
 		testDataProvider = new TestDataProvider();
-		testDataProvider.putData(INDEX_NAME, SuggestData.builder().type("keywords").suggestRecords(testRecords).modificationTime(System.currentTimeMillis()).build());
+		var suggestData = SuggestData.builder().type("keywords").suggestRecords(testRecords).modificationTime(System.currentTimeMillis()).build();
+		testDataProvider.putData(INDEX_NAME, suggestData);
 		suggesterProxy = new QuerySuggesterProxy(INDEX_NAME, TestDataProvider.class.getSimpleName());
 		LuceneSuggesterFactory factory = new LuceneSuggesterFactory(indexBaseDir);
-		underTest = new SuggestionsUpdater(testDataProvider, new DefaultSuggestConfigProvider(), null, INDEX_NAME, suggesterProxy, factory);
+		updaterBuilder = SuggestionsUpdater.builder()
+				.dataProvider(testDataProvider)
+				.configProvider(new DefaultSuggestConfigProvider())
+				.indexName(INDEX_NAME)
+				.querySuggesterProxy(suggesterProxy)
+				.factory(factory);
 	}
 
 	@Test
 	public void testStandardDataUpdate() throws Exception {
+		SuggestionsUpdater underTest = updaterBuilder.build();
+
 		assert !suggesterProxy.isReady();
 		underTest.run();
 		assert suggesterProxy.isReady();
@@ -64,4 +74,25 @@ class SuggestionsUpdaterTest {
 		suggesterProxy.destroy();
 	}
 
+	@Test
+	public void testArchivedDataUpdate() throws Exception {
+		IndexArchiveProvider archiveProvider = new LocalIndexArchiveProvider();
+		assert !archiveProvider.hasData(INDEX_NAME);
+
+		{
+			SuggestionsUpdater underTest = updaterBuilder.archiveProvider(archiveProvider).build();
+			underTest.run();
+			assertEquals(3, suggesterProxy.suggest("sea", 5, NO_TAGS).size());
+			suggesterProxy.destroy();
+		}
+		assert archiveProvider.hasData(INDEX_NAME);
+
+		{
+			// build updater with new proxy that just can fetch data from the archive
+			suggesterProxy = new QuerySuggesterProxy(INDEX_NAME, "archive");
+			SuggestionsUpdater underTest = updaterBuilder.querySuggesterProxy(suggesterProxy).dataProvider(null).build();
+			underTest.run();
+			assertEquals(3, suggesterProxy.suggest("sea", 5, NO_TAGS).size());
+		}
+	}
 }

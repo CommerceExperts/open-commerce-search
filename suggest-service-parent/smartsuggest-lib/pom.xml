@@ -14,10 +14,25 @@
 	<packaging>jar</packaging>
 	<name>smartSuggest Library</name>
 
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-lang3</artifactId>
+				<version>3.14.0</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-compress</artifactId>
+			<version>1.26.2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.guava</groupId>
@@ -87,11 +102,6 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.searchhub</groupId>
-			<artifactId>searchhub-suggest-data-provider</artifactId>
-			<version>1.4.2</version>
 		</dependency>
 	</dependencies>
 

@@ -1,11 +1,19 @@
 package de.cxp.ocs.smartsuggest.util;
 
+import de.cxp.ocs.smartsuggest.spi.IndexArchive;
+
 import java.io.*;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 
 public class FileUtils {
 
@@ -43,37 +51,97 @@ public class FileUtils {
 		}
 	}
 
-	public static void copyDirectoryRecursively(Path source, Path destination) throws IOException {
-		if (!Files.exists(destination)) {
-			Files.createDirectory(destination);
+	public static boolean isTarGz(File file) {
+		if (file == null || !file.exists() || !file.isFile()) {
+			return false;
 		}
-		SimpleFileVisitor<Path> copyFileTreeVisitor = new SimpleFileVisitor<>() {
+		
+		// Check file extension
+		String name = file.getName().toLowerCase();
+		if (!name.endsWith(".tar.gz") && !name.endsWith(".tgz")) {
+			return false;
+		}
+		
+		// Check magic numbers for gzip format
+		try (FileInputStream fis = new FileInputStream(file)) {
+			byte[] magic = new byte[2];
+			if (fis.read(magic) != 2) {
+				return false;
+			}
+			// Check for gzip magic number: 0x1f 0x8b
+			return (magic[0] & 0xff) == 0x1f && (magic[1] & 0xff) == 0x8b;
+		}
+		catch (IOException e) {
+			return false;
+		}
+	}
 
-			Path fullTargetPath = destination;
+	public static void unpackArchive(IndexArchive archive, Path targetFolder) throws IOException {
+		File tarFile = archive.zippedTarFile();
+		if (!isTarGz(tarFile)) {
+			throw new IllegalArgumentException("File " + tarFile + " is not a valid tar.gz archive");
+		}
 
-			@Override
-			public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-				// do not copy the name of source root directory
-				if (!dir.equals(source)) {
-					fullTargetPath = fullTargetPath.resolve(dir.getFileName());
-					Files.createDirectory(fullTargetPath);
+		if (!Files.exists(targetFolder)) {
+			Files.createDirectories(targetFolder);
+		}
+
+		try (InputStream fileInputStream = Files.newInputStream(tarFile.toPath());
+			 BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream);
+			 GZIPInputStream gzipInputStream = new GZIPInputStream(bufferedInputStream);
+			 TarArchiveInputStream tarInputStream = new TarArchiveInputStream(gzipInputStream)) {
+
+			TarArchiveEntry entry;
+			while ((entry = tarInputStream.getNextEntry()) != null) {
+				Path entryPath = targetFolder.resolve(entry.getName());
+				
+				if (entry.isDirectory()) {
+					Files.createDirectories(entryPath);
+				} else {
+					Path parent = entryPath.getParent();
+					if (parent != null && !Files.exists(parent)) {
+						Files.createDirectories(parent);
+					}
+					Files.copy(tarInputStream, entryPath);
 				}
-				return super.preVisitDirectory(dir, attrs);
 			}
+		}
+	}
 
-			@Override
-			public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-				fullTargetPath = fullTargetPath.getParent();
-				return super.postVisitDirectory(dir, exc);
-			}
+	public static File packArchive(Path sourceFolder, String prefix) throws IOException {
+		Path tempFile = Files.createTempFile(prefix, ".tar.gz");
+		
+		try (OutputStream fileOutputStream = Files.newOutputStream(tempFile);
+			 BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(fileOutputStream);
+			 GZIPOutputStream gzipOutputStream = new GZIPOutputStream(bufferedOutputStream);
+			 TarArchiveOutputStream tarOutputStream = new TarArchiveOutputStream(gzipOutputStream)) {
+			
+			tarOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
+			
+			Files.walkFileTree(sourceFolder, new SimpleFileVisitor<>() {
+				@Override
+				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+					String entryName = sourceFolder.relativize(file).toString();
+					TarArchiveEntry entry = new TarArchiveEntry(file.toFile(), entryName);
+					tarOutputStream.putArchiveEntry(entry);
+					Files.copy(file, tarOutputStream);
+					tarOutputStream.closeArchiveEntry();
+					return FileVisitResult.CONTINUE;
+				}
 
-			@Override
-			public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-					throws IOException {
-				Files.copy(file, fullTargetPath.resolve(file.getFileName()));
-				return FileVisitResult.CONTINUE;
-			}
-		};
-		Files.walkFileTree(source, copyFileTreeVisitor);
+				@Override
+				public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+					if (!dir.equals(sourceFolder)) {
+						String entryName = sourceFolder.relativize(dir) + "/";
+						TarArchiveEntry entry = new TarArchiveEntry(dir.toFile(), entryName);
+						tarOutputStream.putArchiveEntry(entry);
+						tarOutputStream.closeArchiveEntry();
+					}
+					return FileVisitResult.CONTINUE;
+				}
+			});
+		}
+
+		return tempFile.toFile();
 	}
 }

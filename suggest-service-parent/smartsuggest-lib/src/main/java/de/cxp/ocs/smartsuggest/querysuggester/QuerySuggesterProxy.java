@@ -26,38 +26,37 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Accountable {
 
-	private final String	indexName;
-	private final String	dataProviderName;
-	private int				maxSuggestionsPerCacheEntry	= 10;
+	private final String indexName;
+	private final String dataProviderName;
+	private       int    maxSuggestionsPerCacheEntry = 10; // TODO: make configurable
 
-	private final AtomicReference<QuerySuggester>	innerQuerySuggester	= new AtomicReference<>(new NoopQuerySuggester());
-	private volatile boolean						isClosed			= false;
+	private final    AtomicReference<QuerySuggester> innerQuerySuggester = new AtomicReference<>(new NoopQuerySuggester());
+	private volatile boolean                         isClosed            = false;
 
-	private final int						cacheLetterLength	= Integer.getInteger("CACHE_LETTER_LENGTH", 3);
-	private Cache<String, List<Suggestion>>	firstLetterCache	= CacheBuilder.newBuilder()
+	private final int                             cacheLetterLength = Integer.getInteger("CACHE_LETTER_LENGTH", 3);
+	private final Cache<String, List<Suggestion>> firstLetterCache  = CacheBuilder.newBuilder()
 			.maximumSize(Long.getLong("CACHE_MAX_SIZE", 10_000L))
 			.recordStats()
 			.build();
 
-	private CacheStats	cacheStats;
-	private long		lastCacheStatsUpdate;
+	private CacheStats cacheStats;
+	private long       lastCacheStatsUpdate;
 
 	/**
 	 * names for logging and metrics
-	 * 
+	 *
 	 * @param indexName
-	 *        index name
+	 * 		index name
 	 * @param dataProviderName
-	 *        data provider name
+	 * 		data provider name
 	 */
 	public QuerySuggesterProxy(String indexName, String dataProviderName) {
 		this.indexName = indexName;
 		this.dataProviderName = dataProviderName;
 	}
 
-	public QuerySuggesterProxy(String indexName, String dataType, int maxSuggestionsPerCacheEntry) {
-		this(indexName, dataType);
-		this.maxSuggestionsPerCacheEntry = maxSuggestionsPerCacheEntry;
+	public QuerySuggester getInnerSuggester() {
+		return innerQuerySuggester.get();
 	}
 
 	public void updateSuggester(@NonNull QuerySuggester newSuggester) throws AlreadyClosedException {
@@ -79,7 +78,7 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 				oldSuggester.destroy();
 			}
 			catch (Exception e) {
-				log.error("Failed to close/cleanup the old suggester. Ignoring to continue with new suggester.", e);
+				log.error("Failed to close/cleanup the old suggester. Ignoring error and continue with new suggester.", e);
 			}
 		}
 	}
@@ -181,4 +180,5 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 	public long recordCount() {
 		return innerQuerySuggester.get().recordCount();
 	}
+
 }

@@ -1,8 +1,10 @@
 package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
+import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.SuggesterFactory;
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
+import de.cxp.ocs.smartsuggest.spi.IndexArchive;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
@@ -13,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.analysis.CharArraySet;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -26,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
 @RequiredArgsConstructor
 public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySuggester> {
 
-	private static final String FILENAME_SUGGEST_DATA   = "suggest_data.ser";
+	private static final String FILENAME_SUGGEST_DATA = "suggest_data.ser";
 
 	@NonNull
 	private final Path                    baseDirectory;
@@ -43,7 +46,7 @@ public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySugge
 
 	@Override
 	public LuceneQuerySuggester getSuggester(SuggestData suggestData, SuggestConfig suggestConfig) {
-		final Path indexFolder = prepareIndexFolder(suggestData);
+		final Path indexFolder = prepareIndexFolder(suggestData.getModificationTime());
 
 		LuceneQuerySuggester luceneQuerySuggester = initSuggester(suggestData, suggestConfig, indexFolder);
 		indexSuggestRecords(suggestData, luceneQuerySuggester);
@@ -53,16 +56,16 @@ public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySugge
 		return luceneQuerySuggester;
 	}
 
-	private Path prepareIndexFolder(SuggestData suggestData) {
-		Path indexFolder = baseDirectory.resolve(String.valueOf(suggestData.getModificationTime()));
+	private Path prepareIndexFolder(Long modTime) {
+		Path indexFolder = baseDirectory.resolve(String.valueOf(modTime));
 		try {
-			Files.createDirectory(indexFolder);
+			Files.createDirectories(indexFolder);
 		}
 		catch (IOException ioe) {
 			throw new IllegalArgumentException("base directory " + baseDirectory + " is not writable", ioe);
 		}
 		if (!FileUtils.isEmptyDirectory(indexFolder)) {
-			throw new IllegalStateException("data for that index-state (" + suggestData.getModificationTime() + ") already exists!");
+			throw new IllegalStateException("data for that index-state (" + modTime + ") already exists!");
 		}
 		return indexFolder;
 	}
@@ -115,24 +118,25 @@ public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySugge
 	}
 
 	@Override
-	public Path persist(LuceneQuerySuggester querySuggester) throws IOException {
+	public IndexArchive createArchive(QuerySuggester querySuggester) throws IOException {
+		LuceneQuerySuggester luceneSuggester = (LuceneQuerySuggester) querySuggester;
 		final long start = System.currentTimeMillis();
-		querySuggester.commit();
+		luceneSuggester.commit();
 		persistJobFuture.join();
-		log.info("suggester persisted to {} in {}ms", querySuggester.getIndexFolder(), System.currentTimeMillis() - start);
-		return querySuggester.getIndexFolder();
+		File tarGzFile = FileUtils.packArchive(luceneSuggester.getIndexFolder(), "suggest-index-" + luceneSuggester.getLastIndexTime().toEpochMilli());
+		log.info("suggester persisted to {} in {}ms", tarGzFile, System.currentTimeMillis() - start);
+		return new IndexArchive(tarGzFile, luceneSuggester.getLastIndexTime().toEpochMilli());
 	}
 
 	@Override
-	public LuceneQuerySuggester recover(Path archiveFolder, SuggestConfig suggestConfig) throws IOException {
+	public LuceneQuerySuggester recover(IndexArchive archive, SuggestConfig suggestConfig) throws IOException {
 		final long start = System.currentTimeMillis();
-		SuggestData suggestData = FileUtils.loadSerializable(archiveFolder.resolve(FILENAME_SUGGEST_DATA), SuggestData.class);
-		//SuggestConfig suggestConfig = FileUtils.loadSerializable(archiveFolder.resolve(FILENAME_SUGGEST_CONFIG), SuggestConfig.class);
-		Path indexFolder = prepareIndexFolder(suggestData);
-		FileUtils.copyDirectoryRecursively(archiveFolder, indexFolder);
+		Path indexFolder = prepareIndexFolder(archive.dataModificationTime());
+		FileUtils.unpackArchive(archive, indexFolder);
+		SuggestData suggestData = FileUtils.loadSerializable(indexFolder.resolve(FILENAME_SUGGEST_DATA), SuggestData.class);
 		LuceneQuerySuggester suggester = initSuggester(suggestData, suggestConfig, indexFolder);
 		assert suggester.isReady();
-		log.info("recovered LuceneQuerySuggester from {} with {} records in {}ms", archiveFolder, suggester.recordCount(), System.currentTimeMillis() - start);
+		log.info("recovered LuceneQuerySuggester from {} with {} records in {}ms", archive, suggester.recordCount(), System.currentTimeMillis() - start);
 		return suggester;
 	}
 

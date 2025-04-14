@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder(toBuilder = true)
-public class SuggestData implements Serializable {
+public class SuggestData implements Serializable, DatedData {
 
 	/**
 	 * type/name of these suggest data. All suggest data with same type will be
@@ -56,4 +56,5 @@ public class SuggestData implements Serializable {
 	 * Queries that are suggested in case the complete input does not yield enough results.
 	 */
 	Map<String, List<String>> relaxedQueries;
+
 }

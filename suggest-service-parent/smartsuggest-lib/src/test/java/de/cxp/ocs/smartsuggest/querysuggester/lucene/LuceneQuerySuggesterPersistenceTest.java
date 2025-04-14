@@ -1,20 +1,25 @@
 package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
+import de.cxp.ocs.smartsuggest.spi.IndexArchive;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
-import de.cxp.ocs.smartsuggest.util.FileUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.nio.file.Path;
-import java.util.*;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
-import static de.cxp.ocs.smartsuggest.util.TestSetupUtil.*;
+import static de.cxp.ocs.smartsuggest.util.TestSetupUtil.asSuggestRecord;
+import static de.cxp.ocs.smartsuggest.util.TestSetupUtil.getWordSet;
 import static java.util.Arrays.asList;
 import static org.mockito.Mockito.mock;
 
+@Slf4j
 public class LuceneQuerySuggesterPersistenceTest {
 
 	private static final List<SuggestRecord> testRecords = asList(
@@ -61,16 +66,16 @@ public class LuceneQuerySuggesterPersistenceTest {
 		suggestData.setSuggestRecords(testRecords);
 		var config = minimalSuggestConfig();
 
-		Path archiveFolder = baseDir.resolve("archive_" + UUID.randomUUID());
+		IndexArchive archive;
 		try (LuceneQuerySuggester underTest = factory.getSuggester(suggestData, config)) {
 			assertAllFunctionsWork(underTest);
 
-			Path indexFolder = factory.persist(underTest);
-			FileUtils.copyDirectoryRecursively(indexFolder, archiveFolder);
+			archive = factory.createArchive(underTest);
 			underTest.destroy();
 		}
 
-		try (LuceneQuerySuggester recovered = factory.recover(archiveFolder, config)) {
+		log.info("recovering lucene suggester from archive {}", archive);
+		try (LuceneQuerySuggester recovered = factory.recover(archive, config)) {
 			assertAllFunctionsWork(recovered);
 		}
 
