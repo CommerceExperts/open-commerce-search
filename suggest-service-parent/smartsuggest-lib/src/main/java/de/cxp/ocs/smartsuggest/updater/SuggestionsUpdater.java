@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -238,15 +237,15 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 	}
 
 	@Override
-	public void instrument(Optional<MeterRegistryAdapter> metricsRegistryAdapter, Iterable<Tag> tags) {
-		metricsRegistryAdapter.ifPresent(adapter -> this.addSensors(adapter.getMetricsRegistry(), tags));
+	public void instrument(MeterRegistryAdapter metricsRegistryAdapter, Iterable<Tag> tags) {
+		if (metricsRegistryAdapter != null) {
+			MeterRegistry reg = metricsRegistryAdapter.getMetricsRegistry();
+			reg.gauge(Util.APP_NAME + ".update.fail.count", tags, this, updater -> updater.updateFailCount);
+			reg.more().counter(Util.APP_NAME + ".update.success.count", tags, this, updater -> updater.updateSuccessCount);
+			reg.more().timeGauge(Util.APP_NAME + ".suggestions.age", tags, this, TimeUnit.SECONDS,
+					updater -> (double) (updater.lastUpdate == null ? -1 : System.currentTimeMillis() - updater.lastUpdate.toEpochMilli()) / 1000);
+			reg.gauge(Util.APP_NAME + ".suggestions.size", tags, this, updater -> updater.suggestionsCount);
+		}
 	}
 
-	private void addSensors(MeterRegistry reg, Iterable<Tag> tags) {
-		reg.gauge(Util.APP_NAME + ".update.fail.count", tags, this, updater -> updater.updateFailCount);
-		reg.more().counter(Util.APP_NAME + ".update.success.count", tags, this, updater -> updater.updateSuccessCount);
-		reg.more().timeGauge(Util.APP_NAME + ".suggestions.age", tags, this, TimeUnit.SECONDS,
-				updater -> (double) (updater.lastUpdate == null ? -1 : System.currentTimeMillis() - updater.lastUpdate.toEpochMilli()) / 1000);
-		reg.gauge(Util.APP_NAME + ".suggestions.size", tags, this, updater -> updater.suggestionsCount);
-	}
 }

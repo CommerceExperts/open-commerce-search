@@ -35,11 +35,11 @@ public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySugge
 	private final Path                    baseDirectory;
 	private       CompletableFuture<Void> persistJobFuture = null;
 
-	private Optional<MeterRegistryAdapter> metricsRegistryAdapter = Optional.empty();
-	private Iterable<Tag>                  tags;
+	private MeterRegistryAdapter metricsRegistryAdapter = null;
+	private Iterable<Tag>        tags;
 
 	@Override
-	public void instrument(Optional<MeterRegistryAdapter> metricsRegistryAdapter, Iterable<Tag> tags) {
+	public void instrument(MeterRegistryAdapter metricsRegistryAdapter, Iterable<Tag> tags) {
 		this.metricsRegistryAdapter = metricsRegistryAdapter;
 		this.tags = tags;
 	}
@@ -82,7 +82,7 @@ public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySugge
 						.map(sw -> new CharArraySet(sw, true))
 						.orElse(null),
 				suggestData.getModificationTime());
-		if (metricsRegistryAdapter.isPresent()) {
+		if (metricsRegistryAdapter != null) {
 			luceneQuerySuggester.instrument(metricsRegistryAdapter, tags);
 		}
 		return luceneQuerySuggester;

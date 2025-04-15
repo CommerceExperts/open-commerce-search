@@ -10,7 +10,6 @@ import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import io.micrometer.core.instrument.Tag;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 public class FakeSuggesterFactory implements SuggesterFactory<FakeSuggester> {
@@ -38,7 +37,7 @@ public class FakeSuggesterFactory implements SuggesterFactory<FakeSuggester> {
 	}
 
 	@Override
-	public void instrument(Optional<MeterRegistryAdapter> metricsRegistryAdapter, Iterable<Tag> tags) {
+	public void instrument(MeterRegistryAdapter metricsRegistryAdapter, Iterable<Tag> tags) {
 		// irrelevant for testing
 	}
 

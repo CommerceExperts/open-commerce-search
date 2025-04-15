@@ -28,7 +28,7 @@ public class InstrumentationTest {
 		querySuggestManager = QuerySuggestManager.builder()
 				.withSuggestDataProvider(serviceMock)
 				.addMetricsRegistryAdapter(MeterRegistryAdapter.of(meterRegistry))
-				.updateRateUnbound(1)
+				.setMinimalUpdateRate()
 				.build();
 
 		serviceMock.setRequestLatencyInMs(0);

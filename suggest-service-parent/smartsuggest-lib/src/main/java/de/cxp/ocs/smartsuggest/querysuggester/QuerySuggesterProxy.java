@@ -1,20 +1,8 @@
 package de.cxp.ocs.smartsuggest.querysuggester;
 
-import static java.util.Collections.emptyList;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.apache.lucene.store.AlreadyClosedException;
-import org.apache.lucene.util.Accountable;
-import org.apache.lucene.util.RamUsageEstimator;
-
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheStats;
-
 import de.cxp.ocs.smartsuggest.monitoring.Instrumentable;
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
 import de.cxp.ocs.smartsuggest.util.Util;
@@ -22,6 +10,19 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.lucene.store.AlreadyClosedException;
+import org.apache.lucene.util.Accountable;
+import org.apache.lucene.util.RamUsageEstimator;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static java.util.Collections.emptyList;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Slf4j
 public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Accountable {
@@ -147,15 +148,14 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 	}
 
 	@Override
-	public void instrument(Optional<MeterRegistryAdapter> metricsRegistryAdapter, Iterable<Tag> tags) {
-		metricsRegistryAdapter.ifPresent(adapter -> addSensors(adapter.getMetricsRegistry(), tags));
-	}
-
-	private void addSensors(MeterRegistry reg, Iterable<Tag> tags) {
-		reg.gauge(Util.APP_NAME + ".suggester.cache.size", tags, this, me -> me.firstLetterCache.size());
-		reg.gauge(Util.APP_NAME + ".suggester.cache.evictionCount", tags, this, me -> me.getCacheStats().evictionCount());
-		reg.gauge(Util.APP_NAME + ".suggester.cache.hit_rate", tags, this, me -> me.getCacheStats().hitRate());
-		reg.gauge(Util.APP_NAME + ".suggester.cache.miss_rate", tags, this, me -> me.getCacheStats().missRate());
+	public void instrument(MeterRegistryAdapter metricsRegistryAdapter, Iterable<Tag> tags) {
+		if (metricsRegistryAdapter != null) {
+			MeterRegistry reg = metricsRegistryAdapter.getMetricsRegistry();
+			reg.gauge(Util.APP_NAME + ".suggester.cache.size", tags, this, me -> me.firstLetterCache.size());
+			reg.gauge(Util.APP_NAME + ".suggester.cache.evictionCount", tags, this, me -> me.getCacheStats().evictionCount());
+			reg.gauge(Util.APP_NAME + ".suggester.cache.hit_rate", tags, this, me -> me.getCacheStats().hitRate());
+			reg.gauge(Util.APP_NAME + ".suggester.cache.miss_rate", tags, this, me -> me.getCacheStats().missRate());
+		}
 	}
 
 	@Override

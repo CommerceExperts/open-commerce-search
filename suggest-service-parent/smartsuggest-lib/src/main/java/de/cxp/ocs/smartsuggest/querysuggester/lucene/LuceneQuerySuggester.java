@@ -1,24 +1,22 @@
 package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
-import static java.util.Collections.emptyList;
-import static org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester.PRESERVE_SEP;
-import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_MIN_FUZZY_LENGTH;
-import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_TRANSPOSITIONS;
-
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-
+import de.cxp.ocs.smartsuggest.monitoring.Instrumentable;
+import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
+import de.cxp.ocs.smartsuggest.querysuggester.QueryIndexer;
+import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
+import de.cxp.ocs.smartsuggest.querysuggester.SuggestException;
+import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
+import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
+import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig.SortStrategy;
+import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
+import de.cxp.ocs.smartsuggest.util.Util;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
@@ -41,21 +39,22 @@ import org.apache.lucene.util.RamUsageEstimator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.cxp.ocs.smartsuggest.monitoring.Instrumentable;
-import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
-import de.cxp.ocs.smartsuggest.querysuggester.QueryIndexer;
-import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
-import de.cxp.ocs.smartsuggest.querysuggester.SuggestException;
-import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
-import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
-import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
-import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
-import de.cxp.ocs.smartsuggest.spi.SuggestConfig.SortStrategy;
-import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
-import de.cxp.ocs.smartsuggest.util.Util;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
-import lombok.extern.slf4j.Slf4j;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyList;
+import static org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester.PRESERVE_SEP;
+import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_MIN_FUZZY_LENGTH;
+import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_TRANSPOSITIONS;
 
 @Slf4j
 public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accountable, Instrumentable {
@@ -201,15 +200,14 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	}
 
 	@Override
-	public void instrument(Optional<MeterRegistryAdapter> metricsRegistryAdapter, Iterable<Tag> tags) {
-		metricsRegistryAdapter.ifPresent(reg -> this.addSensors(reg.getMetricsRegistry(), tags));
-	}
-
-	private void addSensors(MeterRegistry reg, Iterable<Tag> tags) {
-		reg.gauge(METRICS_PREFIX + ".record_count", tags, this, me -> me.recordCount);
-		reg.gauge(METRICS_PREFIX + ".estimated_memusage_bytes", tags, this, me -> me.memUsageBytes);
-		reg.more().counter(METRICS_PREFIX + ".last_index_timestamp_seconds", tags, this,
-				me -> (me.indexModTime == null ? -1 : me.indexModTime.getEpochSecond()));
+	public void instrument(MeterRegistryAdapter metricsRegistryAdapter, Iterable<Tag> tags) {
+		if (metricsRegistryAdapter != null) {
+			MeterRegistry reg = metricsRegistryAdapter.getMetricsRegistry();
+			reg.gauge(METRICS_PREFIX + ".record_count", tags, this, me -> me.recordCount);
+			reg.gauge(METRICS_PREFIX + ".estimated_memusage_bytes", tags, this, me -> me.memUsageBytes);
+			reg.more().counter(METRICS_PREFIX + ".last_index_timestamp_seconds", tags, this,
+					me -> (me.indexModTime == null ? -1 : me.indexModTime.getEpochSecond()));
+		}
 	}
 
 	@Override

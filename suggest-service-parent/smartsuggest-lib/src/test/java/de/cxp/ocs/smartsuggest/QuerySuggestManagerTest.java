@@ -46,7 +46,7 @@ class QuerySuggestManagerTest {
 		serviceMock.updateSuggestions(testTenant1, Collections.emptyList());
 		querySuggestManager = QuerySuggestManager.builder()
 				.withSuggestDataProvider(serviceMock)
-				.updateRateUnbound(1)
+				.setMinimalUpdateRate()
 				.build();
 
 		QuerySuggester suggester = querySuggestManager.getQuerySuggester(testTenant1);
@@ -72,7 +72,7 @@ class QuerySuggestManagerTest {
 	void twoChannelsBasicTest() throws Exception {
 		querySuggestManager = QuerySuggestManager.builder()
 				.withSuggestDataProvider(serviceMock)
-				.updateRateUnbound(1)
+				.setMinimalUpdateRate()
 				.build();
 
 		serviceMock.updateSuggestions(testTenant1, singletonList(s("foo", "fnord")));
@@ -97,7 +97,7 @@ class QuerySuggestManagerTest {
 	void failingService() throws Exception {
 		querySuggestManager = QuerySuggestManager.builder()
 				.withSuggestDataProvider(serviceMock)
-				.updateRateUnbound(1)
+				.setMinimalUpdateRate()
 				.build();
 
 		serviceMock.updateSuggestions(testTenant1, singletonList(s("foo", "fnord")));
@@ -143,7 +143,7 @@ class QuerySuggestManagerTest {
 		SuggestDataProvider api = mock(SuggestDataProvider.class);
 		QuerySuggestManagerBuilder querySuggestManagerBuilder = QuerySuggestManager.builder()
 				.withSuggestDataProvider(api)
-				.updateRateUnbound(1);
+				.setMinimalUpdateRate();
 
 		try (QuerySuggestManager qm = querySuggestManagerBuilder.build()) {
 			QuerySuggester noopMapper = qm.getQuerySuggester("noop");
@@ -157,7 +157,7 @@ class QuerySuggestManagerTest {
 	void destroySuggesterTest() throws Exception {
 		querySuggestManager = QuerySuggestManager.builder()
 				.withSuggestDataProvider(serviceMock)
-				.updateRateUnbound(1)
+				.setMinimalUpdateRate()
 				.build();
 
 		serviceMock.updateSuggestions(testTenant1, Arrays.asList(s("foo", "1")));
@@ -187,7 +187,7 @@ class QuerySuggestManagerTest {
 				.withSuggestDataProvider(dp1)
 				.withSuggestDataProvider(dp2)
 				.withSuggestDataProvider(mock)
-				.updateRateUnbound(1)
+				.setMinimalUpdateRate()
 				.build();
 
 		// subtest 1: only one data provider has data
@@ -223,7 +223,7 @@ class QuerySuggestManagerTest {
 	private QuerySuggester getQuerySuggester(SuggestDataProvider apiStub) {
 		return QuerySuggestManager.builder()
 				.withSuggestDataProvider(apiStub)
-				.updateRateUnbound(1)
+				.setMinimalUpdateRate()
 				.build()
 				.getQuerySuggester(testTenant1);
 	}
