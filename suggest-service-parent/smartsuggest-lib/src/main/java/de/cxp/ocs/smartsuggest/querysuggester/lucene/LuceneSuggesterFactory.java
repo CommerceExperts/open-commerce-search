@@ -80,7 +80,8 @@ public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySugge
 						suggestConfig),
 				Optional.ofNullable(suggestData.getWordsToIgnore())
 						.map(sw -> new CharArraySet(sw, true))
-						.orElse(null));
+						.orElse(null),
+				suggestData.getModificationTime());
 		if (metricsRegistryAdapter.isPresent()) {
 			luceneQuerySuggester.instrument(metricsRegistryAdapter, tags);
 		}
@@ -93,7 +94,7 @@ public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySugge
 		if (suggestRecords instanceof List<SuggestRecord> suggestRecordList) {
 			suggestRecordList.sort(Comparator.comparingDouble(SuggestRecord::getWeight).reversed());
 		}
-		luceneQuerySuggester.index(suggestRecords).join();
+		luceneQuerySuggester.index(suggestRecords, suggestData.getModificationTime()).join();
 		log.info("Indexing {} suggestions took: {}ms", luceneQuerySuggester.recordCount(), System.currentTimeMillis() - start);
 	}
 
@@ -123,9 +124,9 @@ public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySugge
 		final long start = System.currentTimeMillis();
 		luceneSuggester.commit();
 		persistJobFuture.join();
-		File tarGzFile = FileUtils.packArchive(luceneSuggester.getIndexFolder(), "suggest-index-" + luceneSuggester.getLastIndexTime().toEpochMilli());
+		File tarGzFile = FileUtils.packArchive(luceneSuggester.getIndexFolder(), "suggest-index-" + luceneSuggester.getIndexModTime().toEpochMilli());
 		log.info("suggester persisted to {} in {}ms", tarGzFile, System.currentTimeMillis() - start);
-		return new IndexArchive(tarGzFile, luceneSuggester.getLastIndexTime().toEpochMilli());
+		return new IndexArchive(tarGzFile, luceneSuggester.getIndexModTime().toEpochMilli());
 	}
 
 	@Override

@@ -27,7 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Accountable {
 
 	private final String indexName;
-	private final String dataProviderName;
 	private       int    maxSuggestionsPerCacheEntry = 10; // TODO: make configurable
 
 	private final    AtomicReference<QuerySuggester> innerQuerySuggester = new AtomicReference<>(new NoopQuerySuggester());
@@ -47,12 +46,9 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 	 *
 	 * @param indexName
 	 * 		index name
-	 * @param dataProviderName
-	 * 		data provider name
 	 */
-	public QuerySuggesterProxy(String indexName, String dataProviderName) {
+	public QuerySuggesterProxy(String indexName) {
 		this.indexName = indexName;
-		this.dataProviderName = dataProviderName;
 	}
 
 	public QuerySuggester getInnerSuggester() {
@@ -61,11 +57,9 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 
 	public void updateSuggester(@NonNull QuerySuggester newSuggester) throws AlreadyClosedException {
 		if (isClosed) throw new AlreadyClosedException("suggester for tenant " + indexName + " closed");
-		log.info("updating from {} to {} for tenant {} with data from {}",
-				innerQuerySuggester.get().getClass().getSimpleName(),
-				newSuggester.getClass().getSimpleName(),
-				indexName,
-				dataProviderName);
+		log.info("updating index {} from {}({} records) to {}({} records)", indexName,
+				innerQuerySuggester.get().getClass().getSimpleName(), innerQuerySuggester.get().recordCount(),
+				newSuggester.getClass().getSimpleName(), newSuggester.recordCount());
 
 		long startMs = System.currentTimeMillis();
 		Set<String> cacheKeys = firstLetterCache.asMap().keySet();

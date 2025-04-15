@@ -128,17 +128,6 @@ public class FileUtils {
 					tarOutputStream.closeArchiveEntry();
 					return FileVisitResult.CONTINUE;
 				}
-
-				@Override
-				public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
-					if (!dir.equals(sourceFolder)) {
-						String entryName = sourceFolder.relativize(dir) + "/";
-						TarArchiveEntry entry = new TarArchiveEntry(dir.toFile(), entryName);
-						tarOutputStream.putArchiveEntry(entry);
-						tarOutputStream.closeArchiveEntry();
-					}
-					return FileVisitResult.CONTINUE;
-				}
 			});
 		}
 

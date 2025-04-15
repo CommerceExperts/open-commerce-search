@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class SuggestionsUpdater implements Runnable, Instrumentable {
 
-	private final SuggestDataProvider  dataProvider;
+	private final SuggestDataProvider  dataSourceProvider;
 	private final IndexArchiveProvider archiveProvider;
 
 	@NonNull
@@ -59,7 +59,7 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 	@Accessors(fluent = true)
 	public static class SuggestionsUpdaterBuilder {
 
-		private SuggestDataProvider   dataProvider;
+		private SuggestDataProvider   dataSourceProvider;
 		private IndexArchiveProvider  archiveProvider;
 		private SuggestConfigProvider configProvider;
 		private SuggestConfig         defaultSuggestConfig;
@@ -76,10 +76,10 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 			Objects.requireNonNull(configProvider, "configProvider required for index " + indexName);
 			Objects.requireNonNull(querySuggesterProxy, "QuerySuggesterProxy required to setup Updater for index " + indexName);
 			Objects.requireNonNull(factory, "SuggesterFactory required for index " + indexName);
-			if (dataProvider == null && archiveProvider == null) {
-				throw new IllegalArgumentException("Either dataProvider or archiverProvider must be given for index " + indexName);
+			if (dataSourceProvider == null && archiveProvider == null) {
+				throw new IllegalArgumentException("Either dataSourceProvider or archiverProvider must be given for index " + indexName);
 			}
-			return new SuggestionsUpdater(dataProvider, archiveProvider, configProvider, defaultSuggestConfig, indexName, querySuggesterProxy, factory);
+			return new SuggestionsUpdater(dataSourceProvider, archiveProvider, configProvider, defaultSuggestConfig, indexName, querySuggesterProxy, factory);
 		}
 
 	}
@@ -111,32 +111,32 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 	}
 
 	private void update() throws Exception {
-		Instant remoteSuggestDataModTime = dataProvider == null ? null : getRemoteDataModTime(dataProvider);
+		Instant remoteSourceDataModTime = dataSourceProvider == null ? null : getRemoteDataModTime(dataSourceProvider);
 		Instant remoteArchiveModTime = archiveProvider == null ? null : getRemoteDataModTime(archiveProvider);
 
-		if (remoteSuggestDataModTime == null && remoteArchiveModTime == null) {
+		if (remoteSourceDataModTime == null && remoteArchiveModTime == null) {
 			log.warn("no data available for index {} from dataprovider {}", indexName, getProviderNames());
 		}
-		else if (remoteSuggestDataModTime == null) {
+		else if (remoteSourceDataModTime == null) {
 			updateFromArchiveProvider(remoteArchiveModTime);
 		}
 		else if (remoteArchiveModTime == null) {
-			updateFromDataProvider(remoteSuggestDataModTime);
+			updateFromSourceDataProvider(remoteSourceDataModTime);
 			if (archiveProvider != null) archiveSuggestIndex();
 		}
 		// both providers have data, decide which one to use
-		else if (lastUpdate == null || remoteSuggestDataModTime.isAfter(lastUpdate) || remoteArchiveModTime.isAfter(lastUpdate)) {
+		else if (lastUpdate == null || remoteSourceDataModTime.isAfter(lastUpdate) || remoteArchiveModTime.isAfter(lastUpdate)) {
 			// only do an update from remote data, if it's really newer than the archive. otherwise prefer archive as it's quicker to process
-			if (remoteSuggestDataModTime.isAfter(remoteArchiveModTime)) {
-				if (updateFromDataProvider(remoteSuggestDataModTime)) archiveSuggestIndex();
+			if (remoteSourceDataModTime.isAfter(remoteArchiveModTime)) {
+				if (updateFromSourceDataProvider(remoteSourceDataModTime)) archiveSuggestIndex();
 			}
 			else {
 				updateFromArchiveProvider(remoteArchiveModTime);
 			}
 		}
 		else {
-			log.trace("No changes for index {}. last update = {}, remote data mod.time = {}, remote archive mod.time = {}",
-					indexName, lastUpdate, remoteSuggestDataModTime, remoteArchiveModTime);
+			log.trace("No changes for index {}. last update = {}, remote source mod.time = {}, remote archive mod.time = {}",
+					indexName, lastUpdate, remoteSourceDataModTime, remoteArchiveModTime);
 		}
 	}
 
@@ -147,7 +147,7 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 
 	private String getProviderNames() {
 		String providerName = null;
-		if (dataProvider != null) providerName = dataProvider.getClass().getSimpleName();
+		if (dataSourceProvider != null) providerName = dataSourceProvider.getClass().getSimpleName();
 		if (archiveProvider != null) {
 			providerName = providerName == null ? "" : " and ";
 			providerName += archiveProvider.getClass().getSimpleName();
@@ -186,10 +186,10 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 		}
 	}
 
-	private boolean updateFromDataProvider(Instant remoteSuggestDataModTime) throws Exception {
+	private boolean updateFromSourceDataProvider(Instant remoteSuggestDataModTime) throws Exception {
 		if (lastUpdate == null || remoteSuggestDataModTime.isAfter(lastUpdate)) {
-			SuggestData suggestData = fetchSuggestData(dataProvider, remoteSuggestDataModTime);
-			log.info("Received data for index {} with {} records", indexName,
+			SuggestData suggestData = fetchSuggestData(dataSourceProvider, remoteSuggestDataModTime);
+			log.info("Received source data for index {} with {} records", indexName,
 					suggestData.getSuggestRecords() instanceof Collection ? ((Collection<?>) suggestData.getSuggestRecords()).size() : "?");
 
 			SuggestConfig suggestConfig = configProvider.getConfig(indexName, defaultSuggestConfig);
@@ -201,7 +201,7 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 			finishUpdate(querySuggester, remoteSuggestDataModTime);
 			return true;
 		}
-		// no new changes from remote - don't log this, as it will be logged every N seconds
+		// no new changes from remote - don't log this, as it would be logged every N seconds
 		return false;
 	}
 
@@ -215,7 +215,8 @@ public class SuggestionsUpdater implements Runnable, Instrumentable {
 		long dataModTimestamp = data.getModificationTime();
 		if (dataModTimestamp > 0L && remoteModTime.toEpochMilli() != dataModTimestamp) {
 			throw new IllegalStateException(
-					"Received data for index " + indexName + " with the wrong modTime (" + data.getModificationTime() + ") - expected modTime " + remoteModTime + "!");
+					"Received data for index " + indexName + " by " + dataProvider.getClass().getCanonicalName() + " with the wrong modTime (" + data.getModificationTime() + ")"
+							+ " - expected modTime " + remoteModTime + "!");
 		}
 
 		return data;

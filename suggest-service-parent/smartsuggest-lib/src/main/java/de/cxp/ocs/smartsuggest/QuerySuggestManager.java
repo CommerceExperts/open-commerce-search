@@ -567,7 +567,7 @@ public class QuerySuggestManager implements AutoCloseable {
 				.of(INDEX_NAME_TAG, indexName)
 				.and("dataProvider", suggestDataProvider.getClass().getCanonicalName());
 
-		QuerySuggesterProxy updateableQuerySuggester = new QuerySuggesterProxy(indexName, suggestDataProvider.getClass().getCanonicalName());
+		QuerySuggesterProxy updateableQuerySuggester = new QuerySuggesterProxy(indexName);
 		updateableQuerySuggester.instrument(metricsRegistry, tags);
 
 		Path tenantFolder = suggestIndexFolder.resolve(indexName + "_" + System.currentTimeMillis()).resolve(suggestDataProvider.getClass().getCanonicalName());
@@ -577,7 +577,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		//, indexName, updateableQuerySuggester, factory
 		SuggestionsUpdater updateTask = SuggestionsUpdater.builder()
 				.indexName(indexName)
-				.dataProvider(suggestDataProvider)
+				.dataSourceProvider(suggestDataProvider)
 				.configProvider(suggestConfigProvider)
 				.defaultSuggestConfig(suggestConfig)
 				.factory(factory)

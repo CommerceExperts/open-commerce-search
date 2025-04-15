@@ -63,7 +63,7 @@ class LuceneQuerySuggesterTest {
 				asSuggestRecord("user query 2", masterQuery2, 101),
 				asSuggestRecord("u 2", masterQuery2, 101)));
 
-		underTest.index(toIndex).join();
+		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		List<Suggestion> results = underTest.suggest("user");
 
@@ -84,7 +84,7 @@ class LuceneQuerySuggesterTest {
 				asSuggestRecord("user query 2", masterQuery1, 101),
 				asSuggestRecord("u 2", masterQuery2, 101)));
 
-		underTest.index(toIndex).join();
+		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		List<Suggestion> results = underTest.suggest("user");
 
@@ -106,7 +106,7 @@ class LuceneQuerySuggesterTest {
 				asSuggestRecord("user query 3", masterQuery3, 101),
 				asSuggestRecord("u 4", masterQuery4, 99)));
 
-		underTest.index(toIndex).join();
+		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		List<Suggestion> results = underTest.suggest("u");
 
@@ -125,7 +125,7 @@ class LuceneQuerySuggesterTest {
 		List<SuggestRecord> toIndex = new ArrayList<>(singletonList(
 				asSuggestRecord("gucci", Gucci, 1000)));
 
-		underTest.index(toIndex).join();
+		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		List<Suggestion> results = underTest.suggest("guci");
 		assertThat(results).hasSize(1);
@@ -140,7 +140,7 @@ class LuceneQuerySuggesterTest {
 		List<SuggestRecord> toIndex = new ArrayList<>(singletonList(
 				asSuggestRecord("washington", Washington, 1000)));
 
-		underTest.index(toIndex).join();
+		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		List<Suggestion> results = underTest.suggest("veshin");
 		assertThat(results).hasSize(1);
@@ -157,7 +157,7 @@ class LuceneQuerySuggesterTest {
 				asSuggestRecord("women shirt", womensShirts, 99),
 				asSuggestRecord("shirt", mensShirts, 1000)));
 
-		underTest.index(toIndex).join();
+		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		List<Suggestion> results = underTest.suggest("shirt");
 		assertThat(results).hasSize(2);
@@ -176,7 +176,7 @@ class LuceneQuerySuggesterTest {
 				asSuggestRecord(womensShirts, setOf("women's shirt"), 101),
 				asSuggestRecord(withoutSMensShirts, setOf("men shirt"), 1000)));
 
-		underTest.index(toIndex).join();
+		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		// with apostrophe
 		List<Suggestion> results = underTest.suggest("men's");
@@ -212,7 +212,7 @@ class LuceneQuerySuggesterTest {
 				asSuggestRecord(Renew, Renew, 100),
 				asSuggestRecord(Newton, Newton, 101)));
 
-		underTest.index(toIndex).join();
+		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		List<Suggestion> results = underTest.suggest("new");
 		assertSuggestion(results.get(0), NewYork, BEST_MATCHES_GROUP_NAME);
@@ -230,7 +230,7 @@ class LuceneQuerySuggesterTest {
 				asSuggestRecord("name 2", Movie2, 100, setOf("movie")),
 				asSuggestRecord("name 3", Book1, 102, setOf("book"))));
 
-		underTest.index(toIndex).join();
+		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		List<Suggestion> bookResults = underTest.suggest("name", 10, setOf("book"));
 		assertSuggestion(bookResults.get(0), Book1, TYPO_MATCHES_GROUP_NAME);
@@ -260,7 +260,7 @@ class LuceneQuerySuggesterTest {
 				asSuggestRecord(WorkShirts, setOf("work shirts"), 103),
 				asSuggestRecord(Shirts, setOf("shirts"), 104)));
 
-		underTest.index(toIndex).join();
+		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		List<Suggestion> results = underTest.suggest("beige men's shirts");
 		assertSuggestion(results.get(0), BeigeMensShirts, BEST_MATCHES_GROUP_NAME);
@@ -290,7 +290,7 @@ class LuceneQuerySuggesterTest {
 				asSuggestRecord("work shirts", WorkShirts, 100),
 				asSuggestRecord("shirts", Shirts, 100)));
 
-		underTest.index(toIndex).join();
+		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		List<Suggestion> results = underTest.suggest("men's shi");
 
@@ -356,7 +356,7 @@ class LuceneQuerySuggesterTest {
 				asSuggestRecord("weise schuhe", weißeSchuheMaster, 6600),
 				asSuggestRecord("weise schue", weißeSchuheMaster, 6600)));
 
-		underTest.index(toIndex).join();
+		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		List<Suggestion> results = underTest.suggest("schuhe");
 
@@ -432,7 +432,7 @@ class LuceneQuerySuggesterTest {
 		// sort like the LuceneSuggesterFactory does it
 		Collections.sort((List<SuggestRecord>) toIndex, Comparator.comparingDouble(SuggestRecord::getWeight).reversed());
 
-		underTest.index(toIndex).join();
+		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		List<Suggestion> results = underTest.suggest("weisse s", 20, Collections.emptySet());
 
@@ -481,7 +481,7 @@ class LuceneQuerySuggesterTest {
 				asSuggestRecord("schuh für kinder", schuheForKinderMaster, 3400),
 				asSuggestRecord("schuhe  für kinder", schuheForKinderMaster, 3400)));
 
-		underTest.index(toIndex).join();
+		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		// `für` is not a stopword so there are results for it
 		List<Suggestion> results = underTest.suggest("für");
@@ -515,7 +515,7 @@ class LuceneQuerySuggesterTest {
 				asSuggestRecord("fff", hoseMaster, 3),
 				asSuggestRecord("ggg", hemdMaster, 2)));
 
-		underTest.index(toIndex).join();
+		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		List<Suggestion> results = underTest.suggest("hmd");
 
@@ -581,7 +581,7 @@ class LuceneQuerySuggesterTest {
 	void destroyedSuggesterReturnsEmptyResult() throws Exception {
 		List<SuggestRecord> suggestions = new ArrayList<>();
 		suggestions.add(asSuggestRecord("fnord", "", 1));
-		underTest.index(suggestions).join();
+		underTest.index(suggestions, System.currentTimeMillis()).join();
 
 		assertThat(underTest.suggest("fno")).hasSize(1);
 
@@ -606,7 +606,7 @@ class LuceneQuerySuggesterTest {
 					asSuggestRecord("shiney", primary2, 20), // <<sh matches secondary
 					asSuggestRecord("sustainable", primary3, 30)));
 
-			underTest.index(toIndex).join();
+			underTest.index(toIndex, System.currentTimeMillis()).join();
 
 			List<Suggestion> results = underTest.suggest("sh");
 			System.out.println(results);
