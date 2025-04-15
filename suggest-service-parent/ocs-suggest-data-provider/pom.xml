@@ -15,6 +15,16 @@
 	<packaging>jar</packaging>
 	<name>OCS Suggest Data Provider</name>
 
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>commons-codec</groupId>
+				<artifactId>commons-codec</artifactId>
+				<version>1.17.2</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
 		<dependency>
 			<groupId>de.cxp.ocs</groupId>
