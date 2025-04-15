@@ -20,10 +20,13 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -88,11 +91,16 @@ public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySugge
 		return luceneQuerySuggester;
 	}
 
-	private static void indexSuggestRecords(SuggestData suggestData, LuceneQuerySuggester luceneQuerySuggester) {
+	private void indexSuggestRecords(SuggestData suggestData, LuceneQuerySuggester luceneQuerySuggester) {
 		final long start = System.currentTimeMillis();
 		Iterable<SuggestRecord> suggestRecords = suggestData.getSuggestRecords();
 		if (suggestRecords instanceof List<SuggestRecord> suggestRecordList) {
-			suggestRecordList.sort(Comparator.comparingDouble(SuggestRecord::getWeight).reversed());
+			try {
+				Collections.sort(suggestRecordList, Comparator.comparingDouble(SuggestRecord::getWeight).reversed());
+			} catch (UnsupportedOperationException uoe) {
+				log.warn("provided suggest data records (of {}) can't be sorted, which is generally recommended but not required.",
+						StreamSupport.stream(tags.spliterator(), false).map(Tag::toString).collect(Collectors.joining(", ")));
+			}
 		}
 		luceneQuerySuggester.index(suggestRecords, suggestData.getModificationTime()).join();
 		log.info("Indexing {} suggestions took: {}ms", luceneQuerySuggester.recordCount(), System.currentTimeMillis() - start);
