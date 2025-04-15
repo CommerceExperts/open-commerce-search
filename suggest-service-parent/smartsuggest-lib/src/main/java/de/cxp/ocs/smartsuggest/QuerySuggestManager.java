@@ -495,7 +495,7 @@ public class QuerySuggestManager implements AutoCloseable {
 		IndexArchiveProvider archiveProvidersForIndex = archiveDataProviders == null ? null :
 				// in case of multiple archive providers, use the first one that has data for that index, otherwise use the first one
 				archiveDataProviders.stream().filter(dp -> checkDataProviderHasData(dp, indexName)).findFirst()
-						.orElse(archiveDataProviders.getFirst());
+						.orElse(archiveDataProviders.isEmpty() ? null : archiveDataProviders.getFirst());
 
 		if (actualSuggestDataProviders.isEmpty() && archiveProvidersForIndex == null) {
 			log.warn("No DataProvider provides data for index {}. Will use NoopQuerySuggester", indexName);
