@@ -27,14 +27,14 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 @Slf4j
 public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Accountable {
 
-	private final String indexName;
-	private       int    maxSuggestionsPerCacheEntry = 10; // TODO: make configurable
-
+	private final    String                          indexName;
 	private final    AtomicReference<QuerySuggester> innerQuerySuggester = new AtomicReference<>(new NoopQuerySuggester());
 	private volatile boolean                         isClosed            = false;
 
-	private final int                             cacheLetterLength = Integer.getInteger("CACHE_LETTER_LENGTH", 3);
-	private final Cache<String, List<Suggestion>> firstLetterCache  = CacheBuilder.newBuilder()
+	private final int maxSuggestionsPerCacheEntry = Integer.getInteger("MAX_SUGGESTIONS_PER_CACHE_ENTRY", 10);
+	private final int cacheLetterLength           = Integer.getInteger("CACHE_LETTER_LENGTH", 3);
+
+	private final Cache<String, List<Suggestion>> firstLetterCache = CacheBuilder.newBuilder()
 			.maximumSize(Long.getLong("CACHE_MAX_SIZE", 10_000L))
 			.recordStats()
 			.build();
@@ -102,7 +102,7 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 		if (isClosed || isBlank(term)) return emptyList();
 		final String normalizedTerm = term.toLowerCase();
 
-		// only cache results, if no tags filter is given and the the limit
+		// only cache results, if no tags filter is given and the limit
 		// of results is <= to the maxSuggestionPerCacheEntry level
 		if (normalizedTerm.length() <= cacheLetterLength
 				&& (tags == null || tags.isEmpty())
@@ -115,7 +115,7 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 					cachedResults = cachedResults.subList(0, maxResults);
 				}
 
-				// dont use stream + collector, because we need a mutable list
+				// don't use stream + collector, because we need a mutable list
 				ArrayList<Suggestion> clonedList = new ArrayList<>(cachedResults.size());
 				for (Suggestion cachedSuggestion : cachedResults) {
 					clonedList.add(cloneSuggestion(cachedSuggestion));

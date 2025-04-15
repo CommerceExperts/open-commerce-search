@@ -64,6 +64,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 */
 	@Deprecated
 	public static final String PAYLOAD_LABEL_KEY      = "meta.label";
+
 	/**
 	 * Use {@link CommonPayloadFields#PAYLOAD_GROUPMATCH_KEY} instead.
 	 */
@@ -314,7 +315,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 				final int itemsToFetchTypos = maxResults - uniqueQueries.size();
 				int resultCount = collectSuggestions(term, contexts, secondarySuggester, itemsToFetchTypos, uniqueQueries, itemsToFetchTypos, TYPO_MATCHES_GROUP_NAME, results);
 				if (SortStrategy.PrimaryAndSecondaryByWeight.equals(suggestConfig.getSortStrategy())) {
-					Collections.sort(results, Util.getDefaultComparator(suggestConfig.locale, term));
+					results.sort(Util.getDefaultComparator(suggestConfig.locale, term));
 				}
 				perfResult.addStep("variantMatches", resultCount);
 			}
@@ -323,7 +324,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults
 					&& contexts == null) {
 				final int itemsToFetchOneEdit = maxResults - uniqueQueries.size();
-				int resultCount = collectFuzzySuggestions(term, contexts, fuzzySuggesterOneEdit, itemsToFetchOneEdit, uniqueQueries, itemsToFetchOneEdit,
+				int resultCount = collectFuzzySuggestions(term, contexts, fuzzySuggesterOneEdit, itemsToFetchOneEdit, uniqueQueries,
 						FUZZY_MATCHES_ONE_EDIT_GROUP_NAME, results);
 				perfResult.addStep("fuzzy1Matches", resultCount);
 			}
@@ -332,7 +333,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults
 					&& contexts == null) {
 				final int itemsToFetchTwoEdits = maxResults - uniqueQueries.size();
-				int resultCount = collectFuzzySuggestions(term, contexts, fuzzySuggesterTwoEdits, itemsToFetchTwoEdits, uniqueQueries, itemsToFetchTwoEdits,
+				int resultCount = collectFuzzySuggestions(term, contexts, fuzzySuggesterTwoEdits, itemsToFetchTwoEdits, uniqueQueries,
 						FUZZY_MATCHES_TWO_EDITS_GROUP_NAME, results);
 				perfResult.addStep("fuzzy2Matches", resultCount);
 			}
@@ -383,7 +384,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 * </p>
 	 */
 	private int collectFuzzySuggestions(String term, Set<BytesRef> contexts, Lookup suggester, final int itemsToFetch, Set<String> uniqueQueries,
-			int maxResults, String groupName, List<Suggestion> results) throws IOException {
+			String groupName, List<Suggestion> results) throws IOException {
 
 		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, itemsToFetch + uniqueQueries.size());
 
@@ -406,7 +407,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 
 		if (!suggestions.isEmpty()) {
 			results.addAll(suggestions);
-			log.debug("Collected '{}' {} for term '{}': {}", suggestions.size(), groupName, term, suggestions);
+			log.debug("Fuzzy-Collected '{}' {} for term '{}': {}", suggestions.size(), groupName, term, suggestions);
 		}
 		return suggestions.size();
 	}
@@ -416,9 +417,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, itemsToFetch + uniqueQueries.size());
 
 		final List<Suggestion> suggestions = getUniqueSuggestions(lookupResults, uniqueQueries, maxResults);
-		suggestions.forEach(s -> {
-			withPayloadEntry(s, CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName);
-		});
+		suggestions.forEach(s -> withPayloadEntry(s, CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName));
 
 		if (!suggestions.isEmpty()) {
 			results.addAll(suggestions);
@@ -566,14 +565,14 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			Map<String, String> payload = SerializationUtils.deserialize(result.payload.bytes);
 			String label = payload.get(CommonPayloadFields.PAYLOAD_LABEL_KEY);
 			if (label == null) label = result.key.toString();
-			Suggestion s = new Suggestion(label)
+			Suggestion suggestion = new Suggestion(label)
 					.setPayload(payload)
 					.setWeight(result.value)
 					.setContext(result.contexts);
-			if (s.getPayload() == null) s.setPayload(new HashMap<>());
-			s = withPayloadEntry(s, CommonPayloadFields.PAYLOAD_MATCH_KEY, result.key.toString());
-			s = withPayloadEntry(s, CommonPayloadFields.PAYLOAD_WEIGHT_KEY, String.valueOf(result.value));
-			return s;
+			if (suggestion.getPayload() == null) suggestion.setPayload(new HashMap<>());
+			withPayloadEntry(suggestion, CommonPayloadFields.PAYLOAD_MATCH_KEY, result.key.toString());
+			withPayloadEntry(suggestion, CommonPayloadFields.PAYLOAD_WEIGHT_KEY, String.valueOf(result.value));
+			return suggestion;
 		}
 		catch (Exception e) {
 			if (deserializationFailLogCount % 100 == 0) {
@@ -648,7 +647,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			return primarySuggester.getCount();
 		}
 		catch (IOException e) {
-			log.warn("IOException when retrieving count of infixSuggester: " + e.getMessage());
+			log.warn("IOException when retrieving count of infixSuggester: {}", e.getMessage());
 			return -1;
 		}
 	}
