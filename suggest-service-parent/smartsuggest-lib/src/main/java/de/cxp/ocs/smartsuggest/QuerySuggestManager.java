@@ -489,8 +489,8 @@ public class QuerySuggestManager implements AutoCloseable {
 		log.info("Initializing SuggestIndex '{}' {}synchronously", indexName, synchronous ? "" : "a");
 		List<SuggestDataProvider> actualSuggestDataProviders = suggestDataProviders == null ? Collections.emptyList() :
 				suggestDataProviders.stream()
-				.filter(sdp -> checkDataProviderHasData(sdp, indexName))
-				.collect(Collectors.toList());
+						.filter(sdp -> checkDataProviderHasData(sdp, indexName))
+						.collect(Collectors.toList());
 
 		IndexArchiveProvider archiveProvidersForIndex = archiveDataProviders == null ? null :
 				// in case of multiple archive providers, use the first one that has data for that index, otherwise use the first one
@@ -512,32 +512,87 @@ public class QuerySuggestManager implements AutoCloseable {
 
 		final QuerySuggester actualQuerySuggester;
 		if (actualSuggestDataProviders.isEmpty()) {
-			actualQuerySuggester = initializeQuerySuggester(null, archiveProvidersForIndex, indexName, suggestConfig, synchronous);
+			if (archiveProvidersForIndex instanceof CompoundIndexArchiveProvider compoundIndexArchiveProvider
+					&& compoundIndexArchiveProvider.getIndexSuffixes(indexName).size() > 1) {
+				actualQuerySuggester = getMultiSourceSuggester(indexName, suggestConfig, actualSuggestDataProviders, archiveProvidersForIndex, synchronous, limiter.isPresent());
+			}
+			else {
+				actualQuerySuggester = initializeQuerySuggester(null, archiveProvidersForIndex, indexName, suggestConfig, synchronous);
+			}
 		}
 		else if (actualSuggestDataProviders.size() == 1) {
 			actualQuerySuggester = initializeQuerySuggester(actualSuggestDataProviders.getFirst(), archiveProvidersForIndex, indexName, suggestConfig, synchronous);
 		}
-		else if (suggestConfig.useDataSourceMerger || archiveProvidersForIndex != null) {
-			if (!suggestConfig.useDataSourceMerger) {
-				log.warn("Merging multiple data sources for index {}, although suggestConfig.useDataSourceMerger is set to 'false',"
-						+ " because a IndexArchiveProvider is given and it would not not work with compound data sources.", indexName);
-			}
-			actualQuerySuggester = initializeQuerySuggester(new MergingSuggestDataProvider(actualSuggestDataProviders), archiveProvidersForIndex, indexName, suggestConfig, synchronous);
-		}
 		else {
-			List<QuerySuggester> suggesters = new ArrayList<>();
-			for (SuggestDataProvider sdp : actualSuggestDataProviders) {
-				suggesters.add(initializeQuerySuggester(sdp, archiveProvidersForIndex, indexName, suggestConfig, synchronous));
-			}
-			actualQuerySuggester = new CompoundQuerySuggester(suggesters, suggestConfig);
-			if (limiter.isPresent()) {
-				((CompoundQuerySuggester) actualQuerySuggester).setDoLimitFinalResult(false);
-			}
+			actualQuerySuggester = getMultiSourceSuggester(indexName, suggestConfig, actualSuggestDataProviders, archiveProvidersForIndex, synchronous, limiter.isPresent());
 		}
 
 		return limiter
 				.map(_limiter -> (QuerySuggester) new GroupingSuggester(actualQuerySuggester, _limiter).setPrefetchLimitFactor(suggestConfig.getPrefetchLimitFactor()))
 				.orElse(actualQuerySuggester);
+	}
+
+	/**
+	 * Provides a merged or compound suggester depending on the settings and available data providers.
+	 */
+	private QuerySuggester getMultiSourceSuggester(String indexName, SuggestConfig suggestConfig, List<SuggestDataProvider> sourceDataProvider,
+			IndexArchiveProvider indexArchiveProvider,
+			boolean synchronous, boolean limiterIsPresent) {
+
+		Collection<String> indexSuffixes;
+		CompoundIndexArchiveProvider compoundArchiver = indexArchiveProvider instanceof CompoundIndexArchiveProvider ? (CompoundIndexArchiveProvider) indexArchiveProvider : null;
+		// if there is no index archiver at all, we can use compound suggester as well without any problems
+		boolean canUseCompound = indexArchiveProvider == null || compoundArchiver != null;
+		if (sourceDataProvider.isEmpty() && compoundArchiver != null) {
+			indexSuffixes = compoundArchiver.getIndexSuffixes(indexName);
+		}
+		else {
+			indexSuffixes = Collections.emptyList();
+		}
+
+		QuerySuggester querySuggester;
+		if (suggestConfig.useDataSourceMerger || !canUseCompound) {
+			if (!suggestConfig.useDataSourceMerger) {
+				log.warn("Merging multiple data sources for index {}, although suggestConfig.useDataSourceMerger is set to 'false', "
+								+ "because a IndexArchiveProvider is given and it does only provide a single archive. "
+								+ "If you want to use a CompoundSuggester in combination with an IndexArchiveProvider, "
+								+ "you should inject an implementation of the CompoundIndexArchiveProvider.",
+						indexName);
+			}
+			else {
+				log.info("initializing suggester for index {} merging the data of {} source-data provider", indexName, sourceDataProvider.size());
+			}
+			// at this stage, sourceDataProvider can never be empty, because if no sourceDataProvider is given, we either have a CompoundIndexArchiver that is handled below
+			// or we have a single IndexArchiveProvider that is already utilized as a single data provider
+			querySuggester = initializeQuerySuggester(new MergingSuggestDataProvider(sourceDataProvider), indexArchiveProvider, indexName, suggestConfig, synchronous);
+		}
+		else {
+			List<QuerySuggester> suggesters = new ArrayList<>();
+			if (sourceDataProvider.isEmpty()) {
+				log.info("initializing CompoundSuggester in fetcher mode with compound archiver for index {} with suffixes {}", indexName, indexSuffixes);
+				for (String sdpName : indexSuffixes) {
+					IndexArchiveProvider subProvider = compoundArchiver.getSuffixProvider(sdpName);
+					suggesters.add(initializeQuerySuggester(null, subProvider, indexName, suggestConfig, synchronous));
+				}
+			}
+			else {
+				StringBuilder sdpNames = new StringBuilder();
+				for (SuggestDataProvider sdp : sourceDataProvider) {
+					if (!sdpNames.isEmpty()) sdpNames.append(", ");
+					sdpNames.append(sdp.getName());
+					var sdpArchiver = compoundArchiver != null ? compoundArchiver.getSuffixProvider(sdp.getName()) : null;
+					suggesters.add(initializeQuerySuggester(sdp, sdpArchiver, indexName, suggestConfig, synchronous));
+				}
+				log.info("initializing CompoundSuggester in indexing mode for index {} with{} + with source-data-providers {}",
+						indexName, indexArchiveProvider == null ? "out indexArchiveProvider" : " " + indexArchiveProvider.getClass().getSimpleName(), sdpNames);
+			}
+
+			querySuggester = new CompoundQuerySuggester(suggesters, suggestConfig);
+			if (limiterIsPresent) {
+				((CompoundQuerySuggester) querySuggester).setDoLimitFinalResult(false);
+			}
+		}
+		return querySuggester;
 	}
 
 	private boolean checkDataProviderHasData(AbstractDataProvider<?> dataProvider, String indexName) {
@@ -584,7 +639,8 @@ public class QuerySuggestManager implements AutoCloseable {
 		}
 	}
 
-	private QuerySuggester initializeQuerySuggester(SuggestDataProvider suggestDataProvider, IndexArchiveProvider archiveProvider, String indexName, SuggestConfig suggestConfig, boolean synchronous) {
+	private QuerySuggester initializeQuerySuggester(SuggestDataProvider suggestDataProvider, IndexArchiveProvider archiveProvider, String indexName, SuggestConfig suggestConfig,
+			boolean synchronous) {
 		if ("noop".equals(indexName)) {
 			return new NoopQuerySuggester(true);
 		}

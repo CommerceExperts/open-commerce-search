@@ -1,13 +1,14 @@
 package de.cxp.ocs.smartsuggest.updater;
 
+import de.cxp.ocs.smartsuggest.spi.CompoundIndexArchiveProvider;
 import de.cxp.ocs.smartsuggest.spi.IndexArchive;
-import de.cxp.ocs.smartsuggest.spi.IndexArchiveProvider;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-public class LocalIndexArchiveProvider implements IndexArchiveProvider {
+public class LocalCompoundIndexArchiveProvider extends CompoundIndexArchiveProvider {
 
 	final private Map<String, IndexArchive> cached = new HashMap<>();
 
@@ -31,4 +32,11 @@ public class LocalIndexArchiveProvider implements IndexArchiveProvider {
 		return cached.get(indexName);
 	}
 
+	@Override
+	public Collection<String> getIndexSuffixes(String indexName) {
+		return cached.keySet().stream()
+				.filter(key -> key.startsWith(indexName + "/"))
+				.map(key -> key.substring(indexName.length() + 1))
+				.toList();
+	}
 }

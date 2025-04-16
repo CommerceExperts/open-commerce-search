@@ -14,11 +14,14 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneSuggesterFactory;
 import de.cxp.ocs.smartsuggest.spi.*;
+import de.cxp.ocs.smartsuggest.updater.LocalCompoundIndexArchiveProvider;
 import de.cxp.ocs.smartsuggest.updater.LocalIndexArchiveProvider;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -134,11 +137,16 @@ class QuerySuggestManagerTest {
 
 	@Test
 	void testThrowAwayManager() throws Exception {
-		QuerySuggester querySuggester = getQuerySuggester(new RemoteSuggestDataProviderSimulation());
+		var sdp = new RemoteSuggestDataProviderSimulation();
+		sdp.updateSuggestions("test.1", List.of(new SuggestRecord("query1", "matching text", null, null, 10L)));
+		QuerySuggester querySuggester = getQuerySuggester(sdp);
 
 		System.gc();
-		Thread.sleep(10);
-		querySuggester.suggest("foo");
+		Awaitility.await()
+				.atMost(5, TimeUnit.SECONDS)
+				.pollInterval(100, TimeUnit.MILLISECONDS)
+				.until(querySuggester::isReady);
+		assert !querySuggester.suggest("mat").isEmpty();
 	}
 
 	@Test
@@ -241,33 +249,56 @@ class QuerySuggestManagerTest {
 	}
 
 	@Test
-	void testCompoundDataSourceIndexCanBeArchivedAndRestored() throws Exception {
+	void testIndexAndRestoreMultipleDataSources_withMerger() throws Exception {
+		testIndexAndRestoreMultipleDataSources(true, new LocalIndexArchiveProvider());
+	}
+
+	@Test
+	void testIndexAndRestoreMultipleDataSources_withCompoundSuggester() throws Exception {
+		testIndexAndRestoreMultipleDataSources(false, new LocalIndexArchiveProvider());
+	}
+
+	@Test
+	void testIndexAndRestoreMultipleDataSources_withCompoundSuggesterAndCompoundArchiver() throws Exception {
+		testIndexAndRestoreMultipleDataSources(false, new LocalCompoundIndexArchiveProvider());
+	}
+
+	private void testIndexAndRestoreMultipleDataSources(boolean enableMerger, IndexArchiveProvider archiveProvider) throws Exception {
+		SuggestConfig config = new SuggestConfig();
+		config.setUseDataSourceMerger(enableMerger);
+
 		RemoteSuggestDataProviderSimulation dp1 = new RemoteSuggestDataProviderSimulation();
 		RemoteSuggestDataProviderSimulation dp2 = new RemoteSuggestDataProviderSimulation();
 		dp1.updateSuggestions("indexA", List.of(new SuggestRecord("query 1.2", "arbitrary matching text", null, null, 10L)));
 		dp2.updateSuggestions("indexA", List.of(new SuggestRecord("query 2.2", "more matching text", null, null, 10L)));
-		LocalIndexArchiveProvider archiveProvider = new LocalIndexArchiveProvider();
-		querySuggestManager = QuerySuggestManager.builder()
-				.withSuggestDataProvider(dp1)
-				.withSuggestDataProvider(dp2)
-				.withArchiveDataProvider(archiveProvider)
-				.setMinimalUpdateRate()
-				.build();
-		QuerySuggester suggester = querySuggestManager.getQuerySuggester("indexA", true);
-		assert suggester.isReady();
-		assertEquals(2, suggester.recordCount());
-		assert archiveProvider.hasData("indexA");
+
+		try (
+				var indexingQSM = QuerySuggestManager.builder()
+						.withSuggestDataProvider(dp1)
+						.withSuggestDataProvider(dp2)
+						.withArchiveDataProvider(archiveProvider)
+						.setMinimalUpdateRate()
+						.withDefaultSuggestConfig(config)
+						.build()
+		) {
+			QuerySuggester suggester = indexingQSM.getQuerySuggester("indexA", true);
+			assert suggester.isReady();
+			assertEquals(2, suggester.recordCount());
+
+			indexingQSM.destroyQuerySuggester("indexA");
+		}
 
 		// recreate query suggester without the suggest-data-providers
-		querySuggestManager.destroyQuerySuggester("indexA");
-		querySuggestManager.close();
-		querySuggestManager = QuerySuggestManager.builder()
-				.withArchiveDataProvider(archiveProvider)
-				.setMinimalUpdateRate()
-				.build();
-		suggester = querySuggestManager.getQuerySuggester("indexA", true);
-		assert suggester.isReady();
-		assertEquals(2, suggester.recordCount());
+		try (
+				var fetchingQSM = QuerySuggestManager.builder()
+						.withArchiveDataProvider(archiveProvider)
+						.setMinimalUpdateRate()
+						.build()
+		) {
+			QuerySuggester suggester = fetchingQSM.getQuerySuggester("indexA", true);
+			assert suggester.isReady();
+			assertEquals(2, suggester.recordCount());
+		}
 	}
 
 	/**
