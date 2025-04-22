@@ -387,22 +387,27 @@ public class QuerySuggestManager implements AutoCloseable {
 		List<T> dataProviders = new ArrayList<>();
 
 		while (loadedSDPs.hasNext()) {
+			T sdp = null;
 			try {
-				// due to the possibility to inject additionalSuggestDataProviders it is possible
-				// that two SuggestDataProvider of the same class are injected. We accept this, as
-				// this way it's possible to have a common SuggestDataProvider that can provide
+				// due to the possibility to inject additional dataProviders it is possible
+				// that two data provider of the same class are injected. We accept this, as
+				// this way it's possible to have a common data provider that can provide
 				// different kind of data or data for different indexes. However we can't deduplicate
 				// the config here. This has to be done at the instantiation of that according SDP
-				T sdp = loadedSDPs.next();
+				sdp = loadedSDPs.next();
+			}
+			catch (Exception e) {
+				log.warn("failed to load a data provider", e);
+			}
+			if (sdp != null) try {
 				Map<String, Object> sdpConfig = dataProviderConfig.get(sdp.getClass().getCanonicalName());
-				if (sdpConfig != null) {
-					sdp.configure(sdpConfig);
-				}
+				// ensure configure is called here, since it may contain required init code (as we only have no args constructor)
+				sdp.configure(sdpConfig != null ? sdpConfig : Collections.emptyMap());
 				dataProviders.add(sdp);
 				log.info("initialized SmartSuggest with {}", sdp.getClass().getCanonicalName());
 			}
 			catch (Exception e) {
-				log.info("failed to load a SuggestDataProvider", e);
+				log.warn("failed to configure data provider {}", sdp.getClass().getCanonicalName(), e);
 			}
 		}
 
