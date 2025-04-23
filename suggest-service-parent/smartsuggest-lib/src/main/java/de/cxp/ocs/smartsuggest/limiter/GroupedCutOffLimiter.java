@@ -47,12 +47,14 @@ public class GroupedCutOffLimiter implements Limiter {
 	private final LinkedHashMap<String, Integer> limitConf;
 
 	@NonNull
-	private final Optional<String[]> groupDeduplicationOrder;
+	private final String[] groupDeduplicationOrder;
 
 	@Override
 	public List<Suggestion> limit(List<Suggestion> suggestions, int limit) {
 		Map<String, List<Suggestion>> groupedSuggestions = suggestions.stream().collect(Collectors.groupingBy(this::groupKey));
-		groupDeduplicationOrder.ifPresent(order -> SuggestDeduplicator.deduplicate(groupedSuggestions, order));
+		if (groupDeduplicationOrder != null && groupDeduplicationOrder.length > 0) {
+			SuggestDeduplicator.deduplicate(groupedSuggestions, groupDeduplicationOrder);
+		}
 
 		List<Suggestion> finalList = new ArrayList<>(Math.min(limit, suggestions.size()));
 		for (Entry<String, Integer> limitEntry : limitConf.entrySet()) {

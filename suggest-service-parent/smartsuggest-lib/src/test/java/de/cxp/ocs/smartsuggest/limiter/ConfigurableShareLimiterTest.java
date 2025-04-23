@@ -27,7 +27,7 @@ public class ConfigurableShareLimiterTest {
 		shareConfiguration.put("keyword", 0.3);
 		shareConfiguration.put("brand", 0.2);
 		shareConfiguration.put("category", 0.5);
-		underTest = new ConfigurableShareLimiter("type", shareConfiguration, Optional.empty());
+		underTest = new ConfigurableShareLimiter("type", shareConfiguration, null);
 	}
 
 	@AfterEach

@@ -24,7 +24,7 @@ public class SuggestConfig implements Cloneable, Serializable {
 
 	public String groupKey;
 
-	public Optional<String[]> groupDeduplicationOrder = Optional.empty();
+	public String[] groupDeduplicationOrder = null;
 
 	public boolean useRelativeShareLimit = false;
 
@@ -190,7 +190,7 @@ public class SuggestConfig implements Cloneable, Serializable {
 	 *        preferred
 	 */
 	public void setGroupDeduplicationOrder(String[] groupDeduplicationOrder) {
-		this.groupDeduplicationOrder = Optional.ofNullable(groupDeduplicationOrder);
+		this.groupDeduplicationOrder = groupDeduplicationOrder;
 	}
 
 	/**
@@ -273,8 +273,8 @@ public class SuggestConfig implements Cloneable, Serializable {
 	public SuggestConfig clone() {
 		return this.toBuilder()
 				// deep copy of mutable properties
-				.groupConfig(this.groupConfig.stream().map(orig -> new GroupConfig(orig.groupName, orig.limit)).collect(Collectors.toList()))
-				.groupDeduplicationOrder(this.groupDeduplicationOrder.map(original -> Arrays.copyOf(original, original.length)))
+				.groupConfig(this.groupConfig == null ? null : this.groupConfig.stream().map(orig -> new GroupConfig(orig.groupName, orig.limit)).collect(Collectors.toList()))
+				.groupDeduplicationOrder(this.groupDeduplicationOrder == null ? null : Arrays.copyOf(this.groupDeduplicationOrder, this.groupDeduplicationOrder.length))
 				.build();
 	}
 }
