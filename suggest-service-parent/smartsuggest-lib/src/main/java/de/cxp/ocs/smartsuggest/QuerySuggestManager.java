@@ -19,6 +19,7 @@ import io.micrometer.core.instrument.search.RequiredSearch;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -26,6 +27,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * <p>
@@ -179,7 +181,21 @@ public class QuerySuggestManager implements AutoCloseable {
 		 * @return the builder itself
 		 */
 		public QuerySuggestManagerBuilder addDataProviderConfig(Class<? extends SuggestDataProvider> sdpClazz, Map<String, Object> config) {
-			dataProviderConfigs.put(sdpClazz.getCanonicalName(), config);
+			addDataProviderConfig(sdpClazz.getCanonicalName(), config);
+			return this;
+		}
+
+		/**
+		 * Same as {@code QuerySuggestManagerBuilder.addDataProviderConfig(String, Map)}
+		 *
+		 * @param sdpClazz
+		 * 		class of all data provider instances that should receive this config.
+		 * @param config
+		 * 		config map to be used for the given data provider
+		 * @return the builder itself
+		 */
+		public QuerySuggestManagerBuilder addArchiveProviderConfig(Class<? extends IndexArchiveProvider> sdpClazz, Map<String, Object> config) {
+			addDataProviderConfig(sdpClazz.getCanonicalName(), config);
 			return this;
 		}
 
@@ -689,6 +705,20 @@ public class QuerySuggestManager implements AutoCloseable {
 	public void close() {
 		scheduledTasks.values().forEach(t -> t.cancel(true));
 		executor.shutdown();
+
+		archiveDataProviders.forEach(this::closeGracefully);
+		suggestDataProviders.forEach(this::closeGracefully);
+		closeGracefully(suggestConfigProvider);
 	}
 
+	private void closeGracefully(Object provider) {
+		if (provider instanceof Closeable c) {
+			try {
+				c.close();
+			}
+			catch (IOException ex) {
+				log.warn("failed to close {}", c.getClass().getCanonicalName(), ex);
+			}
+		}
+	}
 }
