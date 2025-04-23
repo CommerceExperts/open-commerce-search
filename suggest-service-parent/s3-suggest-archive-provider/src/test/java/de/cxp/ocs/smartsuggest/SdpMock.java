@@ -13,8 +13,14 @@ import lombok.experimental.Accessors;
 public class SdpMock implements SuggestDataProvider {
 
 	@NonNull
-	private final String indexName;
-	private SuggestData suggestData = null;
+	private final String      indexName;
+	private       SuggestData suggestData = null;
+	private       String      name        = "sdpMock";
+
+	@Override
+	public String getName() {
+		return name;
+	}
 
 	@Override
 	public boolean hasData(String indexName) {

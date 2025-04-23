@@ -97,8 +97,18 @@ public class S3ArchiveProvider extends CompoundIndexArchiveProvider implements C
 		String fullPrefix = prefix + indexName + "/";
 		ListObjectsV2Response objectList = s3Client.listObjectsV2(b -> b.bucket(bucketName).prefix(prefix));
 
-		Set<String> indexSuffixes = objectList.commonPrefixes().stream().map(p -> p.prefix().substring(fullPrefix.length())).collect(Collectors.toSet());
-		log.trace("for index {} found suffixes: {}", indexName, indexSuffixes);
+		Set<String> indexSuffixes = objectList.contents().stream()
+				.map(S3Object::key)
+				.filter(k -> k.startsWith(indexName))
+				.map(k -> {
+					String stripped = k.substring(fullPrefix.length());
+					int i = stripped.indexOf('/');
+					if (i > 0) stripped = stripped.substring(0, i);
+					return stripped;
+				})
+				.filter(str -> !ARCHIVE_FILE_NAME.equals(str))
+				.collect(Collectors.toSet());
+		log.debug("for index {} found suffixes: {}", indexName, indexSuffixes);
 		return indexSuffixes;
 	}
 
@@ -153,7 +163,7 @@ public class S3ArchiveProvider extends CompoundIndexArchiveProvider implements C
 	public IndexArchive loadData(String indexName) throws IOException {
 		try {
 			// only create parent directory, not the file itself; its created by the getObject call
-			Path tempFilePath = Files.createTempDirectory(indexName).resolve(ARCHIVE_FILE_NAME);
+			Path tempFilePath = Files.createTempDirectory(indexName.replace('/', '_')).resolve(ARCHIVE_FILE_NAME);
 			GetObjectRequest getObjectRequest = GetObjectRequest.builder().bucket(bucketName).key(getObjectKey(indexName)).build();
 			GetObjectResponse objectMeta = s3Client.getObject(getObjectRequest, tempFilePath);
 			return new IndexArchive(tempFilePath.toFile(), getModTime(objectMeta.metadata()));

@@ -3,6 +3,7 @@ package de.cxp.ocs.smartsuggest;
 import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
 import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
 import de.cxp.ocs.smartsuggest.spi.IndexArchive;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import io.findify.s3mock.S3Mock;
@@ -93,7 +94,7 @@ public class S3ArchiveProviderTest {
 						.withSuggestDataProvider(dataProviderMock)
 						.withArchiveDataProvider(underTest)
 						.addArchiveProviderConfig(S3ArchiveProvider.class, testConfig)
-						.withArchiveDataProvider(underTest).build()
+						.build()
 		) {
 			assert !underTest.hasData(indexName2);
 			assert qsm.getQuerySuggester(indexName2, true).isReady();
@@ -114,6 +115,68 @@ public class S3ArchiveProviderTest {
 			QuerySuggester suggester = qsm.getQuerySuggester(indexName2);
 			List<Suggestion> suggestions = suggester.suggest("la");
 			assertEquals(1, suggestions.size());
+		}
+	}
+
+	@Test
+	void integrationTestWithMultipleDataSources() {
+		String indexName3 = "test_3";
+		S3ArchiveProvider underTest = new S3ArchiveProvider();
+
+		// first initialize with some data
+		long modTime1 = System.currentTimeMillis();
+		SdpMock sdp1 = new SdpMock(indexName3)
+				.name("sdp1")
+				.suggestData(SuggestData.builder()
+						.modificationTime(modTime1)
+						.suggestRecords(List.of(new SuggestRecord("label 1", "first content", null, null, 100)))
+						.build());
+
+		long modTime2 = System.currentTimeMillis();
+		SdpMock sdp2 = new SdpMock(indexName3)
+				.name("sdp2")
+				.suggestData(SuggestData.builder()
+						.modificationTime(modTime2)
+						.suggestRecords(List.of(new SuggestRecord("label 2", "second content", null, null, 1000)))
+						.build());
+
+		SuggestConfig suggestConfig = SuggestConfig.builder().useDataSourceMerger(false).build();
+		try (
+				var qsm = QuerySuggestManager.builder()
+						.withDefaultSuggestConfig(suggestConfig)
+						.withSuggestDataProvider(sdp1)
+						.withSuggestDataProvider(sdp2)
+						.withArchiveDataProvider(underTest)
+						.addArchiveProviderConfig(S3ArchiveProvider.class, testConfig)
+						.build()
+		) {
+			assert !underTest.hasData(indexName3);
+			assert !underTest.hasData(indexName3 + "/sdp1");
+			assert !underTest.hasData(indexName3 + "/sdp2");
+
+			assert qsm.getQuerySuggester(indexName3, true).isReady();
+			// assert data has been placed
+			assert underTest.hasData(indexName3 + "/sdp1");
+			assert underTest.hasData(indexName3 + "/sdp2");
+		}
+
+		// now run again without the sdp mocks
+		try (
+				var qsm = QuerySuggestManager.builder()
+						.withDefaultSuggestConfig(suggestConfig)
+						.withArchiveDataProvider(underTest)
+						.addArchiveProviderConfig(S3ArchiveProvider.class, testConfig)
+						.build()
+		) {
+			assert underTest.hasData(indexName3 + "/sdp1");
+			assert underTest.hasData(indexName3 + "/sdp2");
+
+			var suggester = qsm.getQuerySuggester(indexName3, true);
+			assert suggester.isReady();
+			List<Suggestion> suggestions = suggester.suggest("lab");
+			assertEquals(2, suggestions.size());
+			assertEquals("label 2", suggestions.get(0).getLabel()); // has higher weight
+			assertEquals("label 1", suggestions.get(1).getLabel());
 		}
 	}
 
