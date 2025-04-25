@@ -1,0 +1,15 @@
+{
+  "framework": "react",
+  "projectName": "frontend",
+  "typescript": true,
+  "tailwind": true,
+  "packageManager": "npm",
+  "toolchain": "none",
+  "mode": "file-router",
+  "git": true,
+  "variableValues": {},
+  "version": 1,
+  "existingAddOns": [
+    "shadcn"
+  ]
+}
