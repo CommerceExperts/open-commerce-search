@@ -70,6 +70,12 @@
             <artifactId>lombok</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.github.marko-asplund</groupId>
+            <artifactId>s3mock_2.12</artifactId>
+            <version>0.6.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 </project>
