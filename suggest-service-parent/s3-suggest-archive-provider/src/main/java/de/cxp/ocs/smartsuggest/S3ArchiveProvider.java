@@ -9,7 +9,6 @@ import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
-import software.amazon.awssdk.utils.AttributeMap;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -19,8 +18,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static software.amazon.awssdk.http.SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES;
 
 /**
  * Stores the index-archives in a s3 bucket (optionally with some prefix) in the following structure:
@@ -53,7 +50,7 @@ public class S3ArchiveProvider extends CompoundIndexArchiveProvider implements C
 
 	@Override
 	public void configure(Map<String, Object> config) {
-		bucketName = Objects.requireNonNull(config.get("bucket"), "bucket config is required for s3archive provider").toString();
+		bucketName = Objects.requireNonNull(config.get("bucket"), "bucket config is required").toString();
 		prefix = config.getOrDefault("prefix", "").toString();
 
 		var s3ClientBuilder = S3Client.builder().httpClientBuilder(ApacheHttpClient.builder());

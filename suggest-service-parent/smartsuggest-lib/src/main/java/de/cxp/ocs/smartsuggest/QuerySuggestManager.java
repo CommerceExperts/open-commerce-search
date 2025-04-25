@@ -27,7 +27,6 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * <p>
@@ -423,7 +422,8 @@ public class QuerySuggestManager implements AutoCloseable {
 				log.info("initialized SmartSuggest with {}", sdp.getClass().getCanonicalName());
 			}
 			catch (Exception e) {
-				log.warn("failed to configure data provider {}", sdp.getClass().getCanonicalName(), e);
+				log.info("ignoring data provider {}, as it cannot be configured due to {}:{}",
+						sdp.getClass().getCanonicalName(), e.getClass(), e.getMessage());
 			}
 		}
 
