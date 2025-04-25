@@ -7,7 +7,7 @@
     <parent>
         <groupId>de.cxp.ocs</groupId>
         <artifactId>suggest-service-parent</artifactId>
-        <version>0.70.3</version>
+        <version>0.70.4</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -25,12 +25,6 @@
             <groupId>de.cxp.ocs</groupId>
             <artifactId>smartsuggest-lib</artifactId>
             <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <artifactId>commons-codec</artifactId>
-                    <groupId>commons-codec</groupId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
@@ -43,6 +37,11 @@
                     <groupId>software.amazon.awssdk</groupId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <!-- overwrite diverged version of awssdk -->
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
         </dependency>
         <dependency>
             <artifactId>apache-client</artifactId>
@@ -67,22 +66,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.github.marko-asplund</groupId>
-            <artifactId>s3mock_2.12</artifactId>
-            <version>0.6.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- TODO: remove? -->
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.17.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

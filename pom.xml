@@ -39,6 +39,7 @@
 		<logback.version>1.5.13</logback.version>
 		<jackson.version>2.18.3</jackson.version>
 		<junit.jupiter.version>5.7.0</junit.jupiter.version>
+		<snakeyaml.version>2.4</snakeyaml.version>
 	</properties>
 
 	<dependencyManagement>
@@ -74,7 +75,7 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>suggest-service</artifactId>
-				<version>0.30.0</version>
+				<version>0.31.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
@@ -180,6 +181,11 @@
                 <artifactId>json-smart</artifactId>
                 <version>2.5.2</version>
             </dependency>
+			<dependency>
+				<groupId>org.yaml</groupId>
+				<artifactId>snakeyaml</artifactId>
+				<version>${snakeyaml.version}</version>
+			</dependency>
 
 			<!-- swagger -->
 			<dependency>
@@ -312,7 +318,7 @@
 								<jvmFlag>-server</jvmFlag>
 								<jvmFlag>-XX:+UseContainerSupport</jvmFlag>
 							</jvmFlags>
-							<entrypoint></entrypoint>
+							<entrypoint />
 						</container>
 					</configuration>
 					<executions>
