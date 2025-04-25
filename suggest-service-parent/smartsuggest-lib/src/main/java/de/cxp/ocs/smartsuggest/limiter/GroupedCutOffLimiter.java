@@ -46,7 +46,6 @@ public class GroupedCutOffLimiter implements Limiter {
 	@NonNull
 	private final LinkedHashMap<String, Integer> limitConf;
 
-	@NonNull
 	private final String[] groupDeduplicationOrder;
 
 	@Override
