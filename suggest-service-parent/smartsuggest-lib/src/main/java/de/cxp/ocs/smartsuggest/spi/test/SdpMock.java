@@ -1,4 +1,4 @@
-package de.cxp.ocs.smartsuggest;
+package de.cxp.ocs.smartsuggest.spi.test;
 
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
@@ -10,7 +10,7 @@ import lombok.experimental.Accessors;
 @RequiredArgsConstructor
 @Accessors(fluent = true)
 @Setter
-public class SdpMock implements SuggestDataProvider {
+class SdpMock implements SuggestDataProvider {
 
 	@NonNull
 	private final String      indexName;
