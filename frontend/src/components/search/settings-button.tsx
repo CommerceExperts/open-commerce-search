@@ -5,7 +5,7 @@ export function SettingsButton(props: React.ComponentProps<"button">) {
   return (
     <Button variant="default" {...props}>
       <IconSettings />
-      <span>Settings</span>
+      <span className="hidden sm:block">Settings</span>
     </Button>
   );
 }

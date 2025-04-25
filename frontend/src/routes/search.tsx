@@ -18,7 +18,7 @@ function App() {
       <SiteHeader>
         <div className="flex justify-between items-center w-full">
           <h1 className="text-base font-medium">Search</h1>
-          <SearchInput className="lg:fixed lg:left-1/2 lg:-translate-x-1/2" />
+          <SearchInput className="hidden sm:block xl:fixed xl:left-1/2 xl:-translate-x-1/2 w-[160px] md:w-[250px] xl:w-[350px]" />
           <div className="flex gap-2 items-center">
             <TenantSelect />
             <SettingsButton />
@@ -27,7 +27,8 @@ function App() {
         </div>
       </SiteHeader>
       <div className="flex flex-1 flex-col gap-4 p-4">
-        <div className="flex items-center justify-between">
+        <SearchInput className="mx-auto block sm:hidden w-[300px]" />
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <h3>
             <span className="font-bold">All results</span> (1)
           </h3>

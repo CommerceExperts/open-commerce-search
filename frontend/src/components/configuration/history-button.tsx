@@ -1,11 +1,11 @@
-import { IconDeviceFloppy } from "@tabler/icons-react";
+import { IconHistory } from "@tabler/icons-react";
 import { Button } from "../ui/button";
 
 export function HistoryButton(props: React.ComponentProps<"button">) {
   return (
-    <Button disabled={true} className="w-min" {...props}>
-      <IconDeviceFloppy />
-      <span className="hidden lg:inline">Save changes</span>
+    <Button variant="secondary" className="w-min" {...props}>
+      <IconHistory />
+      <span className="hidden lg:inline">History</span>
     </Button>
   );
 }

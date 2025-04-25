@@ -6,7 +6,10 @@ export function SearchInput(props: React.ComponentProps<"div">) {
   return (
     <div
       {...props}
-      className={cn(props.className, "relative w-[200px] xl:w-[350px]")}
+      className={cn(
+        props.className,
+        "relative"
+      )}
     >
       <div className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground">
         <IconSearch className="h-4 w-4" />

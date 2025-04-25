@@ -29,7 +29,7 @@ export function WelcomeMessageCard(props: React.ComponentProps<"div">) {
     <Card {...props}>
       <CardHeader>
         <CardTitle className="text-2xl">
-          <span className="font-medium">Welcome,</span> Nelson F.
+          <span className="font-medium">Welcome,</span> Max Mustermann.
         </CardTitle>
         <CardDescription>
           The Open Commerce Search Stack (OCSS) is a small abstraction layer on
@@ -59,7 +59,7 @@ export function IndexListCard(props: React.ComponentProps<"div">) {
       <CardHeader>
         <CardTitle className="text-xl">Indexes</CardTitle>
       </CardHeader>
-      <ScrollArea className="h-[350px] px-6">
+      <ScrollArea className="h-[500px] xl:h-[350px] px-6">
         <Accordion type="single" collapsible>
           {[...Array(100).keys()]
             .map((i) => i.toString())
