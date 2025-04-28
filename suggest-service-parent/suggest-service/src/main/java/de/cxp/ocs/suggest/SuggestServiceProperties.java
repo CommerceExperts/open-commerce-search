@@ -6,18 +6,23 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.LinkedHashMap;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigParseOptions;
+import com.typesafe.config.ConfigSyntax;
+import com.typesafe.config.impl.Parseable;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig.SortStrategy;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider;
 import lombok.NonNull;
+import scala.sys.Prop;
 
 /**
  * <p>
@@ -33,36 +38,36 @@ import lombok.NonNull;
  */
 public class SuggestServiceProperties implements SuggestConfigProvider {
 
-	private final Properties				properties;
-	private final Function<String, String>	getEnvAccess;
+	private final Function<String, String> getEnvAccess;
+	private final Config                   config;
 
 	private static final String SUGGEST_PROPERTY_PREFIX = "suggest.";
 
 	/**
 	 * Expects integer value
-	 * 
-	 * @see {@link SuggestConfig::setMaxSharpenedQueries}
+	 *
+	 * @see SuggestConfig::setMaxSharpenedQueries
 	 */
 	private static final String PROPERTY_MAX_SHARPENED_QUERIES = "max-sharpened-queries";
 
 	/**
 	 * Expects boolean value
 	 * 
-	 * @see {@link SuggestConfig::setUseDataSourceMerger}
+	 * @see SuggestConfig::setUseDataSourceMerger
 	 */
 	private final static String PROPERTY_DATA_SOURCE_MERGER = "data-source-merger";
 
 	/**
 	 * Expects boolean value
 	 * 
-	 * @see {@link SuggestConfig::setAlwaysDoFuzzy}
+	 * @see SuggestConfig::setAlwaysDoFuzzy
 	 */
 	private static final String PROPERTY_ALWAYS_DO_FUZZY = "always-do-fuzzy";
 
 	/**
 	 * Expects boolean value. Default: true
 	 * 
-	 * @see {@link SuggestConfig::setIndexConcurrently}
+	 * @see SuggestConfig::setIndexConcurrently
 	 */
 	private static final String PROPERTY_CONCURRENT_INDEXATION = "concurrent-indexation";
 
@@ -73,22 +78,22 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 	 * <li>PrimaryAndSecondaryByWeight</li>
 	 * </ul>
 	 * 
-	 * @see {@link SuggestConfig.SortStrategy}
-	 * @see {@link SuggestConfig::setSortStrategy}
+	 * @see SuggestConfig.SortStrategy
+	 * @see SuggestConfig::setSortStrategy
 	 */
 	private static final String PROPERTY_SORT_STRATEGY = "sort-strategy";
 
 	/**
 	 * Expects integer value
 	 *
-	 * @see {@link SuggestConfig::setPrefetchLimitFactor}
+	 * @see SuggestConfig::setPrefetchLimitFactor
 	 */
 	private final static String PROPERTY_GROUP_PREFETCH_LIMIT_FACTOR = "group.prefetch-limit-factor";
 
 	/**
 	 * Expects string value
 	 * 
-	 * @see {@link SuggestConfig::setGroupKey}
+	 * @see SuggestConfig::setGroupKey
 	 */
 	private final static String PROPERTY_GROUP_KEY = "group.key";
 
@@ -102,8 +107,8 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 	 * in case both configurations exist.
 	 * </p>
 	 * 
-	 * @see {@link SuggestConfig::setUseRelativeShareLimit}
-	 * @see {@link SuggestConfig::addGroupConfig}
+	 * @see SuggestConfig::setUseRelativeShareLimit
+	 * @see SuggestConfig::addGroupConfig
 	 */
 	private final static String PROPERTY_GROUP_SHARE_CONF = "group.share-conf";
 
@@ -117,48 +122,64 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 	 * configured as well.
 	 * </p>
 	 * 
-	 * @see {@link SuggestConfig::addGroupConfig}
+	 * @see SuggestConfig::addGroupConfig
 	 */
 	private final static String PROPERTY_GROUP_CUTOFF_CONF = "group.cutoff-conf";
 
 	/**
 	 * If 'suggest.group.key' is defined, this property expects a comma separated list of groups related to it.
 	 * 
-	 * @see {@link SuggestConfig::setGroupDeduplicationOrder}
+	 * @see SuggestConfig::setGroupDeduplicationOrder
 	 */
 	private static final String PROPERTY_GROUP_DEDUPLICATION_ORDER = "group.deduplication-order";
 
 	/**
 	 * Expects language tag as string
 	 * 
-	 * @see {@link Locale::forLanguageTag}
+	 * @see Locale::forLanguageTag
 	 */
 	private static final String PROPERTY_LOCALE = "locale";
 
 	public SuggestServiceProperties() {
-		this(System.getProperties());
+		this(ConfigFactory.load("suggest"));
 	}
 
+	public SuggestServiceProperties(Config config) {
+		this(config, System::getenv);
+	}
+
+	// only for testing
+	SuggestServiceProperties(Config config, Function<String, String> getEnvAccess) {
+		this.config = config;
+		this.getEnvAccess = getEnvAccess;
+	}
+
+	/**
+	 * @deprecated use constructor with {@link Config} arg instead.
+	 * @param properties to load
+	 */
+	@Deprecated
 	public SuggestServiceProperties(Properties properties) {
 		this(properties, System::getenv);
 	}
 
-	// only for testing
-	SuggestServiceProperties(Properties properties, Function<String, String> getEnvAccess) {
-		this.properties = properties;
-		this.getEnvAccess = getEnvAccess;
+	public SuggestServiceProperties(Properties properties, Function<String, String> getEnvAccess) {
+		this(Parseable.newProperties(properties, ConfigParseOptions.defaults().setAllowMissing(false).setSyntax(ConfigSyntax.PROPERTIES)).parse().toConfig(), getEnvAccess);
 	}
 
-	public SuggestServiceProperties(@NonNull
-	InputStream stream) {
-		getEnvAccess = System::getenv;
-		properties = new Properties(System.getProperties());
+	public SuggestServiceProperties(@NonNull InputStream stream) {
+		this(loadPropertiesFromStream(stream), System::getenv);
+	}
+
+	private static Properties loadPropertiesFromStream(InputStream stream) {
+		Properties p = new Properties(System.getProperties());
 		try {
-			properties.load(stream);
+			p.load(stream);
 		}
 		catch (IOException e) {
 			throw new UncheckedIOException("Failed to load custom suggest properties", e);
 		}
+		return p;
 	}
 
 	public SuggestConfig getDefaultSuggestConfig() {
@@ -179,6 +200,7 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 
 		getPropertyValue(PROPERTY_GROUP_SHARE_CONF, customPropertyInfix)
 				.map(rawConf -> toLinkedHashMap(rawConf, Double::parseDouble))
+				.filter(map -> !map.isEmpty())
 				.ifPresent(
 						groupConfMap -> {
 							baseConfig.setUseRelativeShareLimit(true);
@@ -248,6 +270,15 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 		return safeIndexName.length() == 0 ? Optional.empty() : Optional.of(safeIndexName.toString());
 	}
 
+	public void foreachDataproviderConfig(BiConsumer<String, Map<String, Object>> configConsumer) {
+		List<? extends Config> dpConfigList = config.getConfigList(SUGGEST_PROPERTY_PREFIX + "dataprovider");
+		for(Config dpConfig : dpConfigList) {
+			String className = dpConfig.getString("type");
+			Map<String, Object> configMap = dpConfig.getConfig("config").root().unwrapped();
+			configConsumer.accept(className, configMap);
+		}
+	}
+
 	/**
 	 * Expects env var 'SUGGEST_SERVER_PORT' set to a valid port number.
 	 * Defaults to 8081.
@@ -298,7 +329,7 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 	 */
 	public String[] getPreloadIndexes() {
 		return getPropertyValue("preload-indexes")
-				.map(s -> s.split(","))
+				.map(s -> StringUtils.split(s, ","))
 				.orElse(new String[0]);
 	}
 
@@ -387,16 +418,20 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 	}
 
 	private Optional<String> getFullPropertyValue(String fullClassifiedPropertyName) {
-		String value = properties.getProperty(fullClassifiedPropertyName);
+		String value = getPropertyOrNull(fullClassifiedPropertyName);
 		if (value == null) {
 			// legacy support where coherent property names where split by dot
 			// but now are separated by dash
-			value = properties.getProperty(fullClassifiedPropertyName.replace('-', '.'));
+			value = getPropertyOrNull(fullClassifiedPropertyName.replace('-', '.'));
 		}
 		if (value == null) {
 			value = getEnvAccess.apply(StringUtils.replaceChars(fullClassifiedPropertyName, ".-", "__").toUpperCase(Locale.ROOT));
 		}
 		return Optional.ofNullable(value);
+	}
+
+	private String getPropertyOrNull(String fullClassifiedPropertyName) {
+		return config.hasPath(fullClassifiedPropertyName) ? config.getString(fullClassifiedPropertyName) : null;
 	}
 
 }

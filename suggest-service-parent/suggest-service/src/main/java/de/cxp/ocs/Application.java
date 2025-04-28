@@ -29,7 +29,7 @@ public class Application {
 
 	public static void main(String[] args) {
 		log.info("starting suggest-service");
-		SuggestServiceProperties properties = loadProperties();
+		SuggestServiceProperties properties = new SuggestServiceProperties();
 		final PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
 		final QuerySuggestManager querySuggestManager = getQuerySuggestManager(properties, meterRegistry);
 		final SuggestService suggestService = new SuggestServiceImpl(querySuggestManager, properties);
@@ -87,11 +87,6 @@ public class Application {
 		On.get(mgmPathPrefix + "/info").json(new InfoReqHandler("git.properties"));
 	}
 
-	private static SuggestServiceProperties loadProperties() {
-		InputStream suggestPropertiesStream = Application.class.getClassLoader().getResourceAsStream("suggest.properties");
-		return suggestPropertiesStream == null ? new SuggestServiceProperties() : new SuggestServiceProperties(suggestPropertiesStream);
-	}
-
 	public static QuerySuggestManager getQuerySuggestManager(SuggestServiceProperties props, MeterRegistry meterRegistry) {
 		QuerySuggestManagerBuilder querySuggestManagerBuilder = QuerySuggestManager.builder()
 				.indexFolder(props.getIndexFolder())
@@ -99,6 +94,7 @@ public class Application {
 				.addMetricsRegistryAdapter(MeterRegistryAdapter.of(meterRegistry))
 				.preloadIndexes(props.getPreloadIndexes())
 				.withDefaultSuggestConfig(props.getDefaultSuggestConfig());
+		props.foreachDataproviderConfig(querySuggestManagerBuilder::addDataProviderConfig);
 
 		return querySuggestManagerBuilder.build();
 	}
