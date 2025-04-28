@@ -16,7 +16,8 @@
 	<description>intermediate parent project that splits the Suggest Service into several modules</description>
 
 	<properties>
-		<lucene.version>10.2.0</lucene.version>
+		<!-- don't upgrade unless compatible with used elasticsearch-rest-high-level-client -->
+		<lucene.version>8.11.3</lucene.version>
 		<micrometer.version>1.14.4</micrometer.version>
 	</properties>
 
@@ -37,7 +38,7 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-suggest-data-provider</artifactId>
-				<version>0.22.2</version>
+				<version>0.22.3</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
@@ -52,7 +53,7 @@
 			</dependency>
 			<dependency>
 				<groupId>org.apache.lucene</groupId>
-				<artifactId>lucene-analysis-common</artifactId>
+				<artifactId>lucene-analyzers-common</artifactId>
 				<version>${lucene.version}</version>
 			</dependency>
 			<dependency>
