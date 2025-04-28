@@ -81,7 +81,7 @@ public class SettingsProxy {
 		return connectionConf;
 	}
 	public Optional<Boolean> isIndexEnabled(String indexName) {
-		return Optional.ofNullable(get("suggest.index." + indexName)).map(Boolean::parseBoolean);
+		return Optional.ofNullable(get("suggest.index." + indexName + ".enable")).map(Boolean::parseBoolean);
 	}
 
 	RestHighLevelClient restHighLevelClient;

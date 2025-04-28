@@ -362,7 +362,7 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 	/**
 	 * <p>
 	 * Expects the env var 'SUGGESTER_MAX_IDLE_MINUTES' or the system property
-	 * 'suggester.max.idle.minutes' to be set to an integer value.
+	 * 'suggester.max-idle-minutes' to be set to an integer value.
 	 * Defaults to 30.
 	 * </p>
 	 * <p>
