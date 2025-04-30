@@ -137,7 +137,9 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 * @param stopWords
 	 * 		optional set of stopwords. may be null
 	 * @param modTime
-	 * 		value that only must be set, if the indexFolder already contains the indexes. This modTime relates to the data that is already in the indexFolder.
+	 * 		Value that only MUST be set, if the indexFolder already contains the indexed data.
+	 * 		It MUST NOT be set, if the indexFolder is empty and does not contain data.
+	 * 		This modTime relates to the data that is already in the indexFolder.
 	 */
 	public LuceneQuerySuggester(Path indexFolder, SuggestConfig suggestConfig, ModifiedTermsService modifiedTermsService, CharArraySet stopWords, Long modTime) {
 		this.modifiedTermsService = modifiedTermsService;
