@@ -13,7 +13,6 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import de.cxp.ocs.smartsuggest.limiter.Limiter;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
@@ -26,12 +25,11 @@ public class CompoundQuerySuggesterTest {
 
 	private CompoundQuerySuggester underTest;
 
-	private static Limiter					limiter			= (list, limit) -> list;
-	private static SuggestConfigProvider	configProvider	= new DefaultSuggestConfigProvider();
+	private static final SuggestConfigProvider	configProvider	= new DefaultSuggestConfigProvider();
 
 	@Test
 	public void testWithoutDataProviders() throws IOException {
-		underTest = new CompoundQuerySuggester("", emptyList(), configProvider, new FakeSuggesterFactory(), limiter);
+		underTest = new CompoundQuerySuggester("", emptyList(), configProvider, new FakeSuggesterFactory());
 		assertTrue(underTest.suggest("a").isEmpty());
 	}
 
@@ -44,8 +42,8 @@ public class CompoundQuerySuggesterTest {
 				new TestDataProvider().putData("index-a",
 						getSuggestData("type2",
 								new SuggestRecord("fnord", "", emptyMap(), emptySet(), 200))));
-		underTest = new CompoundQuerySuggester("index-a", dataProviders, configProvider, new FakeSuggesterFactory(), limiter);
-		assertTrue(underTest.suggest("f").size() == 2, () -> "expect both terms as result, only got " + underTest.suggest("f"));
+		underTest = new CompoundQuerySuggester("index-a", dataProviders, configProvider, new FakeSuggesterFactory());
+		assertEquals(2, underTest.suggest("f").size(), () -> "expect both terms as result, only got " + underTest.suggest("f"));
 	}
 
 	@Test
@@ -57,8 +55,8 @@ public class CompoundQuerySuggesterTest {
 				new TestDataProvider().putData("index-a",
 						getSuggestData("type2",
 								new SuggestRecord("fnord", "", emptyMap(), singleton("y"), 100))));
-		underTest = new CompoundQuerySuggester("index-a", dataProviders, configProvider, new FakeSuggesterFactory(), limiter);
-		assertEquals("fnord", underTest.suggest("f", 10, singleton("y")).get(0).getLabel());
+		underTest = new CompoundQuerySuggester("index-a", dataProviders, configProvider, new FakeSuggesterFactory());
+		assertEquals("fnord", underTest.suggest("f", 10, singleton("y")).getFirst().getLabel());
 	}
 
 	private SuggestData getSuggestData(String type, SuggestRecord... records) {

@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -96,7 +95,7 @@ public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySugge
 		Iterable<SuggestRecord> suggestRecords = suggestData.getSuggestRecords();
 		if (suggestRecords instanceof List<SuggestRecord> suggestRecordList) {
 			try {
-				Collections.sort(suggestRecordList, Comparator.comparingDouble(SuggestRecord::getWeight).reversed());
+				suggestRecordList.sort(Comparator.comparingDouble(SuggestRecord::getWeight).reversed());
 			} catch (UnsupportedOperationException uoe) {
 				log.warn("provided suggest data records (of {}) can't be sorted, which is generally recommended but not required.",
 						StreamSupport.stream(tags.spliterator(), false).map(Tag::toString).collect(Collectors.joining(", ")));
@@ -118,8 +117,6 @@ public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySugge
 				.build();
 		try {
 			FileUtils.persistSerializable(indexFolder.resolve(FILENAME_SUGGEST_DATA), nonIndexedData);
-			// TODO: check if suggest can be skipped as it can't be serialized without changing its properties
-			//if (config != null) FileUtils.persistSerializable(indexFolder.resolve(FILENAME_SUGGEST_CONFIG), config);
 		}
 		catch (IOException ioe) {
 			throw new UncheckedIOException(ioe);

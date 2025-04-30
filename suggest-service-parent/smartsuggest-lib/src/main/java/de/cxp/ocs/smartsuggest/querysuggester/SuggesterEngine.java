@@ -3,13 +3,8 @@ package de.cxp.ocs.smartsuggest.querysuggester;
 public enum SuggesterEngine {
 
 	/**
-	 * Implementation that uses https://lucene.apache.org/
+	 * Implementation that uses <a href="https://lucene.apache.org/">Apache Lucene</a>
 	 */
 	LUCENE,
-
-	/**
-	 * Implementation that uses https://github.com/nikcomestotalk/autosuggest
-	 */
-	DHIMAN;
 
 }

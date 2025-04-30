@@ -1,17 +1,14 @@
 package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
+import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
+import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
+import org.apache.commons.lang3.SerializationUtils;
+import org.apache.lucene.search.suggest.InputIterator;
+import org.apache.lucene.util.BytesRef;
+
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-
-import org.apache.commons.lang3.SerializationUtils;
-import org.apache.lucene.search.suggest.InputIterator;
-import org.apache.lucene.search.suggest.Lookup;
-import org.apache.lucene.search.suggest.Lookup.LookupResult;
-import org.apache.lucene.util.BytesRef;
-
-import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
-import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 
 abstract class SuggestionIterator implements InputIterator {
 

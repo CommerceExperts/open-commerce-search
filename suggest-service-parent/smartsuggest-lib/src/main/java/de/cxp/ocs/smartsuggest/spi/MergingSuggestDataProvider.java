@@ -73,8 +73,8 @@ public class MergingSuggestDataProvider implements SuggestDataProvider {
 			}
 			else if (loadedData.getLocale() != null && !locale.equals(loadedData.getLocale())) {
 				log.warn("the different suggestDataProviders provide different locale setting for index {}."
-						+ " Locale '{}' from will be kept and '{}' from {}-data will be dropped",
-						indexName, locale, loadedData.getType());
+						+ " Locale '{}' from first data provider will be kept and '{}' from {}-data will be dropped",
+						indexName, locale, loadedData.getLocale(), loadedData.getType());
 			}
 
 			if (loadedData.getModificationTime() > lastModificationTime) {

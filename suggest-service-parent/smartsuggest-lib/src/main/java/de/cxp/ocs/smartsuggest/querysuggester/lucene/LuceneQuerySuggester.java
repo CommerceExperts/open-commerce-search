@@ -65,12 +65,6 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	@Deprecated
 	public static final String PAYLOAD_LABEL_KEY      = "meta.label";
 
-	/**
-	 * Use {@link CommonPayloadFields#PAYLOAD_GROUPMATCH_KEY} instead.
-	 */
-	@Deprecated
-	public static final String PAYLOAD_GROUPMATCH_KEY = "meta.matchGroupName";
-
 	public static final String BEST_MATCHES_GROUP_NAME            = "best matches";
 	public static final String TYPO_MATCHES_GROUP_NAME            = "secondary matches";
 	public static final String FUZZY_MATCHES_ONE_EDIT_GROUP_NAME  = "fuzzy matches with 1 edit";
@@ -353,10 +347,10 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			}
 
 			perfResult.stop();
-			if (perfResult.getTotalTime().getTime() > 200L) {
+			if (perfResult.getTotalTime().getDuration().toMillis() > 200L) {
 				perfLog.warn(perfResult.toString());
 			}
-			else if (perfResult.getTotalTime().getTime() > 100L) {
+			else if (perfResult.getTotalTime().getDuration().toMillis() > 100L) {
 				perfLog.info(perfResult.toString());
 			}
 			else {
@@ -434,11 +428,10 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		if (modifiedSuggestions != null && !modifiedSuggestions.isEmpty()) {
 			long count = modifiedSuggestions.stream()
 					.filter(uniqueQueries::add)
-					// TODO: figure out, which are better matching before
-					// truncating
+					// TODO: figure out, which are better matching before truncating
 					.limit(maxResults)
 					.map(l -> withPayloadEntry(new Suggestion(l), CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName))
-					.peek(results::add)
+					.filter(results::add)
 					.count();
 
 			log.debug("Collected '{}' {} for term '{}'", count, groupName, term);

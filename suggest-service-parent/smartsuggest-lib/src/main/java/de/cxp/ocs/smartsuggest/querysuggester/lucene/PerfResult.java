@@ -1,14 +1,13 @@
 package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.lang3.time.StopWatch;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 import lombok.ToString;
+import org.apache.commons.lang3.time.StopWatch;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 public class PerfResult {
@@ -38,8 +37,8 @@ public class PerfResult {
 	}
 
 	public void addStep(String step, int results) {
-		// get split time since last split
-		long splitTime = totalTime.getTime();
+		// get time since last step
+		long splitTime = totalTime.getDuration().toMillis();
 		steps.add(new StepTime(step, splitTime - _lastSplit, results));
 		_lastSplit = splitTime;
 	}

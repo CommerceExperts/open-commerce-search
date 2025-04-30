@@ -148,9 +148,8 @@ public class QuerySuggestManager implements AutoCloseable {
 		 */
 		@Deprecated
 		public QuerySuggestManagerBuilder engine(SuggesterEngine engine) {
-			if (SuggesterEngine.DHIMAN.equals(engine)) {
-				throw new UnsupportedOperationException("DHIMAN suggester is not implemented anymore");
-			}
+			// only one engine supported at the moment, so no special handling here
+			assert engine == SuggesterEngine.LUCENE;
 			return this;
 		}
 
@@ -508,7 +507,7 @@ public class QuerySuggestManager implements AutoCloseable {
 						.forEach(m -> Objects.requireNonNull(metricsRegistry.getMetricsRegistry().remove(m)).close());
 			}
 		}
-		// remove last (?) reference and suggest garbage collection
+		// InstrumentationTest::testInstrumentationOfReinitializedSuggester does only work with this way to release object
 		removedSuggester = null;
 		System.gc();
 	}

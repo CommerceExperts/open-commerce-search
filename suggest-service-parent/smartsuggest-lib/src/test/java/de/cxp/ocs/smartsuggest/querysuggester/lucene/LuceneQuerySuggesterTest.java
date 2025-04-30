@@ -1,36 +1,28 @@
 package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
-import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.BEST_MATCHES_GROUP_NAME;
-import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.FUZZY_MATCHES_ONE_EDIT_GROUP_NAME;
-import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.FUZZY_MATCHES_TWO_EDITS_GROUP_NAME;
-import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.PAYLOAD_GROUPMATCH_KEY;
-import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.RELAXED_GROUP_NAME;
-import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.SHINGLE_MATCHES_GROUP_NAME;
-import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.TYPO_MATCHES_GROUP_NAME;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static de.cxp.ocs.smartsuggest.util.TestSetupUtil.*;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.*;
-
 import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.io.TempDir;
-
 import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig.SortStrategy;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.TempDir;
 
-@SuppressWarnings("deprecation")
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.*;
+
+import static de.cxp.ocs.smartsuggest.querysuggester.lucene.LuceneQuerySuggester.*;
+import static de.cxp.ocs.smartsuggest.spi.CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY;
+import static de.cxp.ocs.smartsuggest.util.TestSetupUtil.asSuggestRecord;
+import static de.cxp.ocs.smartsuggest.util.TestSetupUtil.getWordSet;
+import static java.util.Arrays.asList;
+import static java.util.Collections.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+
 @Slf4j
 class LuceneQuerySuggesterTest {
 
@@ -89,8 +81,8 @@ class LuceneQuerySuggesterTest {
 		List<Suggestion> results = underTest.suggest("user");
 
 		assertThat(results).hasSize(1);
-		assertGroupName(results.get(0), TYPO_MATCHES_GROUP_NAME);
-		assertLabel(results.get(0), masterQuery1);
+		assertGroupName(results.getFirst(), TYPO_MATCHES_GROUP_NAME);
+		assertLabel(results.getFirst(), masterQuery1);
 	}
 
 	@DisplayName("Search for 'u' should return the best matches for all suggestions, sorted by the weight")
@@ -129,7 +121,7 @@ class LuceneQuerySuggesterTest {
 
 		List<Suggestion> results = underTest.suggest("guci");
 		assertThat(results).hasSize(1);
-		assertSuggestion(results.get(0), Gucci, FUZZY_MATCHES_ONE_EDIT_GROUP_NAME);
+		assertSuggestion(results.getFirst(), Gucci, FUZZY_MATCHES_ONE_EDIT_GROUP_NAME);
 
 	}
 
@@ -144,7 +136,7 @@ class LuceneQuerySuggesterTest {
 
 		List<Suggestion> results = underTest.suggest("veshin");
 		assertThat(results).hasSize(1);
-		assertSuggestion(results.get(0), Washington, FUZZY_MATCHES_TWO_EDITS_GROUP_NAME);
+		assertSuggestion(results.getFirst(), Washington, FUZZY_MATCHES_TWO_EDITS_GROUP_NAME);
 	}
 
 	@DisplayName("Search for 'shirt' should return all unique best matches with 'shirt'")
@@ -233,7 +225,7 @@ class LuceneQuerySuggesterTest {
 		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		List<Suggestion> bookResults = underTest.suggest("name", 10, setOf("book"));
-		assertSuggestion(bookResults.get(0), Book1, TYPO_MATCHES_GROUP_NAME);
+		assertSuggestion(bookResults.getFirst(), Book1, TYPO_MATCHES_GROUP_NAME);
 
 		List<Suggestion> movieResults = underTest.suggest("name", 10, setOf("movie"));
 		assertSuggestion(movieResults.get(0), Movie1, TYPO_MATCHES_GROUP_NAME);
@@ -320,7 +312,7 @@ class LuceneQuerySuggesterTest {
 		final String sportSchuheMaster = "sport schuhe";
 		final String schuheForChindrenMaster = "schuhe für kinder";
 		final String damenSommerSchuheMaster = "damen sommerschuhe";
-		final String weißeSchuheMaster = "weiße schuhe";
+		final String weisseSchuheMaster = "weiße schuhe";
 		List<SuggestRecord> toIndex = new ArrayList<>(asList(
 				asSuggestRecord("sport schuhe", sportSchuheMaster, 226000),
 				asSuggestRecord("sportschue", sportSchuheMaster, 226000),
@@ -352,22 +344,22 @@ class LuceneQuerySuggesterTest {
 				asSuggestRecord("damen somerschue", damenSommerSchuheMaster, 3400),
 				asSuggestRecord("damen sommer shuhe", damenSommerSchuheMaster, 3400),
 
-				asSuggestRecord("weiße schuhe", weißeSchuheMaster, 6600),
-				asSuggestRecord("weise schuhe", weißeSchuheMaster, 6600),
-				asSuggestRecord("weise schue", weißeSchuheMaster, 6600)));
+				asSuggestRecord("weiße schuhe", weisseSchuheMaster, 6600),
+				asSuggestRecord("weise schuhe", weisseSchuheMaster, 6600),
+				asSuggestRecord("weise schue", weisseSchuheMaster, 6600)));
 
 		underTest.index(toIndex, System.currentTimeMillis()).join();
 
 		List<Suggestion> results = underTest.suggest("schuhe");
 
 		assertThat(results).hasSize(3);
-		final Suggestion result = results.get(0);
+		final Suggestion result = results.getFirst();
 		assertGroupName(result, BEST_MATCHES_GROUP_NAME);
 		// not expecting "damenschuhe" since there is not a single variant that
 		// starts with "schuhe"
 		assertThat(results).hasSize(3);
 		assertLabel(results.get(0), sportSchuheMaster);
-		assertLabel(results.get(1), weißeSchuheMaster);
+		assertLabel(results.get(1), weisseSchuheMaster);
 		assertLabel(results.get(2), schuheForChindrenMaster);
 	}
 
@@ -375,30 +367,30 @@ class LuceneQuerySuggesterTest {
 	@Test
 	void suggest4() {
 
-		final String weißeSommerhoseMaster = "weiße sommerhose";
-		final String weißeSchuheMaster = "weiße schuhe";
-		final String weißeSneakerMaster = "weiße sneaker";
-		final String weißeSockenMaster = "weiße socken";
-		final String weißeSpitzenbluseMaster = "weiße spitzenbluse";
-		final String weißeStoffhoseMaster = "weiße stoffhose";
+		final String weisseSommerhoseMaster = "weiße sommerhose";
+		final String weisseSchuheMaster = "weiße schuhe";
+		final String weisseSneakerMaster = "weiße sneaker";
+		final String weisseSockenMaster = "weiße socken";
+		final String weisseSpitzenbluseMaster = "weiße spitzenbluse";
+		final String weisseStoffhoseMaster = "weiße stoffhose";
 		final String weisseStrickjackeMaster = "weisse strickjacke";
 		final String weisseShortsMaster = "weisse shorts";
-		final String weißesSpitzenkleidMaster = "weißes spitzenkleid";
-		final String weißeTshirtsDamenMaster = "weiße tshirts damen";
-		final String weißesSommerkleidMaster = "weißes sommerkleid";
+		final String weissesSpitzenkleidMaster = "weißes spitzenkleid";
+		final String weisseTshirtsDamenMaster = "weiße tshirts damen";
+		final String weissesSommerkleidMaster = "weißes sommerkleid";
 		final String weissesHemdMaster = "weisses hemd";
-		final String tShirtWeißMaster = "t shirt weiß";
+		final String tShirtWeissMaster = "t shirt weiß";
 		
-		List<SuggestRecord> toIndex = new ArrayList<SuggestRecord>(asList(
-				asSuggestRecord(weißeSommerhoseMaster, setOf("weisse sommerhose", "weisse sommerhosse"), 3400),
-				asSuggestRecord(weißeSchuheMaster, setOf("weise schue", "weiße schuhe", "weise schuhe"), 6600),
-				asSuggestRecord(weißeSneakerMaster, setOf("weise sneaker", "weise sneakers", "weisse sneaker", "weiße sneakers"), 0),
-				asSuggestRecord(weißeSockenMaster,
+		List<SuggestRecord> toIndex = new ArrayList<>(asList(
+				asSuggestRecord(weisseSommerhoseMaster, setOf("weisse sommerhose", "weisse sommerhosse"), 3400),
+				asSuggestRecord(weisseSchuheMaster, setOf("weise schue", "weiße schuhe", "weise schuhe"), 6600),
+				asSuggestRecord(weisseSneakerMaster, setOf("weise sneaker", "weise sneakers", "weisse sneaker", "weiße sneakers"), 0),
+				asSuggestRecord(weisseSockenMaster,
 						setOf("weise socken", "weisse socken.", "weissem socken", "weiße socke", "weißer socken", "weißes socken"),
 						6600),
-				asSuggestRecord(weißeSpitzenbluseMaster,
+				asSuggestRecord(weisseSpitzenbluseMaster,
 						setOf("weise spitzenbluse", "weisse spitzenbluse", "weiße spitzen blusen", "weiße spitzenblus"), 0),
-				asSuggestRecord(weißeStoffhoseMaster, setOf("weiße stoffhosen", "weisse stoffhose", "weisse stoffhosen", "weiße stoff hosen"),
+				asSuggestRecord(weisseStoffhoseMaster, setOf("weiße stoffhosen", "weisse stoffhose", "weisse stoffhosen", "weiße stoff hosen"),
 						1800),
 				asSuggestRecord(weisseStrickjackeMaster,
 						setOf("weisse strickjacke", "weise strickjacke", "weiße strickjacken", "weisestrickjacke", "weisse strick jacke",
@@ -408,14 +400,14 @@ class LuceneQuerySuggesterTest {
 						setOf("weisse shorts", "weiße short", "weisse short", "weiße short,", "weißer shortst", "weise short,", "weiße shorts.",
 								"weiße tshorts"),
 						19408),
-				asSuggestRecord(weißesSpitzenkleidMaster,
+				asSuggestRecord(weissesSpitzenkleidMaster,
 						setOf("weißes spitzen kleid", "weiss es spitzenkleid", "weisse spitzenkleid", "weisses spitzenkleid", "weißes  spitzenkleid"),
 						1800),
-				asSuggestRecord(weißeTshirtsDamenMaster,
+				asSuggestRecord(weisseTshirtsDamenMaster,
 						setOf("weiße t-shirts damen", "weisse shirts damen", "weiße t shirts damen", "weise shirts damen", "weise t shirts damen",
 								"weisse t shirts damen", "weiße shirts damen", "weiße tshirts  damen"),
 						6600),
-				asSuggestRecord(weißesSommerkleidMaster,
+				asSuggestRecord(weissesSommerkleidMaster,
 						setOf("weißes sommerkleid", "weiße sommerkleider", "weise sommer kleid", "weises sommerkleid", "weiße sommer kleider",
 								"weißes sommer kleid", "weisse sommerkleid", "weisses  sommerkleid", "weißes  sommerkleid", "weißes sommerkleider"),
 						14599),
@@ -427,10 +419,10 @@ class LuceneQuerySuggesterTest {
 								"weiss  hemd", "weisse hemde", "weisse shemd", "weisses  hemd", "weisses <hemd", "weisße hemd", "weiße hemd s",
 								"weiße hemdchen", "weißen hemd", "weißes hemd s", "weißes hemde", "weißhemd"),
 						500418),
-				asSuggestRecord(tShirtWeißMaster, setOf("weiße shirts", "weisse shirt", "weisse shirts"), 851928)
+				asSuggestRecord(tShirtWeissMaster, setOf("weiße shirts", "weisse shirt", "weisse shirts"), 851928)
 		));
 		// sort like the LuceneSuggesterFactory does it
-		Collections.sort((List<SuggestRecord>) toIndex, Comparator.comparingDouble(SuggestRecord::getWeight).reversed());
+		toIndex.sort(Comparator.comparingDouble(SuggestRecord::getWeight).reversed());
 
 		underTest.index(toIndex, System.currentTimeMillis()).join();
 
@@ -447,21 +439,21 @@ class LuceneQuerySuggesterTest {
 		// suggestions with the same score are returned based on the better exact match position:
 		// weißeSocken contains a variant with ss (as searched in the query)
 		// weißeSchuhe does not contain a variant with ss, so it has a worse position although indexed first
-		assertLabel(results.get(2), weißeSockenMaster);
-		assertLabel(results.get(3), weißeSchuheMaster);
+		assertLabel(results.get(2), weisseSockenMaster);
+		assertLabel(results.get(3), weisseSchuheMaster);
 
-		assertLabel(results.get(4), weißeSommerhoseMaster);
-		assertLabel(results.get(5), weißeStoffhoseMaster);
-		assertLabel(results.get(6), weißeSpitzenbluseMaster);
-		assertLabel(results.get(7), weißeSneakerMaster);
+		assertLabel(results.get(4), weisseSommerhoseMaster);
+		assertLabel(results.get(5), weisseStoffhoseMaster);
+		assertLabel(results.get(6), weisseSpitzenbluseMaster);
+		assertLabel(results.get(7), weisseSneakerMaster);
 
 		assertGroupName(results.get(8), LuceneQuerySuggester.TYPO_MATCHES_GROUP_NAME);
 		assertGroupName(results.get(12), LuceneQuerySuggester.TYPO_MATCHES_GROUP_NAME);
-		assertLabel(results.get(8), tShirtWeißMaster);
+		assertLabel(results.get(8), tShirtWeissMaster);
 		assertLabel(results.get(9), weissesHemdMaster);
-		assertLabel(results.get(10), weißesSommerkleidMaster);
-		assertLabel(results.get(11), weißeTshirtsDamenMaster);
-		assertLabel(results.get(12), weißesSpitzenkleidMaster);
+		assertLabel(results.get(10), weissesSommerkleidMaster);
+		assertLabel(results.get(11), weisseTshirtsDamenMaster);
+		assertLabel(results.get(12), weissesSpitzenkleidMaster);
 	}
 
 	@DisplayName("Ignore stopwords (like `früher`) for German locale")
@@ -486,8 +478,8 @@ class LuceneQuerySuggesterTest {
 		// `für` is not a stopword so there are results for it
 		List<Suggestion> results = underTest.suggest("für");
 		assertThat(results).hasSize(1);
-		assertGroupName(results.get(0), BEST_MATCHES_GROUP_NAME);
-		assertLabel(results.get(0), schuheForKinderMaster);
+		assertGroupName(results.getFirst(), BEST_MATCHES_GROUP_NAME);
+		assertLabel(results.getFirst(), schuheForKinderMaster);
 
 		{
 			// `früher` is a stopword so there are no results for it
@@ -544,7 +536,6 @@ class LuceneQuerySuggesterTest {
 				getWordSet(Locale.GERMAN));
 
 		// nothing is indexed
-
 		{
 			suggestConfig.setMaxSharpenedQueries(3);
 			List<Suggestion> results = underTest.suggest("fleece");
@@ -559,7 +550,7 @@ class LuceneQuerySuggesterTest {
 		for (Suggestion result : results) {
 			assertTrue(expectedLabels.remove(result.getLabel()), "label '" + result.getLabel() + "' found, but was not expected");
 		}
-		assertTrue(expectedLabels.isEmpty(), "Some expected labels were not found: " + expectedLabels.toString());
+		assertTrue(expectedLabels.isEmpty(), "Some expected labels were not found: " + expectedLabels);
 	}
 
 	@DisplayName("Search for `fleeceanzug` should return relaxed results")
@@ -573,7 +564,7 @@ class LuceneQuerySuggesterTest {
 
 		List<Suggestion> results = underTest.suggest("fleeceanzug");
 		assertThat(results).hasSize(1);
-		assertSuggestion(results.get(0), "fleece", RELAXED_GROUP_NAME);
+		assertSuggestion(results.getFirst(), "fleece", RELAXED_GROUP_NAME);
 	}
 
 	@DisplayName("Destroyed Suggester returns empty result")
@@ -627,7 +618,7 @@ class LuceneQuerySuggesterTest {
 	}
 
 	private void assertGroupName(Suggestion suggestion, String expectedGroupName) {
-		assertThat(suggestion.getPayload().get(LuceneQuerySuggester.PAYLOAD_GROUPMATCH_KEY)).isEqualTo(expectedGroupName);
+		assertThat(suggestion.getPayload().get(PAYLOAD_GROUPMATCH_KEY)).isEqualTo(expectedGroupName);
 	}
 
 	private void assertSuggestion(Suggestion suggestion, String expectedLabel, String expectedGroupName) {
@@ -637,33 +628,6 @@ class LuceneQuerySuggesterTest {
 
 	private Set<String> setOf(String... entries) {
 		return new HashSet<>(asList(entries));
-	}
-
-	/**
-	 * minimal suggestion that only compares label and groupname
-	 *
-	 */
-	static class AssertSuggestion extends Suggestion {
-
-		AssertSuggestion(String label, String groupName) {
-			super(label);
-			this.setPayload(Collections.singletonMap(PAYLOAD_GROUPMATCH_KEY, groupName));
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			System.out.println("using equals");
-			if (!(obj instanceof Suggestion)) return false;
-			Suggestion other = (Suggestion)obj;
-			return this.getLabel().equals(other.getLabel())
-					&& this.getPayload().get(PAYLOAD_GROUPMATCH_KEY).equals(other.getPayload().get(PAYLOAD_GROUPMATCH_KEY));
-		}
-
-		@Override
-		public int hashCode() {
-			System.out.println("using hashcode");
-			return super.hashCode();
-		}
 	}
 
 }

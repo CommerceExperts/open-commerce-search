@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.SneakyThrows;
 
 @Data
 @Builder(toBuilder = true)
@@ -52,7 +53,7 @@ public class SuggestConfig implements Cloneable, Serializable {
 
 	}
 
-	public static enum SortStrategy {
+	public enum SortStrategy {
 		/**
 		 * Suggestions are ordered by their match-group (sharpened, primary,
 		 * secondary, fuzzy1, fuzzy2, etc). Within each group, matches are
@@ -97,7 +98,7 @@ public class SuggestConfig implements Cloneable, Serializable {
 	 * </p>
 	 * Default: false
 	 * 
-	 * @param useDataSourceMerge
+	 * @param useDataSourceMerge flag if data merging should be enabled or disabled
 	 */
 	public void setUseDataSourceMerger(boolean useDataSourceMerge) {
 		this.useDataSourceMerger = useDataSourceMerge;
@@ -239,7 +240,7 @@ public class SuggestConfig implements Cloneable, Serializable {
 	 * This limit only is considered if there are more sharpened queries than defined by that limit.
 	 * </p>
 	 * 
-	 * @param maxSharpenedQueries
+	 * @param maxSharpenedQueries limit for sharpened queries
 	 */
 	public void setMaxSharpenedQueries(int maxSharpenedQueries) {
 		this.maxSharpenedQueries = maxSharpenedQueries;
@@ -263,15 +264,17 @@ public class SuggestConfig implements Cloneable, Serializable {
 	 * until
 	 * the service is ready for usage and will spare computational power that might be used for others.
 	 * 
-	 * @return
+	 * @return true if concurrent indexation is enabled.
 	 */
 	public boolean isIndexConcurrently() {
 		return isIndexConcurrently;
 	}
 
+	@SneakyThrows
 	@Override
-	public SuggestConfig clone() {
-		return this.toBuilder()
+	public SuggestConfig clone()  {
+		SuggestConfig suggestConfig = (SuggestConfig) super.clone();
+		return suggestConfig.toBuilder()
 				// deep copy of mutable properties
 				.groupConfig(this.groupConfig == null ? null : this.groupConfig.stream().map(orig -> new GroupConfig(orig.groupName, orig.limit)).collect(Collectors.toList()))
 				.groupDeduplicationOrder(this.groupDeduplicationOrder == null ? null : Arrays.copyOf(this.groupDeduplicationOrder, this.groupDeduplicationOrder.length))
