@@ -93,7 +93,12 @@ public class FileUtils {
 
 			TarArchiveEntry entry;
 			while ((entry = tarInputStream.getNextEntry()) != null) {
-				Path entryPath = targetFolder.resolve(entry.getName());
+				Path entryPath = targetFolder.resolve(entry.getName()).normalize();
+				
+				// Validate that the entryPath is within the targetFolder
+				if (!entryPath.startsWith(targetFolder)) {
+					throw new IOException("Invalid entry: " + entry.getName() + " - Entry is outside of the target directory");
+				}
 				
 				if (entry.isDirectory()) {
 					Files.createDirectories(entryPath);
