@@ -414,16 +414,27 @@ public class QuerySuggestManager implements AutoCloseable {
 			catch (Exception e) {
 				log.warn("failed to load a data provider", e);
 			}
-			if (sdp != null) try {
+			if (sdp != null) {
 				Map<String, Object> sdpConfig = dataProviderConfig.get(sdp.getClass().getCanonicalName());
-				// ensure configure is called here, since it may contain required init code (as we only have no args constructor)
-				sdp.configure(sdpConfig != null ? sdpConfig : Collections.emptyMap());
-				dataProviders.add(sdp);
-				log.info("initialized SmartSuggest with {}", sdp.getClass().getCanonicalName());
-			}
-			catch (Exception e) {
-				log.info("ignoring data provider {}, as it cannot be configured due to {}:{}",
-						sdp.getClass().getCanonicalName(), e.getClass(), e.getMessage());
+				sdpConfig = sdpConfig != null ? sdpConfig : Collections.emptyMap();
+
+				// check if data provider is *explicitly* disabled (all are enabled by default)
+				// it can be disabled via the sdpConfig.enable or a system property of <classname>.enable
+				String dpEnabled = Optional.ofNullable(sdpConfig.get("enable")).map(String::valueOf)
+						.orElse(System.getProperty(sdp.getClass().getName()+".enable", "true"));
+				if ("false".equalsIgnoreCase(dpEnabled)) {
+					log.info("ignoring disabled data provider {}", sdp.getClass());
+				}
+				else try {
+					// ensure configure is called here, since it may contain required init code (as we only have no args constructor)
+					sdp.configure(sdpConfig);
+					dataProviders.add(sdp);
+					log.info("initialized SmartSuggest with {}", sdp.getClass().getCanonicalName());
+				}
+				catch (Exception e) {
+					log.info("ignoring data provider {}, as it cannot be configured due to {}:{}",
+							sdp.getClass().getCanonicalName(), e.getClass(), e.getMessage());
+				}
 			}
 		}
 
