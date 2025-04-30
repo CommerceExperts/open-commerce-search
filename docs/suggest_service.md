@@ -78,18 +78,13 @@ For more advanced scenarios the "SuggestDataProvider" interface must be implemen
 
 ## Archive and Restore
 
-To avoid the indexation of the same data across several instances, you can also provide an implementation of the "IndexArchiveProvider": It should be able to upload and download
-files to/from and external storage, like s3 or gcp-storage.
+To prevent the same data from being indexed across multiple instances, you can utilize the "IndexArchiveProvider". This provider should facilitate the uploading and downloading of files to and from external storage solutions, such as S3 or GC-Storage.
 
-Now you can start your suggest services without data providers anymore but only with your IndexArchiverProvider implementation. Additionally, you need a indexer-instance that runs 
-with the same IndexArchiverProvider implementation and all the SuggestDataProvider from where the source data is fetched. If it recognizes new data from the data-providers, it will
-index it and push it to the IndexArchiverProvider. As soon as the other instances will recognize the new IndexArchives, they will pull and use them directly.
+Now you can start your suggest services only with your IndexArchiverProvider implementation, removing or disabling all the SuggestDataProvider implementations. Additionally, you will need an indexer instance that operates with the same IndexArchiverProvider and all SuggestDataProvider instances from which the source data is retrieved. When this indexer detects new data from the data providers, it will index it and push it to the IndexArchiverProvider. The other instances will then recognize the new IndexArchives, pulling and utilizing them directly.
 
-That Indexer-Instance can also run in a Cron-Job like manner, so it won't be stressed by live traffic during indexation.
+Alternatively that Indexer-Instance can also run in a cronjob like manner, minimizing stress from live traffic during indexing. To achieve this, pass the program argument 'only-update-archives' to the server application, which will execute the updates and then shut down.
 
-In case you are using several data sources for a single index, you either need to configure 'suggestConfig.useDataSourceMerger = true' to put all the data into a single index
-or you need to extend the 'CompoundIndexArchiveProvider' in order to support a compound suggester. (The compound suggester is a better choice when your suggest result should
-contain different types of suggestion and you want to guarantee a certain amount of each type.)
+If you are using multiple data sources for a single index, you must either set `suggestConfig.useDataSourceMerger = true` to consolidate all data into a single index or extend the `CompoundIndexArchiveProvider` to support arching the data of a compound suggester. The compound suggester is preferable when your suggestion results need to include various types of suggestions while *ensuring* a balanced representation of each type.
 
 [back to top](#)
 
