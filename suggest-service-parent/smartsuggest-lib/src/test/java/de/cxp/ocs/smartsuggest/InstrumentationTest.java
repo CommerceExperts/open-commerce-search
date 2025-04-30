@@ -22,13 +22,13 @@ public class InstrumentationTest {
 	private QuerySuggestManager					querySuggestManager;
 
 	@Test
-	public void testInstrumentationOfReinitializedSuggester() {
+	public void testInstrumentationOfReinitializedSuggester() throws Exception {
 		SimpleMeterRegistry meterRegistry = new SimpleMeterRegistry();
 
 		querySuggestManager = QuerySuggestManager.builder()
 				.withSuggestDataProvider(serviceMock)
 				.addMetricsRegistryAdapter(MeterRegistryAdapter.of(meterRegistry))
-				.updateRateUnbound(1)
+				.setMinimalUpdateRate()
 				.build();
 
 		serviceMock.setRequestLatencyInMs(0);

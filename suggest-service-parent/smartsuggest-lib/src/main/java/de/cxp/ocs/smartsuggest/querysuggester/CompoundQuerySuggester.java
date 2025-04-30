@@ -10,7 +10,6 @@ import java.util.stream.Stream;
 import org.apache.lucene.util.Accountable;
 import org.apache.lucene.util.RamUsageEstimator;
 
-import de.cxp.ocs.smartsuggest.limiter.Limiter;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
@@ -36,7 +35,7 @@ public class CompoundQuerySuggester implements QuerySuggester, Accountable {
 	}
 
 	// for testing purposes
-	CompoundQuerySuggester(String indexName, List<SuggestDataProvider> dataProviders, SuggestConfigProvider configProvider, SuggesterFactory factory, Limiter limiter)
+	CompoundQuerySuggester(String indexName, List<SuggestDataProvider> dataProviders, SuggestConfigProvider configProvider, SuggesterFactory<?> factory)
 			throws IOException {
 		suggesterList = new ArrayList<>();
 		for (SuggestDataProvider dataProvider : dataProviders) {
@@ -50,11 +49,9 @@ public class CompoundQuerySuggester implements QuerySuggester, Accountable {
 	@Override
 	public List<Suggestion> suggest(String term, int maxResults, Set<String> tags) throws SuggestException {
 		if (suggesterList.isEmpty()) return Collections.emptyList();
-		if (suggesterList.size() == 1) return suggesterList.get(0).suggest(term, maxResults, tags);
+		if (suggesterList.size() == 1) return suggesterList.getFirst().suggest(term, maxResults, tags);
 
-		Stream<QuerySuggester> suggesterStream = suggesterList.stream();
-		if (isMultiThreaded) suggesterStream = suggesterStream.parallel();
-
+		Stream<QuerySuggester> suggesterStream = isMultiThreaded ? suggesterList.stream().parallel() : suggesterList.stream();
 		List<Suggestion> finalResult = new ArrayList<>();
 		suggesterStream
 				.map(s -> s.suggest(term, maxResults, tags))

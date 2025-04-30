@@ -1,14 +1,12 @@
 package de.cxp.ocs.smartsuggest;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
+import lombok.Getter;
 import lombok.Setter;
 
 public class RemoteSuggestDataProviderSimulation implements SuggestDataProvider {
@@ -26,6 +24,10 @@ public class RemoteSuggestDataProviderSimulation implements SuggestDataProvider 
 	private long timeoutMs = 8 * 1000;
 
 	private Random latencyDeviation = new Random();
+
+	@Setter
+	@Getter // overwrite SuggestDataProvider::getName
+	private String name = UUID.randomUUID().toString();
 
 	void updateSuggestions(String indexName, List<SuggestRecord> suggestions) {
 		if (!availability) {

@@ -43,20 +43,22 @@ import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@SuppressWarnings("deprecation")
 public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 
-	private final static String	EMPTY_STRING	= "";
-	private static final String	_NESTED			= "_nested";
-	private static final String	_FILTER			= "_filter";
-	private static final String	_CARDINALITY	= "_cardinality";
-	private static final String	_VALUES			= "_values";
-	private static final String	_IDS			= "_ids";
+	private final static String EMPTY_STRING = "";
+	private static final String _NESTED      = "_nested";
+	private static final String _FILTER      = "_filter";
+	private static final String _CARDINALITY = "_cardinality";
+	private static final String _VALUES      = "_values";
+	private static final String _IDS         = "_ids";
 
-	private final SettingsProxy settings = new SettingsProxy();
+	private SettingsProxy       settings;
+	private RestHighLevelClient client;
 
-	private final RestHighLevelClient client;
-
-	public ElasticsearchSuggestDataProvider() {
+	@Override
+	public void configure(Map<String, Object> config) {
+		settings = new SettingsProxy(config);
 		ConnectionConfiguration connectionConf = settings.getConnectionConfig();
 		log.info("Connecting to Elasticsearch at {}", connectionConf.getHosts());
 		RestClientBuilder restClientBuilder = RestClientBuilderFactory.createRestClientBuilder(connectionConf);
@@ -358,7 +360,7 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 	 * Example: If 3 aggregationBuilders are given (a1, a2, a3) then a2 will be
 	 * a subaggregation of a1, and a3 will be a subaggregation of a2!
 	 * </p>
-	 * 
+	 *
 	 * @param firstAgg
 	 * @param subAggs
 	 * @return

@@ -10,7 +10,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
-import de.cxp.ocs.smartsuggest.util.FakeSuggestDataProvider;
+import de.cxp.ocs.smartsuggest.util.TestDataProvider;
 import de.cxp.ocs.smartsuggest.util.FakeSuggester;
 
 public class MergingSuggestDataProviderTest {
@@ -21,7 +21,7 @@ public class MergingSuggestDataProviderTest {
 	public void withSingleProvider() throws IOException {
 		underTest = new MergingSuggestDataProvider(
 				Arrays.asList(
-						new FakeSuggestDataProvider().putData("index1",
+						new TestDataProvider().putData("index1",
 								getSuggestData("keywords",
 										simpleSuggestRecord("test 1"),
 										simpleSuggestRecord("test 2")))));
@@ -35,11 +35,11 @@ public class MergingSuggestDataProviderTest {
 	public void withTwoProvider() throws IOException {
 		underTest = new MergingSuggestDataProvider(
 				Arrays.asList(
-						new FakeSuggestDataProvider().putData("index1",
+						new TestDataProvider().putData("index1",
 								getSuggestData("keywords",
 										simpleSuggestRecord("test 1"),
 										simpleSuggestRecord("test 2"))),
-						new FakeSuggestDataProvider().putData("index1",
+						new TestDataProvider().putData("index1",
 								getSuggestData("brand",
 										simpleSuggestRecord("test 3"),
 										simpleSuggestRecord("test 4")))));
@@ -59,11 +59,11 @@ public class MergingSuggestDataProviderTest {
 	public void withTaggedDataProvided() throws IOException {
 		underTest = new MergingSuggestDataProvider(
 				Arrays.asList(
-						new FakeSuggestDataProvider().putData("index1",
+						new TestDataProvider().putData("index1",
 								getSuggestData("type1",
 										taggedSuggestRecord("test 1", "tag A"),
 										taggedSuggestRecord("test 2", "tag B"))),
-						new FakeSuggestDataProvider().putData("index1",
+						new TestDataProvider().putData("index1",
 								getSuggestData("brand",
 										taggedSuggestRecord("test 3", "tag A"),
 										taggedSuggestRecord("test 4", "tag B")))));

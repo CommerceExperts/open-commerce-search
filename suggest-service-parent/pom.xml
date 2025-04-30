@@ -7,8 +7,8 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.70.3</version>
-		<relativePath>../</relativePath>
+		<version>0.71.0</version>
+		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<artifactId>suggest-service-parent</artifactId>
@@ -16,21 +16,34 @@
 	<description>intermediate parent project that splits the Suggest Service into several modules</description>
 
 	<properties>
+		<!-- don't upgrade unless compatible with used elasticsearch-rest-high-level-client -->
 		<lucene.version>8.11.3</lucene.version>
 		<micrometer.version>1.14.4</micrometer.version>
 	</properties>
+
+	<modules>
+		<module>smartsuggest-lib</module>
+		<module>suggest-service</module>
+		<module>ocs-suggest-data-provider</module>
+		<module>s3-suggest-archive-provider</module>
+	</modules>
 	
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>smartsuggest-lib</artifactId>
-				<version>0.23.2</version>
+				<version>0.24.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-suggest-data-provider</artifactId>
-				<version>0.22.2</version>
+				<version>0.23.0</version>
+			</dependency>
+			<dependency>
+				<groupId>de.cxp.ocs</groupId>
+				<artifactId>s3-suggest-archive-provider</artifactId>
+				<version>0.1.0</version>
 			</dependency>
 			
 			<dependency>
@@ -64,14 +77,19 @@
 				<artifactId>micrometer-registry-jmx</artifactId>
 				<version>${micrometer.version}</version>
 			</dependency>
+
+			<dependency>
+				<groupId>commons-codec</groupId>
+				<artifactId>commons-codec</artifactId>
+				<version>1.17.1</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.httpcomponents</groupId>
+				<artifactId>httpcore</artifactId>
+				<version>4.4.16</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
-	<modules>
-		<module>smartsuggest-lib</module>
-		<module>suggest-service</module>
-		<module>ocs-suggest-data-provider</module>
-	</modules>
 
 	<!-- copy repos from parent, which is necessary otherwise older versions 
 		of parent won't be found during public build -->

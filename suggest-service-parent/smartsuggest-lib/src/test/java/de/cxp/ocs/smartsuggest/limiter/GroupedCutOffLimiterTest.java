@@ -24,7 +24,7 @@ public class GroupedCutOffLimiterTest {
 		limitConf.put("keyword", 5);
 		limitConf.put("brand", 3);
 		limitConf.put("category", 4);
-		underTest = new GroupedCutOffLimiter("type", 3, limitConf, Optional.empty());
+		underTest = new GroupedCutOffLimiter("type", 3, limitConf, null);
 	}
 
 	@Test
@@ -118,7 +118,7 @@ public class GroupedCutOffLimiterTest {
 
 	@Test
 	public void onlyConfigreDefaultLimit() {
-		underTest = new GroupedCutOffLimiter("type", 3, new LinkedHashMap<>(), Optional.empty());
+		underTest = new GroupedCutOffLimiter("type", 3, new LinkedHashMap<>(), null);
 		List<Suggestion> bigList = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
 			bigList.add(new Suggestion("c_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "category")));

@@ -1,20 +1,8 @@
 package de.cxp.ocs.smartsuggest.querysuggester;
 
-import static java.util.Collections.emptyList;
-import static org.apache.commons.lang3.StringUtils.isBlank;
-
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.apache.lucene.store.AlreadyClosedException;
-import org.apache.lucene.util.Accountable;
-import org.apache.lucene.util.RamUsageEstimator;
-
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheStats;
-
 import de.cxp.ocs.smartsuggest.monitoring.Instrumentable;
 import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
 import de.cxp.ocs.smartsuggest.util.Util;
@@ -22,51 +10,57 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.lucene.store.AlreadyClosedException;
+import org.apache.lucene.util.Accountable;
+import org.apache.lucene.util.RamUsageEstimator;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static java.util.Collections.emptyList;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Slf4j
 public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Accountable {
 
-	private final String	indexName;
-	private final String	dataProviderName;
-	private int				maxSuggestionsPerCacheEntry	= 10;
+	private final    String                          indexName;
+	private final    AtomicReference<QuerySuggester> innerQuerySuggester = new AtomicReference<>(new NoopQuerySuggester());
+	private volatile boolean                         isClosed            = false;
 
-	private final AtomicReference<QuerySuggester>	innerQuerySuggester	= new AtomicReference<>(new NoopQuerySuggester());
-	private volatile boolean						isClosed			= false;
+	private final int maxSuggestionsPerCacheEntry = Integer.getInteger("MAX_SUGGESTIONS_PER_CACHE_ENTRY", 10);
+	private final int cacheLetterLength           = Integer.getInteger("CACHE_LETTER_LENGTH", 3);
 
-	private final int						cacheLetterLength	= Integer.getInteger("CACHE_LETTER_LENGTH", 3);
-	private Cache<String, List<Suggestion>>	firstLetterCache	= CacheBuilder.newBuilder()
+	private final Cache<String, List<Suggestion>> firstLetterCache = CacheBuilder.newBuilder()
 			.maximumSize(Long.getLong("CACHE_MAX_SIZE", 10_000L))
 			.recordStats()
 			.build();
 
-	private CacheStats	cacheStats;
-	private long		lastCacheStatsUpdate;
+	private CacheStats cacheStats;
+	private long       lastCacheStatsUpdate;
 
 	/**
 	 * names for logging and metrics
-	 * 
+	 *
 	 * @param indexName
-	 *        index name
-	 * @param dataProviderName
-	 *        data provider name
+	 * 		index name
 	 */
-	public QuerySuggesterProxy(String indexName, String dataProviderName) {
+	public QuerySuggesterProxy(String indexName) {
 		this.indexName = indexName;
-		this.dataProviderName = dataProviderName;
 	}
 
-	public QuerySuggesterProxy(String indexName, String dataType, int maxSuggestionsPerCacheEntry) {
-		this(indexName, dataType);
-		this.maxSuggestionsPerCacheEntry = maxSuggestionsPerCacheEntry;
+	public QuerySuggester getInnerSuggester() {
+		return innerQuerySuggester.get();
 	}
 
-	public void updateQueryMapper(@NonNull QuerySuggester newSuggester) throws AlreadyClosedException {
+	public void updateSuggester(@NonNull QuerySuggester newSuggester) throws AlreadyClosedException {
 		if (isClosed) throw new AlreadyClosedException("suggester for tenant " + indexName + " closed");
-		log.info("updating from {} to {} for tenant {} with data from {}",
-				innerQuerySuggester.get().getClass().getSimpleName(),
-				newSuggester.getClass().getSimpleName(),
-				indexName,
-				dataProviderName);
+		log.info("updating index {} from {}({} records) to {}({} records)", indexName,
+				innerQuerySuggester.get().getClass().getSimpleName(), innerQuerySuggester.get().recordCount(),
+				newSuggester.getClass().getSimpleName(), newSuggester.recordCount());
 
 		long startMs = System.currentTimeMillis();
 		Set<String> cacheKeys = firstLetterCache.asMap().keySet();
@@ -75,7 +69,12 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 
 		QuerySuggester oldSuggester = innerQuerySuggester.getAndSet(newSuggester);
 		if (oldSuggester != null) {
-			oldSuggester.destroy();
+			try {
+				oldSuggester.destroy();
+			}
+			catch (Exception e) {
+				log.error("Failed to close/cleanup the old suggester. Ignoring error and continue with new suggester.", e);
+			}
 		}
 	}
 
@@ -93,11 +92,17 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 	}
 
 	@Override
+	public void destroy() throws Exception {
+		close();
+		innerQuerySuggester.get().destroy();
+	}
+
+	@Override
 	public List<Suggestion> suggest(String term, int maxResults, Set<String> tags) throws SuggestException {
 		if (isClosed || isBlank(term)) return emptyList();
 		final String normalizedTerm = term.toLowerCase();
 
-		// only cache results, if no tags filter is given and the the limit
+		// only cache results, if no tags filter is given and the limit
 		// of results is <= to the maxSuggestionPerCacheEntry level
 		if (normalizedTerm.length() <= cacheLetterLength
 				&& (tags == null || tags.isEmpty())
@@ -110,7 +115,7 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 					cachedResults = cachedResults.subList(0, maxResults);
 				}
 
-				// dont use stream + collector, because we need a mutable list
+				// don't use stream + collector, because we need a mutable list
 				ArrayList<Suggestion> clonedList = new ArrayList<>(cachedResults.size());
 				for (Suggestion cachedSuggestion : cachedResults) {
 					clonedList.add(cloneSuggestion(cachedSuggestion));
@@ -143,15 +148,14 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 	}
 
 	@Override
-	public void instrument(Optional<MeterRegistryAdapter> metricsRegistryAdapter, Iterable<Tag> tags) {
-		metricsRegistryAdapter.ifPresent(adapter -> addSensors(adapter.getMetricsRegistry(), tags));
-	}
-
-	private void addSensors(MeterRegistry reg, Iterable<Tag> tags) {
-		reg.gauge(Util.APP_NAME + ".suggester.cache.size", tags, this, me -> me.firstLetterCache.size());
-		reg.gauge(Util.APP_NAME + ".suggester.cache.evictionCount", tags, this, me -> me.getCacheStats().evictionCount());
-		reg.gauge(Util.APP_NAME + ".suggester.cache.hit_rate", tags, this, me -> me.getCacheStats().hitRate());
-		reg.gauge(Util.APP_NAME + ".suggester.cache.miss_rate", tags, this, me -> me.getCacheStats().missRate());
+	public void instrument(MeterRegistryAdapter metricsRegistryAdapter, Iterable<Tag> tags) {
+		if (metricsRegistryAdapter != null) {
+			MeterRegistry reg = metricsRegistryAdapter.getMetricsRegistry();
+			reg.gauge(Util.APP_NAME + ".suggester.cache.size", tags, this, me -> me.firstLetterCache.size());
+			reg.gauge(Util.APP_NAME + ".suggester.cache.evictionCount", tags, this, me -> me.getCacheStats().evictionCount());
+			reg.gauge(Util.APP_NAME + ".suggester.cache.hit_rate", tags, this, me -> me.getCacheStats().hitRate());
+			reg.gauge(Util.APP_NAME + ".suggester.cache.miss_rate", tags, this, me -> me.getCacheStats().missRate());
+		}
 	}
 
 	@Override
@@ -170,4 +174,5 @@ public class QuerySuggesterProxy implements QuerySuggester, Instrumentable, Acco
 	public long recordCount() {
 		return innerQuerySuggester.get().recordCount();
 	}
+
 }

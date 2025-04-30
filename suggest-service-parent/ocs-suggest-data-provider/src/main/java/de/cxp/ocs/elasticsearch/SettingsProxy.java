@@ -20,12 +20,14 @@ public class SettingsProxy {
 
 	private ConnectionConfiguration connectionConf;
 
-	public SettingsProxy() {
+	public SettingsProxy(Map<String, Object> config) {
 		defaultProperties = loadPropertiesResource("ocs-suggest.default.properties")
-				.map(defaultProps -> new Properties(defaultProps))
-				.orElseGet(() -> new Properties());
+				.map(Properties::new)
+				.orElseGet(Properties::new);
 
-		loadPropertiesResource("ocs-suggest.properties").ifPresent(p -> defaultProperties.putAll(p));
+		loadPropertiesResource("ocs-suggest.properties").ifPresent(defaultProperties::putAll);
+
+		defaultProperties.putAll(config);
 	}
 
 	private Optional<Properties> loadPropertiesResource(String resourceName) {
@@ -79,7 +81,7 @@ public class SettingsProxy {
 		return connectionConf;
 	}
 	public Optional<Boolean> isIndexEnabled(String indexName) {
-		return Optional.ofNullable(get("suggest.index." + indexName)).map(Boolean::parseBoolean);
+		return Optional.ofNullable(get("suggest.index." + indexName + ".enable")).map(Boolean::parseBoolean);
 	}
 
 	RestHighLevelClient restHighLevelClient;

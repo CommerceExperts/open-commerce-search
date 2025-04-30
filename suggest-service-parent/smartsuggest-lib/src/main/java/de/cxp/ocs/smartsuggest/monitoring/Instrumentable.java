@@ -1,7 +1,5 @@
 package de.cxp.ocs.smartsuggest.monitoring;
 
-import java.util.Optional;
-
 import io.micrometer.core.instrument.Tag;
 
 public interface Instrumentable {
@@ -16,6 +14,6 @@ public interface Instrumentable {
 	 *        these "standard" tags should be used for all added sensors. More
 	 *        tags can be added.
 	 */
-	void instrument(Optional<MeterRegistryAdapter> metricsRegistryAdapter, Iterable<Tag> tags);
+	void instrument(MeterRegistryAdapter metricsRegistryAdapter, Iterable<Tag> tags);
 
 }
