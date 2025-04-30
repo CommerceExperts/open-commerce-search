@@ -64,7 +64,7 @@ The Suggest Service has no "indexation" API because with that there would be a n
 Instead each instance fetches and indexes the data on its own using "Data Providers". This data provider is asked if it can deliver data for a requested index and it also has
 the modification time of the given data. If there is new data, the suggester library will fetch and index that provided data into the local environment.
 
-Since this architecture is sensitive to potential performance bottle necks at the data providers, that "update" job is done asynchronously in the background of the Suggest Service instances.
+Since this architecture is sensitive to potential performance bottlenecks at the data providers, that "update" job is done asynchronously in the background of the Suggest Service instances.
 However, indexing inside a suggester service in a cluster environment with multiple instances might be not optimal, even more when it needs more time. 
 Therefor the suggester library has the ability to archive and restore lucene indexes directly. More about it in the Archive and Restore section below.   
 
