@@ -65,7 +65,7 @@ public class ConfigurableShareLimiter implements Limiter {
 	public final static String	OTHER_SHARE_KEY			= "other";
 
 	private final String				groupingKey;
-	private final Optional<String[]>	groupDeduplicationOrder;
+	private final String[]	groupDeduplicationOrder;
 
 	private final LinkedHashMap<String, Double> origShareConf = new LinkedHashMap<>();
 	private final LinkedHashMap<String, Double> normalizedShareConf = new LinkedHashMap<>();
@@ -89,7 +89,7 @@ public class ConfigurableShareLimiter implements Limiter {
 	 *        the groups defined first will be preferred over suggestions from
 	 *        other groups.
 	 */
-	public ConfigurableShareLimiter(@NonNull String groupingKey, LinkedHashMap<String, Double> shareConfiguration, Optional<String[]> groupDeduplicationOrder) {
+	public ConfigurableShareLimiter(@NonNull String groupingKey, LinkedHashMap<String, Double> shareConfiguration, String[] groupDeduplicationOrder) {
 		this.groupingKey = groupingKey;
 		this.groupDeduplicationOrder = groupDeduplicationOrder;
 
@@ -107,7 +107,9 @@ public class ConfigurableShareLimiter implements Limiter {
 		}
 
 		Map<String, List<Suggestion>> groupedSuggestions = suggestions.stream().collect(Collectors.groupingBy(this::groupKey));
-		groupDeduplicationOrder.ifPresent(order -> SuggestDeduplicator.deduplicate(groupedSuggestions, order));
+		if (groupDeduplicationOrder != null && groupDeduplicationOrder.length > 0) {
+			SuggestDeduplicator.deduplicate(groupedSuggestions, groupDeduplicationOrder);
+		}
 
 		List<Suggestion> limitedSuggestions;
 		if (groupedSuggestions.size() == 1) {

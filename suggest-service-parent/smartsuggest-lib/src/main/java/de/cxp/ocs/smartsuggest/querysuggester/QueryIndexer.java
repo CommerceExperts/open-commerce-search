@@ -11,15 +11,16 @@ public interface QueryIndexer {
 	/**
 	 * @return The time of the last successful indexing
 	 */
-	Instant getLastIndexTime();
+	Instant getIndexModTime();
 
 	/**
-	 * 
 	 * @param suggestions
-	 *        the suggestions to index
+	 * 		the suggestions to index
+	 * @param modificationTime
+	 * 		timestamp (millis) of the data origin
 	 * @return future that is ready as soon as the indexation is done
 	 * @throws IOException
-	 *         in case indexation fails
+	 * 		in case indexation fails
 	 */
-	CompletableFuture<Void> index(Iterable<SuggestRecord> suggestions) throws IOException;
+	CompletableFuture<Void> index(Iterable<SuggestRecord> suggestions, long modificationTime) throws IOException;
 }

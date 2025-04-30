@@ -1,5 +1,6 @@
 package de.cxp.ocs.smartsuggest.spi;
 
+import java.io.Serializable;
 import java.util.*;
 
 import lombok.AllArgsConstructor;
@@ -10,8 +11,8 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class SuggestData {
+@Builder(toBuilder = true)
+public class SuggestData implements Serializable, DatedData {
 
 	/**
 	 * type/name of these suggest data. All suggest data with same type will be
@@ -55,4 +56,5 @@ public class SuggestData {
 	 * Queries that are suggested in case the complete input does not yield enough results.
 	 */
 	Map<String, List<String>> relaxedQueries;
+
 }

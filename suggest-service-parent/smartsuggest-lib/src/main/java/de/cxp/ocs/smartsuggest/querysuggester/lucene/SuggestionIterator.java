@@ -1,16 +1,14 @@
 package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
+import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
+import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
+import org.apache.commons.lang3.SerializationUtils;
+import org.apache.lucene.search.suggest.InputIterator;
+import org.apache.lucene.util.BytesRef;
+
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-
-import org.apache.commons.lang3.SerializationUtils;
-import org.apache.lucene.search.suggest.InputIterator;
-import org.apache.lucene.search.suggest.Lookup;
-import org.apache.lucene.util.BytesRef;
-
-import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
-import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 
 abstract class SuggestionIterator implements InputIterator {
 
@@ -63,7 +61,6 @@ abstract class SuggestionIterator implements InputIterator {
 	 * Serializes the SuggestRecord payload. It will be deserilized and attached
 	 * to the returned suggestions again.
 	 *
-	 * @see LuceneQuerySuggester#getBestMatch(Lookup.LookupResult)
 	 * @return A BytesRef with the payload
 	 */
 	@Override
@@ -94,7 +91,9 @@ abstract class SuggestionIterator implements InputIterator {
 
 		Set<BytesRef> contexts = new HashSet<>();
 		for (String context : currentSuggestion.getTags()) {
-			contexts.add(new BytesRef(context.getBytes(StandardCharsets.UTF_8)));
+			if (context != null) {
+				contexts.add(new BytesRef(context.getBytes(StandardCharsets.UTF_8)));
+			}
 		}
 		return contexts;
 	}

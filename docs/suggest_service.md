@@ -61,13 +61,30 @@ In case the whole result computation needs more than 100ms, an `INFO` message is
 ## Data Providers
 
 The Suggest Service has no "indexation" API because with that there would be a need to orchestrate the indexation and distribute the created indexes in a distributed scenario. 
-Instead each instance fetches and indexes the data on its own using "Data Providers". 
+Instead each instance fetches and indexes the data on its own using "Data Providers". This data provider is asked if it can deliver data for a requested index and it also has
+the modification time of the given data. If there is new data, the suggester library will fetch and index that provided data into the local environment.
 
-Since this architecture moves a potential performance bottle neck to the data providers, that "update" job is done asychronously in the background of the Suggest Service instances.
+Since this architecture is sensitive to potential performance bottlenecks at the data providers, that "update" job is done asynchronously in the background of the Suggest Service instances.
+However, indexing inside a suggester service in a cluster environment with multiple instances might be not optimal, even more when it needs more time. 
+Therefor the suggester library has the ability to archive and restore lucene indexes directly. More about it in the Archive and Restore section below.   
 
-Per default, OCSS comes with a data provider, that fetches certain data fields from the according OCS-Elasticsearch index. This can be used to provide suggestions for categories, brands and product titles for example.
+Per default, OCSS comes with a data provider, that fetches certain data fields from the according OCS-Elasticsearch index. 
+This can be used to provide suggestions for categories, brands and product titles for example.
 
-For more advanced scenarios a data provider must be implemented and added to the classpath using "[Java's ServiceLoader mechanism](plugin_guide.html#extending-ocs-the-plugin-guide)".
+For more advanced scenarios the "SuggestDataProvider" interface must be implemented and added to the classpath according to the "[Java's ServiceLoader mechanism](plugin_guide.html#extending-ocs-the-plugin-guide)".
+
+[back to top](#)
+
+
+## Archive and Restore
+
+To prevent the same data from being indexed across multiple instances, you can utilize the "IndexArchiveProvider". This provider should facilitate the uploading and downloading of files to and from external storage solutions, such as S3 or GC-Storage.
+
+Now you can start your suggest services only with your IndexArchiverProvider implementation, removing or disabling all the SuggestDataProvider implementations (you can do that with the system property `-D<canonical-class-name>.enable=false`). Additionally, you will need an indexer instance that operates with the same IndexArchiverProvider and all SuggestDataProvider instances from which the source data is retrieved. When this indexer detects new data from the data providers, it will index it and push it to the IndexArchiverProvider. The other instances will then recognize the new IndexArchives, pulling and utilizing them directly.
+
+Alternatively that Indexer-Instance can also run in a cronjob like manner, minimizing stress from live traffic during indexing. To achieve this, pass the program argument 'only-update-archives' to the server application, which will execute the updates and then shut down.
+
+If you are using multiple data sources for a single index, you must either set `suggestConfig.useDataSourceMerger = true` to consolidate all data into a single index or extend the `CompoundIndexArchiveProvider` to support arching the data of a compound suggester. The compound suggester is preferable when your suggestion results need to include various types of suggestions while *ensuring* a balanced representation of each type.
 
 [back to top](#)
 

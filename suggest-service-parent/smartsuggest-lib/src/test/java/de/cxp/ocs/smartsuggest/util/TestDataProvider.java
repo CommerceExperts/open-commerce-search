@@ -6,12 +6,12 @@ import java.util.Map;
 import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
 
-public class FakeSuggestDataProvider implements SuggestDataProvider {
+public class TestDataProvider implements SuggestDataProvider {
 
 	Map<String, Long>			modDates	= new HashMap<>();
 	Map<String, SuggestData>	suggestData	= new HashMap<>();
 
-	public FakeSuggestDataProvider putData(String indexName, SuggestData data) {
+	public TestDataProvider putData(String indexName, SuggestData data) {
 		suggestData.put(indexName, data);
 		modDates.put(indexName, data.getModificationTime() > 0 ? data.getModificationTime() : System.currentTimeMillis());
 		return this;

@@ -1,8 +1,8 @@
 package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
-import java.util.Iterator;
-
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
+
+import java.util.Iterator;
 
 class SuggestionBestMatchIterator extends SuggestionIterator {
 

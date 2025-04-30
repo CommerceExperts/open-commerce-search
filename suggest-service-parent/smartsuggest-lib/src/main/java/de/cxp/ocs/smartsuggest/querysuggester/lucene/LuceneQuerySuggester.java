@@ -1,25 +1,22 @@
 package de.cxp.ocs.smartsuggest.querysuggester.lucene;
 
-import static java.util.Collections.emptyList;
-import static org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester.PRESERVE_SEP;
-import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_MIN_FUZZY_LENGTH;
-import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_TRANSPOSITIONS;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
+import de.cxp.ocs.smartsuggest.monitoring.Instrumentable;
+import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
+import de.cxp.ocs.smartsuggest.querysuggester.QueryIndexer;
+import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
+import de.cxp.ocs.smartsuggest.querysuggester.SuggestException;
+import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
+import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
+import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
+import de.cxp.ocs.smartsuggest.spi.SuggestConfig.SortStrategy;
+import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
+import de.cxp.ocs.smartsuggest.util.Util;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SerializationUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
@@ -42,21 +39,22 @@ import org.apache.lucene.util.RamUsageEstimator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.cxp.ocs.smartsuggest.monitoring.Instrumentable;
-import de.cxp.ocs.smartsuggest.monitoring.MeterRegistryAdapter;
-import de.cxp.ocs.smartsuggest.querysuggester.QueryIndexer;
-import de.cxp.ocs.smartsuggest.querysuggester.QuerySuggester;
-import de.cxp.ocs.smartsuggest.querysuggester.SuggestException;
-import de.cxp.ocs.smartsuggest.querysuggester.Suggestion;
-import de.cxp.ocs.smartsuggest.querysuggester.modified.ModifiedTermsService;
-import de.cxp.ocs.smartsuggest.spi.CommonPayloadFields;
-import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
-import de.cxp.ocs.smartsuggest.spi.SuggestConfig.SortStrategy;
-import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
-import de.cxp.ocs.smartsuggest.util.Util;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
-import lombok.extern.slf4j.Slf4j;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyList;
+import static org.apache.lucene.search.suggest.analyzing.AnalyzingSuggester.PRESERVE_SEP;
+import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_MIN_FUZZY_LENGTH;
+import static org.apache.lucene.search.suggest.analyzing.FuzzySuggester.DEFAULT_TRANSPOSITIONS;
 
 @Slf4j
 public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accountable, Instrumentable {
@@ -65,28 +63,23 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 * Use {@link CommonPayloadFields#PAYLOAD_LABEL_KEY} instead.
 	 */
 	@Deprecated
-	public static final String	PAYLOAD_LABEL_KEY		= "meta.label";
-	/**
-	 * Use {@link CommonPayloadFields#PAYLOAD_GROUPMATCH_KEY} instead.
-	 */
-	@Deprecated
-	public static final String	PAYLOAD_GROUPMATCH_KEY	= "meta.matchGroupName";
+	public static final String PAYLOAD_LABEL_KEY      = "meta.label";
 
-	public static final String	BEST_MATCHES_GROUP_NAME				= "best matches";
-	public static final String	TYPO_MATCHES_GROUP_NAME				= "secondary matches";
-	public static final String	FUZZY_MATCHES_ONE_EDIT_GROUP_NAME	= "fuzzy matches with 1 edit";
-	public static final String	FUZZY_MATCHES_TWO_EDITS_GROUP_NAME	= "fuzzy matches with 2 edits";
-	public static final String	SHINGLE_MATCHES_GROUP_NAME			= "shingle matches";
-	public static final String	RELAXED_GROUP_NAME					= "relaxed matches";
-	public static final String	SHARPENED_GROUP_NAME				= "sharpened matches";
+	public static final String BEST_MATCHES_GROUP_NAME            = "best matches";
+	public static final String TYPO_MATCHES_GROUP_NAME            = "secondary matches";
+	public static final String FUZZY_MATCHES_ONE_EDIT_GROUP_NAME  = "fuzzy matches with 1 edit";
+	public static final String FUZZY_MATCHES_TWO_EDITS_GROUP_NAME = "fuzzy matches with 2 edits";
+	public static final String SHINGLE_MATCHES_GROUP_NAME         = "shingle matches";
+	public static final String RELAXED_GROUP_NAME                 = "relaxed matches";
+	public static final String SHARPENED_GROUP_NAME               = "sharpened matches";
 
 	private static final String METRICS_PREFIX = Util.APP_NAME + ".lucene_suggester";
 
 	private static final Logger perfLog = LoggerFactory.getLogger("de.cxp.ocs.smartsuggest.performance");
 
-	private final AnalyzingInfixSuggester	primarySuggester;
-	private final AnalyzingInfixSuggester	secondarySuggester;
-	private final AnalyzingInfixSuggester	shingleSuggester;
+	private final AnalyzingInfixSuggester primarySuggester;
+	private final AnalyzingInfixSuggester secondarySuggester;
+	private final AnalyzingInfixSuggester shingleSuggester;
 
 	/**
 	 * A fuzzy suggester that is used for search terms shorter than or equal to
@@ -101,30 +94,54 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 */
 	private final FuzzySuggester fuzzySuggesterTwoEdits;
 
-	private final SuggestConfig			suggestConfig;
-	private final ModifiedTermsService	modifiedTermsService;
+	@Getter(AccessLevel.PACKAGE)
+	private final SuggestConfig        suggestConfig;
+	private final ModifiedTermsService modifiedTermsService;
 
-	private Instant	lastIndexTime;
-	private long	recordCount		= 0;
-	private long	memUsageBytes	= 0;
+	@Getter
+	private Instant indexModTime;
+	private long    recordCount   = 0;
+	private long    memUsageBytes = 0;
 
-	private final List<Closeable>	closeables	= new ArrayList<>();
-	private volatile boolean		isClosed	= false;
-	private final Path				indexFolder;
+	private final    List<Closeable> closeables = new ArrayList<>();
+	private volatile boolean         isClosed   = false;
+
+	@Getter(AccessLevel.PACKAGE)
+	private final Path indexFolder;
+
+	/**
+	 * Constructor for fresh suggester that in initialized in an empty folder. To recover the suggester, use the other constructor with the modTime of the according data.
+	 *
+	 * @param indexFolder
+	 * 		the parent folder for the specific suggesters
+	 * @param suggestConfig
+	 * 		the full suggest configuration
+	 * @param modifiedTermsService
+	 * 		service that provides mappings for modified terms
+	 * @param stopWords
+	 * 		optional set of stopwords. may be null
+	 */
+	public LuceneQuerySuggester(Path indexFolder, SuggestConfig suggestConfig, ModifiedTermsService modifiedTermsService, CharArraySet stopWords) {
+		this(indexFolder, suggestConfig, modifiedTermsService, stopWords, null);
+	}
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param indexFolder
-	 *        the parent folder for the specific suggesters
+	 * 		the parent folder for the specific suggesters
 	 * @param suggestConfig
-	 *        the full suggest configuration
+	 * 		the full suggest configuration
 	 * @param modifiedTermsService
-	 *        service that provides mappings for modified terms
+	 * 		service that provides mappings for modified terms
 	 * @param stopWords
-	 *        optional set of stopwords. may be null
+	 * 		optional set of stopwords. may be null
+	 * @param modTime
+	 * 		Value that only MUST be set, if the indexFolder already contains the indexed data.
+	 * 		It MUST NOT be set, if the indexFolder is empty and does not contain data.
+	 * 		This modTime relates to the data that is already in the indexFolder.
 	 */
-	public LuceneQuerySuggester(Path indexFolder, SuggestConfig suggestConfig, ModifiedTermsService modifiedTermsService, CharArraySet stopWords) {
+	public LuceneQuerySuggester(Path indexFolder, SuggestConfig suggestConfig, ModifiedTermsService modifiedTermsService, CharArraySet stopWords, Long modTime) {
 		this.modifiedTermsService = modifiedTermsService;
 		this.suggestConfig = suggestConfig;
 		this.indexFolder = indexFolder;
@@ -164,7 +181,15 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			fuzzySuggesterOneEdit = createFuzzySuggester(indexFolder, "Short", basicIndexAnalyzer, basicQueryAnalyzer, 1);
 			fuzzySuggesterTwoEdits = createFuzzySuggester(indexFolder, "Long", basicIndexAnalyzer, basicQueryAnalyzer, 2);
 
-			index(emptyList()).join();
+			if (primarySuggester.getCount() == 0) {
+				// seems like nothing is initialized => we need to init the analyzers with empty data to avoid "not ready" suggesters
+				index(emptyList(), 0).join();
+			}
+			else {
+				fuzzySuggesterOneEdit.load(new FileInputStream(getFuzzyIndexFile(1)));
+				fuzzySuggesterTwoEdits.load(new FileInputStream(getFuzzyIndexFile(2)));
+				finalizeIndexation(null, Objects.requireNonNull(modTime, "modTime required if index already exist, but is not empty"));
+			}
 		}
 		catch (IOException iox) {
 			throw new SuggestException("An error occurred while initializing the QuerySuggester", iox);
@@ -172,20 +197,19 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	}
 
 	@Override
-	public void instrument(Optional<MeterRegistryAdapter> metricsRegistryAdapter, Iterable<Tag> tags) {
-		metricsRegistryAdapter.ifPresent(reg -> this.addSensors(reg.getMetricsRegistry(), tags));
-	}
-
-	private void addSensors(MeterRegistry reg, Iterable<Tag> tags) {
-		reg.gauge(METRICS_PREFIX + ".record_count", tags, this, me -> me.recordCount);
-		reg.gauge(METRICS_PREFIX + ".estimated_memusage_bytes", tags, this, me -> me.memUsageBytes);
-		reg.more().counter(METRICS_PREFIX + ".last_index_timestamp_seconds", tags, this,
-				me -> (me.lastIndexTime == null ? -1 : me.lastIndexTime.getEpochSecond()));
+	public void instrument(MeterRegistryAdapter metricsRegistryAdapter, Iterable<Tag> tags) {
+		if (metricsRegistryAdapter != null) {
+			MeterRegistry reg = metricsRegistryAdapter.getMetricsRegistry();
+			reg.gauge(METRICS_PREFIX + ".record_count", tags, this, me -> me.recordCount);
+			reg.gauge(METRICS_PREFIX + ".estimated_memusage_bytes", tags, this, me -> me.memUsageBytes);
+			reg.more().counter(METRICS_PREFIX + ".last_index_timestamp_seconds", tags, this,
+					me -> (me.indexModTime == null ? -1 : me.indexModTime.getEpochSecond()));
+		}
 	}
 
 	@Override
 	public boolean isReady() {
-		return lastIndexTime != null;
+		return indexModTime != null;
 	}
 
 	private FuzzySuggester createFuzzySuggester(Path indexFolder, String name,
@@ -287,7 +311,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 				final int itemsToFetchTypos = maxResults - uniqueQueries.size();
 				int resultCount = collectSuggestions(term, contexts, secondarySuggester, itemsToFetchTypos, uniqueQueries, itemsToFetchTypos, TYPO_MATCHES_GROUP_NAME, results);
 				if (SortStrategy.PrimaryAndSecondaryByWeight.equals(suggestConfig.getSortStrategy())) {
-					Collections.sort(results, Util.getDefaultComparator(suggestConfig.locale, term));
+					results.sort(Util.getDefaultComparator(suggestConfig.locale, term));
 				}
 				perfResult.addStep("variantMatches", resultCount);
 			}
@@ -296,7 +320,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults
 					&& contexts == null) {
 				final int itemsToFetchOneEdit = maxResults - uniqueQueries.size();
-				int resultCount = collectFuzzySuggestions(term, contexts, fuzzySuggesterOneEdit, itemsToFetchOneEdit, uniqueQueries, itemsToFetchOneEdit,
+				int resultCount = collectFuzzySuggestions(term, contexts, fuzzySuggesterOneEdit, itemsToFetchOneEdit, uniqueQueries,
 						FUZZY_MATCHES_ONE_EDIT_GROUP_NAME, results);
 				perfResult.addStep("fuzzy1Matches", resultCount);
 			}
@@ -305,7 +329,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults
 					&& contexts == null) {
 				final int itemsToFetchTwoEdits = maxResults - uniqueQueries.size();
-				int resultCount = collectFuzzySuggestions(term, contexts, fuzzySuggesterTwoEdits, itemsToFetchTwoEdits, uniqueQueries, itemsToFetchTwoEdits,
+				int resultCount = collectFuzzySuggestions(term, contexts, fuzzySuggesterTwoEdits, itemsToFetchTwoEdits, uniqueQueries,
 						FUZZY_MATCHES_TWO_EDITS_GROUP_NAME, results);
 				perfResult.addStep("fuzzy2Matches", resultCount);
 			}
@@ -325,10 +349,10 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			}
 
 			perfResult.stop();
-			if (perfResult.getTotalTime().getTime() > 200L) {
+			if (perfResult.getTotalTime().getDuration().toMillis() > 200L) {
 				perfLog.warn(perfResult.toString());
 			}
-			else if (perfResult.getTotalTime().getTime() > 100L) {
+			else if (perfResult.getTotalTime().getDuration().toMillis() > 100L) {
 				perfLog.info(perfResult.toString());
 			}
 			else {
@@ -354,20 +378,9 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	 * the primary text indexed, because we use the indexed text to check for
 	 * prefix match.
 	 * </p>
-	 * 
-	 * @param term
-	 * @param contexts
-	 * @param suggester
-	 * @param itemsToFetch
-	 * @param uniqueQueries
-	 * @param maxResults
-	 * @param groupName
-	 * @param results
-	 * @return
-	 * @throws IOException
 	 */
 	private int collectFuzzySuggestions(String term, Set<BytesRef> contexts, Lookup suggester, final int itemsToFetch, Set<String> uniqueQueries,
-			int maxResults, String groupName, List<Suggestion> results) throws IOException {
+			String groupName, List<Suggestion> results) throws IOException {
 
 		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, itemsToFetch + uniqueQueries.size());
 
@@ -378,7 +391,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 				// (=weight) directly.
 				// Because of that however, we can only use that method only for
 				// suggesters that have only indexed the primary texts = label!
-				.filter(s -> !uniqueQueries.contains(s.key))
+				.filter(s -> !uniqueQueries.contains(s.key.toString()))
 				.collect(Util.getTopKFuzzySuggestionCollector(itemsToFetch + uniqueQueries.size(), suggestConfig.locale, term))
 				.stream()
 				.map(this::getBestMatch)
@@ -390,7 +403,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 
 		if (!suggestions.isEmpty()) {
 			results.addAll(suggestions);
-			log.debug("Collected '{}' {} for term '{}': {}", suggestions.size(), groupName, term, suggestions);
+			log.debug("Fuzzy-Collected '{}' {} for term '{}': {}", suggestions.size(), groupName, term, suggestions);
 		}
 		return suggestions.size();
 	}
@@ -400,9 +413,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		final List<Lookup.LookupResult> lookupResults = suggester.lookup(term, contexts, false, itemsToFetch + uniqueQueries.size());
 
 		final List<Suggestion> suggestions = getUniqueSuggestions(lookupResults, uniqueQueries, maxResults);
-		suggestions.forEach(s -> {
-			withPayloadEntry(s, CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName);
-		});
+		suggestions.forEach(s -> withPayloadEntry(s, CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName));
 
 		if (!suggestions.isEmpty()) {
 			results.addAll(suggestions);
@@ -419,11 +430,10 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		if (modifiedSuggestions != null && !modifiedSuggestions.isEmpty()) {
 			long count = modifiedSuggestions.stream()
 					.filter(uniqueQueries::add)
-					// TODO: figure out, which are better matching before
-					// truncating
+					// TODO: figure out, which are better matching before truncating
 					.limit(maxResults)
 					.map(l -> withPayloadEntry(new Suggestion(l), CommonPayloadFields.PAYLOAD_GROUPMATCH_KEY, groupName))
-					.peek(results::add)
+					.filter(results::add)
 					.count();
 
 			log.debug("Collected '{}' {} for term '{}'", count, groupName, term);
@@ -459,13 +469,20 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 		return bestMatches;
 	}
 
-	@Override
-	public Instant getLastIndexTime() {
-		return lastIndexTime;
+	void commit() throws IOException {
+		primarySuggester.commit();
+		secondarySuggester.commit();
+		shingleSuggester.commit();
+		fuzzySuggesterOneEdit.store(new FileOutputStream(getFuzzyIndexFile(1)));
+		fuzzySuggesterTwoEdits.store(new FileOutputStream(getFuzzyIndexFile(2)));
+	}
+
+	private File getFuzzyIndexFile(int fuzzyStage) {
+		return indexFolder.resolve("fuzzy_" + fuzzyStage + ".idx").toFile();
 	}
 
 	@Override
-	public CompletableFuture<Void> index(Iterable<SuggestRecord> suggestions) {
+	public CompletableFuture<Void> index(Iterable<SuggestRecord> suggestions, long modificationTime) {
 		Runnable primaryIndexJob = indexAsync(primarySuggester, suggestions, false);
 		Runnable secondaryIndexJob = indexAsync(secondarySuggester, suggestions, true);
 		Runnable fuzzyShortIndexJob = indexAsync(fuzzySuggesterOneEdit, suggestions, false);
@@ -480,7 +497,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			CompletableFuture<Void> shingleFuture = CompletableFuture.runAsync(shingleIndexJob);
 			return CompletableFuture
 					.allOf(infixFuture, typoInfixFuture, fuzzyShortFuture, fuzzyLongFuture, shingleFuture)
-					.thenRun(() -> finalizeIndexation(suggestions));
+					.thenRun(() -> finalizeIndexation(suggestions, modificationTime));
 		}
 		else {
 			// this runs as a part of the SuggestionsUpdater inside a ThreadPoolExecutor, so no need to shift that work
@@ -490,13 +507,13 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			fuzzyShortIndexJob.run();
 			fuzzyLongIndexJob.run();
 			shingleIndexJob.run();
-			finalizeIndexation(suggestions);
+			finalizeIndexation(suggestions, modificationTime);
 			return CompletableFuture.completedFuture(null);
 		}
 	}
 
-	private void finalizeIndexation(Iterable<SuggestRecord> suggestions) {
-		lastIndexTime = Instant.now();
+	private void finalizeIndexation(Iterable<SuggestRecord> suggestions, long dataModTime) {
+		indexModTime = dataModTime == -1 ? Instant.MIN : Instant.ofEpochMilli(dataModTime);
 		recordCount = getRecordCount(suggestions);
 		memUsageBytes = ramBytesUsed();
 	}
@@ -510,7 +527,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 				return primarySuggester.getCount();
 			}
 			catch (IOException e) {
-				return StreamSupport.stream(suggestions.spliterator(), false).count();
+				return -1;
 			}
 		}
 	}
@@ -543,14 +560,14 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			Map<String, String> payload = SerializationUtils.deserialize(result.payload.bytes);
 			String label = payload.get(CommonPayloadFields.PAYLOAD_LABEL_KEY);
 			if (label == null) label = result.key.toString();
-			Suggestion s = new Suggestion(label)
+			Suggestion suggestion = new Suggestion(label)
 					.setPayload(payload)
 					.setWeight(result.value)
 					.setContext(result.contexts);
-			if (s.getPayload() == null) s.setPayload(new HashMap<>());
-			s = withPayloadEntry(s, CommonPayloadFields.PAYLOAD_MATCH_KEY, result.key.toString());
-			s = withPayloadEntry(s, CommonPayloadFields.PAYLOAD_WEIGHT_KEY, String.valueOf(result.value));
-			return s;
+			if (suggestion.getPayload() == null) suggestion.setPayload(new HashMap<>());
+			withPayloadEntry(suggestion, CommonPayloadFields.PAYLOAD_MATCH_KEY, result.key.toString());
+			withPayloadEntry(suggestion, CommonPayloadFields.PAYLOAD_WEIGHT_KEY, String.valueOf(result.value));
+			return suggestion;
 		}
 		catch (Exception e) {
 			if (deserializationFailLogCount % 100 == 0) {
@@ -572,12 +589,13 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 				log.error("An error occurred while closing '{}'", closeable, x);
 			}
 		}
-		cleanupIndexFolder();
 	}
 
-	private void cleanupIndexFolder() throws IOException {
+	@Override
+	public void destroy() throws Exception {
+		if (!isClosed) close();
 		try {
-			Files.walkFileTree(indexFolder, new SimpleFileVisitor<Path>() {
+			Files.walkFileTree(indexFolder, new SimpleFileVisitor<>() {
 
 				@Override
 				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
@@ -624,7 +642,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			return primarySuggester.getCount();
 		}
 		catch (IOException e) {
-			log.warn("IOException when retrieving count of infixSuggester: " + e.getMessage());
+			log.warn("IOException when retrieving count of infixSuggester: {}", e.getMessage());
 			return -1;
 		}
 	}
