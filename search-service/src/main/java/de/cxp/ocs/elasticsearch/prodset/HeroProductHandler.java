@@ -48,9 +48,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HeroProductHandler {
 
-	private static int MAX_IDS_ORDERED_BOOSTING = 1000;
+	private static final int    MAX_IDS_ORDERED_BOOSTING = 1000;
 	// used to identify products boosted by the hero-products query
-	public static String QUERY_NAME_PREFIX = "hero-product-set-";
+	public static        String QUERY_NAME_PREFIX        = "hero-product-set-";
 
 	@NonNull
 	private final Map<ProductSetType, ProductSetResolver> resolvers;

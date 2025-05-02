@@ -12,7 +12,7 @@ public class InfoReqHandler implements ReqHandler {
 
 	private static final long serialVersionUID = 1L;
 
-	private Map<String, Object> info = new HashMap<>();
+	private final Map<String, Object> info = new HashMap<>();
 
 	public InfoReqHandler(String... propertyResources) {
 		for (String propertyResource : propertyResources) {

@@ -17,7 +17,7 @@ import feign.httpclient.ApacheHttpClient;
 
 public class SearchClient implements SearchService {
 
-	private SearchApi target;
+	private final SearchApi target;
 
 	/**
 	 * With this constructor the Feign::Builder can be configured.

@@ -19,7 +19,7 @@ public final class Util {
 
 	private Util() {};
 
-	private static Pattern numPattern = Pattern.compile("-?\\d+(\\.\\d+)?(E-\\d+)?|(-?\\.\\d+)");
+	private static final Pattern numPattern = Pattern.compile("-?\\d+(\\.\\d+)?(E-\\d+)?|(-?\\.\\d+)");
 
 	public static Optional<Number> tryToParseAsNumber(final Object numVal) {
 		if (numVal == null) return Optional.empty();

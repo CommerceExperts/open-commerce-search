@@ -19,7 +19,7 @@ import feign.httpclient.ApacheHttpClient;
 
 public class ImportClient implements FullIndexationService, UpdateIndexService {
 
-	private ImportApi target;
+	private final ImportApi target;
 
 	/**
 	 * With this constructor the Feign::Builder can be configured.

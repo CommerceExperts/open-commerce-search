@@ -48,7 +48,7 @@ public class FacetConfigurationApplyer {
 	private final List<FacetCreator>						facetCreators			= new ArrayList<>();
 	private final Map<FacetCreatorClassifier, FacetCreator>	facetCreatorsByTypes	= new HashMap<>();
 
-	private int maxFacets;
+	private final int maxFacets;
 
 	private final List<FacetFilter> facetFilters = new ArrayList<>();
 

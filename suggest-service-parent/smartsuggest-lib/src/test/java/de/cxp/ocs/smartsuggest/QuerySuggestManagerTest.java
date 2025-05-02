@@ -36,11 +36,11 @@ class QuerySuggestManagerTest {
 
 	private static final int UPDATE_LATENCY = 2000;
 
-	private String testTenant1 = "test.1";
-	private String testTenant2 = "test.2";
+	private final String testTenant1 = "test.1";
+	private final String testTenant2 = "test.2";
 
-	private RemoteSuggestDataProviderSimulation serviceMock = new RemoteSuggestDataProviderSimulation();
-	private QuerySuggestManager                 querySuggestManager;
+	private final RemoteSuggestDataProviderSimulation serviceMock = new RemoteSuggestDataProviderSimulation();
+	private       QuerySuggestManager                 querySuggestManager;
 
 	@AfterEach
 	void afterEach() {

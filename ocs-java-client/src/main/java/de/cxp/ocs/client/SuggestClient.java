@@ -11,7 +11,7 @@ import feign.jackson.JacksonDecoder;
 
 public class SuggestClient implements SuggestService {
 
-	private SuggestApi target;
+	private final SuggestApi target;
 
 	/**
 	 * With this constructor the Feign::Builder can be configured.

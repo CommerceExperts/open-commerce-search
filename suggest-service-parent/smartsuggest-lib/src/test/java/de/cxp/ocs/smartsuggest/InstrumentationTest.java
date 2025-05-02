@@ -16,10 +16,10 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 public class InstrumentationTest {
 
-	private String testIndex = "instrumentation_test";
+	private final String testIndex = "instrumentation_test";
 
-	private RemoteSuggestDataProviderSimulation	serviceMock	= new RemoteSuggestDataProviderSimulation();
-	private QuerySuggestManager					querySuggestManager;
+	private final RemoteSuggestDataProviderSimulation serviceMock = new RemoteSuggestDataProviderSimulation();
+	private       QuerySuggestManager                 querySuggestManager;
 
 	@Test
 	public void testInstrumentationOfReinitializedSuggester() throws Exception {
