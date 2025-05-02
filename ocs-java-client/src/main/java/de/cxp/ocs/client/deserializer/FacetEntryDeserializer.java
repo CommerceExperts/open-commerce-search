@@ -18,7 +18,7 @@ import de.cxp.ocs.model.result.RangeFacetEntry;
 public class FacetEntryDeserializer extends JsonDeserializer<FacetEntry> {
 
 	@Override
-	public FacetEntry deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+	public FacetEntry deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
 		TreeNode docNode = p.readValueAsTree();
 
 		TreeNode childrenNode = docNode.get("children");
