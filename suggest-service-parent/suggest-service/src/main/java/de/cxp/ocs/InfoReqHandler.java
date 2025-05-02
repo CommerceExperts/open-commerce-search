@@ -21,7 +21,7 @@ public class InfoReqHandler implements ReqHandler {
 	}
 
 	@Override
-	public Object execute(Req req) throws Exception {
+	public Object execute(Req req) {
 		return info;
 	}
 

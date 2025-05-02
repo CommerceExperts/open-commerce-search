@@ -15,7 +15,7 @@ public class NoopQuerySuggester implements QuerySuggester {
 	private boolean isReady = false;
 
 	@Override
-	public void close() throws Exception {}
+	public void close() {}
 
 	@Override
 	public List<Suggestion> suggest(String term, int maxResults, Set<String> tags) throws SuggestException {

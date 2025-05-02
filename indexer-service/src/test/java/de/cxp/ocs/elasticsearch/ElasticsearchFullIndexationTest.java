@@ -42,7 +42,7 @@ public class ElasticsearchFullIndexationTest {
 			Collections.emptyList());
 
 	@BeforeEach
-	public void setupDefaultEsIndexClient() throws IOException {
+	public void setupDefaultEsIndexClient() {
 		when(mockedIndexClient.getSettings(any())).thenReturn(Optional.empty());
 	}
 

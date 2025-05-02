@@ -61,12 +61,12 @@ public class SearchClient implements SearchService {
 	}
 
 	@Override
-	public SearchResult arrangedSearch(String tenant, ArrangedSearchQuery searchQuery) throws Exception {
+	public SearchResult arrangedSearch(String tenant, ArrangedSearchQuery searchQuery) {
 		return target.arrangedSearch(tenant, searchQuery);
 	}
 
 	@Override
-	public Document getDocument(String tenant, String docId) throws Exception {
+	public Document getDocument(String tenant, String docId) {
 		return target.getDocument(tenant, docId);
 	}
 }
