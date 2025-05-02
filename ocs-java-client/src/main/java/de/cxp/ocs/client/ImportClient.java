@@ -78,17 +78,15 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 	}
 
 	/**
-	 * Similar to patchDocuments, but for the extended sub type {@link Product}
-	 * that supports variants. For some reason this is necessary.
-	 * 
+	 * Similar to patchDocuments, but for the extended sub type {@link Product} that supports variants. For some reason this is necessary.
+	 *
 	 * XXX: may be solved with custom serializer.
-	 * 
+	 *
 	 * @param indexName
 	 * @param products
-	 * @return
 	 */
-	public Map<String, Result> patchProducts(String indexName, List<Product> products) {
-		return target.patchProducts(indexName, products);
+	public void patchProducts(String indexName, List<Product> products) {
+		target.patchProducts(indexName, products);
 	}
 
 	/**

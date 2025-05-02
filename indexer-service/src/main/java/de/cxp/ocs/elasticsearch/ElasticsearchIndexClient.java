@@ -85,7 +85,7 @@ class ElasticsearchIndexClient {
 		}
 	}
 
-	public boolean updateAlias(String aliasName, String oldIndexName, String newIndexName) {
+	public void updateAlias(String aliasName, String oldIndexName, String newIndexName) {
 		IndicesAliasesRequest aliasRequest = new IndicesAliasesRequest();
 		if (oldIndexName != null) {
 			aliasRequest.addAliasAction(AliasActions.remove().alias(aliasName).index(oldIndexName));
@@ -95,35 +95,29 @@ class ElasticsearchIndexClient {
 		try {
 			AcknowledgedResponse updateAliases = highLevelClient.indices()
 					.updateAliases(aliasRequest, RequestOptions.DEFAULT);
-			return updateAliases.isAcknowledged();
 		}
 		catch (IOException e) {
 			log.error("updating alias {} from old index {} to new index {} failed because of {}: {}",
 					aliasName, oldIndexName, newIndexName,
 					e.getClass().getSimpleName(), e.getMessage());
-			return false;
 		}
 	}
 
 	/**
-	 * create index ready for full indexation. After indexation finalizeIndex
-	 * should be called to enable replication and set refresh interval.
-	 * 
+	 * create index ready for full indexation. After indexation finalizeIndex should be called to enable replication and set refresh interval.
+	 *
 	 * @param indexName
-	 * @return
 	 */
-	public boolean createFreshIndex(String indexName) {
+	public void createFreshIndex(String indexName) {
 		CreateIndexRequest createIndexRequest = new CreateIndexRequest(indexName);
 		createIndexRequest.settings(Settings.builder()
 				.put(ES_SETTINGS_NUMBER_OF_REPLICAS, 0)
 				.put(ES_SETTINGS_REFRESH_INTERVAL, "-1"));
 		try {
 			highLevelClient.indices().create(createIndexRequest, RequestOptions.DEFAULT);
-			return true;
 		}
 		catch (IOException e) {
 			log.error("creating index {} failed: {}", indexName, e.getMessage());
-			return false;
 		}
 	}
 
@@ -207,7 +201,7 @@ class ElasticsearchIndexClient {
 		return count.getCount();
 	}
 
-	public boolean deleteIndex(final String index, final boolean silent) {
+	public void deleteIndex(final String index, final boolean silent) {
 		try {
 			DeleteIndexRequest deleteIndexRequest = new DeleteIndexRequest(index);
 			AcknowledgedResponse deleteIndexResponse = highLevelClient.indices().delete(deleteIndexRequest, RequestOptions.DEFAULT);
@@ -215,16 +209,13 @@ class ElasticsearchIndexClient {
 				if (!silent) {
 					throw new IOException("Delete index operation not acknowledged by client response.");
 				}
-				return false;
 			}
 		}
 		catch (Exception e) {
 			if (!silent) {
 				log.warn("Failed to delete old index {} because the index did not exist.", index);
 			}
-			return false;
 		}
-		return true;
 	}
 
 	/**

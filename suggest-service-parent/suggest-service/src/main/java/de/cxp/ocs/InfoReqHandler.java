@@ -25,7 +25,7 @@ public class InfoReqHandler implements ReqHandler {
 		return info;
 	}
 
-	public Map<String, Object> load(String propertyResource) {
+	public void load(String propertyResource) {
 		try {
 			InputStream gitPropertiesStream = InfoReqHandler.class.getClassLoader().getResourceAsStream(propertyResource);
 			if (gitPropertiesStream != null) {
@@ -40,7 +40,6 @@ public class InfoReqHandler implements ReqHandler {
 		catch (Exception e) {
 			addProperty(propertyResource + ".error", e.getClass().getSimpleName() + ": " + e.getMessage());
 		}
-		return info;
 	}
 
 	private void addProperty(Object name, Object value) {
