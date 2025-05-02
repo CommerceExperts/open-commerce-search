@@ -54,7 +54,7 @@ public class SuggestServicePropertiesTest {
 
 		Path indexFolder = underTest.getIndexFolder();
 		assertNotNull(indexFolder);
-		assertTrue(indexFolder.startsWith("/tmp"), "should be a temp folder, but was "+indexFolder);
+		assertTrue(indexFolder.startsWith("/tmp") || indexFolder.toString().contains("\\Temp\\"), "should be a temp folder, but was "+indexFolder);
 
 		SuggestConfig suggestConfig = underTest.getDefaultSuggestConfig();
 		assertEquals(Locale.ROOT, suggestConfig.getLocale());
