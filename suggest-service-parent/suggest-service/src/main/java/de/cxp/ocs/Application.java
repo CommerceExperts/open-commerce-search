@@ -1,6 +1,5 @@
 package de.cxp.ocs;
 
-import java.io.InputStream;
 import java.io.Serial;
 import java.util.Arrays;
 import java.util.Collections;

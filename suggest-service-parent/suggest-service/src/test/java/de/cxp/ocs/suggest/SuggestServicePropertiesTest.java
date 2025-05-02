@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig.GroupConfig;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SuggestServicePropertiesTest {
 
