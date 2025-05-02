@@ -23,7 +23,7 @@ public class DocumentDeserializer extends JsonDeserializer<Document> {
 	private final static Logger log = Logger.getLogger(DocumentDeserializer.class.getCanonicalName());
 
 	@Override
-	public Document deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+	public Document deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
 		TreeNode docNode = p.readValueAsTree();
 
 		TreeNode variantsNode = docNode.get("variants");

@@ -321,11 +321,11 @@ public class ElasticsearchCRUDTest {
 						.string(objectMapper.writeValueAsString(Collections.singletonMap(doc.id, expectedResult))));
 	}
 
-	void deleteDocument(String indexName, String id) throws JsonProcessingException, Exception {
+	void deleteDocument(String indexName, String id) throws Exception {
 		deleteDocument(indexName, id, 200, Result.DELETED);
 	}
 
-	void deleteDocument(String indexName, String id, int expectedStatus, Result expectedResult) throws JsonProcessingException, Exception {
+	void deleteDocument(String indexName, String id, int expectedStatus, Result expectedResult) throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders
 				.delete("/indexer-api/v1/update/" + indexName + "?id=" + id)
 				.contentType(MediaType.APPLICATION_JSON))

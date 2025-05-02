@@ -17,7 +17,7 @@ import de.cxp.ocs.model.index.Product;
 public class ProductDeserializer extends JsonDeserializer<Product> {
 
 	@Override
-	public Product deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+	public Product deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
 		TreeNode docNode = p.readValueAsTree();
 
 		Product product = new Product();
