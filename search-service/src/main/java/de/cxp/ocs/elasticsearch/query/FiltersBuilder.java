@@ -55,7 +55,7 @@ public class FiltersBuilder {
 		FilterCollector filterCollector = new FilterCollector();
 
 		// collect filter queries on master and variant level
-		buildFilterQueries(filters, filterCollector, withFacets ? false : true);
+		buildFilterQueries(filters, filterCollector, !withFacets);
 		buildFilterQueries(querqyFilters, filterCollector, true);
 
 		TextMatchQuery<QueryBuilder> postFilterQuery = buildFilters(filterCollector.postFilterQueries);

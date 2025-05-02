@@ -598,12 +598,12 @@ public class Searcher {
 
 		if (queryContext.heroProducts != null) {
 			variantsMatchQuery = queryContext.heroProducts.applyToVariantQuery(variantsMatchQuery);
-			variantsOnlyFiltered = variantsMatchQuery != null ? false : variantsOnlyFiltered;
+			variantsOnlyFiltered = variantsMatchQuery == null && variantsOnlyFiltered;
 		}
 
 		if (queryContext.variantSortings.isEmpty()) {
 			variantsMatchQuery = queryContext.scoring.wrapVariantLevelQuery(variantsMatchQuery);
-			variantsOnlyFiltered = variantsMatchQuery != null ? false : variantsOnlyFiltered;
+			variantsOnlyFiltered = variantsMatchQuery == null && variantsOnlyFiltered;
 		}
 
 		// variant inner hits are always retrieved in a should clause,
