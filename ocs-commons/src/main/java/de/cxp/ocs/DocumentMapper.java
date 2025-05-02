@@ -120,7 +120,7 @@ public class DocumentMapper {
 
 				if (!lastCatPath.isEmpty() && !catPath.startsWith(lastCatPath)) {
 					if (primaryCategoryField.map(catField -> catField.getName().equals(fieldName)).orElse(false)) {
-						mapped.addCategory(path.toArray(new Category[path.size()]));
+						mapped.addCategory(path.toArray(new Category[0]));
 					}
 					else {
 						joinPathDataField(mapped, fieldName, path);
@@ -143,7 +143,7 @@ public class DocumentMapper {
 			List<Category> path = pathEntry.getValue();
 			if (!path.isEmpty()) {
 				if (primaryCategoryField.map(catField -> catField.getName().equals(fieldName)).orElse(false)) {
-					mapped.addCategory(path.toArray(new Category[path.size()]));
+					mapped.addCategory(path.toArray(new Category[0]));
 				}
 				else {
 					joinPathDataField(mapped, fieldName, path);
@@ -159,7 +159,7 @@ public class DocumentMapper {
 	}
 
 	private static void joinPathDataField(Document mapped, String fieldName, List<Category> path) {
-		Category[] assembledPath = path.toArray(new Category[path.size()]);
+		Category[] assembledPath = path.toArray(new Category[0]);
 		Object previousPathVal = mapped.data.get(fieldName);
 
 		if (previousPathVal != null && previousPathVal instanceof Category[]) {

@@ -196,7 +196,7 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 		for (QueryStringTerm term : parsedQuery.getFilters()) {
 			if (term.getOccur().equals(Occur.MUST_NOT)) {
 				mainQuery = ESQueryUtils.mapToBoolQueryBuilder(mainQuery).mustNot(exactMatchQuery(term.getRawTerm()));
-				queryDescription.append(" must_not:" + term.getRawTerm()).append(" ");
+				queryDescription.append(" must_not:").append(term.getRawTerm()).append(" ");
 			}
 		}
 

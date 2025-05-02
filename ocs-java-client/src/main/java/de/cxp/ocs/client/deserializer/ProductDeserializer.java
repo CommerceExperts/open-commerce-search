@@ -34,7 +34,7 @@ public class ProductDeserializer extends JsonDeserializer<Product> {
 					variants.add(extractedDocument);
 				}
 			}
-			product.setVariants(variants.toArray(new Document[variants.size()]));
+			product.setVariants(variants.toArray(new Document[0]));
 		}
 
 		return product;

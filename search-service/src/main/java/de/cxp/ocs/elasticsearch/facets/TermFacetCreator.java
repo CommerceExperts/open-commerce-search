@@ -229,9 +229,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 		if (values.length == 1) return Collections.singleton(values[0]);
 
 		Set<String> hashedValues = new HashSet<>();
-		for (String val : values) {
-			hashedValues.add(val);
-		}
+		hashedValues.addAll(Arrays.asList(values));
 		return hashedValues;
 	}
 

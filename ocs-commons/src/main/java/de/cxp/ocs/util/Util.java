@@ -130,7 +130,7 @@ public final class Util {
 			Function<Object, T> convert) {
 		if (value == null) return Collections.emptyList();
 		if (targetType.isInstance(value)) {
-			return Arrays.asList(targetType.cast(value));
+			return List.of(targetType.cast(value));
 		}
 		else if (value instanceof Collection) {
 			List<T> newCollection = new ArrayList<>();
@@ -150,7 +150,7 @@ public final class Util {
 			return newCollection;
 		}
 		T converted = convert.apply(value);
-		return converted == null ? Collections.emptyList() : Arrays.asList(converted);
+		return converted == null ? Collections.emptyList() : List.of(converted);
 	}
 
 	public static Map<String, String> asMap(String... keyValues) {

@@ -563,7 +563,7 @@ public class Searcher {
 				includeFields.add(FieldConstants.SORT_DATA + ".*");
 			}
 
-			searchSourceBuilder.fetchSource(includeFields.toArray(new String[includeFields.size()]), null);
+			searchSourceBuilder.fetchSource(includeFields.toArray(new String[0]), null);
 		}
 		else {
 			searchSourceBuilder.fetchSource(FetchSourceContext.DO_NOT_FETCH_SOURCE);
