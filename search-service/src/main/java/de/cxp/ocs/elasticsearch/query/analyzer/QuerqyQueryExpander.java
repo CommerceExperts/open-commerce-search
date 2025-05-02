@@ -475,7 +475,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 
 		private Optional<Term> extractSingleTerm(BooleanClause clause) {
 			if (!(clause instanceof DisjunctionMaxQuery)) {
-				log.warn("Cannot handle boolean clause of type {}: {}", clause.getClass().getSimpleName(), clause.toString());
+				log.warn("Cannot handle boolean clause of type {}: {}", clause.getClass().getSimpleName(), clause);
 				return Optional.empty();
 			}
 

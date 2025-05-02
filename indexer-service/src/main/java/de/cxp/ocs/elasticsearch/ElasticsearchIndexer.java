@@ -187,7 +187,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	private String getNumberedIndexName(String localizedIndexName, int number) {
-		return INDEX_PREFIX + String.valueOf(number) + INDEX_DELIMITER + localizedIndexName;
+		return INDEX_PREFIX + number + INDEX_DELIMITER + localizedIndexName;
 	}
 
 	@Override

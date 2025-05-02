@@ -31,9 +31,9 @@ public class GroupedCutOffLimiterTest {
 	public void standardUseCase() {
 		List<Suggestion> bigList = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
-			bigList.add(new Suggestion("b_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "brand")));
-			bigList.add(new Suggestion("c_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "category")));
-			bigList.add(new Suggestion("k_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "keyword")));
+			bigList.add(new Suggestion("b_" + (i + 1)).setPayload(Collections.singletonMap("type", "brand")));
+			bigList.add(new Suggestion("c_" + (i + 1)).setPayload(Collections.singletonMap("type", "category")));
+			bigList.add(new Suggestion("k_" + (i + 1)).setPayload(Collections.singletonMap("type", "keyword")));
 		}
 
 		List<Suggestion> limited12 = underTest.limit(bigList, 12);
@@ -63,8 +63,8 @@ public class GroupedCutOffLimiterTest {
 	public void oneGroupNotInResult() {
 		List<Suggestion> bigList = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
-			bigList.add(new Suggestion("c_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "category")));
-			bigList.add(new Suggestion("k_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "keyword")));
+			bigList.add(new Suggestion("c_" + (i + 1)).setPayload(Collections.singletonMap("type", "category")));
+			bigList.add(new Suggestion("k_" + (i + 1)).setPayload(Collections.singletonMap("type", "keyword")));
 			// no brands part of result
 		}
 
@@ -78,11 +78,11 @@ public class GroupedCutOffLimiterTest {
 	public void withUnconfiguredGroupsInResult() {
 		List<Suggestion> bigList = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
-			bigList.add(new Suggestion("c_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "category")));
-			bigList.add(new Suggestion("k_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "keyword")));
-			bigList.add(new Suggestion("b_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "brand")));
-			bigList.add(new Suggestion("f_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "foo")));
-			bigList.add(new Suggestion("x_" + String.valueOf(i + 1)));
+			bigList.add(new Suggestion("c_" + (i + 1)).setPayload(Collections.singletonMap("type", "category")));
+			bigList.add(new Suggestion("k_" + (i + 1)).setPayload(Collections.singletonMap("type", "keyword")));
+			bigList.add(new Suggestion("b_" + (i + 1)).setPayload(Collections.singletonMap("type", "brand")));
+			bigList.add(new Suggestion("f_" + (i + 1)).setPayload(Collections.singletonMap("type", "foo")));
+			bigList.add(new Suggestion("x_" + (i + 1)));
 		}
 
 		// the configured limits are enough to fill the list
@@ -121,10 +121,10 @@ public class GroupedCutOffLimiterTest {
 		underTest = new GroupedCutOffLimiter("type", 3, new LinkedHashMap<>(), null);
 		List<Suggestion> bigList = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
-			bigList.add(new Suggestion("c_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "category")));
-			bigList.add(new Suggestion("k_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "keyword")));
-			bigList.add(new Suggestion("b_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "brand")));
-			bigList.add(new Suggestion("x_" + String.valueOf(i + 1)));
+			bigList.add(new Suggestion("c_" + (i + 1)).setPayload(Collections.singletonMap("type", "category")));
+			bigList.add(new Suggestion("k_" + (i + 1)).setPayload(Collections.singletonMap("type", "keyword")));
+			bigList.add(new Suggestion("b_" + (i + 1)).setPayload(Collections.singletonMap("type", "brand")));
+			bigList.add(new Suggestion("x_" + (i + 1)));
 		}
 
 		List<Suggestion> limited12 = underTest.limit(bigList, 12);
