@@ -188,7 +188,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			searchQuery = termFetcher.getExtractedWords();
 		}
 		else if (expandedQuery.getUserQuery() != null) {
-			log.error("not expected userquery of type" + expandedQuery.getUserQuery().getClass().getCanonicalName());
+			log.error("not expected userquery of type{}", expandedQuery.getUserQuery().getClass().getCanonicalName());
 			TermFetcher termFetcher = new TermFetcher();
 			expandedQuery.getUserQuery().accept(termFetcher);
 			searchQuery = termFetcher.getExtractedWords();
