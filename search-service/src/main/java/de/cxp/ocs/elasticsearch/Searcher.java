@@ -108,9 +108,9 @@ public class Searcher {
 	private final Timer						correctedWordsTimer;
 	private final Timer						resultTimer;
 	private final Timer						searchRequestTimer;
-	private final DistributionSummary		summary;
-	private ScoringCreator					scoringCreator;
-	private SpellCorrector					spellCorrector;
+	private final DistributionSummary summary;
+	private final ScoringCreator      scoringCreator;
+	private final SpellCorrector      spellCorrector;
 
 	public Searcher(RestHighLevelClient restClient, SearchContext searchContext, final MeterRegistry registry, final SearchPlugins plugins) {
 		this.restClient = restClient;

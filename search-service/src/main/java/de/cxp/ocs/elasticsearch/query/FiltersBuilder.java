@@ -22,11 +22,11 @@ import de.cxp.ocs.elasticsearch.query.filter.*;
 
 public class FiltersBuilder {
 
-	private final Set<String>	postFilterFacets	= new HashSet<>();
-	private FieldConfigIndex	indexedFieldConfig;
+	private final Set<String>      postFilterFacets	= new HashSet<>();
+	private final FieldConfigIndex indexedFieldConfig;
 
 
-	private static Map<Class<? extends InternalResultFilter>, InternalResultFilterAdapter<? extends InternalResultFilter>> filterAdapters = new HashMap<>(3);
+	private static final Map<Class<? extends InternalResultFilter>, InternalResultFilterAdapter<? extends InternalResultFilter>> filterAdapters = new HashMap<>(3);
 	static {
 		filterAdapters.put(NumberResultFilter.class, new NumberResultFilterAdapter());
 		filterAdapters.put(TermResultFilter.class, new TermResultFilterAdapter());

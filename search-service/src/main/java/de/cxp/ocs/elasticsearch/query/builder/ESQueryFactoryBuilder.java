@@ -33,7 +33,7 @@ public class ESQueryFactoryBuilder {
 
 	private List<QueryConfiguration> queryConfigs;
 
-	private Map<String, QueryConfiguration> queryConfigIndex = new HashMap<>();
+	private final Map<String, QueryConfiguration> queryConfigIndex = new HashMap<>();
 
 	private final Map<String, Supplier<? extends ESQueryFactory>> knownQueryFactories;
 

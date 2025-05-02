@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class QuerqyQueryExpanderTest {
 
-	private QuerqyQueryExpanderBuilder qqBuilder = new QuerqyQueryExpanderBuilder();
+	private final QuerqyQueryExpanderBuilder qqBuilder = new QuerqyQueryExpanderBuilder();
 
 	@AfterEach
 	public void cleanupTempRuleFile() {

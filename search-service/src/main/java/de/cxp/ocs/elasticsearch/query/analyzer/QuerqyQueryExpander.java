@@ -39,8 +39,8 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 	public final static String	DO_ASCIIFY_RULES_PROPERTY_NAME		= "do_asciiy_rules";
 	public final static String	DO_LOWERCASE_RULES_PROPERTY_NAME	= "do_lowercase_rules";
 
-	private WhiteSpaceQuerqyParser	defaultParser			= new WhiteSpaceQuerqyParser();
-	private QuerqyParser			parser					= defaultParser;
+	private final WhiteSpaceQuerqyParser defaultParser = new WhiteSpaceQuerqyParser();
+	private       QuerqyParser           parser        = defaultParser;
 	private RewriteChain			rewriteChain			= null;
 	private boolean					loggedMissingRewriter	= false;
 
@@ -237,9 +237,9 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 	@NoArgsConstructor
 	static class TermCollector {
 
-		private List<QueryStringTerm> inputTerms = new ArrayList<>();
+		private final List<QueryStringTerm> inputTerms = new ArrayList<>();
 
-		private Set<QueryStringTerm> associations = new LinkedHashSet<>();
+		private final Set<QueryStringTerm> associations = new LinkedHashSet<>();
 
 		public TermCollector(QueryStringTerm inpuTerm) {
 			addInputTerm(inpuTerm);

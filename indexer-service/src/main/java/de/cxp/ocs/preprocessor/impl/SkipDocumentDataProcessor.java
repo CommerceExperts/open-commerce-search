@@ -30,7 +30,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SkipDocumentDataProcessor implements DocumentPreProcessor {
 
-	private Map<String, Pattern> filterPatterns = new HashMap<>();
+	private final Map<String, Pattern> filterPatterns = new HashMap<>();
 
 	@Override
 	public void initialize(FieldConfigAccess fieldConfig, Map<String, String> confMap) {

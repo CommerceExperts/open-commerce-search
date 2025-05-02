@@ -15,7 +15,7 @@ public class TraceOptions {
 		Request, EsQuery
 	}
 
-	private static Map<String, TraceFlag> lowercaseMapping = new HashMap<>(TraceFlag.values().length);
+	private static final Map<String, TraceFlag> lowercaseMapping = new HashMap<>(TraceFlag.values().length);
 	static {
 		for (TraceFlag f : TraceFlag.values()) {
 			lowercaseMapping.put(f.name().toLowerCase(), f);
