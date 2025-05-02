@@ -45,7 +45,7 @@ public enum QueryBuildingSetting {
 	 * PHRASE_PREFIX
 	 * <p>
 	 * see
-	 <a href=" * https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html#multi-match-types">query-dsl-multi-match-query.html#multi-match-types</a>
+	 * <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html#multi-match-types">query-dsl-multi-match-query.html#multi-match-types</a>
 	 */
 	multimatch_type,
 
