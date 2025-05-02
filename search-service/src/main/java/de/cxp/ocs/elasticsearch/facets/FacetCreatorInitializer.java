@@ -45,7 +45,7 @@ class FacetCreatorInitializer {
 	private class ConfigCollector {
 
 		FieldType					relatedFieldType;
-		Map<String, FacetConfig>	configsByField	= new HashMap<>();
+		final Map<String, FacetConfig> configsByField = new HashMap<>();
 
 		FacetConfig putFacetConfig(String fieldName, FacetConfig facetConfig) {
 			return configsByField.put(fieldName, facetConfig);

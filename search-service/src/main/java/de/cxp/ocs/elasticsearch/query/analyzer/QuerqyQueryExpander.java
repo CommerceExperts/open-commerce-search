@@ -299,9 +299,9 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 
 		private QueryStringTerm initialTerm;
 
-		Map<String, TermCollector>		termAssociationCollectors	= new LinkedHashMap<>();
-		Map<String, List<String>>		inputTermCollectorRelations	= new HashMap<>();
-		Map<String, QueryStringTerm>	inputTerms					= new LinkedHashMap<>();
+		final Map<String, TermCollector> termAssociationCollectors   = new LinkedHashMap<>();
+		final Map<String, List<String>>  inputTermCollectorRelations = new HashMap<>();
+		final Map<String, QueryStringTerm> inputTerms                  = new LinkedHashMap<>();
 
 		private Occur occur;
 
@@ -519,8 +519,8 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 
 	static class FilterFetcher extends AbstractNodeVisitor<Node> {
 
-		List<QueryStringTerm>								extractedWords	= new ArrayList<>();
-		private de.cxp.ocs.elasticsearch.model.term.Occur	occur;
+		final   List<QueryStringTerm>                     extractedWords = new ArrayList<>();
+		private de.cxp.ocs.elasticsearch.model.term.Occur occur;
 
 		@Override
 		public Node visit(DisjunctionMaxQuery disjunctionMaxQuery) {

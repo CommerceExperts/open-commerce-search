@@ -127,7 +127,7 @@ public class NumericFacetEntryBuilderTest {
 
 	private static class FacetConfigBuilder {
 
-		Map<String, Object> metaData = new HashMap<>();
+		final Map<String, Object> metaData = new HashMap<>();
 
 		public FacetConfigBuilder lowerBoundAdjustValue(double adjust) {
 			metaData.put("lowerBoundAdjustValue", String.valueOf(adjust));

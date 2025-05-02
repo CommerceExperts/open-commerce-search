@@ -11,7 +11,7 @@ import org.opentest4j.TestAbortedException;
 
 public class QuerqyQueryExpanderBuilder {
 
-	List<File> createdTempFiles = new ArrayList<>();
+	final List<File> createdTempFiles = new ArrayList<>();
 
 	enum RuleLoadingFlags {
 		ASCIIFY, LOWERCASE

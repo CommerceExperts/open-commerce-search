@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 public class NonAlphanumericWordSplitAnalyzerTest {
 
-	NonAlphanumericWordSplitAnalyzer underTest = new NonAlphanumericWordSplitAnalyzer();
+	final NonAlphanumericWordSplitAnalyzer underTest = new NonAlphanumericWordSplitAnalyzer();
 
 	@Test
 	public void testCommaSplit() {
