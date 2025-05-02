@@ -23,7 +23,7 @@ import de.cxp.ocs.model.result.*;
 import de.cxp.ocs.util.DataIndexer;
 
 @ExtendWith({ OCSStack.class })
-public class FilterAndSortByFacetValues {
+public class FilterAndSortByFacetValuesTest {
 
 	static final String indexName = "test_campaign_indexing";
 

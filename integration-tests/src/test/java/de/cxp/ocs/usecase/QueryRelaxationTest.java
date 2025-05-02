@@ -19,7 +19,7 @@ import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.util.DataIndexer;
 
 @ExtendWith({ OCSStack.class })
-public class QueryRelaxation {
+public class QueryRelaxationTest {
 
 	@Test
 	public void testPartiallyKnownTermCombinationAreSearchedInclusively() throws Exception {
