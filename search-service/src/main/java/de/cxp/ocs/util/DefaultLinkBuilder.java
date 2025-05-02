@@ -266,7 +266,7 @@ public final class DefaultLinkBuilder implements LinkBuilder {
 	private String withParameterAppended(String filterName, String filterValues) {
 		String newParam = filterName + "=" + urlEncodeValue(filterValues);
 		String query = searchQueryLink.getRawQuery();
-		if (query == null || query.length() == 0) {
+		if (query == null || query.isEmpty()) {
 			return newParam;
 		}
 		else {

@@ -221,7 +221,7 @@ public final class FieldConfigIndex implements FieldConfigAccess {
 			// alternative case: if one field has no "source field names",
 			// it should be the categories field.
 			if (categoryFields.size() > 1) {
-				categoryFields.entrySet().removeIf(e -> e.getValue().getSourceNames().size() > 0);
+				categoryFields.entrySet().removeIf(e -> !e.getValue().getSourceNames().isEmpty());
 				if (categoryFields.isEmpty()) {
 					log.info("Multiple category fields defined, but none with one of the prefered names (categories/category) or without source names found!"
 							+ " Won't index Document::categories data!");

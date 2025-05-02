@@ -84,7 +84,7 @@ public class FieldUsageApplier {
 			value = convertCategoryDataToString(value, catPath -> {
 				StringBuilder searchableCategoryPath = new StringBuilder();
 				for (Category c : catPath) {
-					if (searchableCategoryPath.length() > 0) searchableCategoryPath.append(" / ");
+					if (!searchableCategoryPath.isEmpty()) searchableCategoryPath.append(" / ");
 					searchableCategoryPath.append(c.getName());
 				}
 				return searchableCategoryPath.toString();
@@ -411,7 +411,7 @@ public class FieldUsageApplier {
 	private static String toCategoryPathString(Category[] categories) {
 		StringBuilder categoryPath = new StringBuilder();
 		for (Category c : categories) {
-			if (categoryPath.length() > 0) categoryPath.append('/');
+			if (!categoryPath.isEmpty()) categoryPath.append('/');
 			categoryPath.append(c.getName().replace("/", "%2F"));
 		}
 		return categoryPath.toString();
@@ -421,7 +421,7 @@ public class FieldUsageApplier {
 		List<FacetEntry<String>> catFacetEntries = new ArrayList<>();
 		StringBuilder pathString = new StringBuilder();
 		for (Category cat : catPath) {
-			if (pathString.length() > 0) pathString.append('/');
+			if (!pathString.isEmpty()) pathString.append('/');
 			pathString.append(cat.getName().replace("/", "%2F"));
 			catFacetEntries.add(new FacetEntry<>(fieldName, pathString.toString()).setId(cat.getId()));
 		}
@@ -432,7 +432,7 @@ public class FieldUsageApplier {
 		List<FacetEntry<String>> catFacetEntries = new ArrayList<>();
 		StringBuilder pathString = new StringBuilder();
 		for (String cat : catPath) {
-			if (pathString.length() > 0) pathString.append('/');
+			if (!pathString.isEmpty()) pathString.append('/');
 			pathString.append(cat.replace("/", "%2F"));
 
 			catFacetEntries.add(new FacetEntry<>(fieldName, pathString.toString()));

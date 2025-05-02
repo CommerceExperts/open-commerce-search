@@ -73,7 +73,7 @@ public class SpellCorrector {
 
 						if (spellCorrectOption.getScore() > bestScore) {
 							bestScores.put(perWordCorrection.getText().string(), spellCorrectOption.getScore());
-							if (wordCorrections.getRelatedTerms().size() > 0) {
+							if (!wordCorrections.getRelatedTerms().isEmpty()) {
 								wordCorrections.getRelatedTerms().clear();
 							}
 						}

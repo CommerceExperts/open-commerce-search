@@ -168,7 +168,7 @@ public class HeroProductHandler {
 				}
 				boost /= MAX_IDS_ORDERED_BOOSTING;
 
-				if (variantBoostQueryString.length() > 0) {
+				if (!variantBoostQueryString.isEmpty()) {
 					variantBoostQuery = QueryBuilders.queryStringQuery(variantBoostQueryString.toString())
 							.defaultField(FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + ".*")
 							.analyzer("whitespace");
@@ -216,7 +216,7 @@ public class HeroProductHandler {
 	 */
 	public static Set<String> extractSlices(SearchResponse searchResponse, InternalSearchParams internalParams, SearchResult searchResult,
 			VariantPickingStrategy variantPickingStrategy) {
-		if (internalParams.getSortings().size() == 0) {
+		if (internalParams.getSortings().isEmpty()) {
 			StaticProductSet[] productSets = internalParams.heroProductSets;
 			Map<String, Integer> productSetAssignment = new HashMap<>();
 			for (int i = 0; i < productSets.length; i++) {

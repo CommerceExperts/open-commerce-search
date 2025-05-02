@@ -254,7 +254,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 		}
 
 		List<QueryStringTerm> build() {
-			if (associations.size() > 0) {
+			if (!associations.isEmpty()) {
 				List<QueryStringTerm> inputQueryTerms = inputTerms.stream().map(input -> extractTermInput(input)).collect(Collectors.toList());
 				QueryStringTerm inputQuery = inputQueryTerms.size() == 1 ? inputQueryTerms.get(0) : new ConceptTerm(inputTerms);
 				return Collections.singletonList(new AssociatedTerm(inputQuery, associations));
@@ -450,7 +450,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			for (BooleanClause clause : booleanQuery.getClauses()) {
 				Optional<WeightedTerm> weightedWord = extractSingleTerm(clause).map(this::toWeightedWord);
 				if (weightedWord.isPresent()) {
-					if (text.length() > 0) {
+					if (!text.isEmpty()) {
 						text.append(' ');
 						isPhrase = true;
 					}

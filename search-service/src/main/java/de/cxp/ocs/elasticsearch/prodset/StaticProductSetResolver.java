@@ -48,7 +48,7 @@ public class StaticProductSetResolver implements ProductSetResolver {
 
 		// these ids are actual unique document IDs
 		else {
-			if (excludedIds != null && excludedIds.size() > 0) {
+			if (excludedIds != null && !excludedIds.isEmpty()) {
 				Set<String> filteredIds = new HashSet<String>(staticSet.getIds().length);
 				for (String id : staticSet.getIds()) {
 					if (!excludedIds.contains(id)) {

@@ -86,7 +86,7 @@ public abstract class FixedIntervalFacetCreator implements CustomFacetCreator {
 	private final List<NumericRange> fixedRanges;
 
 	public FixedIntervalFacetCreator(List<NumericRange> ranges) {
-		assert ranges.size() > 0;
+		assert !ranges.isEmpty();
 		fixedRanges = new ArrayList<>(ranges);
 	}
 

@@ -109,7 +109,7 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 			}
 		}
 		log.info("converted {} of {} documents", bulk.size(), data.documents.length);
-		if (bulk.size() > 0) {
+		if (!bulk.isEmpty()) {
 			return addToIndex(data.getSession(), bulk);
 		}
 		else {

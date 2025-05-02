@@ -150,7 +150,7 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 
 			// check how many unmatched queries are matched
 			int consideredUnmatchedQueries = 0;
-			if (unmatchedTerms.size() > 0) {
+			if (!unmatchedTerms.isEmpty()) {
 				consideredUnmatchedQueries = unmatchedTerms.size();
 				pQuery.getTermsUnique().keySet().forEach(unmatchedTerms::remove);
 				consideredUnmatchedQueries -= unmatchedTerms.size();
@@ -183,7 +183,7 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 
 		// in case we have some terms that are not matched by any query, use
 		// them with the fallback query builder to boost matching records.
-		if (unmatchedTerms.size() > 0 && fallbackQueryBuilder != null) {
+		if (!unmatchedTerms.isEmpty() && fallbackQueryBuilder != null) {
 			TextMatchQuery<QueryBuilder> boostQuery = fallbackQueryBuilder.createQuery(new ExtendedQuery(new MultiTermQuery(unmatchedTerms.keySet(), unmatchedTerms.values())));
 			String queryName = "boost(" + ESQueryUtils.getQueryLabel(unmatchedTerms.values()) + ")";
 			mainQuery = QueryBuilders.boolQuery()
@@ -213,11 +213,11 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 		 */
 		QueryBuilder variantScoreQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery);
 
-		return new TextMatchQuery<>(mainQuery, variantScoreQuery, true, unmatchedTerms.size() == 0, queryDescription.toString());
+		return new TextMatchQuery<>(mainQuery, variantScoreQuery, true, unmatchedTerms.isEmpty(), queryDescription.toString());
 	}
 
 	private boolean termHasMatches(QueryStringTerm unknownTerm) {
-		if (unknownTerm instanceof AssociatedTerm) return ((AssociatedTerm) unknownTerm).getRelatedTerms().size() > 0;
+		if (unknownTerm instanceof AssociatedTerm) return !((AssociatedTerm) unknownTerm).getRelatedTerms().isEmpty();
 		if (unknownTerm instanceof CountedTerm) return ((CountedTerm) unknownTerm).getTermFrequency() > 0;
 		else return false;
 	}

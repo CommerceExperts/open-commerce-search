@@ -79,7 +79,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		}
 		else {
 			Map<String, Set<AliasMetadata>> aliases = getIndexNameRelatedAliases(indexName);
-			return aliases.size() > 0;
+			return !aliases.isEmpty();
 		}
 	}
 
@@ -165,7 +165,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 
 	private String getNextIndexName(String indexName, String localizedIndexName) {
 		Map<String, Set<AliasMetadata>> aliases = indexClient.getAliases(INDEX_PREFIX + "*" + INDEX_DELIMITER + localizedIndexName);
-		if (aliases.size() == 0) return getNumberedIndexName(localizedIndexName, 1);
+		if (aliases.isEmpty()) return getNumberedIndexName(localizedIndexName, 1);
 
 		int oldIndexNumber = aliases.keySet().stream().mapToInt(this::extractIndexNumber).max().orElse(1);
 		String numberedIndexName = getNumberedIndexName(localizedIndexName, oldIndexNumber + 1);

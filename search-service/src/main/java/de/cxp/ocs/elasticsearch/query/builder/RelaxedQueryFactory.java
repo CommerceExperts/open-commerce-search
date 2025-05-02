@@ -119,7 +119,7 @@ public class RelaxedQueryFactory implements ESQueryFactory, FallbackConsumer {
 				pQuery.unknownTerms.forEach(term -> unmatchedTerms.put(term.getRawTerm(), term));
 			}
 			// for all others, check if they match one of those unmatched ones
-			else if (unmatchedTerms.size() > 0) {
+			else if (!unmatchedTerms.isEmpty()) {
 				pQuery.getTermsUnique().keySet().forEach(unmatchedTerms::remove);
 			}
 
@@ -134,7 +134,7 @@ public class RelaxedQueryFactory implements ESQueryFactory, FallbackConsumer {
 
 		// in case we have some terms that are not matched by any query, use
 		// them with the fallback query builder to boost matching records.
-		if (unmatchedTerms.size() > 0 && fallbackQueryBuilder != null) {
+		if (!unmatchedTerms.isEmpty() && fallbackQueryBuilder != null) {
 			QueryBuilder boostQuery = fallbackQueryBuilder.createQuery(new ExtendedQuery(new MultiTermQuery(unmatchedTerms.keySet(), unmatchedTerms.values()))).getMasterLevelQuery();
 			boostQuery.boost(createdQueries.size());
 			mainQuery = QueryBuilders.boolQuery().must(mainQuery).should(boostQuery);
@@ -163,7 +163,7 @@ public class RelaxedQueryFactory implements ESQueryFactory, FallbackConsumer {
 		 */
 		QueryBuilder variantScoreQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery);
 
-		return new TextMatchQuery<>(mainQuery, variantScoreQuery, true, unmatchedTerms.size() == 0, queryDescription.toString());
+		return new TextMatchQuery<>(mainQuery, variantScoreQuery, true, unmatchedTerms.isEmpty(), queryDescription.toString());
 	}
 
 	private List<PredictedQuery> predictQueries(final @NonNull ExtendedQuery analyzedQuery) {
