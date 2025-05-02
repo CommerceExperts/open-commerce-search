@@ -282,7 +282,7 @@ public class SerializationTest {
 				Document.class,
 				doc -> {
 					Object val = doc.data.get("mixedIntAndLong");
-					return Arrays.equals((long[]) val, new long[] { Long.MAX_VALUE, 123l });
+					return Arrays.equals((long[]) val, new long[] { Long.MAX_VALUE, 123L });
 				});
 	}
 
