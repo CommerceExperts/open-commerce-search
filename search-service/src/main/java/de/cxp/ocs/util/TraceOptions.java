@@ -37,7 +37,7 @@ public class TraceOptions {
 				traceFlags.add(traceFlag);
 			}
 			else {
-				log.debug("ignoring unknown trace-flag " + s);
+				log.debug("ignoring unknown trace-flag {}", s);
 			}
 		}
 		return new TraceOptions(traceFlags);
