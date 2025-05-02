@@ -184,7 +184,7 @@ public class HeroProductHandler {
 			idsOrderedBoostQuery
 					.append(id)
 					.append('^')
-					.append(String.valueOf(boost))
+					.append(boost)
 					.append(' ');
 			boost -= 1;
 		}

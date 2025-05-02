@@ -334,7 +334,7 @@ public final class DefaultLinkBuilder implements LinkBuilder {
 
 	private String urlEncodeValue(String value) {
 		try {
-			return URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
+			return URLEncoder.encode(value, StandardCharsets.UTF_8);
 		} catch (Exception e) {
 			return value;
 		}
