@@ -279,7 +279,6 @@ public class SearchController implements SearchService {
 					.filter(aliases -> !aliases.isEmpty())
 					.map(aliases -> aliases.iterator().next().alias())
 					.forEach(tenants::add);
-			;
 		}
 		catch (IOException e) {
 			log.warn("could not retrieve ES indices", e);

@@ -21,5 +21,5 @@ public enum SortOrder {
 		public String toString() {
 			return "desc";
 		}
-	};
+	}
 }
