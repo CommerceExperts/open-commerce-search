@@ -107,15 +107,15 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 
 			Map<String, Result> results = new HashMap<>();
 			if (!docsSplit.products.isEmpty()) {
-				results.putAll(target.putProducts(indexName, replaceExisting == null ? true : replaceExisting, langCode, docsSplit.products));
+				results.putAll(target.putProducts(indexName, replaceExisting == null || replaceExisting, langCode, docsSplit.products));
 			}
 			if (!docsSplit.documents.isEmpty()) {
-				results.putAll(target.putDocuments(indexName, replaceExisting == null ? true : replaceExisting, langCode, docsSplit.documents));
+				results.putAll(target.putDocuments(indexName, replaceExisting == null || replaceExisting, langCode, docsSplit.documents));
 			}
 			return results;
 		}
 		else {
-			return target.putDocuments(indexName, replaceExisting == null ? true : replaceExisting, langCode, docs);
+			return target.putDocuments(indexName, replaceExisting == null || replaceExisting, langCode, docs);
 		}
 	}
 
@@ -129,7 +129,7 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 	 * @return
 	 */
 	public Map<String, Result> putProducts(String indexName, Boolean replaceExisting, String langCode, List<Product> products) {
-		return target.putProducts(indexName, replaceExisting == null ? true : replaceExisting, langCode, products);
+		return target.putProducts(indexName, replaceExisting == null || replaceExisting, langCode, products);
 	}
 
 	@Override
