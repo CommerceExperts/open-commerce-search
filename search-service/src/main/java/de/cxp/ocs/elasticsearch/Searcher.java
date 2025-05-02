@@ -211,11 +211,10 @@ public class Searcher {
 
 		Map<String, Float> masterFields = validateSearchFields(fieldWeights, this.fieldIndex, Field::isMasterLevel);
 
-		TextMatchQuery<QueryBuilder> searchQuery = new TextMatchQuery<>(
+		queryContext.text = new TextMatchQuery<>(
 				QueryBuilders.queryStringQuery(parameters.userQuery).fields(masterFields),
 				QueryBuilders.matchAllQuery(),
 				false, true);
-		queryContext.text = searchQuery;
 
 		SearchSourceBuilder searchSourceBuilder = buildBasicSearchSourceBuilder(parameters, queryContext);
 		searchSourceBuilder.query(buildFinalQuery(queryContext));

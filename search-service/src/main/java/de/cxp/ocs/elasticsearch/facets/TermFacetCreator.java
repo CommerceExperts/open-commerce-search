@@ -236,10 +236,9 @@ public class TermFacetCreator extends NestedFacetCreator {
 	}
 
 	private long getDocumentCount(Bucket valueBucket) {
-		long docCount = nestedFacetCorrector != null
+		return nestedFacetCorrector != null
 				? nestedFacetCorrector.getCorrectedDocumentCount(valueBucket)
 				: valueBucket.getDocCount();
-		return docCount;
 	}
 
 }
