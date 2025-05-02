@@ -47,8 +47,8 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 	@Override
 	public void initialize(Map<String, String> settings) {
 		String commonRulesLocation = settings == null ? null : settings.get(RULES_URL_PROPERTY_NAME);
-		Boolean isAsciifyRules = Boolean.parseBoolean(settings.get(DO_ASCIIFY_RULES_PROPERTY_NAME));
-		Boolean isLowercaseRules = Boolean.parseBoolean(settings.get(DO_LOWERCASE_RULES_PROPERTY_NAME));
+		boolean isAsciifyRules = Boolean.parseBoolean(settings.get(DO_ASCIIFY_RULES_PROPERTY_NAME));
+		boolean isLowercaseRules = Boolean.parseBoolean(settings.get(DO_LOWERCASE_RULES_PROPERTY_NAME));
 		try {
 			if (commonRulesLocation == null) {
 				log.error("no 'common_rules_url' provided! Won't enrich queries with querqy.");

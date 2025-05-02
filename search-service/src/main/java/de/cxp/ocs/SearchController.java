@@ -285,7 +285,7 @@ public class SearchController implements SearchService {
 		}
 		tenants.addAll(searchContexts.keySet());
 		tenants.addAll(plugins.getConfigurationProvider().getConfiguredTenants());
-		return tenants.toArray(new String[tenants.size()]);
+		return tenants.toArray(new String[0]);
 	}
 
 	private Searcher initializeSearcher(SearchContext searchContext) {

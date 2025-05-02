@@ -3,6 +3,7 @@ package de.cxp.ocs.elasticsearch.query.analyzer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -47,9 +48,9 @@ public class NonAlphanumericWordSplitAnalyzerTest {
 
 	@Test
 	public void testBindCharactersAreTrimmed() {
-		assertEquals(Arrays.asList("tld"), underTest.analyze("tld.").getInputTerms());
-		assertEquals(Arrays.asList("bind"), underTest.analyze("bind-").getInputTerms());
-		assertEquals(Arrays.asList("under"), underTest.analyze("under_").getInputTerms());
+		assertEquals(List.of("tld"), underTest.analyze("tld.").getInputTerms());
+		assertEquals(List.of("bind"), underTest.analyze("bind-").getInputTerms());
+		assertEquals(List.of("under"), underTest.analyze("under_").getInputTerms());
 	}
 
 	@Test
@@ -65,12 +66,12 @@ public class NonAlphanumericWordSplitAnalyzerTest {
 
 	@Test
 	public void testAsianCharacters() {
-		assertEquals(Arrays.asList("牌信誉"), underTest.analyze("牌信誉").getInputTerms());
+		assertEquals(List.of("牌信誉"), underTest.analyze("牌信誉").getInputTerms());
 	}
 
 	@Test
 	public void testDimensionsSeparatorX() {
-		assertEquals(Arrays.asList("12x34"), underTest.analyze("12x34").getInputTerms());
+		assertEquals(List.of("12x34"), underTest.analyze("12x34").getInputTerms());
 	}
 
 	@Test

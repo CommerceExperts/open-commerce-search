@@ -209,8 +209,7 @@ public class ConfigurableShareLimiter implements Limiter {
 			}
 		}
 
-		HashMap<String, Double> nextShareConf = new HashMap<>();
-		nextShareConf.putAll(origShareConf);
+		HashMap<String, Double> nextShareConf = new HashMap<>(origShareConf);
 
 		// if we still have unknown keys, either the remaining share is split
 		// onto them or the minimum share is applied to them

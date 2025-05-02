@@ -55,7 +55,7 @@ public class StaticProductSetResolver implements ProductSetResolver {
 						filteredIds.add(id);
 					}
 				}
-				requestIdsQuery = QueryBuilders.idsQuery().addIds(filteredIds.toArray(new String[filteredIds.size()]));
+				requestIdsQuery = QueryBuilders.idsQuery().addIds(filteredIds.toArray(new String[0]));
 			}
 			else {
 				requestIdsQuery = QueryBuilders.idsQuery().addIds(staticSet.getIds());

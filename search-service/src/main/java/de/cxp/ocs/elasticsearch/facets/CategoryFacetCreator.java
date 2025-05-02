@@ -302,7 +302,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 				}
 			}
 			if (!category.isSelectedPath) filterValuesSet.add(pathFilterValue);
-			filterValues = filterValuesSet.isEmpty() ? null : filterValuesSet.toArray(new String[filterValuesSet.size()]);
+			filterValues = filterValuesSet.isEmpty() ? null : filterValuesSet.toArray(new String[0]);
 		}
 		else if (category.isSelectedPath) {
 			filterValues = null;
