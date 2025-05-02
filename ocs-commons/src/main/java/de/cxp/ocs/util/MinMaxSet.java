@@ -8,7 +8,7 @@ import java.util.TreeSet;
 /**
  * A set that only returns the min and the max value (based on natural ordering)
  * of all added values.
- * 
+ * <p>
  * If only one value is added, it is the min and the max value, however if
  * returned as iterator or array, the set will only contain that one value.
  */

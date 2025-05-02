@@ -43,7 +43,7 @@ public enum QueryBuildingSetting {
 	/**
 	 * one of CROSS_FIELDS (default), BEST_FIELDS, MOST_FIELDS, PHRASE,
 	 * PHRASE_PREFIX
-	 * 
+	 * <p>
 	 * see
 	 * https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html#multi-match-types
 	 */

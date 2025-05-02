@@ -206,8 +206,6 @@ class FacetCreatorInitializer {
 	 *        either the ones from master or variant level
 	 * @param rangeFacetConfigs
 	 *        either the ones from master or variant level
-	 * @param allIgnoredFields
-	 *        a set of all ignored facet-fields
 	 * @param defaultNumberFacetType
 	 *        the type of the default numeric facet
 	 * @param isVariantLevel

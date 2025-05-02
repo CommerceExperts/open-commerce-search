@@ -158,7 +158,7 @@ public class RelaxedQueryFactory implements ESQueryFactory, FallbackConsumer {
 		/**
 		 * We have copied all searchable variant-level data to master level and
 		 * skip searching on variant level in the first step.
-		 *
+		 * <p>
 		 * Now prefer variants with more matching terms
 		 */
 		QueryBuilder variantScoreQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery);

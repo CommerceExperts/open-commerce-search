@@ -360,7 +360,6 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 	 * a subaggregation of a1, and a3 will be a subaggregation of a2!
 	 * </p>
 	 *
-	 * @param firstAgg
 	 * @param subAggs
 	 * @return
 	 */

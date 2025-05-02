@@ -54,7 +54,7 @@ public enum ScoreType {
 	 * <strong>Gaussian</strong> decay that is calculated on numeric, date or
 	 * geo-point data values.
 	 * Required parameters are 'ORIGIN', 'SCALE', 'OFFSET', and 'DECAY'.
-	 * 
+	 * <p>
 	 * see <a href=
 	 * "https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-decay">ES
 	 * Function Decay documentation</a>
@@ -65,7 +65,7 @@ public enum ScoreType {
 	 * <strong>Linear</strong> decay that is calculated on numeric, date or
 	 * geo-point data values.
 	 * Required parameters are 'ORIGIN', 'SCALE', 'OFFSET', and 'DECAY'.
-	 * 
+	 * <p>
 	 * see <a href=
 	 * "https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-decay">ES
 	 * Function Decay documentation</a>
@@ -76,7 +76,7 @@ public enum ScoreType {
 	 * <strong>Exponential</strong> decay that is calculated on numeric, date or
 	 * geo-point data values.
 	 * Required parameters are 'ORIGIN', 'SCALE', 'OFFSET', and 'DECAY'.
-	 * 
+	 * <p>
 	 * see <a href=
 	 * "https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html#function-decay">ES
 	 * Function Decay documentation</a>
