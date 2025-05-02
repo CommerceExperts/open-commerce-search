@@ -323,7 +323,7 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 		SuggestRecord suggestRecord = toSuggestRecord(b.getKeyAsString(), (int) b.getDocCount(), field);
 		if (idFieldPresent) {
 			Terms idsAggResult = b.getAggregations().get(_IDS);
-			if (idsAggResult != null && idsAggResult.getBuckets().size() > 0) {
+			if (idsAggResult != null && !idsAggResult.getBuckets().isEmpty()) {
 				suggestRecord.getPayload().put("id", idsAggResult.getBuckets().get(0).getKeyAsString());
 			}
 		}

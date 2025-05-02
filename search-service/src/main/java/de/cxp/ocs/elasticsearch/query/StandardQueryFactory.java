@@ -127,7 +127,7 @@ public class StandardQueryFactory {
 			attachQueryTermsAsShingles(parsedQuery.getInputTerms(), finalQueryBuilder);
 		}
 
-		if (parsedQuery.getFilters().size() > 0) {
+		if (!parsedQuery.getFilters().isEmpty()) {
 			finalQueryBuilder
 					.append(' ')
 					.append(QueryStringUtil.buildQueryString(parsedQuery.getFilters(), " "));

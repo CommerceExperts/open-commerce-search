@@ -91,7 +91,7 @@ public class SearchController implements SearchService {
 	public void refreshAllConfigs() {
 		contextRefresher.refresh();
 		Set<String> loadedTenants = new HashSet<>(searchContexts.keySet());
-		if (loadedTenants.size() > 0) {
+		if (!loadedTenants.isEmpty()) {
 			log.info("Refreshing {} loaded tenants: {}", loadedTenants.size(), loadedTenants);
 			loadedTenants.forEach(this::flushConfig);
 		}
@@ -208,7 +208,7 @@ public class SearchController implements SearchService {
 	}
 
 	private void triggerFlushIfNecessary(String tenant, SearchResult result) {
-		if (result.getSlices().size() > 0 && result.getSlices().get(0).hits.size() > 0) {
+		if (!result.getSlices().isEmpty() && !result.getSlices().get(0).hits.isEmpty()) {
 			String indexName = result.getSlices().get(0).hits.get(0).index;
 			String prevIndexName = actualIndexPerTenant.put(tenant, indexName);
 			if (prevIndexName != null && !indexName.equals(prevIndexName)) {
@@ -276,7 +276,7 @@ public class SearchController implements SearchService {
 			esBuilder.getRestHLClient().indices()
 					.getAlias(new GetAliasesRequest().indices("ocs-*"), RequestOptions.DEFAULT)
 					.getAliases().values().stream()
-					.filter(aliases -> aliases.size() > 0)
+					.filter(aliases -> !aliases.isEmpty())
 					.map(aliases -> aliases.iterator().next().alias())
 					.forEach(tenants::add);
 			;

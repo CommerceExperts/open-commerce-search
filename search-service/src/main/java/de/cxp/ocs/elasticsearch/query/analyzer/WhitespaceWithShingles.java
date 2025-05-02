@@ -23,7 +23,7 @@ public class WhitespaceWithShingles implements UserQueryAnalyzer {
 		}
 		terms.add(new WeightedTerm(split[split.length - 1]));
 
-		AnalyzedQuery termsQuery = terms.size() == 0 ? new SingleTermQuery(userQuery, terms.get(0)) : new MultiTermQuery(terms);
+		AnalyzedQuery termsQuery = terms.isEmpty() ? new SingleTermQuery(userQuery, terms.get(0)) : new MultiTermQuery(terms);
 		return new ExtendedQuery(termsQuery);
 	}
 

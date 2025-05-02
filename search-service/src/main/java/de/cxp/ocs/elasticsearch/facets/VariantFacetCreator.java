@@ -45,7 +45,7 @@ public class VariantFacetCreator implements FacetCreator {
 	}
 
 	public AggregationBuilder _buildAggregation(Function<FacetCreator, AggregationBuilder> subAggCreatorCall) {
-		if (innerCreators.size() == 0) return null;
+		if (innerCreators.isEmpty()) return null;
 		NestedAggregationBuilder nestedAggBuilder = AggregationBuilders.nested("_variants", FieldConstants.VARIANTS);
 		innerCreators.forEach(creator -> {
 			nestedAggBuilder.subAggregation(subAggCreatorCall.apply(creator));

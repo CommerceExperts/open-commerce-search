@@ -103,7 +103,7 @@ public class ResultMapper {
 		if (source == null) return;
 
 		Object sortData = source.get(FieldConstants.SORT_DATA);
-		if (sortData != null && sortData instanceof Map && sortedFields.size() > 0) {
+		if (sortData != null && sortData instanceof Map && !sortedFields.isEmpty()) {
 			sortedFields.forEach((fieldName, order) -> {
 				Map<String, String> fieldsToChange = new HashMap<String, String>();
 				resultHit.document.getData().computeIfPresent(fieldName, (fn, v) -> {
@@ -176,9 +176,9 @@ public class ResultMapper {
 	@SuppressWarnings("unchecked")
 	private static boolean isMapList(Object data, Predicate<Object> keyPredicate, Predicate<Object> valuePredicate) {
 		boolean isWantedMap = data instanceof List
-				&& ((List<Object>) data).size() > 0
+				&& !((List<Object>) data).isEmpty()
 				&& ((List<Object>) data).get(0) instanceof Map
-				&& ((List<Map<?, ?>>) data).get(0).size() > 0;
+				&& !((List<Map<?, ?>>) data).get(0).isEmpty();
 		if (isWantedMap && keyPredicate != null && valuePredicate != null) {
 			Entry<?, ?> mapContent = ((List<Map<?, ?>>) data).get(0).entrySet().iterator().next();
 			isWantedMap &= keyPredicate.test(mapContent.getKey()) && valuePredicate.test(mapContent.getValue());

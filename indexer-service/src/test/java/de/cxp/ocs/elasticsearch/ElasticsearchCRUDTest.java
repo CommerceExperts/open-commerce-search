@@ -342,7 +342,7 @@ public class ElasticsearchCRUDTest {
 		Object variantsSources = source.get(VARIANTS);
 		IndexableItem indexedItem;
 
-		if (variantsSources != null && variantsSources instanceof List && ((List<?>) variantsSources).size() > 0) {
+		if (variantsSources != null && variantsSources instanceof List && !((List<?>) variantsSources).isEmpty()) {
 			MasterItem masterItem = new MasterItem(id);
 			for (Object variantSource : (List<?>) variantsSources) {
 				VariantItem variantItem = new VariantItem(masterItem);

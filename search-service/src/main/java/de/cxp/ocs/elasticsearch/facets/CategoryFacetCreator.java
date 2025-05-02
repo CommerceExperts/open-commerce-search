@@ -78,7 +78,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 	protected Optional<Facet> createFacet(Bucket facetNameBucket, FacetConfig facetConfig, InternalResultFilter intFacetFilter, DefaultLinkBuilder linkBuilder) {
 		Terms categoryAgg = facetNameBucket.getAggregations().get(FACET_VALUES_AGG);
 		List<? extends Bucket> catBuckets = categoryAgg.getBuckets();
-		if (catBuckets.size() == 0) return Optional.empty();
+		if (catBuckets.isEmpty()) return Optional.empty();
 
 		// let it crash if it's from the wrong type
 		PathResultFilter facetFilter = intFacetFilter != null && intFacetFilter.isNegated() ? null : (PathResultFilter) intFacetFilter;
@@ -145,7 +145,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 		Terms idsAgg = (Terms) categoryBucket.getAggregations().get(FACET_IDS_AGG);
 		List<? extends Bucket> idBuckets = idsAgg.getBuckets();
 		String id = null;
-		if (idBuckets != null && idBuckets.size() > 0) {
+		if (idBuckets != null && !idBuckets.isEmpty()) {
 			id = idBuckets.iterator().next().getKeyAsString();
 			if (idBuckets.size() > 1) {
 				log.warn("Unexpected category bucket: More than one ID for the same category name can't be handled (yet)."
@@ -302,7 +302,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 				}
 			}
 			if (!category.isSelectedPath) filterValuesSet.add(pathFilterValue);
-			filterValues = filterValuesSet.size() == 0 ? null : filterValuesSet.toArray(new String[filterValuesSet.size()]);
+			filterValues = filterValuesSet.isEmpty() ? null : filterValuesSet.toArray(new String[filterValuesSet.size()]);
 		}
 		else if (category.isSelectedPath) {
 			filterValues = null;

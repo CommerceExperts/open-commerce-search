@@ -100,7 +100,7 @@ class QueryPredictor {
 				.getBuckets()) {
 			final PredictedQuery predictedQuery = new PredictedQuery();
 			final LinkedHashMap<String, QueryStringTerm> matchingTerms = getMatchingTerms(predictionWords, scoreBucket);
-			if (matchingTerms.size() == 0) continue;
+			if (matchingTerms.isEmpty()) continue;
 
 			// set term-frequency of single match terms
 			if (matchingTerms.size() == 1) {
@@ -354,7 +354,7 @@ class QueryPredictor {
 				uniqueTokens.removeAll(shingle.getValue());
 			}
 		}
-		if (uniqueTokens.size() > 0 && uniqueTokens.size() < termsUnique.size()) {
+		if (!uniqueTokens.isEmpty() && uniqueTokens.size() < termsUnique.size()) {
 			return Optional.of(uniqueTokens);
 		}
 		else {
@@ -382,10 +382,10 @@ class QueryPredictor {
 	 * @return
 	 */
 	private boolean containsAny(final Set<String> haystack, final Collection<String> needles) {
-		if (haystack.size() == 0) {
+		if (haystack.isEmpty()) {
 			return false;
 		}
-		if (needles.size() == 0) {
+		if (needles.isEmpty()) {
 			return false;
 		}
 		if (haystack.size() == 1) {

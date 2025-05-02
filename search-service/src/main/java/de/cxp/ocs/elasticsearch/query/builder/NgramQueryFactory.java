@@ -92,14 +92,14 @@ public class NgramQueryFactory implements ESQueryFactory {
 				.collect(Collectors.joining(" "));
 
 		MultiMatchQueryBuilder mainQuery = buildEsQuery(searchPhrase);
-		if (masterFields.size() > 0) {
+		if (!masterFields.isEmpty()) {
 			mainQuery.fields(masterFields);
 		}
 		String queryName = getLabel(parsedQuery.getSearchQuery());
 		mainQuery.queryName(queryName);
 
 		MultiMatchQueryBuilder variantQuery = buildEsQuery(searchPhrase);
-		if (variantFields.size() > 0) {
+		if (!variantFields.isEmpty()) {
 			variantQuery.fields(variantFields);
 		}
 		variantQuery.queryName("variant-" + queryName);

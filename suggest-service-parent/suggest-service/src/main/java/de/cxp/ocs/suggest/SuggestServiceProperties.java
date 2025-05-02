@@ -267,7 +267,7 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 				lastCharIsDash = false;
 			}
 		}
-		return safeIndexName.length() == 0 ? Optional.empty() : Optional.of(safeIndexName.toString());
+		return safeIndexName.isEmpty() ? Optional.empty() : Optional.of(safeIndexName.toString());
 	}
 
 	public void foreachDataproviderConfig(BiConsumer<String, Map<String, Object>> configConsumer) {

@@ -38,7 +38,7 @@ public class DocumentMapper {
 		Document mapped;
 
 		Object variantsData = source.get(VARIANTS);
-		if (variantsData != null && variantsData instanceof List && ((List<?>) variantsData).size() > 0) {
+		if (variantsData != null && variantsData instanceof List && !((List<?>) variantsData).isEmpty()) {
 			mapped = new Product(id);
 			List<?> variantSources = (List<?>) variantsData;
 			Document[] variants = new Document[variantSources.size()];
@@ -118,7 +118,7 @@ public class DocumentMapper {
 				String catPath = facetEntry.get("value").toString();
 				List<Category> path = paths.computeIfAbsent(fieldName, n -> new ArrayList<>());
 
-				if (lastCatPath.length() > 0 && !catPath.startsWith(lastCatPath)) {
+				if (!lastCatPath.isEmpty() && !catPath.startsWith(lastCatPath)) {
 					if (primaryCategoryField.map(catField -> catField.getName().equals(fieldName)).orElse(false)) {
 						mapped.addCategory(path.toArray(new Category[path.size()]));
 					}
@@ -141,7 +141,7 @@ public class DocumentMapper {
 		for (Entry<String, List<Category>> pathEntry : paths.entrySet()) {
 			String fieldName = pathEntry.getKey();
 			List<Category> path = pathEntry.getValue();
-			if (path.size() > 0) {
+			if (!path.isEmpty()) {
 				if (primaryCategoryField.map(catField -> catField.getName().equals(fieldName)).orElse(false)) {
 					mapped.addCategory(path.toArray(new Category[path.size()]));
 				}
@@ -201,7 +201,7 @@ public class DocumentMapper {
 
 	private static Optional<List<Map<String, String>>> asFacetList(Map<String, Object> source, String sourceDataField) {
 		Object sourceData = source.get(sourceDataField);
-		if (sourceData != null && sourceData instanceof List && ((List<?>) sourceData).size() > 0) {
+		if (sourceData != null && sourceData instanceof List && !((List<?>) sourceData).isEmpty()) {
 			return Optional.of((List<Map<String, String>>) sourceData);
 		}
 		else {
