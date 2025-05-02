@@ -111,7 +111,7 @@ public interface SearchService {
 							description = "response code if tenant is unknown or index does not exist",
 							content = @Content(mediaType = "text/plain"))
 			})
-	public SearchResult search(
+	SearchResult search(
 			@Parameter(
 					in = ParameterIn.PATH,
 					name = "tenant",
@@ -165,7 +165,7 @@ public interface SearchService {
 
 	@POST
 	@Path("search/arranged/{tenant}")
-	public SearchResult arrangedSearch(
+	SearchResult arrangedSearch(
 			@Parameter(
 					in = ParameterIn.PATH,
 					name = "tenant",
@@ -178,7 +178,7 @@ public interface SearchService {
 
 	@GET
 	@Path("doc/{tenant}/{id}")
-	public Document getDocument(
+	Document getDocument(
 			@Parameter(
 					in = ParameterIn.PATH,
 					name = "tenant",
@@ -194,6 +194,6 @@ public interface SearchService {
 	@GET
 	@Path("tenants")
 	@ApiResponse(responseCode = "200", description = "a list of available tenants")
-	public String[] getTenants();
+	String[] getTenants();
 
 }

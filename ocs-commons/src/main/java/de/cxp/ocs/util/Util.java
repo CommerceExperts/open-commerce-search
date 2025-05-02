@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 
 public final class Util {
 
-	private Util() {};
+	private Util() {}
 
 	private static final Pattern numPattern = Pattern.compile("-?\\d+(\\.\\d+)?(E-\\d+)?|(-?\\.\\d+)");
 

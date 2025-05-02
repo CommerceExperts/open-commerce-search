@@ -120,7 +120,7 @@ public class FieldUsageApplier {
 				((VariantItem) record).getMaster().getSearchData().compute(fieldName, joinDataValueFunction(value));
 			}
 		}
-	};
+	}
 
 	private static void handleResultField(final DataItem record, final Field field, Object value) {
 		if (FieldType.CATEGORY.equals(field.getType())) {
@@ -138,7 +138,7 @@ public class FieldUsageApplier {
 		else {
 			record.getResultData().compute(fieldName, joinDataValueFunction(value));
 		}
-	};
+	}
 
 	private static void handleSortField(final DataItem record, final Field field, Object value) {
 		value = unwrapValue(field, value);
@@ -258,7 +258,7 @@ public class FieldUsageApplier {
 			numberValue.map(numVal -> record.getNumberFacetData().add(new FacetEntry<>(field.getName(),
 					numVal)));
 		}
-	};
+	}
 
 	private static void handleCategoryFacetData(final DataItem record, final Field field, Object value) {
 		if (record instanceof IndexableItem) {
@@ -348,7 +348,7 @@ public class FieldUsageApplier {
 			record.getScores().compute(fieldName, joinDataValueFunction(value));
 		}
 
-	};
+	}
 
 	protected static BiFunction<? super String, ? super Object, ?> joinDataValueFunction(
 			final Object value) {

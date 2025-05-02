@@ -24,7 +24,7 @@ import jakarta.ws.rs.*;
 public interface UpdateIndexService {
 
 	// similar to org.elasticsearch.action.DocWriteResponse.Result
-	public enum Result {
+	enum Result {
 		CREATED, UPDATED, DELETED, NOT_FOUND, NOOP,
 		/**
 		 * Used if the update was not done due to a negative precondition.

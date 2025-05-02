@@ -33,6 +33,6 @@ public enum FieldUsage {
 	/**
 	 * Fields with this usage are prepared to be used for scoring
 	 */
-	SCORE;
+	SCORE
 
 }
