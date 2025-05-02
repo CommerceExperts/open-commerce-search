@@ -249,10 +249,9 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 		SearchSourceBuilder cardinalityReq = new SearchSourceBuilder().size(0)
 				.aggregation(subordinateAggregations(aggBuilders));
 		SearchResponse cardinalityResp = execSearch(indexName, cardinalityReq);
-		long cardinality = ((Cardinality) extractSubAggregation(
+		return ((Cardinality) extractSubAggregation(
 				cardinalityResp.getAggregations(),
 				aggBuilders.stream().map(AggregationBuilder::getName).collect(Collectors.toList()))).getValue();
-		return cardinality;
 	}
 
 	private Collection<SuggestRecord> fetchTermsFromResultData(String indexName, Field field, Optional<BloomFilter<CharSequence>> dedupFilter) throws IOException {

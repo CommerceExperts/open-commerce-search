@@ -156,11 +156,10 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	private String normalizeIndexName(String basename) {
-		String normalizedBasename = StringUtils.strip(
+		return StringUtils.strip(
 				basename.toLowerCase(Locale.ROOT)
 						.replaceAll("[^a-z0-9_\\-\\.]+", INDEX_DELIMITER),
 				INDEX_DELIMITER);
-		return normalizedBasename;
 	}
 
 	private String getNextIndexName(String indexName, String localizedIndexName) {

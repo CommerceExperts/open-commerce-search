@@ -253,7 +253,7 @@ class QueryPredictor {
 				.minDocCount(1)
 				.script(new Script("_score"));
 
-		final SearchResponse searchResponse = restClient
+		return restClient
 				.search(new SearchRequest(indices)
 						.source(SearchSourceBuilder.searchSource()
 								.suggest(spellCheckQuery)
@@ -262,7 +262,6 @@ class QueryPredictor {
 								.size(0)
 								.timeout(TimeValue.timeValueMillis(20))),
 						RequestOptions.DEFAULT);
-		return searchResponse;
 	}
 
 	protected QueryBuilder buildTermQuery(final QueryStringTerm term, final Collection<String> searchFields) {

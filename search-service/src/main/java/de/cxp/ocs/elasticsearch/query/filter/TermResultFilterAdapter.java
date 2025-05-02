@@ -15,10 +15,9 @@ public class TermResultFilterAdapter implements InternalResultFilterAdapter<Term
 	}
 
 	private BoolQueryBuilder nestedFilterQuery(String fieldPrefix, TermResultFilter filter) {
-		BoolQueryBuilder termFilterQuery = QueryBuilders.boolQuery()
+		return QueryBuilders.boolQuery()
 				.must(QueryBuilders.termQuery(fieldPrefix + "name", filter.getField().getName()))
 				.must(toTermsFilter(fieldPrefix + (filter.isFilterOnId() ? "id" : "value.normalized"), filter.getValues()));
-		return termFilterQuery;
 	}
 
 	private QueryBuilder standardFilterQuery(String fieldPrefix, TermResultFilter filter) {
