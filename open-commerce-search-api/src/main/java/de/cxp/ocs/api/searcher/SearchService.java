@@ -34,7 +34,7 @@ public interface SearchService {
 
 	/**
 	 * Search the index using the given searchQuery.
-	 * 
+	 * <p>
 	 * Each tenant can have its own configuration. Different tenants may still
 	 * use the same indexes. This is defined by the underlying configuration.
 	 * 
@@ -45,12 +45,12 @@ public interface SearchService {
 	 * @param filters
 	 *        Any other parameters are used as filters. They are validated
 	 *        according to the actual data and configuration.
-	 * 
+	 * <p>
 	 *        Each filter can have multiple values, separated by comma. Commas
 	 *        inside the values have to be double-URL encoded.
 	 *        Depending on the configured backend type these values are used
 	 *        differently.
-	 * 
+	 * <p>
 	 *        Examples:
 	 *        <ul>
 	 *        <li>

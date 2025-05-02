@@ -52,12 +52,12 @@ public final class Util {
 	 * If both values are not null, this method creates a flat collection of
 	 * them. By default a HashSet is used as collection. If this is not wanted,
 	 * pass another collection type as value.
-	 * 
+	 * <p>
 	 * If one value is null, the other is returned and no collection is created.
-	 * 
+	 * <p>
 	 * The inner types of the collection are not checked, so it's possible to
 	 * merge different types into a collection.
-	 * 
+	 * <p>
 	 * If a given value is an array, it will be transformed into a collection.
 	 * Multidimensional arrays become a collection of array.
 	 * 

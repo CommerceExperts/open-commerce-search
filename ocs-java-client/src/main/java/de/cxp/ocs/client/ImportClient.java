@@ -53,7 +53,7 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 	/**
 	 * Patch one or more documents. The passed documents only need partial data
 	 * that needs to be patched and the ID of the documents to patch.
-	 * 
+	 * <p>
 	 * Attention: in order to patch Products with variants, use the
 	 * "patchProducts" method, which is necessary to have them serialized
 	 * properly.
@@ -91,7 +91,7 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 
 	/**
 	 * Add or overwrite existing documents.
-	 * 
+	 * <p>
 	 * Attention: in order to put Products with variants, use the
 	 * "putProducts" method, which is necessary to have them serialized
 	 * properly.

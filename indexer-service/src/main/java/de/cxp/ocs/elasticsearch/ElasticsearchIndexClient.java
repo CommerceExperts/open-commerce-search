@@ -67,7 +67,7 @@ class ElasticsearchIndexClient {
 	/**
 	 * Get actual index names with potential aliases.
 	 * 
-	 * @param indexNames
+	 * @param indexName
 	 * @return
 	 */
 	public Map<String, Set<AliasMetadata>> getAliases(String indexName) {

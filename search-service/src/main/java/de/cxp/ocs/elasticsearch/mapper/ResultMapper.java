@@ -86,7 +86,7 @@ public class ResultMapper {
 	 * different values at a product for that given field (e.g. multiple prices
 	 * from the variants), then add a prefix "from" or "to" depending on sort
 	 * order.
-	 * 
+	 * <p>
 	 * The goal is to show "from 10€" if sorted by price ascending and "to 59€"
 	 * if sorted by price descending.
 	 * 

@@ -36,7 +36,7 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 
 	/**
 	 * This property defines how old should an index be to be deleted if it still is not assigned to an alias.
-	 * 
+	 * <p>
 	 * There is also the scheduled AbandonedIndexCleanupTask that takes care for any abandoned index.
 	 * Since that scheduled task won't consider newly started index runs, it has a higher default
 	 * deletion threshold age. That's why we won't use that age setting (injected via property) here.

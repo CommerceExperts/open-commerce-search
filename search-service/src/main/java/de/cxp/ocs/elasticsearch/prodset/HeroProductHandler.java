@@ -128,11 +128,11 @@ public class HeroProductHandler {
 			 * A: 1000_000 * [1000 : 1] = 1000_000_000 : 1000_000
 			 * B: 1000 * [1000 : 1] = 1000_000 : 1000
 			 * C: 1 * [1000 : 1] = 1000 : 1
-			 * 
+			 * <p>
 			 * last product of set A has boost (1_000_000 * 1),
 			 * which must be greater than
 			 * the first product of set B that has boost (1000 * 1000)
-			 * 
+			 * <p>
 			 * Additional add factor 10 to ensure those IDs are returned prior to the "natural" result.
 			 */
 			float boost = 10f * (float) Math.pow(MAX_IDS_ORDERED_BOOSTING, productSets.length - 1);

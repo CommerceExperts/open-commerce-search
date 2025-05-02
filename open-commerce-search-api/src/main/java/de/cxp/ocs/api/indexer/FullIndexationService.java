@@ -19,7 +19,7 @@ import jakarta.ws.rs.Path;
 
 /**
  * Run a full import into a new index.
- * 
+ * <p>
  * If product and content data should be indexed, consider using different
  * indexes.
  * Otherwise make sure to use the same fields for the same content type,

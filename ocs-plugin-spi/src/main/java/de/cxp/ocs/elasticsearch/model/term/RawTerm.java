@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Use carefully - don't use for userinput directly.
- *
+ * <p>
  * XXX: think about replacing it
  */
 @RequiredArgsConstructor

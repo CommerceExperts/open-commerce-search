@@ -214,7 +214,7 @@ class QueryPredictor {
 
 	/**
 	 *
-	 * @param fieldWeights
+	 * @param searchFields
 	 *        fields to search
 	 * @param terms
 	 * @param excludeFilters
