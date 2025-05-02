@@ -86,7 +86,7 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 	}
 
 	@Override
-	public long getLastDataModTime(String indexName) throws IOException {
+	public long getLastDataModTime(String indexName) {
 		long lastModTime = -1;
 		try {
 			GetSettingsResponse settingsResponse = client.indices()

@@ -131,7 +131,7 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 	protected abstract void validateSession(ImportSession session) throws IllegalArgumentException;
 
 	@Override
-	public boolean done(ImportSession session) throws Exception {
+	public boolean done(ImportSession session) {
 		validateSession(session);
 		dataPreProcessors.forEach(pp -> pp.finish(true));
 		return deploy(session);

@@ -579,7 +579,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close() {
 		isClosed = true;
 		for (Closeable closeable : closeables) {
 			try {

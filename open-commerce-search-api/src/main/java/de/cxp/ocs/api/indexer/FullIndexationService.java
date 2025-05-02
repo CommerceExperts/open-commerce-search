@@ -147,8 +147,6 @@ public interface FullIndexationService {
 	 * @param session
 	 *        ImportSession that contains the information, which index should be
 	 *        dropped.
-	 * @throws Exception
-	 *         if import session is invalid
 	 */
 	@POST
 	@Path("cancel")
@@ -161,6 +159,6 @@ public interface FullIndexationService {
 					@ApiResponse(responseCode = "202"),
 					@ApiResponse(responseCode = "400", description = "indexation was already confirmed or import session is invalid")
 			})
-	void cancel(@RequestBody ImportSession session) throws Exception;
+	void cancel(@RequestBody ImportSession session);
 
 }

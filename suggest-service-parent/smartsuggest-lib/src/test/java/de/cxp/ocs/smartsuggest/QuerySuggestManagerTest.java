@@ -136,7 +136,7 @@ class QuerySuggestManagerTest {
 	}
 
 	@Test
-	void testThrowAwayManager() throws Exception {
+	void testThrowAwayManager() {
 		var sdp = new RemoteSuggestDataProviderSimulation();
 		sdp.updateSuggestions("test.1", List.of(new SuggestRecord("query1", "matching text", null, null, 10L)));
 		QuerySuggester querySuggester = getQuerySuggester(sdp);
@@ -189,7 +189,7 @@ class QuerySuggestManagerTest {
 	}
 
 	@Test
-	void multipleDataProviders() throws Exception {
+	void multipleDataProviders() {
 		RemoteSuggestDataProviderSimulation dp1 = new RemoteSuggestDataProviderSimulation();
 		RemoteSuggestDataProviderSimulation dp2 = new RemoteSuggestDataProviderSimulation();
 		SuggestDataProvider mock = mock(SuggestDataProvider.class);

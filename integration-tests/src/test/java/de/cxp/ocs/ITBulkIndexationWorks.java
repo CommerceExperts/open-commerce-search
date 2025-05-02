@@ -44,7 +44,7 @@ public class ITBulkIndexationWorks {
 		assertThat(getSuggestions.call()).isNotEmpty();
 	}
 
-	private void flushIndex() throws IOException, InterruptedException {
+	private void flushIndex() throws IOException {
 		getElasticsearchClient().performRequest(new Request("POST", indexName + "/_flush/synced"));
 	}
 }
