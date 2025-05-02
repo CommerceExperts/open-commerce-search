@@ -33,9 +33,9 @@ import de.cxp.ocs.model.index.Document;
 
 public class ElasticsearchFullIndexationTest {
 
-	ElasticsearchIndexClient mockedIndexClient = mock(ElasticsearchIndexClient.class);
+	final ElasticsearchIndexClient mockedIndexClient = mock(ElasticsearchIndexClient.class);
 
-	ElasticsearchIndexer underTest = new ElasticsearchIndexer(
+	final ElasticsearchIndexer underTest = new ElasticsearchIndexer(
 			new FieldConfigIndex(getIndexConf().getFieldConfiguration()),
 			mockedIndexClient,
 			Collections.emptyList(),

@@ -23,9 +23,9 @@ import de.cxp.ocs.model.result.SortOrder;
 
 public final class DefaultLinkBuilder implements LinkBuilder {
 
-	public static String VALUE_DELIMITER = ",";
-	public static String VALUE_DELIMITER_ENCODED = "%2C";
-	public static String SORT_DESC_PREFIX = "-";
+	public static final String VALUE_DELIMITER         = ",";
+	public static final String VALUE_DELIMITER_ENCODED = "%2C";
+	public static final String SORT_DESC_PREFIX        = "-";
 
 	private final static InternalSearchParams defaultParams = new InternalSearchParams();
 

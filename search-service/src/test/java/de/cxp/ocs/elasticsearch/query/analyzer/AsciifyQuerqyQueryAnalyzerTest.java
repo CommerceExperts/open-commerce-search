@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AsciifyQuerqyQueryAnalyzerTest {
 
-	static AsciifyQuerqyQueryAnalyzer underTest = new AsciifyQuerqyQueryAnalyzer();
+	static final AsciifyQuerqyQueryAnalyzer underTest = new AsciifyQuerqyQueryAnalyzer();
 
 	@BeforeAll
 	public static void init() throws IOException {

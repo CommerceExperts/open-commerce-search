@@ -52,7 +52,7 @@ public class HeroProductHandler {
 
 	private static final int    MAX_IDS_ORDERED_BOOSTING = 1000;
 	// used to identify products boosted by the hero-products query
-	public static        String QUERY_NAME_PREFIX        = "hero-product-set-";
+	public static final  String QUERY_NAME_PREFIX        = "hero-product-set-";
 
 	@NonNull
 	private final Map<ProductSetType, ProductSetResolver> resolvers;

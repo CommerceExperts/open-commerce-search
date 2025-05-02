@@ -8,8 +8,8 @@ import de.cxp.ocs.smartsuggest.spi.SuggestDataProvider;
 
 public class TestDataProvider implements SuggestDataProvider {
 
-	Map<String, Long>			modDates	= new HashMap<>();
-	Map<String, SuggestData>	suggestData	= new HashMap<>();
+	final Map<String, Long>        modDates    = new HashMap<>();
+	final Map<String, SuggestData> suggestData = new HashMap<>();
 
 	public TestDataProvider putData(String indexName, SuggestData data) {
 		suggestData.put(indexName, data);
