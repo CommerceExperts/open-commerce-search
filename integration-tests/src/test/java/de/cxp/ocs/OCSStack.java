@@ -33,8 +33,8 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 	private final static int	SEARCH_DEFAULT_PORT		= 8534;
 	private final static int	SUGGEST_DEFAULT_PORT	= 8081;
 
-	public static AtomicBoolean	isStarted	= new AtomicBoolean(false);
-	public static AtomicBoolean	isLogging	= new AtomicBoolean(false);
+	public static final AtomicBoolean isStarted = new AtomicBoolean(false);
+	public static final AtomicBoolean isLogging = new AtomicBoolean(false);
 
 	private static ImportClient		importClient;
 	private static SearchClient		searchClient;

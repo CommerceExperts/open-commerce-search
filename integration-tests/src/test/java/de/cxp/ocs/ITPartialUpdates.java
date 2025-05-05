@@ -1,26 +1,5 @@
 package de.cxp.ocs;
 
-import static de.cxp.ocs.OCSStack.getElasticsearchClient;
-import static de.cxp.ocs.OCSStack.getImportClient;
-import static de.cxp.ocs.OCSStack.getSearchClient;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assume.assumeTrue;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import org.elasticsearch.client.Request;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.rnorth.ducttape.unreliables.Unreliables;
-
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
 import de.cxp.ocs.model.params.SearchQuery;
@@ -30,6 +9,24 @@ import de.cxp.ocs.model.result.SearchResult;
 import de.cxp.ocs.model.result.SearchResultSlice;
 import de.cxp.ocs.util.DataIndexer;
 import lombok.extern.slf4j.Slf4j;
+import org.elasticsearch.client.Request;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.rnorth.ducttape.unreliables.Unreliables;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import static de.cxp.ocs.OCSStack.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Slf4j
 @ExtendWith({ OCSStack.class })
@@ -121,7 +118,7 @@ public class ITPartialUpdates {
 		}
 	}
 
-	private void flushIndex() throws IOException, InterruptedException {
+	private void flushIndex() throws IOException {
 		getElasticsearchClient().performRequest(new Request("POST", indexName + "/_flush/synced"));
 	}
 

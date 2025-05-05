@@ -108,9 +108,9 @@ public class Searcher {
 	private final Timer						correctedWordsTimer;
 	private final Timer						resultTimer;
 	private final Timer						searchRequestTimer;
-	private final DistributionSummary		summary;
-	private ScoringCreator					scoringCreator;
-	private SpellCorrector					spellCorrector;
+	private final DistributionSummary summary;
+	private final ScoringCreator      scoringCreator;
+	private final SpellCorrector      spellCorrector;
 
 	public Searcher(RestHighLevelClient restClient, SearchContext searchContext, final MeterRegistry registry, final SearchPlugins plugins) {
 		this.restClient = restClient;
@@ -211,11 +211,10 @@ public class Searcher {
 
 		Map<String, Float> masterFields = validateSearchFields(fieldWeights, this.fieldIndex, Field::isMasterLevel);
 
-		TextMatchQuery<QueryBuilder> searchQuery = new TextMatchQuery<>(
+		queryContext.text = new TextMatchQuery<>(
 				QueryBuilders.queryStringQuery(parameters.userQuery).fields(masterFields),
 				QueryBuilders.matchAllQuery(),
 				false, true);
-		queryContext.text = searchQuery;
 
 		SearchSourceBuilder searchSourceBuilder = buildBasicSearchSourceBuilder(parameters, queryContext);
 		searchSourceBuilder.query(buildFinalQuery(queryContext));
@@ -264,7 +263,7 @@ public class Searcher {
 				searchSourceBuilder.suggest(null);
 			}
 
-			if (parameters.excludedIds != null && parameters.excludedIds.size() > 0) {
+			if (parameters.excludedIds != null && !parameters.excludedIds.isEmpty()) {
 				BoolQueryBuilder masterLevelQueryWithExcludes = ESQueryUtils.mapToBoolQueryBuilder(searchQuery.getMasterLevelQuery())
 						.mustNot(QueryBuilders.idsQuery().addIds(parameters.excludedIds.toArray(new String[0])));
 				searchQuery.setMasterLevelQuery(masterLevelQueryWithExcludes);
@@ -299,7 +298,7 @@ public class Searcher {
 			if (!isResultSufficient && correctedWords == null && spellCorrector != null && searchResponse.getSuggest() != null) {
 				Sample correctedWordsSample = Timer.start(registry);
 				correctedWords = spellCorrector.extractRelatedWords(searchResponse.getSuggest());
-				if (correctedWords.size() > 0) {
+				if (!correctedWords.isEmpty()) {
 					AnalyzedQuery queryWithCorrections = SpellCorrector.toListWithAllTerms(parsedQuery.getSearchQuery(), correctedWords);
 					parsedQuery = new ExtendedQuery(queryWithCorrections, parsedQuery.getFilters(), parsedQuery.getBoostings());
 					searchMetaData.put("query_corrected", parsedQuery.getSearchQuery().toQueryString());
@@ -307,7 +306,7 @@ public class Searcher {
 
 				// if the current query builder didn't take corrected words into
 				// account, then try again with corrected words
-				if (correctedWords.size() > 0 && !searchQuery.isWithSpellCorrection()) {
+				if (!correctedWords.isEmpty() && !searchQuery.isWithSpellCorrection()) {
 					queryContext.text = stagedQueryBuilder.createQuery(parsedQuery);
 					searchSourceBuilder.query(buildFinalQuery(queryContext));
 					searchResponse = executeSearchRequest(searchSourceBuilder);
@@ -389,7 +388,7 @@ public class Searcher {
 
 		if (parameters.isWithFacets()) {
 			List<AggregationBuilder> aggregators = facetApplier.buildAggregators(queryContext.filters, parameters.aggSampling);
-			if (aggregators != null && aggregators.size() > 0) {
+			if (aggregators != null && !aggregators.isEmpty()) {
 				aggregators.forEach(searchSourceBuilder::aggregation);
 			}
 		}
@@ -404,7 +403,7 @@ public class Searcher {
 		if (totalHits == 0)
 			return false;
 
-		boolean hasFilters = parameters.filters.size() > 0;
+		boolean hasFilters = !parameters.filters.isEmpty();
 		int heroProductCount = parameters.heroProductSets == null ? 0
 				: Arrays.stream(parameters.heroProductSets).mapToInt(ProductSet::getSize).sum();
 		if (!hasFilters || totalHits > heroProductCount) {
@@ -559,12 +558,12 @@ public class Searcher {
 		if (fetchSources) {
 			List<String> includeFields = new ArrayList<>();
 			includeFields.add(FieldConstants.RESULT_DATA + ".*");
-			if (variantSortings.size() > 0) {
+			if (!variantSortings.isEmpty()) {
 				// necessary for ResultMapper::addSortFieldPrefix
 				includeFields.add(FieldConstants.SORT_DATA + ".*");
 			}
 
-			searchSourceBuilder.fetchSource(includeFields.toArray(new String[includeFields.size()]), null);
+			searchSourceBuilder.fetchSource(includeFields.toArray(new String[0]), null);
 		}
 		else {
 			searchSourceBuilder.fetchSource(FetchSourceContext.DO_NOT_FETCH_SOURCE);
@@ -598,12 +597,12 @@ public class Searcher {
 
 		if (queryContext.heroProducts != null) {
 			variantsMatchQuery = queryContext.heroProducts.applyToVariantQuery(variantsMatchQuery);
-			variantsOnlyFiltered = variantsMatchQuery != null ? false : variantsOnlyFiltered;
+			variantsOnlyFiltered = variantsMatchQuery == null && variantsOnlyFiltered;
 		}
 
 		if (queryContext.variantSortings.isEmpty()) {
 			variantsMatchQuery = queryContext.scoring.wrapVariantLevelQuery(variantsMatchQuery);
-			variantsOnlyFiltered = variantsMatchQuery != null ? false : variantsOnlyFiltered;
+			variantsOnlyFiltered = variantsMatchQuery == null && variantsOnlyFiltered;
 		}
 
 		// variant inner hits are always retrieved in a should clause,
@@ -674,7 +673,7 @@ public class Searcher {
 		Map<String, SortOrder> sortedFields = sortingHandler.getSortedNumericFields(parameters);
 
 		boolean preferVariantHit = VariantPickingStrategy.pickAlways.equals(variantPickingStrategy)
-				|| (preferredVariantAttributes.size() > 0
+				|| (!preferredVariantAttributes.isEmpty()
 						&& parameters.getFilters().stream().anyMatch(f -> preferredVariantAttributes.contains(f.getField().getName())));
 
 		ArrayList<ResultHit> resultHits = new ArrayList<>();

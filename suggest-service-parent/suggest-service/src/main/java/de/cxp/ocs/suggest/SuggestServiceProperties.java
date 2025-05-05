@@ -15,14 +15,12 @@ import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigParseOptions;
 import com.typesafe.config.ConfigSyntax;
 import com.typesafe.config.impl.Parseable;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig.SortStrategy;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider;
 import lombok.NonNull;
-import scala.sys.Prop;
 
 /**
  * <p>
@@ -267,7 +265,7 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 				lastCharIsDash = false;
 			}
 		}
-		return safeIndexName.length() == 0 ? Optional.empty() : Optional.of(safeIndexName.toString());
+		return safeIndexName.isEmpty() ? Optional.empty() : Optional.of(safeIndexName.toString());
 	}
 
 	public void foreachDataproviderConfig(BiConsumer<String, Map<String, Object>> configConsumer) {

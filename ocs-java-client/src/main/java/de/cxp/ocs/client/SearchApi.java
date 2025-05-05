@@ -23,7 +23,7 @@ interface SearchApi {
 			@Param("offset") int offset,
 			@Param("limit") int limit,
 			@Param("withFacets") boolean withFacets,
-			@QueryMap Map<String, String> filters) throws Exception;
+			@QueryMap Map<String, String> filters);
 
 	@RequestLine("POST /search-api/v1/search/arranged/{tenant}")
 	@Headers("Content-Type: application/json")

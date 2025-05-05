@@ -40,7 +40,7 @@ public interface SuggestService {
 							description = "tenant is unknown or index does not exist",
 							content = @Content(mediaType = "text/plain"))
 			})
-	public List<Suggestion> suggest(
+	List<Suggestion> suggest(
 			@Parameter(
 					in = ParameterIn.PATH,
 					name = "indexname",

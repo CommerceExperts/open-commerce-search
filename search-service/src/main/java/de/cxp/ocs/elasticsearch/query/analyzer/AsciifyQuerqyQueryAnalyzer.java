@@ -47,10 +47,10 @@ public class AsciifyQuerqyQueryAnalyzer implements UserQueryAnalyzer, Configurab
 
 	private ExtendedQuery getCombinedQueries(ExtendedQuery querqyResult1, ExtendedQuery querqyResult2) {
 		List<QueryStringTerm> filters;
-		if (querqyResult1.getFilters().size() == 0) {
+		if (querqyResult1.getFilters().isEmpty()) {
 			filters = querqyResult2.getFilters();
 		}
-		else if (querqyResult2.getFilters().size() == 0) {
+		else if (querqyResult2.getFilters().isEmpty()) {
 			filters = querqyResult1.getFilters();
 		}
 		else {

@@ -20,10 +20,7 @@ public class FacetCoverageFilter implements FacetFilter {
 					config.getLabel(), facetCoverage, config.getMinFacetCoverage());
 			return false;
 		}
-		if (!facet.isFiltered && config.isRemoveOnSingleFullCoverageFacetElement() && isSingleFullCoverageFacet(facet, totalMatchCount)) {
-			return false;
-		}
-		return true;
+		return facet.isFiltered || !config.isRemoveOnSingleFullCoverageFacetElement() || !isSingleFullCoverageFacet(facet, totalMatchCount);
 	}
 
 	private boolean isSingleFullCoverageFacet(Facet facet, int totalMatchCount) {

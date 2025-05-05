@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith({ OCSStack.class })
 public class MultipleCategoryTreesTest {
 
-	static String indexName = "multi_category";
+	static final String indexName = "multi_category";
 
 	@SuppressWarnings("deprecation")
 	@BeforeAll

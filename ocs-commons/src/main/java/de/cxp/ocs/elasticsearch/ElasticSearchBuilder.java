@@ -5,8 +5,8 @@ import org.elasticsearch.client.RestHighLevelClient;
 
 public class ElasticSearchBuilder implements AutoCloseable {
 
-	private RestHighLevelClient	highLevelClient;
-	private RestClientBuilder	restClientBuilder;
+	private       RestHighLevelClient highLevelClient;
+	private final RestClientBuilder   restClientBuilder;
 
 	public ElasticSearchBuilder(RestClientBuilder clientBuilder) {
 		restClientBuilder = clientBuilder;

@@ -9,7 +9,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Optional;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,9 +43,9 @@ public class ConfigurableShareLimiterTest {
 	public void standardUseCase() {
 		List<Suggestion> bigList = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
-			bigList.add(new Suggestion("b_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "brand")));
-			bigList.add(new Suggestion("c_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "category")));
-			bigList.add(new Suggestion("k_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "keyword")));
+			bigList.add(new Suggestion("b_" + (i + 1)).setPayload(Collections.singletonMap("type", "brand")));
+			bigList.add(new Suggestion("c_" + (i + 1)).setPayload(Collections.singletonMap("type", "category")));
+			bigList.add(new Suggestion("k_" + (i + 1)).setPayload(Collections.singletonMap("type", "keyword")));
 		}
 
 		List<Suggestion> list10 = underTest.limit(bigList, 10);
@@ -80,8 +79,8 @@ public class ConfigurableShareLimiterTest {
 	public void oneGroupNotInResult() {
 		List<Suggestion> bigList = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
-			bigList.add(new Suggestion("b_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "brand")));
-			bigList.add(new Suggestion("k_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "keyword")));
+			bigList.add(new Suggestion("b_" + (i + 1)).setPayload(Collections.singletonMap("type", "brand")));
+			bigList.add(new Suggestion("k_" + (i + 1)).setPayload(Collections.singletonMap("type", "keyword")));
 			// no categories part of result
 		}
 
@@ -110,7 +109,7 @@ public class ConfigurableShareLimiterTest {
 	public void onlyOneGroupInResult() {
 		List<Suggestion> bigList = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
-			bigList.add(new Suggestion("b_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "brand")));
+			bigList.add(new Suggestion("b_" + (i + 1)).setPayload(Collections.singletonMap("type", "brand")));
 			// no category and keywords
 		}
 		List<Suggestion> sameLimitList = underTest.limit(bigList, bigList.size());
@@ -126,10 +125,10 @@ public class ConfigurableShareLimiterTest {
 	public void unconfiguredGroupInResult() {
 		List<Suggestion> bigList = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
-			bigList.add(new Suggestion("b_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "brand")));
-			bigList.add(new Suggestion("c_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "category")));
-			bigList.add(new Suggestion("k_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "keyword")));
-			bigList.add(new Suggestion("x_" + String.valueOf(i + 1)));
+			bigList.add(new Suggestion("b_" + (i + 1)).setPayload(Collections.singletonMap("type", "brand")));
+			bigList.add(new Suggestion("c_" + (i + 1)).setPayload(Collections.singletonMap("type", "category")));
+			bigList.add(new Suggestion("k_" + (i + 1)).setPayload(Collections.singletonMap("type", "keyword")));
+			bigList.add(new Suggestion("x_" + (i + 1)));
 		}
 		List<Suggestion> sameLimitList = underTest.limit(bigList, bigList.size());
 		assertEquals(bigList.size(), sameLimitList.size());
@@ -149,10 +148,10 @@ public class ConfigurableShareLimiterTest {
 		System.setProperty(SHARE_KEY_ENV_PREFIX + "OTHER", "0.5");
 		List<Suggestion> bigList = new ArrayList<>();
 		for (int i = 0; i < 10; i++) {
-			bigList.add(new Suggestion("b_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "brand")));
-			bigList.add(new Suggestion("c_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "category")));
-			bigList.add(new Suggestion("k_" + String.valueOf(i + 1)).setPayload(Collections.singletonMap("type", "keyword")));
-			bigList.add(new Suggestion("x_" + String.valueOf(i + 1)));
+			bigList.add(new Suggestion("b_" + (i + 1)).setPayload(Collections.singletonMap("type", "brand")));
+			bigList.add(new Suggestion("c_" + (i + 1)).setPayload(Collections.singletonMap("type", "category")));
+			bigList.add(new Suggestion("k_" + (i + 1)).setPayload(Collections.singletonMap("type", "keyword")));
+			bigList.add(new Suggestion("x_" + (i + 1)));
 		}
 		List<Suggestion> sameLimitList = underTest.limit(bigList, bigList.size());
 		assertEquals(bigList.size(), sameLimitList.size());

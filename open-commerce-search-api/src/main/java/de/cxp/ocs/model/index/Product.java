@@ -9,7 +9,7 @@ import lombok.experimental.Accessors;
 
 /**
  * Main product containing the data that is common for all variants.
- * 
+ * <p>
  * A product may represent a master-variant relation ship.
  * A variant is associated to a single {@link Product} and cannot have variants
  * again - those will be ignored.

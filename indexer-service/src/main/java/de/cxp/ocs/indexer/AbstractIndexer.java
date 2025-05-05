@@ -36,7 +36,7 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 
 	/**
 	 * This property defines how old should an index be to be deleted if it still is not assigned to an alias.
-	 * 
+	 * <p>
 	 * There is also the scheduled AbandonedIndexCleanupTask that takes care for any abandoned index.
 	 * Since that scheduled task won't consider newly started index runs, it has a higher default
 	 * deletion threshold age. That's why we won't use that age setting (injected via property) here.
@@ -109,7 +109,7 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 			}
 		}
 		log.info("converted {} of {} documents", bulk.size(), data.documents.length);
-		if (bulk.size() > 0) {
+		if (!bulk.isEmpty()) {
 			return addToIndex(data.getSession(), bulk);
 		}
 		else {
@@ -131,7 +131,7 @@ public abstract class AbstractIndexer implements FullIndexationService, UpdateIn
 	protected abstract void validateSession(ImportSession session) throws IllegalArgumentException;
 
 	@Override
-	public boolean done(ImportSession session) throws Exception {
+	public boolean done(ImportSession session) {
 		validateSession(session);
 		dataPreProcessors.forEach(pp -> pp.finish(true));
 		return deploy(session);

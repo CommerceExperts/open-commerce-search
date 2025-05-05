@@ -86,7 +86,7 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 	}
 
 	@Override
-	public long getLastDataModTime(String indexName) throws IOException {
+	public long getLastDataModTime(String indexName) {
 		long lastModTime = -1;
 		try {
 			GetSettingsResponse settingsResponse = client.indices()
@@ -249,10 +249,9 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 		SearchSourceBuilder cardinalityReq = new SearchSourceBuilder().size(0)
 				.aggregation(subordinateAggregations(aggBuilders));
 		SearchResponse cardinalityResp = execSearch(indexName, cardinalityReq);
-		long cardinality = ((Cardinality) extractSubAggregation(
+		return ((Cardinality) extractSubAggregation(
 				cardinalityResp.getAggregations(),
 				aggBuilders.stream().map(AggregationBuilder::getName).collect(Collectors.toList()))).getValue();
-		return cardinality;
 	}
 
 	private Collection<SuggestRecord> fetchTermsFromResultData(String indexName, Field field, Optional<BloomFilter<CharSequence>> dedupFilter) throws IOException {
@@ -323,7 +322,7 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 		SuggestRecord suggestRecord = toSuggestRecord(b.getKeyAsString(), (int) b.getDocCount(), field);
 		if (idFieldPresent) {
 			Terms idsAggResult = b.getAggregations().get(_IDS);
-			if (idsAggResult != null && idsAggResult.getBuckets().size() > 0) {
+			if (idsAggResult != null && !idsAggResult.getBuckets().isEmpty()) {
 				suggestRecord.getPayload().put("id", idsAggResult.getBuckets().get(0).getKeyAsString());
 			}
 		}
@@ -361,7 +360,6 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 	 * a subaggregation of a1, and a3 will be a subaggregation of a2!
 	 * </p>
 	 *
-	 * @param firstAgg
 	 * @param subAggs
 	 * @return
 	 */

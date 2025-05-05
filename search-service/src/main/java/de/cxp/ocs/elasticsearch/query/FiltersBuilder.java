@@ -22,11 +22,11 @@ import de.cxp.ocs.elasticsearch.query.filter.*;
 
 public class FiltersBuilder {
 
-	private final Set<String>	postFilterFacets	= new HashSet<>();
-	private FieldConfigIndex	indexedFieldConfig;
+	private final Set<String>      postFilterFacets	= new HashSet<>();
+	private final FieldConfigIndex indexedFieldConfig;
 
 
-	private static Map<Class<? extends InternalResultFilter>, InternalResultFilterAdapter<? extends InternalResultFilter>> filterAdapters = new HashMap<>(3);
+	private static final Map<Class<? extends InternalResultFilter>, InternalResultFilterAdapter<? extends InternalResultFilter>> filterAdapters = new HashMap<>(3);
 	static {
 		filterAdapters.put(NumberResultFilter.class, new NumberResultFilterAdapter());
 		filterAdapters.put(TermResultFilter.class, new TermResultFilterAdapter());
@@ -55,7 +55,7 @@ public class FiltersBuilder {
 		FilterCollector filterCollector = new FilterCollector();
 
 		// collect filter queries on master and variant level
-		buildFilterQueries(filters, filterCollector, withFacets ? false : true);
+		buildFilterQueries(filters, filterCollector, !withFacets);
 		buildFilterQueries(querqyFilters, filterCollector, true);
 
 		TextMatchQuery<QueryBuilder> postFilterQuery = buildFilters(filterCollector.postFilterQueries);

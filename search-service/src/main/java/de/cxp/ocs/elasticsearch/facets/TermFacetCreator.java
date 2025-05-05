@@ -161,7 +161,7 @@ public class TermFacetCreator extends NestedFacetCreator {
 
 			final String facetValueId;
 			Terms facetValueAgg = (Terms) valueBucket.getAggregations().get(FACET_IDS_AGG);
-			if (facetValueAgg != null && facetValueAgg.getBuckets().size() > 0) {
+			if (facetValueAgg != null && !facetValueAgg.getBuckets().isEmpty()) {
 				facetValueId = facetValueAgg.getBuckets().get(0).getKeyAsString();
 			}
 			else {
@@ -229,17 +229,14 @@ public class TermFacetCreator extends NestedFacetCreator {
 		if (values.length == 1) return Collections.singleton(values[0]);
 
 		Set<String> hashedValues = new HashSet<>();
-		for (String val : values) {
-			hashedValues.add(val);
-		}
+		hashedValues.addAll(Arrays.asList(values));
 		return hashedValues;
 	}
 
 	private long getDocumentCount(Bucket valueBucket) {
-		long docCount = nestedFacetCorrector != null
+		return nestedFacetCorrector != null
 				? nestedFacetCorrector.getCorrectedDocumentCount(valueBucket)
 				: valueBucket.getDocCount();
-		return docCount;
 	}
 
 }

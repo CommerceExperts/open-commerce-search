@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 public class NonAlphanumericStripPreprocessorTest {
 
-	NonAlphanumericStripPreprocessor underTest = new NonAlphanumericStripPreprocessor();
+	final NonAlphanumericStripPreprocessor underTest = new NonAlphanumericStripPreprocessor();
 
 	@Test
 	public void testCommaSplit() {

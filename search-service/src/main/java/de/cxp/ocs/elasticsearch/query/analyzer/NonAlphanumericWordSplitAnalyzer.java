@@ -20,7 +20,7 @@ import de.cxp.ocs.spi.search.UserQueryAnalyzer;
  */
 public class NonAlphanumericWordSplitAnalyzer implements UserQueryAnalyzer {
 
-	public static String BIND_CHARS = "-_.";
+	public static final String BIND_CHARS = "-_.";
 
 	@Override
 	public ExtendedQuery analyze(String userQuery) {

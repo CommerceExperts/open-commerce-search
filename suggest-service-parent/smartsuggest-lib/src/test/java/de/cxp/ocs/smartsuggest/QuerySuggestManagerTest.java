@@ -36,11 +36,11 @@ class QuerySuggestManagerTest {
 
 	private static final int UPDATE_LATENCY = 2000;
 
-	private String testTenant1 = "test.1";
-	private String testTenant2 = "test.2";
+	private final String testTenant1 = "test.1";
+	private final String testTenant2 = "test.2";
 
-	private RemoteSuggestDataProviderSimulation serviceMock = new RemoteSuggestDataProviderSimulation();
-	private QuerySuggestManager                 querySuggestManager;
+	private final RemoteSuggestDataProviderSimulation serviceMock = new RemoteSuggestDataProviderSimulation();
+	private       QuerySuggestManager                 querySuggestManager;
 
 	@AfterEach
 	void afterEach() {
@@ -136,7 +136,7 @@ class QuerySuggestManagerTest {
 	}
 
 	@Test
-	void testThrowAwayManager() throws Exception {
+	void testThrowAwayManager() {
 		var sdp = new RemoteSuggestDataProviderSimulation();
 		sdp.updateSuggestions("test.1", List.of(new SuggestRecord("query1", "matching text", null, null, 10L)));
 		QuerySuggester querySuggester = getQuerySuggester(sdp);
@@ -189,7 +189,7 @@ class QuerySuggestManagerTest {
 	}
 
 	@Test
-	void multipleDataProviders() throws Exception {
+	void multipleDataProviders() {
 		RemoteSuggestDataProviderSimulation dp1 = new RemoteSuggestDataProviderSimulation();
 		RemoteSuggestDataProviderSimulation dp2 = new RemoteSuggestDataProviderSimulation();
 		SuggestDataProvider mock = mock(SuggestDataProvider.class);

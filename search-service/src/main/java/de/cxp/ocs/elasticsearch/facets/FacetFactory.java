@@ -6,7 +6,7 @@ import de.cxp.ocs.model.result.Facet;
 
 public class FacetFactory {
 
-	private static enum MetaDataValues {
+	private enum MetaDataValues {
 		label, order, multiSelect
 	}
 

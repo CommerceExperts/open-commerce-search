@@ -92,14 +92,14 @@ public class NgramQueryFactory implements ESQueryFactory {
 				.collect(Collectors.joining(" "));
 
 		MultiMatchQueryBuilder mainQuery = buildEsQuery(searchPhrase);
-		if (masterFields.size() > 0) {
+		if (!masterFields.isEmpty()) {
 			mainQuery.fields(masterFields);
 		}
 		String queryName = getLabel(parsedQuery.getSearchQuery());
 		mainQuery.queryName(queryName);
 
 		MultiMatchQueryBuilder variantQuery = buildEsQuery(searchPhrase);
-		if (variantFields.size() > 0) {
+		if (!variantFields.isEmpty()) {
 			variantQuery.fields(variantFields);
 		}
 		variantQuery.queryName("variant-" + queryName);
@@ -117,7 +117,7 @@ public class NgramQueryFactory implements ESQueryFactory {
 	}
 
 	private MultiMatchQueryBuilder buildEsQuery(String ngramPhrase) {
-		MultiMatchQueryBuilder mainQuery = QueryBuilders
+		return QueryBuilders
 				.multiMatchQuery(ngramPhrase)
 				.analyzer("ngram")
 				.fuzziness(Fuzziness.ZERO)
@@ -125,7 +125,6 @@ public class NgramQueryFactory implements ESQueryFactory {
 				.tieBreaker(Util.tryToParseAsNumber(querySettings.getOrDefault(tieBreaker, "0")).orElse(0).floatValue())
 				.type(Type.valueOf(querySettings.getOrDefault(multimatch_type, Type.BEST_FIELDS.name())
 						.toUpperCase()));
-		return mainQuery;
 	}
 
 	private String getMinShouldMatch() {

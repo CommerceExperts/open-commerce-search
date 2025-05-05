@@ -63,12 +63,12 @@ public class IntervalFacetEntry extends FacetEntry {
 	private static String getLabel(Number from, Number to) {
 		if (from == null && to == null) throw new IllegalArgumentException("Eiter lower bound or upper bound must be defined! Both are null however.");
 		if (from == null) {
-			return "< " + to.toString();
+			return "< " + to;
 		}
 		if (to == null) {
-			return "> " + from.toString();
+			return "> " + from;
 		}
-		return from.toString() + "-" + to.toString();
+		return from + "-" + to;
 	}
 
 }

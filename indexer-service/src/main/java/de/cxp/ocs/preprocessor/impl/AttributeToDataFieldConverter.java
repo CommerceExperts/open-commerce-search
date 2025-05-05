@@ -58,7 +58,7 @@ public class AttributeToDataFieldConverter implements DocumentPreProcessor {
 		Iterator<Attribute> attributeIterator = modifiedAttributes.iterator();
 		while (attributeIterator.hasNext()) {
 			Attribute attr = attributeIterator.next();
-			if (attr.value != null && applicableForConversion(attr)) {
+			if (applicableForConversion(attr)) {
 				Object value = sourceDocument.getData().get(attr.getName());
 				value = Util.collectObjects(value, attr.getValue());
 				sourceDocument.data.put(attr.getName(), value);

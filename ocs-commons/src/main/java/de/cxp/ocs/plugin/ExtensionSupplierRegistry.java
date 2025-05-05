@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ExtensionSupplierRegistry<E> {
 
 	@Getter
-	private Map<String, Supplier<? extends E>> extensionSuppliers = new HashMap<>();
+	private final Map<String, Supplier<? extends E>> extensionSuppliers = new HashMap<>();
 
 	@SuppressWarnings("unchecked")
 	public <T extends E> void register(T instance) {

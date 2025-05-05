@@ -22,7 +22,7 @@ public class FacetSizeFilter implements FacetFilter {
 	}
 
 	private boolean hasEnoughElements(Facet facet, int minCount) {
-		if (FacetType.RANGE.name().equalsIgnoreCase(facet.getType()) && facet.getEntries().size() >= 1) {
+		if (FacetType.RANGE.name().equalsIgnoreCase(facet.getType()) && !facet.getEntries().isEmpty()) {
 			return true;
 		}
 		if (FacetType.HIERARCHICAL.name().equalsIgnoreCase(facet.getType())) {
@@ -47,7 +47,7 @@ public class FacetSizeFilter implements FacetFilter {
 	}
 
 	private int countLeafChildEntries(HierarchialFacetEntry parentEntry) {
-		if (parentEntry.children.size() == 0)
+		if (parentEntry.children.isEmpty())
 			return 1;
 		else {
 			int leafChildCount = 0;

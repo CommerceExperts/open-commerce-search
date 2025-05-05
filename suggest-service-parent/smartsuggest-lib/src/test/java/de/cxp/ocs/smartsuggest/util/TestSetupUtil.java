@@ -33,8 +33,7 @@ public class TestSetupUtil {
 
 			if (stopWordsFileName != null) {
 				final InputStream stopWordInputStream = LuceneQuerySuggester.class.getResourceAsStream("/stopwords/" + stopWordsFileName);
-				final CharArraySet stopWordSet = WordlistLoader.getWordSet(new InputStreamReader(stopWordInputStream));
-				return stopWordSet;
+				return WordlistLoader.getWordSet(new InputStreamReader(stopWordInputStream));
 			}
 		}
 

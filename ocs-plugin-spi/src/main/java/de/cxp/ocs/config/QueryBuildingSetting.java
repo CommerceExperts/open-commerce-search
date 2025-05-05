@@ -20,13 +20,13 @@ public enum QueryBuildingSetting {
 
 	/**
 	 * Slop value that should be used for the quoted part of the query.
-	 * see https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query-phrase.html
+	 * see <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query-phrase.html">query-dsl-match-query-phrase.html</a>
 	 */
 	phraseSlop,
 
 	/**
 	 * see
-	 * https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-minimum-should-match.html
+	 * <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-minimum-should-match.html">query-dsl-minimum-should-match.html</a>
 	 */
 	minShouldMatch,
 
@@ -43,15 +43,15 @@ public enum QueryBuildingSetting {
 	/**
 	 * one of CROSS_FIELDS (default), BEST_FIELDS, MOST_FIELDS, PHRASE,
 	 * PHRASE_PREFIX
-	 * 
+	 * <p>
 	 * see
-	 * https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html#multi-match-types
+	 * <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-multi-match-query.html#multi-match-types">query-dsl-multi-match-query.html#multi-match-types</a>
 	 */
 	multimatch_type,
 
 	/**
 	 * see
-	 * https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#fuzziness
+	 * <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/common-options.html#fuzziness">common-options.html#fuzziness</a>
 	 */
 	fuzziness,
 

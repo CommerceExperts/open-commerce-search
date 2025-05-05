@@ -11,8 +11,8 @@ import lombok.Setter;
 
 public class RemoteSuggestDataProviderSimulation implements SuggestDataProvider {
 
-	private Map<String, SuggestData>	loadedSuggestions		= new HashMap<>();
-	private Map<String, Long>			loadedSuggestionTimes	= new HashMap<>();
+	private final Map<String, SuggestData> loadedSuggestions     = new HashMap<>();
+	private final Map<String, Long>        loadedSuggestionTimes = new HashMap<>();
 
 	@Setter
 	private boolean availability = true;
@@ -23,7 +23,7 @@ public class RemoteSuggestDataProviderSimulation implements SuggestDataProvider 
 	@Setter
 	private long timeoutMs = 8 * 1000;
 
-	private Random latencyDeviation = new Random();
+	private final Random latencyDeviation = new Random();
 
 	@Setter
 	@Getter // overwrite SuggestDataProvider::getName

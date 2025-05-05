@@ -33,7 +33,7 @@ public class ESQueryFactoryBuilder {
 
 	private List<QueryConfiguration> queryConfigs;
 
-	private Map<String, QueryConfiguration> queryConfigIndex = new HashMap<>();
+	private final Map<String, QueryConfiguration> queryConfigIndex = new HashMap<>();
 
 	private final Map<String, Supplier<? extends ESQueryFactory>> knownQueryFactories;
 
@@ -57,7 +57,7 @@ public class ESQueryFactoryBuilder {
 
 	public ConditionalQueries build() {
 		queryConfigs = context.config.getQueryConfigs();
-		if (queryConfigs == null || queryConfigs.size() == 0) {
+		if (queryConfigs == null || queryConfigs.isEmpty()) {
 			ESQueryFactory defaultQuery = new DefaultQueryFactory();
 			QueryConfiguration queryConfig = new QueryConfiguration();
 			defaultQuery.initialize("default", queryConfig.getSettings(), queryConfig.getWeightedFields(), context.getFieldConfigIndex());
@@ -90,10 +90,10 @@ public class ESQueryFactoryBuilder {
 		if (condition.getMaxQueryLength() < Integer.MAX_VALUE && condition.getMaxQueryLength() > 0) {
 			collectedPredicates.add(new QueryLengthCondition(condition.getMaxQueryLength()));
 		}
-		if (collectedPredicates.size() > 0) {
+		if (!collectedPredicates.isEmpty()) {
 			return new ComposedPredicate(collectedPredicates);
 		}
-		else if (collectedPredicates.size() == 0) return (arr) -> true;
+		else if (collectedPredicates.isEmpty()) return (arr) -> true;
 		else return collectedPredicates.get(0);
 	}
 

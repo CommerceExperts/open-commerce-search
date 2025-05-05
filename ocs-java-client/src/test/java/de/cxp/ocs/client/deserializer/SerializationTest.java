@@ -58,9 +58,6 @@ public class SerializationTest {
 		if (serializable instanceof Document) {
 			assertEqualDocuments((Document) serializable, (Document) deserialized, "");
 		}
-		else if (serializable instanceof Product) {
-			assertEqualDocuments((Product) serializable, (Product) deserialized, "");
-		}
 		else {
 			assertEquals(serializable, deserialized);
 		}
@@ -282,7 +279,7 @@ public class SerializationTest {
 				Document.class,
 				doc -> {
 					Object val = doc.data.get("mixedIntAndLong");
-					return Arrays.equals((long[]) val, new long[] { Long.MAX_VALUE, 123l });
+					return Arrays.equals((long[]) val, new long[] { Long.MAX_VALUE, 123L });
 				});
 	}
 

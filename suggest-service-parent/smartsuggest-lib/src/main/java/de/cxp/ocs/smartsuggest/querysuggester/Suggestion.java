@@ -58,7 +58,7 @@ public class Suggestion {
 			toString.append(" tags=[").append(getTags()).append(']');
 		}
 		if (payload != null) {
-			toString.append(" payload=[").append(payload.toString()).append(']');
+			toString.append(" payload=[").append(payload).append(']');
 		}
 		return toString.toString();
 	}

@@ -65,7 +65,7 @@ public class CompoundQuerySuggester implements QuerySuggester, Accountable {
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close() {
 		suggesterList.forEach(s -> {
 			try {
 				s.close();

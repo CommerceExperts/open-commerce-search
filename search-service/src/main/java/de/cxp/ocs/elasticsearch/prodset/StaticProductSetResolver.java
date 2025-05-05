@@ -36,7 +36,7 @@ public class StaticProductSetResolver implements ProductSetResolver {
 		Set<String> requestedIds = null;
 		QueryBuilder requestIdsQuery;
 		// search in a field
-		if (staticSet.name != null && staticSet.name.startsWith(FN_PREFIX)) {
+		if (staticSet.name.startsWith(FN_PREFIX)) {
 			String searchFieldName = staticSet.name.substring(FN_PREFIX.length());
 			requestIdsQuery = searchContext.fieldConfigIndex.getField(searchFieldName)
 					.map(searchField -> buildNumberSearchQuery(searchField, staticSet.getIds()))
@@ -48,14 +48,14 @@ public class StaticProductSetResolver implements ProductSetResolver {
 
 		// these ids are actual unique document IDs
 		else {
-			if (excludedIds != null && excludedIds.size() > 0) {
+			if (excludedIds != null && !excludedIds.isEmpty()) {
 				Set<String> filteredIds = new HashSet<String>(staticSet.getIds().length);
 				for (String id : staticSet.getIds()) {
 					if (!excludedIds.contains(id)) {
 						filteredIds.add(id);
 					}
 				}
-				requestIdsQuery = QueryBuilders.idsQuery().addIds(filteredIds.toArray(new String[filteredIds.size()]));
+				requestIdsQuery = QueryBuilders.idsQuery().addIds(filteredIds.toArray(new String[0]));
 			}
 			else {
 				requestIdsQuery = QueryBuilders.idsQuery().addIds(staticSet.getIds());

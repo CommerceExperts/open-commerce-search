@@ -12,7 +12,7 @@ public class InfoReqHandler implements ReqHandler {
 
 	private static final long serialVersionUID = 1L;
 
-	private Map<String, Object> info = new HashMap<>();
+	private final Map<String, Object> info = new HashMap<>();
 
 	public InfoReqHandler(String... propertyResources) {
 		for (String propertyResource : propertyResources) {
@@ -21,11 +21,11 @@ public class InfoReqHandler implements ReqHandler {
 	}
 
 	@Override
-	public Object execute(Req req) throws Exception {
+	public Object execute(Req req) {
 		return info;
 	}
 
-	public Map<String, Object> load(String propertyResource) {
+	public void load(String propertyResource) {
 		try {
 			InputStream gitPropertiesStream = InfoReqHandler.class.getClassLoader().getResourceAsStream(propertyResource);
 			if (gitPropertiesStream != null) {
@@ -40,7 +40,6 @@ public class InfoReqHandler implements ReqHandler {
 		catch (Exception e) {
 			addProperty(propertyResource + ".error", e.getClass().getSimpleName() + ": " + e.getMessage());
 		}
-		return info;
 	}
 
 	private void addProperty(Object name, Object value) {

@@ -45,7 +45,7 @@ public class SearchConfiguration {
 		}
 	}
 
-	private EnumMap<ProductSetType, String> heroProductResolver = new EnumMap<>(ProductSetType.class);
+	private final EnumMap<ProductSetType, String> heroProductResolver = new EnumMap<>(ProductSetType.class);
 
 	public SearchConfiguration setHeroProductResolver(Map<ProductSetType, String> customResolverClasses) {
 		heroProductResolver.putAll(customResolverClasses);
