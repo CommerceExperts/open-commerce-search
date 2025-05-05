@@ -1,6 +1,5 @@
 package de.cxp.ocs.smartsuggest.querysuggester;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
