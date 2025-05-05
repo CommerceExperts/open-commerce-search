@@ -58,9 +58,6 @@ public class SerializationTest {
 		if (serializable instanceof Document) {
 			assertEqualDocuments((Document) serializable, (Document) deserialized, "");
 		}
-		else if (serializable instanceof Product) {
-			assertEqualDocuments((Product) serializable, (Product) deserialized, "");
-		}
 		else {
 			assertEquals(serializable, deserialized);
 		}
