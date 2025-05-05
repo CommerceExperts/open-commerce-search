@@ -132,15 +132,13 @@ public final class DefaultLinkBuilder implements LinkBuilder {
 			return escapeValueDelimiter(values[0]);
 
 		StringBuilder valuesString = new StringBuilder();
-		if (values != null) {
-			boolean appended = false;
-			for (String v : values) {
-				if (v != null) {
-					if (appended)
-						valuesString.append(',');
-					valuesString.append(escapeValueDelimiter(v));
-					appended = true;
-				}
+		boolean appended = false;
+		for (String v : values) {
+			if (v != null) {
+				if (appended)
+					valuesString.append(',');
+				valuesString.append(escapeValueDelimiter(v));
+				appended = true;
 			}
 		}
 		return valuesString.toString();

@@ -124,13 +124,11 @@ class QueryPredictor {
 			if (predictedQuery.originalTermCount == 1) {
 				String matchedTerm = predictedQuery.getTermsUnique().keySet().iterator().next();
 				correctedWords.computeIfPresent(matchedTerm, (k, v) -> {
-					if (v instanceof AssociatedTerm) {
-						Iterator<QueryStringTerm> relatedWordIterator = v.getRelatedTerms().values().iterator();
-						while (relatedWordIterator.hasNext()) {
-							CountedTerm relWord = (CountedTerm) relatedWordIterator.next();
-							if (relWord.getTermFrequency() < predictedQuery.matchCount) {
-								relatedWordIterator.remove();
-							}
+					Iterator<QueryStringTerm> relatedWordIterator = v.getRelatedTerms().values().iterator();
+					while (relatedWordIterator.hasNext()) {
+						CountedTerm relWord = (CountedTerm) relatedWordIterator.next();
+						if (relWord.getTermFrequency() < predictedQuery.matchCount) {
+							relatedWordIterator.remove();
 						}
 					}
 					return v;

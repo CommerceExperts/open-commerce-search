@@ -46,7 +46,7 @@ public class LuceneQuerySuggesterPersistenceTest {
 		SuggestConfig suggestConfig = minimalSuggestConfig();
 
 		Long modTime = null;
-		try(var underTest = new LuceneQuerySuggester(indexFolder, suggestConfig, mock(ModifiedTermsService.class), getWordSet(Locale.ROOT), modTime)) {
+		try(var underTest = new LuceneQuerySuggester(indexFolder, suggestConfig, mock(ModifiedTermsService.class), getWordSet(Locale.ROOT), null)) {
 			underTest.index(testRecords, System.currentTimeMillis()).get();
 			assert underTest.isReady();
 			assertAllFunctionsWork(underTest);

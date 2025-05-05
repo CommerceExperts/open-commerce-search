@@ -25,17 +25,7 @@ public class DefaultIndexerConfigurationProvider implements IndexerConfiguration
 
 	@Override
 	public FieldConfiguration getFieldConfiguration(String indexName) {
-		FieldConfiguration fieldConfiguration = getIndexConf(indexName).getFieldConfiguration();
-		fixFieldConfiguration(fieldConfiguration);
-		return fieldConfiguration;
-	}
-
-	private void fixFieldConfiguration(FieldConfiguration fieldConf) {
-		for (Entry<String, Field> field : fieldConf.getFields().entrySet()) {
-			if (field.getValue().getName() == null) {
-				field.getValue().setName(field.getKey());
-			}
-		}
+		return getIndexConf(indexName).getFieldConfiguration();
 	}
 
 	private IndexConfiguration getIndexConf(String indexName) {

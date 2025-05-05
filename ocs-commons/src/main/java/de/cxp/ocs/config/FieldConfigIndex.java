@@ -297,15 +297,13 @@ public final class FieldConfigIndex implements FieldConfigAccess {
 
 		// return first matching dynamic field
 		Field generatedField = null;
-		if (dynamicFields != null) {
-			for (DynamicFieldConfig dynamicFieldConf : dynamicFields) {
-				if (dynamicFieldConf.matches(fieldName, value)) {
-					generatedField = cloneField(dynamicFieldConf.fieldConfig);
-					generatedField.setName(fieldName);
-					generatedFields.put(fieldName, generatedField);
-					updateFieldIndexes(generatedField);
-					break;
-				}
+		for (DynamicFieldConfig dynamicFieldConf : dynamicFields) {
+			if (dynamicFieldConf.matches(fieldName, value)) {
+				generatedField = cloneField(dynamicFieldConf.fieldConfig);
+				generatedField.setName(fieldName);
+				generatedFields.put(fieldName, generatedField);
+				updateFieldIndexes(generatedField);
+				break;
 			}
 		}
 

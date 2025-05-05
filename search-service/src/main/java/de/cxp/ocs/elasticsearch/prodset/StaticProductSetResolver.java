@@ -36,7 +36,7 @@ public class StaticProductSetResolver implements ProductSetResolver {
 		Set<String> requestedIds = null;
 		QueryBuilder requestIdsQuery;
 		// search in a field
-		if (staticSet.name != null && staticSet.name.startsWith(FN_PREFIX)) {
+		if (staticSet.name.startsWith(FN_PREFIX)) {
 			String searchFieldName = staticSet.name.substring(FN_PREFIX.length());
 			requestIdsQuery = searchContext.fieldConfigIndex.getField(searchFieldName)
 					.map(searchField -> buildNumberSearchQuery(searchField, staticSet.getIds()))
