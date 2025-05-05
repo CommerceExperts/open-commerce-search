@@ -37,10 +37,10 @@ public class NumericFacetEntryBuilderTest {
 
 	@Test
 	public void testWithDecimalsNoConfig() {
-		FacetConfig facetConfig = new FacetConfig();
-		assertEquals("< 5.25", new NumericFacetEntryBuilder(null, 5.25).setFirstEntry(true).getLabel(facetConfig).replace(",", "."));
-		assertEquals("5.25 - 12.75", new NumericFacetEntryBuilder(5.25, 12.75).getLabel(facetConfig).replace(",", "."));
-		assertEquals("> 12.75", new NumericFacetEntryBuilder(12.75321, null).setLastEntry(true).getLabel(facetConfig).replace(",", "."));
+		FacetConfig facetConfig = facetConfig().locale("en").build();
+		assertEquals("< 5.25", new NumericFacetEntryBuilder(null, 5.25).setFirstEntry(true).getLabel(facetConfig));
+		assertEquals("5.25 - 12.75", new NumericFacetEntryBuilder(5.25, 12.75).getLabel(facetConfig));
+		assertEquals("> 12.75", new NumericFacetEntryBuilder(12.75321, null).setLastEntry(true).getLabel(facetConfig));
 	}
 
 	@Test
@@ -69,35 +69,36 @@ public class NumericFacetEntryBuilderTest {
 
 	@Test
 	public void testWithDecimalsInclusiveRanges() {
-		FacetConfig facetConfig = facetConfig().decimals(1).upperBoundAdjustValue(-0.01).build();
-		assertEquals("< 5.2", new NumericFacetEntryBuilder(null, 5.2).setFirstEntry(true).getLabel(facetConfig).replace(",", "."));
-		assertEquals("5.2 - 12.7", new NumericFacetEntryBuilder(5.25, 12.75).getLabel(facetConfig).replace(",", "."));
-		assertEquals("> 12.8", new NumericFacetEntryBuilder(12.75321, null).setLastEntry(true).getLabel(facetConfig).replace(",", "."));
+		FacetConfig facetConfig = facetConfig().locale("en").decimals(1).upperBoundAdjustValue(-0.01).build();
+		assertEquals("< 5.2", new NumericFacetEntryBuilder(null, 5.2).setFirstEntry(true).getLabel(facetConfig));
+		assertEquals("5.2 - 12.7", new NumericFacetEntryBuilder(5.25, 12.75).getLabel(facetConfig));
+		assertEquals("> 12.8", new NumericFacetEntryBuilder(12.75321, null).setLastEntry(true).getLabel(facetConfig));
 	}
 
 	@Test
 	public void testWithDecimalsNotRounded() {
 		// restricting decimals uses a number formatter that does natural rounding on a decimal level
-		FacetConfig facetConfig = facetConfig().decimals(1).build();
-		assertEquals("< 5.2", new NumericFacetEntryBuilder(null, 5.25).setFirstEntry(true).getLabel(facetConfig).replace(",", "."));
-		assertEquals("5.2 - 12.7", new NumericFacetEntryBuilder(5.25, 12.74).getLabel(facetConfig).replace(",", "."));
-		assertEquals("> 12.8", new NumericFacetEntryBuilder(12.75321, null).setLastEntry(true).getLabel(facetConfig).replace(",", "."));
+		FacetConfig facetConfig = facetConfig().locale("en").decimals(1).build();
+		assertEquals("< 5.2", new NumericFacetEntryBuilder(null, 5.25).setFirstEntry(true).getLabel(facetConfig));
+		assertEquals("5.2 - 12.7", new NumericFacetEntryBuilder(5.25, 12.74).getLabel(facetConfig));
+		assertEquals("> 12.8", new NumericFacetEntryBuilder(12.75321, null).setLastEntry(true).getLabel(facetConfig));
 	}
 
 	@Test
 	public void testWithTwoDecimalsNotRounded() {
-		FacetConfig facetConfig = facetConfig().decimals(2).build();
-		assertEquals("< 5.25", new NumericFacetEntryBuilder(null, 5.25).setFirstEntry(true).getLabel(facetConfig).replace(",", "."));
-		assertEquals("5.25 - 12.75", new NumericFacetEntryBuilder(5.25, 12.754).getLabel(facetConfig).replace(",", "."));
-		assertEquals("> 12.76", new NumericFacetEntryBuilder(12.755, null).setLastEntry(true).getLabel(facetConfig).replace(",", "."));
+		// test here also with different locale
+		FacetConfig facetConfig = facetConfig().locale("de").decimals(2).build();
+		assertEquals("< 5,25", new NumericFacetEntryBuilder(null, 5.25).setFirstEntry(true).getLabel(facetConfig));
+		assertEquals("5,25 - 12,75", new NumericFacetEntryBuilder(5.25, 12.754).getLabel(facetConfig));
+		assertEquals("> 12,76", new NumericFacetEntryBuilder(12.755, null).setLastEntry(true).getLabel(facetConfig));
 	}
 
 	@Test
 	public void testWithTwoDecimalsAndInclusiveRanges() {
-		FacetConfig facetConfig = facetConfig().decimals(2).upperBoundAdjustValue(-0.01).noLowerBoundPrefix("<= ").build();
-		assertEquals("<= 5.24", new NumericFacetEntryBuilder(null, 5.25).setFirstEntry(true).getLabel(facetConfig).replace(",", "."));
-		assertEquals("5.25 - 12.75", new NumericFacetEntryBuilder(5.25, 12.76).getLabel(facetConfig).replace(",", "."));
-		assertEquals("> 12.76", new NumericFacetEntryBuilder(12.76, null).setLastEntry(true).getLabel(facetConfig).replace(",", "."));
+		FacetConfig facetConfig = facetConfig().locale("").decimals(2).upperBoundAdjustValue(-0.01).noLowerBoundPrefix("<= ").build();
+		assertEquals("<= 5.24", new NumericFacetEntryBuilder(null, 5.25).setFirstEntry(true).getLabel(facetConfig));
+		assertEquals("5.25 - 12.75", new NumericFacetEntryBuilder(5.25, 12.76).getLabel(facetConfig));
+		assertEquals("> 12.76", new NumericFacetEntryBuilder(12.76, null).setLastEntry(true).getLabel(facetConfig));
 	}
 
 	@Test
@@ -128,11 +129,6 @@ public class NumericFacetEntryBuilderTest {
 	private static class FacetConfigBuilder {
 
 		final Map<String, Object> metaData = new HashMap<>();
-
-		public FacetConfigBuilder lowerBoundAdjustValue(double adjust) {
-			metaData.put("lowerBoundAdjustValue", String.valueOf(adjust));
-			return this;
-		}
 
 		public FacetConfigBuilder upperBoundAdjustValue(double adjust) {
 			metaData.put("upperBoundAdjustValue", String.valueOf(adjust));
@@ -193,9 +189,15 @@ public class NumericFacetEntryBuilderTest {
 			metaData.put("unitAsPrefix", "true");
 			return this;
 		}
+		
+		public FacetConfigBuilder locale(String locale) {
+			metaData.put("locale", locale);
+			return this;
+		}
 
 		public FacetConfig build() {
 			return new FacetConfig().setMetaData(metaData);
 		}
+
 	}
 }
