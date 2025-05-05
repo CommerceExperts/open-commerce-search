@@ -315,7 +315,7 @@ class FacetCreatorInitializer {
 			case HIERARCHICAL:
 				return new CategoryFacetCreator(explicitConfigs, null, true);
 			default:
-				log.warn("Not implemented: there is no support for explicit facet creation on type {} for facets ");
+				log.warn("Not implemented: there is no support for explicit facet creation on type {} for facets ", facetType);
 				return null;
 		}
 	}

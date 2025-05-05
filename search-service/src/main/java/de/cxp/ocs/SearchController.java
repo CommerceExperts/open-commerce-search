@@ -208,7 +208,7 @@ public class SearchController implements SearchService {
 			String indexName = result.getSlices().get(0).hits.get(0).index;
 			String prevIndexName = actualIndexPerTenant.put(tenant, indexName);
 			if (prevIndexName != null && !indexName.equals(prevIndexName)) {
-				log.info("flushing config for tenant {} because actual index changed from {} to {}", prevIndexName, indexName);
+				log.info("flushing config for tenant {} because actual index changed from {} to {}", tenant, prevIndexName, indexName);
 				CompletableFuture.runAsync(() -> flushConfig(tenant));
 			}
 		}

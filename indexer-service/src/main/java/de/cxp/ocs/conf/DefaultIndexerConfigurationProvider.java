@@ -1,11 +1,9 @@
 package de.cxp.ocs.conf;
 
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 
 import de.cxp.ocs.config.DataProcessorConfiguration;
-import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfiguration;
 import de.cxp.ocs.config.IndexSettings;
 import de.cxp.ocs.spi.indexer.IndexerConfigurationProvider;
