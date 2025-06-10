@@ -80,10 +80,21 @@
             <artifactId>jackson-module-parameter-names</artifactId>
         </dependency>
 
-
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-config</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>httpclient5</artifactId>
+                    <groupId>org.apache.httpcomponents.client5</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>5.4.3</version>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
