@@ -5,7 +5,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.71.0</version>
+	<version>0.71.1</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -63,12 +63,12 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>indexer-service</artifactId>
-				<version>0.45.4</version>
+				<version>0.45.5</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>search-service</artifactId>
-				<version>0.63.0</version>
+				<version>0.63.1</version>
 			</dependency>
 			<!-- only including the suggest-service directly, because it depends on 
 				the other suggest modules -->
@@ -140,7 +140,7 @@
 				<version>3.17.0</version>
 			</dependency>
 
-            <!-- transitive dependecies fixup -->
+            <!-- transitive dependencies fixup -->
             <dependency>
                 <groupId>commons-logging</groupId>
                 <artifactId>commons-logging</artifactId>
