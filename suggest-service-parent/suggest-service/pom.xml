@@ -6,7 +6,6 @@
         <groupId>de.cxp.ocs</groupId>
         <artifactId>suggest-service-parent</artifactId>
         <version>0.71.0</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>suggest-service</artifactId>
