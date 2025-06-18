@@ -1,16 +1,16 @@
 package de.cxp.ocs.conf;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
+import de.cxp.ocs.config.ConnectionConfiguration;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 import org.springframework.stereotype.Component;
 
-import de.cxp.ocs.config.ConnectionConfiguration;
-import lombok.Getter;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Properties specific to ocs.
@@ -24,20 +24,22 @@ import lombok.Getter;
 @Getter
 public class ApplicationProperties {
 
-	@NestedConfigurationProperty
-	private final ConnectionConfiguration connectionConfiguration = new ConnectionConfiguration();
+    @NestedConfigurationProperty
+    private final ConnectionConfiguration connectionConfiguration = new ConnectionConfiguration();
 
-	private final Set<String> disabledPlugins = new HashSet<>();
+    private final Set<String> disabledPlugins = new HashSet<>();
 
-	private final Map<String, String> preferedPlugins = new HashMap<>();
+    private final Map<String, String> preferedPlugins = new HashMap<>();
 
-	@NestedConfigurationProperty
-	IndexConfiguration defaultIndexConfig = new IndexConfiguration();
+    @NestedConfigurationProperty
+    @Setter
+    IndexConfiguration defaultIndexConfig = new IndexConfiguration();
 
-	/**
-	 * key = index name
-	 */
-	@NestedConfigurationProperty
-	private final Map<String, IndexConfiguration> indexConfig = new HashMap<>();
+    /**
+     * key = index name
+     */
+    @NestedConfigurationProperty
+    @Setter
+    private Map<String, IndexConfiguration> indexConfig = new HashMap<>();
 
 }
