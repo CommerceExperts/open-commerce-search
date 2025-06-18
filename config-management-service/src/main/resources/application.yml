@@ -1,0 +1,14 @@
+server:
+  port: 8538
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/configdb
+    username: user
+    password: pass
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  jackson:
+    serialization:
+      indent-output: true

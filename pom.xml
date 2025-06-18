@@ -18,6 +18,7 @@
 		<module>suggest-service-parent</module>
 		<module>ocs-java-client</module>
 		<module>integration-tests</module>
+		<module>config-management-service</module>
 	</modules>
 
 	<properties>

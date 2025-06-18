@@ -6,7 +6,7 @@
     <parent>
         <groupId>de.cxp.ocs</groupId>
         <artifactId>ocs-parent</artifactId>
-       <version>0.70.0</version>
+       <version>0.71.0</version>
     </parent>
 
     <artifactId>config-service</artifactId>
