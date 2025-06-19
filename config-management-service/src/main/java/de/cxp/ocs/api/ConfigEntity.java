@@ -1,7 +1,9 @@
-package de.cxp.ocs.model;
+package de.cxp.ocs.api;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -14,9 +16,11 @@ public class ConfigEntity {
 
     private String service;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private String defaultConfigJson;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     private String scopedConfigJson;
 

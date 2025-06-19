@@ -27,9 +27,10 @@ spring:
   jackson.deserialization.fail_on_unknown_properties: false
 
 ocs:
-  config-management:
-    enabled: true
-    url: "http://localhost:8538/config-api/v1/search"
   connection-configuration:
     hosts: ${ES_HOSTS:http://localhost:9200}
     auth: ${ES_AUTH}
+
+config-management:
+  enabled: true
+  url: "http://localhost:8538/config-api/v1/search"

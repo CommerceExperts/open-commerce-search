@@ -12,3 +12,391 @@ spring:
   jackson:
     serialization:
       indent-output: true
+
+config-initializer:
+  services:
+    search:
+      default-config:
+        facetConfiguration:
+          maxFacets: 12
+          facets:
+            - sourceField: category
+              label: Category
+              order: 1
+              excludeFromFacetLimit: true
+            - sourceField: brand
+              label: Brand
+              order: 2
+              multiSelect: true
+              excludeFromFacetLimit: true
+            - sourceField: price
+              label: Price
+              order: 3
+              showUnselectedOptions: true
+              metaData:
+                unit: "€"
+              excludeFromFacetLimit: true
+            - sourceField: size
+              label: Size
+              order: 4
+              metaData:
+                detailLinks: 5
+              excludeFromFacetLimit: true
+            - sourceField: color
+              label: Color
+              multi-select: true
+        scoring-configuration:
+          score-functions:
+            - type: field_value_factor
+              field: stock
+              weight: 2.5
+              options:
+                missing: 0
+        query-configuration:
+          ean-search:
+            strategy: "ConfigurableQuery"
+            condition:
+              matchingRegex: "\\s*\\d{13}\\s*(\\s+\\d{13})*"
+              maxTermCount: 42
+            settings:
+              operator: "OR"
+              tieBreaker: 0
+              analyzer: "whitespace"
+              allowParallelSpellcheck: false
+              acceptNoResult: true
+            weightedFields:
+              "[ean]": 1
+          art-nr-search:
+            strategy: "ConfigurableQuery"
+            condition:
+              matchingRegex: "\\s*(\\d+\\w?\\d+\\s*)+"
+              maxTermCount: 42
+            settings:
+              operator: "OR"
+              tieBreaker: 0
+              analyzer: "whitespace"
+              allowParallelSpellcheck: false
+              acceptNoResult: true
+            weightedFields:
+              "[artNr]": 2
+              "[masterNr]": 1.5
+          # AND-match with optional shingles
+          default-query:
+            strategy: "ConfigurableQuery"
+            condition:
+              minTermCount: 1
+              maxTermCount: 10
+            settings:
+              operator: "AND"
+              tieBreaker: 0.7
+              multimatch_type: "CROSS_FIELDS"
+              analyzer: "standard"
+              quoteAnalyzer: "minimal"
+              isQueryWithShingles: true
+              allowParallelSpellcheck: false
+            weightedFields:
+              "[title]": 3
+              "[title.standard]": 2.5
+              "[brand]": 2
+              "[brand.standard]": 1.5
+              "[category_leaf]": 2
+              "[category_leaf.standard]": 1.7
+              "[category_lvl_0]": 1
+              "[category_lvl_0.standard]": 0.7
+              "[category_lvl_1]": 1.1
+              "[category_lvl_1.standard]": 0.8
+              "[category_lvl_2]": 1.2
+              "[category_lvl_2.standard]": 0.9
+              "[category_lvl_3]": 1.3
+              "[category_lvl_3.standard]": 1
+          # pre fetch query
+          relaxed-query:
+            strategy: "RelaxedQuery"
+            condition:
+              minTermCount: 2
+              maxTermCount: 10
+            settings:
+              analyzer: "standard"
+              fallbackQuery: "relaxed-ngram-query"
+              tieBreaker: 0.2
+            weightedFields:
+              "[title]": 3
+              "[title.standard]": 2.5
+              "[brand]": 2
+              "[brand.standard]": 1.5
+              "[category_leaf]": 1.8
+              "[category_leaf.standard]": 1.7
+              "[category_lvl_0]": 1
+              "[category_lvl_0.standard]": 0.7
+              "[category_lvl_1]": 1.1
+              "[category_lvl_1.standard]": 0.8
+              "[category_lvl_2]": 1.2
+              "[category_lvl_2.standard]": 0.9
+              "[category_lvl_3]": 1.3
+              "[category_lvl_3.standard]": 1
+          # "real" fuzzy search for one-term search
+          one-term-fuzzy-search:
+            strategy: "ConfigurableQuery"
+            condition:
+              maxTermCount: 1
+            settings:
+              tieBreaker: 0.7
+              acceptNoResult: false
+              allowParallelSpellcheck: false
+              fuzziness: "AUTO"
+            weightedFields:
+              "[title]": 3
+              "[title.standard]": 2.5
+              "[brand]": 2
+              "[category_leaf]": 1.8
+              "[category_lvl_0]": 1
+              "[category_lvl_1]": 1.1
+              "[category_lvl_2]": 1.2
+              "[category_lvl_3]": 1.3
+          # similar to a fuzzy query including decomposition
+          relaxed-ngram-query:
+            strategy: "NgramQuery"
+            condition:
+              maxTermCount: 10
+            settings:
+              minShouldMatch: "80%"
+              tieBreaker: 0.2
+            weightedFields:
+              "[title]": 3
+              "[title.standard]": 2.5
+              "[brand]": 2
+              "[category_leaf]": 2
+              "[category_lvl_0]": 1
+              "[category_lvl_1]": 1.1
+              "[category_lvl_2]": 1.2
+              "[category_lvl_3]": 1.3
+          dismax-query:
+            strategy: "DisMaxQuery"
+            condition:
+              minTermCount: 3
+              matchingRegex: "^(\\S+\\s+){2,}\\S{1,4}$" # 3 or more words & last word must have less than 5 characters
+            weightedFields:
+              "[title]": 1
+              "[brand]": 1
+          # for all queries with more then 10 words
+          fallback-search:
+            strategy: "ConfigurableQuery"
+            condition:
+              minTermCount: 10
+            settings:
+              analyzer: "standard"
+              minShouldMatch: "75%"
+            weightedFields:
+              "[title]": 3
+              "[title.standard]": 2.5
+              "[brand]": 2
+              "[brand.standard]": 1.5
+              "[category_leaf]": 2
+              "[category_leaf.standard]": 1.7
+              "[category_lvl_0]": 1
+              "[category_lvl_0.standard]": 0.7
+              "[category_lvl_1]": 1.1
+              "[category_lvl_1.standard]": 0.8
+              "[category_lvl_2]": 1.2
+              "[category_lvl_2.standard]": 0.9
+              "[category_lvl_3]": 1.3
+              "[category_lvl_3.standard]": 1
+      scoped-config:
+        tenant-de:
+          facet-configuration:
+            maxFacets: 12
+            facets:
+              - source-field: category
+                label: Category
+                order: 1
+                excludeFromFacetLimit: true
+              - source-field: brand
+                label: Brand
+                order: 2
+                multi-select: true
+                excludeFromFacetLimit: true
+              - source-field: price
+                label: Price
+                order: 3
+                show-unselected-options: true
+                meta-data:
+                  unit: "€"
+                excludeFromFacetLimit: true
+              - source-field: size
+                label: Size
+                order: 4
+                meta-data:
+                  detail-links: 5
+                excludeFromFacetLimit: true
+              - source-field: color
+                label: Color
+                multi-select: true
+    index:
+      default-config:
+        data-processor-configuration:
+          processors:
+            - ExtractCategoryLevelDataProcessor
+        field-configuration:
+          fields:
+            id:
+              name: id
+              type: id
+              usage:
+                - Result
+              field-level: both
+            artNr:
+              name: artNr
+              type: string
+              source-names:
+                - ArticleNumber
+                - MasterArticleNumber
+              usage:
+                - Search
+                - Result
+              field-level: both
+            ean:
+              name: ean
+              source-names:
+                - EAN
+              usage:
+                - Search
+                - Result
+            title:
+              name: title
+              type: string
+              source-names:
+                - Title
+                - product_name
+                - ProductName
+              usage:
+                - Search
+                - Result
+                - Sort
+            brand:
+              name: brand
+              type: string
+              source-names:
+                - Brand
+              usage:
+                - Search
+                - Facet
+                - Result
+            price:
+              name: price
+              type: number
+              source-names:
+                - Price
+              usage:
+                - Sort
+                - Result
+                - Facet
+              field-level: both
+            category:
+              name: category
+              type: category
+              source-names:
+                - Categories
+                - CategoryPath
+              usage:
+                - Result
+                - Facet
+            category_leaf:
+              name: category_leaf
+              type: string
+              usage:
+                - Search
+            color:
+              name: color
+              type: string
+              usage:
+                - Result
+                - Facet
+              field-level: both
+            size:
+              name: size
+              type: string
+              usage:
+                - Result
+                - Facet
+              field-level: variant
+            search_combi:
+              name: search_combi
+              source-names:
+                - color
+                - size
+                - category_leaf
+                - title
+                - brand
+              usage:
+                - Search
+            shortDescription:
+              name: shortDescription
+              source-names:
+                - ShortDescription
+                - Short
+              usage:
+                - Search
+                - Result
+            description:
+              name: description
+              source-names:
+                - Description
+                - Text
+              usage:
+                - Search
+                - Result
+            productUrl:
+              name: productUrl
+              source-names:
+                - ProduktURL
+                - Deeplink
+              usage:
+                - Result
+              field-level: both
+            imageUrl:
+              name: imageUrl
+              source-names:
+                - ImageURL
+              usage:
+                - Result
+              field-level: both
+            stock:
+              name: stock
+              source-names:
+                - OnStock
+                - StockLevel
+              usage:
+                - Score
+                - Result
+                - Filter
+          dynamic-fields:
+            - name: attribute
+              type: number
+              source-names:
+                - .*
+              usage:
+                - Facet
+                - Result
+            - name: attribute
+              type: string
+              source-names:
+                - .*
+              usage:
+                - Facet
+                - Result
+            - name: category_levels
+              type: string
+              source-names:
+                - category_.*
+              usage:
+                - Search
+            - name: others
+              source-names:
+                - .*
+              usage:
+                - Result
+      scoped-config:
+        index-de:
+          data-processor-configuration:
+            processors:
+              - ExtractCategoryLevelDataProcessor

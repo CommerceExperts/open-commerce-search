@@ -1,9 +1,8 @@
-package de.cxp.ocs.controller;
+package de.cxp.ocs.api;
 
 import de.cxp.ocs.configmanagement.dto.ConfigRequest;
 import de.cxp.ocs.configmanagement.dto.ConfigResponse;
 import de.cxp.ocs.configmanagement.dto.RollbackRequest;
-import de.cxp.ocs.service.ConfigService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

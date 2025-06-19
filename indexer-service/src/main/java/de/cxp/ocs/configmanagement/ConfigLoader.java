@@ -1,9 +1,9 @@
-package de.cxp.ocs.config.configmanagement;
+package de.cxp.ocs.configmanagement;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import de.cxp.ocs.config.ApplicationProperties;
-import de.cxp.ocs.config.ApplicationSearchProperties;
+import de.cxp.ocs.conf.ApplicationProperties;
+import de.cxp.ocs.conf.IndexConfiguration;
 import de.cxp.ocs.configmanagement.dto.ConfigResponse;
+import de.cxp.ocs.configmanagement.util.JsonMapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +19,8 @@ import java.util.stream.Collectors;
 public class ConfigLoader {
     private final ApplicationProperties appProps;
     private final ConfigProperties configProps;
+    private final JsonMapper jsonMapper;
     private final RestTemplate restTemplate = new RestTemplate();
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @PostConstruct
     public void fetchAndApplyExternalConfig() {
@@ -37,8 +37,8 @@ public class ConfigLoader {
                 return;
             }
 
-            applyDefaultTenantConfig(response);
-            applyTenantConfigs(response);
+            applyDefaultIndexConfig(response);
+            applyIndexConfigs(response);
 
             log.info("Successfully loaded and applied external config.");
 
@@ -52,13 +52,13 @@ public class ConfigLoader {
         return restTemplate.getForObject(configProps.getUrl(), ConfigResponse.class);
     }
 
-    private void applyDefaultTenantConfig(ConfigResponse response) {
-        ApplicationSearchProperties defaultConfig = convertToSearchProperties(response.getDefaultConfig());
-        appProps.setDefaultTenantConfig(defaultConfig);
+    private void applyDefaultIndexConfig(ConfigResponse response) {
+        IndexConfiguration defaultConfig = convertToSearchProperties(response.getDefaultConfig());
+        appProps.setDefaultIndexConfig(defaultConfig);
     }
 
-    private void applyTenantConfigs(ConfigResponse response) {
-        Map<String, ApplicationSearchProperties> scopedConfigs = response.getScopedConfig()
+    private void applyIndexConfigs(ConfigResponse response) {
+        Map<String, IndexConfiguration> scopedConfigs = response.getScopedConfig()
                 .entrySet()
                 .stream()
                 .collect(Collectors.toMap(
@@ -66,10 +66,10 @@ public class ConfigLoader {
                         entry -> convertToSearchProperties(entry.getValue())
                 ));
 
-        appProps.setTenantConfig(scopedConfigs);
+        appProps.setIndexConfig(scopedConfigs);
     }
 
-    private ApplicationSearchProperties convertToSearchProperties(Object rawConfig) {
-        return objectMapper.convertValue(rawConfig, ApplicationSearchProperties.class);
+    private IndexConfiguration convertToSearchProperties(Object rawConfig) {
+        return jsonMapper.convertValue(rawConfig, IndexConfiguration.class);
     }
 }

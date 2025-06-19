@@ -1,6 +1,5 @@
-package de.cxp.ocs.repository;
+package de.cxp.ocs.api;
 
-import de.cxp.ocs.model.ConfigEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,4 +22,6 @@ public interface ConfigRepository extends JpaRepository<ConfigEntity, Long> {
     @Modifying
     @Query("UPDATE ConfigEntity c SET c.isActive = false WHERE c.service = :service")
     void deactivateAllByService(String service);
+
+    boolean existsByService(String service);
 }
