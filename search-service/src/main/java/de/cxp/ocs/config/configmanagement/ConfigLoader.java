@@ -38,7 +38,7 @@ public class ConfigLoader {
             }
 
             applyDefaultTenantConfig(response);
-            applyScopedTenantConfigs(response);
+            applyTenantConfigs(response);
 
             log.info("Successfully loaded and applied external config.");
 
@@ -57,7 +57,7 @@ public class ConfigLoader {
         appProps.setDefaultTenantConfig(defaultConfig);
     }
 
-    private void applyScopedTenantConfigs(ConfigResponse response) {
+    private void applyTenantConfigs(ConfigResponse response) {
         Map<String, ApplicationSearchProperties> scopedConfigs = response.getScopedConfig()
                 .entrySet()
                 .stream()

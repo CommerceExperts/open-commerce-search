@@ -37,8 +37,8 @@ public class ConfigLoader {
                 return;
             }
 
-            applyDefaultTenantConfig(response);
-            applyScopedTenantConfigs(response);
+            applyDefaultIndexConfig(response);
+            applyIndexConfigs(response);
 
             log.info("Successfully loaded and applied external config.");
 
@@ -52,12 +52,12 @@ public class ConfigLoader {
         return restTemplate.getForObject(configProps.getUrl(), ConfigResponse.class);
     }
 
-    private void applyDefaultTenantConfig(ConfigResponse response) {
+    private void applyDefaultIndexConfig(ConfigResponse response) {
         IndexConfiguration defaultConfig = convertToSearchProperties(response.getDefaultConfig());
         appProps.setDefaultIndexConfig(defaultConfig);
     }
 
-    private void applyScopedTenantConfigs(ConfigResponse response) {
+    private void applyIndexConfigs(ConfigResponse response) {
         Map<String, IndexConfiguration> scopedConfigs = response.getScopedConfig()
                 .entrySet()
                 .stream()
