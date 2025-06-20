@@ -1,5 +1,6 @@
 package de.cxp.ocs.api;
 
+import de.cxp.ocs.configmanagement.dto.ConfigHistory;
 import de.cxp.ocs.configmanagement.dto.ConfigRequest;
 import de.cxp.ocs.configmanagement.dto.ConfigResponse;
 import de.cxp.ocs.configmanagement.dto.RollbackRequest;
@@ -20,7 +21,7 @@ public class ConfigService {
     public ConfigResponse getLatest(String service) {
         ConfigEntity config = configRepository.findFirstByServiceAndIsActiveTrueOrderByCreatedAtDesc(service)
                 .orElseThrow(() -> new RuntimeException("No active config found"));
-        return toResponse(config);
+        return toConfigResponse(config);
     }
 
     public void createNewConfig(String service, ConfigRequest request) {
@@ -35,9 +36,9 @@ public class ConfigService {
         configRepository.save(config);
     }
 
-    public Page<ConfigResponse> getHistory(String service, Pageable pageable) {
+    public Page<ConfigHistory> getHistory(String service, Pageable pageable) {
         return configRepository.findByServiceOrderByCreatedAtDesc(service, pageable)
-                .map(this::toResponse);
+                .map(this::toConfigHistory);
     }
 
     public void rollback(String service, RollbackRequest request) {
@@ -49,7 +50,15 @@ public class ConfigService {
         configRepository.save(config);
     }
 
-    private ConfigResponse toResponse(ConfigEntity config) {
+    private ConfigHistory toConfigHistory(ConfigEntity config) {
+        ConfigHistory configHistory = new ConfigHistory();
+        configHistory.setConfigId(config.getId());
+        configHistory.setActive(config.isActive());
+        configHistory.setCreatedAt(config.getCreatedAt());
+        return configHistory;
+    }
+
+    private ConfigResponse toConfigResponse(ConfigEntity config) {
         ConfigResponse response = new ConfigResponse();
         response.setId(config.getId());
         response.setService(config.getService());

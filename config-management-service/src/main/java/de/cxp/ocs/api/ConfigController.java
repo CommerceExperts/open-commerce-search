@@ -1,5 +1,6 @@
 package de.cxp.ocs.api;
 
+import de.cxp.ocs.configmanagement.dto.ConfigHistory;
 import de.cxp.ocs.configmanagement.dto.ConfigRequest;
 import de.cxp.ocs.configmanagement.dto.ConfigResponse;
 import de.cxp.ocs.configmanagement.dto.RollbackRequest;
@@ -25,7 +26,7 @@ public class ConfigController {
     }
 
     @GetMapping("/{service}/history")
-    public Page<ConfigResponse> getHistory(@PathVariable String service, Pageable pageable) {
+    public Page<ConfigHistory> getHistory(@PathVariable String service, Pageable pageable) {
         return configService.getHistory(service, pageable);
     }
 
