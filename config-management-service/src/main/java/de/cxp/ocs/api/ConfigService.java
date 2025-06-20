@@ -3,7 +3,7 @@ package de.cxp.ocs.api;
 import de.cxp.ocs.configmanagement.dto.ConfigRequest;
 import de.cxp.ocs.configmanagement.dto.ConfigResponse;
 import de.cxp.ocs.configmanagement.dto.RollbackRequest;
-import de.cxp.ocs.util.JsonMapper;
+import de.cxp.ocs.configmanagement.util.JsonMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
