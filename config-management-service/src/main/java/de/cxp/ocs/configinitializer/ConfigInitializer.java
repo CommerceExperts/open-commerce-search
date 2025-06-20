@@ -2,7 +2,7 @@ package de.cxp.ocs.configinitializer;
 
 import de.cxp.ocs.api.ConfigEntity;
 import de.cxp.ocs.api.ConfigRepository;
-import de.cxp.ocs.util.JsonMapper;
+import de.cxp.ocs.configmanagement.util.JsonMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;

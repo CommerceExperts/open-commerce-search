@@ -1,15 +1,16 @@
-package de.cxp.ocs.configmanagement.util;
+package de.cxp.ocs.configmanagement;
 
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import de.cxp.ocs.configmanagement.util.JsonMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class ObjectMapperConfig {
+public class JsonMapperConfig {
     @Bean
     public ObjectMapper objectMapper() {
         ObjectMapper mapper = new ObjectMapper();
@@ -18,5 +19,10 @@ public class ObjectMapperConfig {
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         return mapper;
+    }
+
+    @Bean
+    public JsonMapper jsonMapper(ObjectMapper objectMapper) {
+        return new JsonMapper(objectMapper);
     }
 }
