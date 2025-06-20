@@ -24,6 +24,12 @@ public class ConfigService {
         return toConfigResponse(config);
     }
 
+    public ConfigResponse getByIdAndService(Long id, String service) {
+        ConfigEntity config = configRepository.findByIdAndService(id, service)
+                .orElseThrow(() -> new RuntimeException("No config with id " + id + " found"));
+        return toConfigResponse(config);
+    }
+
     public void createNewConfig(String service, ConfigRequest request) {
         configRepository.deactivateAllByService(service);
 

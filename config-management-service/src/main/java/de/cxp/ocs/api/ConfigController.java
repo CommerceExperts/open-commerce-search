@@ -20,6 +20,11 @@ public class ConfigController {
         return configService.getLatest(service);
     }
 
+    @GetMapping("/{service}/{id}")
+    public ConfigResponse getByIdAndService(@PathVariable String service, @PathVariable Long id) {
+        return configService.getByIdAndService(id, service);
+    }
+
     @PostMapping("/{service}")
     public void createConfig(@PathVariable String service, @RequestBody ConfigRequest request) {
         configService.createNewConfig(service, request);
