@@ -29,7 +29,7 @@ public class MarkerFilter extends AbstractMatcherFilter<ILoggingEvent> {
 
 		final Marker eMarker = event.getMarker();
 
-		if (marker.equals(eMarker) || marker.contains(eMarker)) {
+		if (eMarker != null && (marker.equals(eMarker) || marker.contains(eMarker))) {
 			return onMatch;
 		}
 
