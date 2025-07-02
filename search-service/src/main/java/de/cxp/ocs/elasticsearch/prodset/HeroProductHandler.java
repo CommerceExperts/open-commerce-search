@@ -2,6 +2,7 @@ package de.cxp.ocs.elasticsearch.prodset;
 
 import java.util.*;
 
+import lombok.EqualsAndHashCode;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.Operator;
@@ -46,6 +47,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author Rudolf Batt
  */
 @Slf4j
+@EqualsAndHashCode
 public class HeroProductHandler {
 
 	private static int MAX_IDS_ORDERED_BOOSTING = 1000;
