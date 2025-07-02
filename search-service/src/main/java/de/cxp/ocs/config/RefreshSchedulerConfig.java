@@ -2,6 +2,7 @@ package de.cxp.ocs.config;
 
 import de.cxp.ocs.SearchController;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.context.refresh.ContextRefresher;
 import org.springframework.context.annotation.Configuration;
@@ -38,16 +39,26 @@ public class RefreshSchedulerConfig {
 	@Autowired
 	private ContextRefresher contextRefresher;
 
-	@ConditionalOnProperty(name = "ocs.scheduler.enabled.refresh-config")
+	// ConditionalOnProperty does not work here
+	@Value("${ocs.scheduler.refresh-config.enabled:false}")
+	boolean isConfigRefreshEnabled = false;
+
+	// ConditionalOnProperty does not work here
+	@Value("${ocs.scheduler.refresh-context.enabled:false}")
+	boolean isContextRefreshEnabled = false;
+
 	@Scheduled(fixedDelayString = "${ocs.scheduler.refresh-config-delay-ms:60000}")
 	public void searchControllerRefreshConfigs() {
-		controller.refreshAllConfigs();
+		if (isConfigRefreshEnabled) {
+			controller.refreshAllConfigs();
+		}
 	}
 
-	@ConditionalOnProperty(name = "ocs.scheduler.enabled.refresh-context")
 	@Scheduled(fixedDelayString = "${ocs.scheduler.refresh-context-delay-ms:60000}")
 	public void refreshContext() {
-		contextRefresher.refresh();
+		if (isContextRefreshEnabled) {
+			contextRefresher.refresh();
+		}
 	}
 
 }
