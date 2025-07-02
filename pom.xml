@@ -30,9 +30,8 @@
 		<docker.latest.tag>latest</docker.latest.tag>
 
 		<elasticsearch.version>7.17.28</elasticsearch.version>
-		<spring.version>6.1.13</spring.version>
-		<spring-boot.version>3.4.5</spring-boot.version>
-		<spring-cloud.version>2024.0.1</spring-cloud.version>
+		<spring-boot.version>3.5.0</spring-boot.version>
+		<spring-cloud.version>2025.0.0</spring-cloud.version>
 		<springdoc.version>1.8.0</springdoc.version>
 		
 		<slf4j.version>2.0.15</slf4j.version>

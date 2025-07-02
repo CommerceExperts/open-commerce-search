@@ -6,7 +6,7 @@
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
 		<version>0.71.1</version>
-		<relativePath>../</relativePath>
+		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<artifactId>search-service</artifactId>
@@ -120,6 +120,11 @@
 					<groupId>org.apache.tomcat.embed</groupId>
 				</exclusion>
 			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-webmvc</artifactId>
+			<version>6.2.6</version>
 		</dependency>
 
 		<dependency>
