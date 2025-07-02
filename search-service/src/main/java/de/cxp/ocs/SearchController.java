@@ -51,7 +51,6 @@ import lombok.extern.slf4j.Slf4j;
 @CrossOrigin("*")
 @RestController
 @RequestMapping(path = "/search-api/v1")
-@EnableScheduling
 @Slf4j
 public class SearchController implements SearchService {
 
@@ -70,16 +69,13 @@ public class SearchController implements SearchService {
 	@Autowired
 	private MeterRegistry registry;
 
-	@Autowired
-	private ContextRefresher contextRefresher;
-
 	private final Map<String, SearchContext> searchContexts = new ConcurrentHashMap<>();
 
 	private final Map<String, String> actualIndexPerTenant = new ConcurrentHashMap<>();
 
 	private final Cache<String, Searcher> searchClientCache = CacheBuilder.newBuilder()
 			.expireAfterAccess(10, TimeUnit.MINUTES)
-			.removalListener(notification -> searchContexts.remove(notification.getKey()))
+			.removalListener(notification -> searchContexts.remove((String) notification.getKey()))
 			.build();
 
 	private final Cache<String, Exception> brokenTenantsCache = CacheBuilder.newBuilder()
@@ -87,11 +83,9 @@ public class SearchController implements SearchService {
 			.maximumSize(64)
 			.build();
 
-	@Scheduled(fixedDelayString = "${ocs.scheduler.refresh-config-delay-ms:60000}")
 	public void refreshAllConfigs() {
-		contextRefresher.refresh();
 		Set<String> loadedTenants = new HashSet<>(searchContexts.keySet());
-		if (loadedTenants.size() > 0) {
+		if (!loadedTenants.isEmpty()) {
 			log.info("Refreshing {} loaded tenants: {}", loadedTenants.size(), loadedTenants);
 			loadedTenants.forEach(this::flushConfig);
 		}
@@ -111,13 +105,15 @@ public class SearchController implements SearchService {
 				SearchContext searchContext = searchContextLoader.loadContext(tenant);
 				SearchContext oldConfig = searchContexts.put(tenant, searchContext);
 				if (oldConfig == null) {
-					log.info("config successfuly loaded for tenant {}", tenant);
+					log.info("config successfully loaded for tenant {}", tenant);
 					status = HttpStatus.CREATED;
-				} else if (oldConfig.equals(searchContexts.get(tenant))) {
+				}
+				else if (oldConfig.equals(searchContexts.get(tenant))) {
 					log.info("config flush did not modify config for tenant {}", tenant);
 					status = HttpStatus.NOT_MODIFIED;
-				} else {
-					log.info("config successfuly reloaded for tenant {}", tenant);
+				}
+				else {
+					log.info("config successfully reloaded for tenant {}", tenant);
 					status = HttpStatus.OK;
 					searchClientCache.put(tenant, initializeSearcher(searchContext));
 				}
@@ -173,7 +169,7 @@ public class SearchController implements SearchService {
 				}
 
 				final Searcher searcher = searchClientCache.get(tenant, () -> initializeSearcher(searchContext));
-				
+
 				if (heroProducts != null) {
 					parameters.heroProductSets = searchContext.heroProductHandler.resolve(heroProducts, searcher, searchContext);
 				}

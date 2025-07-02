@@ -10,6 +10,7 @@ import com.google.common.base.Predicates;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.util.Util;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -18,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
  * especially for "the category field" and dynamic fields.
  */
 @Slf4j
+@EqualsAndHashCode
 public final class FieldConfigIndex implements FieldConfigAccess {
 
 	@AllArgsConstructor

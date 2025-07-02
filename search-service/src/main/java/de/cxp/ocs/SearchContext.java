@@ -6,6 +6,7 @@ import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.SearchConfiguration;
 import de.cxp.ocs.elasticsearch.prodset.HeroProductHandler;
 import de.cxp.ocs.spi.search.UserQueryPreprocessor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
  */
 @RequiredArgsConstructor
 @Getter
+@EqualsAndHashCode
 public class SearchContext {
 
 	public final FieldConfigIndex fieldConfigIndex;

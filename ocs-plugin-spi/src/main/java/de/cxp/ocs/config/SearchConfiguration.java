@@ -2,6 +2,7 @@ package de.cxp.ocs.config;
 
 import java.util.*;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -12,6 +13,7 @@ import lombok.NonNull;
  */
 @Getter // write setters with java-doc!
 @NoArgsConstructor
+@EqualsAndHashCode
 public class SearchConfiguration {
 
 	private String indexName;
