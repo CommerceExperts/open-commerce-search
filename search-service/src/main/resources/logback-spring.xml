@@ -41,6 +41,10 @@
 		</logger>
 	</springProfile>
 
+	<logger name="org.elasticsearch.client.RestClient" level="ERROR" additivity="false">
+		<appender-ref ref="STDOUT" />
+	</logger>
+
 	<root level="${log.root.level:-INFO}">
 		<appender-ref ref="STDOUT" />
 	</root>
