@@ -1,5 +1,5 @@
 import { IconFilter } from "@tabler/icons-react";
-import { Button } from "../ui/button";
+import { Button, buttonVariants } from "../ui/button";
 import {
   Sheet,
   SheetContent,
@@ -17,11 +17,12 @@ import {
 export function FilterButton(props: React.ComponentProps<"button">) {
   return (
     <Sheet>
-      <SheetTrigger>
-        <Button variant="outline" size="sm" {...props}>
-          <IconFilter />
-          <span>Filter</span>
-        </Button>
+      <SheetTrigger
+        className={buttonVariants({ variant: "outline", size: "sm" })}
+        {...props}
+      >
+        <IconFilter />
+        <span>Filter</span>
       </SheetTrigger>
       <SheetContent>
         <SheetHeader>
