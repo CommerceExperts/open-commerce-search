@@ -108,7 +108,7 @@ public class SettingsProxy {
 				sourceFields.add(sourceField);
 			}
 			else {
-				log.warn("source field {} was configured but does not exist at index {}", sourceField, indexName);
+				log.warn("source field {} was configured but does not exist at index {}", null, indexName);
 			}
 		}
 		

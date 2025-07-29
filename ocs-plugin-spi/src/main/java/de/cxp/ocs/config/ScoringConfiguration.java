@@ -11,7 +11,7 @@ import lombok.ToString;
 
 /**
  * Configuration that influences how the result hits are scored.
- * 
+ * <p>
  * <a href=
  * "https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-function-score-query.html">Checkout
  * the Elasticsearch scoring function documentation</a>. This is basically a one

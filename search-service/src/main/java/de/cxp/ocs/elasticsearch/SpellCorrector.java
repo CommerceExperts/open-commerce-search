@@ -22,8 +22,8 @@ import de.cxp.ocs.elasticsearch.query.builder.CountedTerm;
 
 public class SpellCorrector {
 
-	private final String[]	spellCorrectionFields;
-	private float			minScore	= 0.75f;
+	private final String[] spellCorrectionFields;
+	private final float    minScore = 0.75f;
 
 	public SpellCorrector(Collection<String> searchFields) {
 		final Set<String> spellCheckFields = new HashSet<>();
@@ -73,7 +73,7 @@ public class SpellCorrector {
 
 						if (spellCorrectOption.getScore() > bestScore) {
 							bestScores.put(perWordCorrection.getText().string(), spellCorrectOption.getScore());
-							if (wordCorrections.getRelatedTerms().size() > 0) {
+							if (!wordCorrections.getRelatedTerms().isEmpty()) {
 								wordCorrections.getRelatedTerms().clear();
 							}
 						}

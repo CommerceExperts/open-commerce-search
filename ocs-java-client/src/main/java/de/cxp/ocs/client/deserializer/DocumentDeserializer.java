@@ -23,7 +23,7 @@ public class DocumentDeserializer extends JsonDeserializer<Document> {
 	private final static Logger log = Logger.getLogger(DocumentDeserializer.class.getCanonicalName());
 
 	@Override
-	public Document deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+	public Document deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
 		TreeNode docNode = p.readValueAsTree();
 
 		TreeNode variantsNode = docNode.get("variants");
@@ -49,7 +49,7 @@ public class DocumentDeserializer extends JsonDeserializer<Document> {
 		}
 
 		JsonNode categoriesNode = (JsonNode) docNode.get("categories");
-		if (categoriesNode != null && categoriesNode.isArray() && ((ArrayNode) categoriesNode).size() > 0) {
+		if (categoriesNode != null && categoriesNode.isArray() && !((ArrayNode) categoriesNode).isEmpty()) {
 			doc.setCategories(Arrays.asList(p.getCodec().treeToValue(categoriesNode, Category[][].class)));
 		}
 
@@ -133,7 +133,7 @@ public class DocumentDeserializer extends JsonDeserializer<Document> {
 			}
 		}
 
-		if (type != null && values.size() > 0) {
+		if (type != null && !values.isEmpty()) {
 			extractedArrayValue = toBestMatchingArray(values, type);
 		}
 		return extractedArrayValue;

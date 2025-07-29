@@ -65,7 +65,7 @@ public class VariantQueryFactory {
 				.type(type)
 				.tieBreaker(tieBreaker)
 				.boost(1f);
-		if (variantSearchFields == null || variantSearchFields.isEmpty()) {
+		if (variantSearchFields.isEmpty()) {
 			queryBuilder.defaultField(defaultSearchField);
 		}
 		else {

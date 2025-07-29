@@ -15,14 +15,12 @@ import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigParseOptions;
 import com.typesafe.config.ConfigSyntax;
 import com.typesafe.config.impl.Parseable;
-import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfig.SortStrategy;
 import de.cxp.ocs.smartsuggest.spi.SuggestConfigProvider;
 import lombok.NonNull;
-import scala.sys.Prop;
 
 /**
  * <p>
@@ -204,15 +202,13 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 				.ifPresent(
 						groupConfMap -> {
 							baseConfig.setUseRelativeShareLimit(true);
-							groupConfMap.entrySet().forEach(e -> baseConfig.addGroupConfig(e.getKey(), (int) (e.getValue() * 100)));
+							groupConfMap.forEach((key, value) -> baseConfig.addGroupConfig(key, (int) (value * 100)));
 						});
 
 		if (!baseConfig.isUseRelativeShareLimit()) {
 			getPropertyValue(PROPERTY_GROUP_CUTOFF_CONF, customPropertyInfix)
 					.map(rawConf -> toLinkedHashMap(rawConf, Integer::parseInt))
-					.ifPresent(
-							groupConfMap -> groupConfMap.entrySet().forEach(
-									e -> baseConfig.addGroupConfig(e.getKey(), e.getValue())));
+					.ifPresent(groupConfMap -> groupConfMap.forEach(baseConfig::addGroupConfig));
 		}
 
 		getPropertyValue(PROPERTY_GROUP_DEDUPLICATION_ORDER, customPropertyInfix)
@@ -243,7 +239,7 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 	}
 
 	@Override
-	public SuggestConfig getConfig(String indexName, SuggestConfig modifiableConfig) {
+	public SuggestConfig getConfig(@NonNull String indexName, SuggestConfig modifiableConfig) {
 		Optional<String> safeIndexName = validateIndexName(indexName);
 		return safeIndexName.map(name -> loadSuggestConfig(modifiableConfig, name)).orElse(modifiableConfig);
 	}
@@ -267,7 +263,7 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 				lastCharIsDash = false;
 			}
 		}
-		return safeIndexName.length() == 0 ? Optional.empty() : Optional.of(safeIndexName.toString());
+		return safeIndexName.isEmpty() ? Optional.empty() : Optional.of(safeIndexName.toString());
 	}
 
 	public void foreachDataproviderConfig(BiConsumer<String, Map<String, Object>> configConsumer) {
@@ -283,7 +279,7 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 	 * Expects env var 'SUGGEST_SERVER_PORT' set to a valid port number.
 	 * Defaults to 8081.
 	 * 
-	 * @return
+	 * @return server port
 	 */
 	public int getServerPort() {
 		return getPropertyValue("server.port")
@@ -295,7 +291,7 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 	 * Expects env var 'SUGGEST_SERVER_ADDRESS' set to a valid server address.
 	 * Defaults to "0.0.0.0".
 	 * 
-	 * @return
+	 * @return server address
 	 */
 	public String getServerAdress() {
 		return getPropertyValue("server.address")
@@ -313,7 +309,7 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 	 * Defaults to 60.
 	 * </p>
 	 * 
-	 * @return
+	 * @return value in seconds
 	 */
 	public int getUpdateRateInSeconds() {
 		return getPropertyValue("update-rate")
@@ -325,7 +321,7 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 	 * Expects the env var SUGGEST_PRELOAD_INDEXES as a comma separated list of
 	 * all index names that should be initialized and loaded on startup.
 	 * 
-	 * @return
+	 * @return array of indexes to be reloaded
 	 */
 	public String[] getPreloadIndexes() {
 		return getPropertyValue("preload-indexes")
@@ -342,7 +338,7 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 	 * Defaults to a temporary directory with the prefix "ocs_suggest".
 	 * </p>
 	 * 
-	 * @return
+	 * @return base path for suggester index
 	 */
 	public Path getIndexFolder() {
 		Optional<String> indexFolder = getPropertyValue("index-folder");
@@ -373,7 +369,7 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 	 * request.
 	 * </p>
 	 * 
-	 * @return
+	 * @return value in minutes
 	 */
 	public int getSuggesterMaxIdleMinutes() {
 		return getPropertyValue("service.max-idle-minutes")
@@ -386,7 +382,7 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 	 * Prefix for /health and /metrics path. Should start with a slash and end
 	 * without. Defaults to empty string.
 	 * 
-	 * @return
+	 * @return path prefix
 	 */
 	public String getManagementPathPrefix() {
 		return getPropertyValue("service.mgmt-path-prefix")

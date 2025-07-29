@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +41,9 @@ class SuggestionsUpdaterTest {
 		var suggestData = SuggestData.builder().type("keywords").suggestRecords(testRecords).modificationTime(System.currentTimeMillis()).build();
 		testDataProvider.putData(INDEX_NAME, suggestData);
 		suggesterProxy = new QuerySuggesterProxy(INDEX_NAME);
-		LuceneSuggesterFactory factory = new LuceneSuggesterFactory(indexBaseDir);
+		LuceneSuggesterFactory factory = new LuceneSuggesterFactory();
+		factory.init(indexBaseDir);
+
 		updaterBuilder = SuggestionsUpdater.builder()
 				.dataSourceProvider(testDataProvider)
 				.configProvider(new DefaultSuggestConfigProvider())
@@ -110,7 +111,7 @@ class SuggestionsUpdaterTest {
 
 			SuggestionsUpdater fetcher = updaterBuilder.dataSourceProvider(null).archiveProvider(archiveProvider)
 					.querySuggesterProxy(f_suggester)
-					.factory(new LuceneSuggesterFactory(Files.createTempDirectory("fetcher"))).build();
+					.factory(new LuceneSuggesterFactory()).build();
 
 			indexer.run();
 			assert archiveProvider.hasData(INDEX_NAME);

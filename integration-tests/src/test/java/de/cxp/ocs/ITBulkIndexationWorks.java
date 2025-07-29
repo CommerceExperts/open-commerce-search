@@ -40,11 +40,11 @@ public class ITBulkIndexationWorks {
 
 		// first request is empty - will start to fetch data from ES index
 		assertThat(getSuggestions.call()).isEmpty();
-		Unreliables.retryUntilTrue(20, TimeUnit.SECONDS, () -> getSuggestions.call().size() > 0);
+		Unreliables.retryUntilTrue(20, TimeUnit.SECONDS, () -> !getSuggestions.call().isEmpty());
 		assertThat(getSuggestions.call()).isNotEmpty();
 	}
 
-	private void flushIndex() throws IOException, InterruptedException {
+	private void flushIndex() throws IOException {
 		getElasticsearchClient().performRequest(new Request("POST", indexName + "/_flush/synced"));
 	}
 }

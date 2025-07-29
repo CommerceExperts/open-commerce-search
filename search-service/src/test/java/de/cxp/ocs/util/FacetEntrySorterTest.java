@@ -12,7 +12,7 @@ import de.cxp.ocs.model.result.FacetEntry;
 
 public class FacetEntrySorterTest {
 
-	private Facet testFacet = new Facet("random")
+	private final Facet testFacet = new Facet("random")
 			.addEntry(new FacetEntry("28 z", "z28", 82, "", false))
 			.addEntry(new FacetEntry("2 B", "b2", 12, "", false))
 			.addEntry(new FacetEntry("Alpha", "a", 1, "", false))

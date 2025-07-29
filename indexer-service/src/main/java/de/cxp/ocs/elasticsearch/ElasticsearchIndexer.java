@@ -79,7 +79,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 		}
 		else {
 			Map<String, Set<AliasMetadata>> aliases = getIndexNameRelatedAliases(indexName);
-			return aliases.size() > 0;
+			return !aliases.isEmpty();
 		}
 	}
 
@@ -156,16 +156,15 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	private String normalizeIndexName(String basename) {
-		String normalizedBasename = StringUtils.strip(
+		return StringUtils.strip(
 				basename.toLowerCase(Locale.ROOT)
 						.replaceAll("[^a-z0-9_\\-\\.]+", INDEX_DELIMITER),
 				INDEX_DELIMITER);
-		return normalizedBasename;
 	}
 
 	private String getNextIndexName(String indexName, String localizedIndexName) {
 		Map<String, Set<AliasMetadata>> aliases = indexClient.getAliases(INDEX_PREFIX + "*" + INDEX_DELIMITER + localizedIndexName);
-		if (aliases.size() == 0) return getNumberedIndexName(localizedIndexName, 1);
+		if (aliases.isEmpty()) return getNumberedIndexName(localizedIndexName, 1);
 
 		int oldIndexNumber = aliases.keySet().stream().mapToInt(this::extractIndexNumber).max().orElse(1);
 		String numberedIndexName = getNumberedIndexName(localizedIndexName, oldIndexNumber + 1);
@@ -187,7 +186,7 @@ public class ElasticsearchIndexer extends AbstractIndexer {
 	}
 
 	private String getNumberedIndexName(String localizedIndexName, int number) {
-		return INDEX_PREFIX + String.valueOf(number) + INDEX_DELIMITER + localizedIndexName;
+		return INDEX_PREFIX + number + INDEX_DELIMITER + localizedIndexName;
 	}
 
 	@Override

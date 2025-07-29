@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class QuerqyQueryExpanderTest {
 
-	private QuerqyQueryExpanderBuilder qqBuilder = new QuerqyQueryExpanderBuilder();
+	private final QuerqyQueryExpanderBuilder qqBuilder = new QuerqyQueryExpanderBuilder();
 
 	@AfterEach
 	public void cleanupTempRuleFile() {
@@ -238,6 +238,7 @@ public class QuerqyQueryExpanderTest {
 		assertEquals(Occur.MUST_NOT, term2.getOccur());
 	}
 
+	@Disabled
 	public void testCombinedTermFilter() {
 		QuerqyQueryExpander underTest = qqBuilder.loadWithRules("input =>", "  FILTER: (everything match together)");
 		var analyzedQuery = analyze(underTest, "input");

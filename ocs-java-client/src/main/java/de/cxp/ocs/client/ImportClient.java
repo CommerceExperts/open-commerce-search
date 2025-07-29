@@ -19,7 +19,7 @@ import feign.httpclient.ApacheHttpClient;
 
 public class ImportClient implements FullIndexationService, UpdateIndexService {
 
-	private ImportApi target;
+	private final ImportApi target;
 
 	/**
 	 * With this constructor the Feign::Builder can be configured.
@@ -53,7 +53,7 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 	/**
 	 * Patch one or more documents. The passed documents only need partial data
 	 * that needs to be patched and the ID of the documents to patch.
-	 * 
+	 * <p>
 	 * Attention: in order to patch Products with variants, use the
 	 * "patchProducts" method, which is necessary to have them serialized
 	 * properly.
@@ -78,22 +78,20 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 	}
 
 	/**
-	 * Similar to patchDocuments, but for the extended sub type {@link Product}
-	 * that supports variants. For some reason this is necessary.
-	 * 
+	 * Similar to patchDocuments, but for the extended sub type {@link Product} that supports variants. For some reason this is necessary.
+	 *
 	 * XXX: may be solved with custom serializer.
-	 * 
+	 *
 	 * @param indexName
 	 * @param products
-	 * @return
 	 */
-	public Map<String, Result> patchProducts(String indexName, List<Product> products) {
-		return target.patchProducts(indexName, products);
+	public void patchProducts(String indexName, List<Product> products) {
+		target.patchProducts(indexName, products);
 	}
 
 	/**
 	 * Add or overwrite existing documents.
-	 * 
+	 * <p>
 	 * Attention: in order to put Products with variants, use the
 	 * "putProducts" method, which is necessary to have them serialized
 	 * properly.
@@ -107,15 +105,15 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 
 			Map<String, Result> results = new HashMap<>();
 			if (!docsSplit.products.isEmpty()) {
-				results.putAll(target.putProducts(indexName, replaceExisting == null ? true : replaceExisting, langCode, docsSplit.products));
+				results.putAll(target.putProducts(indexName, replaceExisting == null || replaceExisting, langCode, docsSplit.products));
 			}
 			if (!docsSplit.documents.isEmpty()) {
-				results.putAll(target.putDocuments(indexName, replaceExisting == null ? true : replaceExisting, langCode, docsSplit.documents));
+				results.putAll(target.putDocuments(indexName, replaceExisting == null || replaceExisting, langCode, docsSplit.documents));
 			}
 			return results;
 		}
 		else {
-			return target.putDocuments(indexName, replaceExisting == null ? true : replaceExisting, langCode, docs);
+			return target.putDocuments(indexName, replaceExisting == null || replaceExisting, langCode, docs);
 		}
 	}
 
@@ -129,7 +127,7 @@ public class ImportClient implements FullIndexationService, UpdateIndexService {
 	 * @return
 	 */
 	public Map<String, Result> putProducts(String indexName, Boolean replaceExisting, String langCode, List<Product> products) {
-		return target.putProducts(indexName, replaceExisting == null ? true : replaceExisting, langCode, products);
+		return target.putProducts(indexName, replaceExisting == null || replaceExisting, langCode, products);
 	}
 
 	@Override

@@ -34,7 +34,7 @@ public interface SearchService {
 
 	/**
 	 * Search the index using the given searchQuery.
-	 * 
+	 * <p>
 	 * Each tenant can have its own configuration. Different tenants may still
 	 * use the same indexes. This is defined by the underlying configuration.
 	 * 
@@ -45,12 +45,12 @@ public interface SearchService {
 	 * @param filters
 	 *        Any other parameters are used as filters. They are validated
 	 *        according to the actual data and configuration.
-	 * 
+	 * <p>
 	 *        Each filter can have multiple values, separated by comma. Commas
 	 *        inside the values have to be double-URL encoded.
 	 *        Depending on the configured backend type these values are used
 	 *        differently.
-	 * 
+	 * <p>
 	 *        Examples:
 	 *        <ul>
 	 *        <li>
@@ -111,7 +111,7 @@ public interface SearchService {
 							description = "response code if tenant is unknown or index does not exist",
 							content = @Content(mediaType = "text/plain"))
 			})
-	public SearchResult search(
+	SearchResult search(
 			@Parameter(
 					in = ParameterIn.PATH,
 					name = "tenant",
@@ -165,7 +165,7 @@ public interface SearchService {
 
 	@POST
 	@Path("search/arranged/{tenant}")
-	public SearchResult arrangedSearch(
+	SearchResult arrangedSearch(
 			@Parameter(
 					in = ParameterIn.PATH,
 					name = "tenant",
@@ -178,7 +178,7 @@ public interface SearchService {
 
 	@GET
 	@Path("doc/{tenant}/{id}")
-	public Document getDocument(
+	Document getDocument(
 			@Parameter(
 					in = ParameterIn.PATH,
 					name = "tenant",
@@ -194,6 +194,6 @@ public interface SearchService {
 	@GET
 	@Path("tenants")
 	@ApiResponse(responseCode = "200", description = "a list of available tenants")
-	public String[] getTenants();
+	String[] getTenants();
 
 }

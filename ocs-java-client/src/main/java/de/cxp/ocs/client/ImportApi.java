@@ -19,11 +19,11 @@ interface ImportApi {
 
 	@RequestLine("POST /indexer-api/v1/full/add")
 	@Headers("Content-Type: application/json")
-	int add(BulkImportData data) throws Exception;
+	int add(BulkImportData data);
 
 	@RequestLine("POST /indexer-api/v1/full/done")
 	@Headers("Content-Type: application/json")
-	boolean done(ImportSession session) throws Exception;
+	boolean done(ImportSession session);
 
 	@RequestLine("POST /indexer-api/v1/full/cancel")
 	@Headers("Content-Type: application/json")

@@ -13,5 +13,5 @@ interface SuggestApi {
 			@Param("indexname") String indexname,
 			@Param("userQuery") String userQuery,
 			@Param("limit") int limit,
-			@Param("filter") String filter) throws Exception;
+			@Param("filter") String filter);
 }

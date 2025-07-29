@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Use carefully - don't use for userinput directly.
- *
+ * <p>
  * XXX: think about replacing it
  */
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class RawTerm implements QueryStringTerm {
 
 	@Override
 	public Occur getOccur() {
-		if (rawQueryTerm.length() > 0) {
+		if (!rawQueryTerm.isEmpty()) {
 			return Occur.fromChar(rawQueryTerm.charAt(0));
 		}
 		return Occur.SHOULD;

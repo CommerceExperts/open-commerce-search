@@ -3,7 +3,7 @@ package de.cxp.ocs.indexer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -166,13 +166,13 @@ public class IndexItemConverterTest {
 								.addField(new Field("price")
 										.setType(FieldType.NUMBER)
 										.setUsage(FieldUsage.FACET)
-										.setSourceNames(Arrays.asList("PRICES")))
+										.setSourceNames(List.of("PRICES")))
 								.addField(new Field("title")
 										.setUsage(FieldUsage.SEARCH, FieldUsage.RESULT)
-										.setSourceNames(Arrays.asList("TITLES")))
+										.setSourceNames(List.of("TITLES")))
 								.addField(new Field("rating")
 										.setUsage(FieldUsage.SCORE, FieldUsage.SORT)
-										.setSourceNames(Arrays.asList("RATINGS")))));
+										.setSourceNames(List.of("RATINGS")))));
 
 		IndexableItem result = underTest.toIndexableItem(
 				new Document("1")

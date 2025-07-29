@@ -46,7 +46,7 @@ public class DynamicProductSetResolver implements ProductSetResolver {
 	private StaticProductSet search(ProductSet dynamicProductSet, Searcher searcher, InternalSearchParams productSetParams) {
 		try {
 			SearchResult prodSetResult = searcher.find(productSetParams);
-			if (prodSetResult.getSlices().size() > 0) {
+			if (!prodSetResult.getSlices().isEmpty()) {
 				String[] ids = new String[prodSetResult.getSlices().get(0).hits.size()];
 				int i = 0;
 				for (ResultHit hit : prodSetResult.getSlices().get(0).hits) {

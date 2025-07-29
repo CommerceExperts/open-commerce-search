@@ -1,6 +1,5 @@
 package de.cxp.ocs.smartsuggest.querysuggester;
 
-import java.io.IOException;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 
@@ -19,8 +18,6 @@ public interface QueryIndexer {
 	 * @param modificationTime
 	 * 		timestamp (millis) of the data origin
 	 * @return future that is ready as soon as the indexation is done
-	 * @throws IOException
-	 * 		in case indexation fails
 	 */
-	CompletableFuture<Void> index(Iterable<SuggestRecord> suggestions, long modificationTime) throws IOException;
+	CompletableFuture<Void> index(Iterable<SuggestRecord> suggestions, long modificationTime);
 }

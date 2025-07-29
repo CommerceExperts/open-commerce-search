@@ -50,7 +50,7 @@ public class FakeSuggester implements QuerySuggester {
 	}
 
 	@Override
-	public void close() throws Exception {}
+	public void close() {}
 
 	@Override
 	public long recordCount() {

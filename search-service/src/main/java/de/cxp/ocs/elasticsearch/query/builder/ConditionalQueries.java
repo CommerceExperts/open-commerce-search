@@ -95,7 +95,7 @@ public class ConditionalQueries {
 	}
 
 	public List<ESQueryFactory> getMatchingFactories(final ExtendedQuery parsedQuery) {
-		if (parsedQuery.getSearchQuery() == null || parsedQuery.getSearchQuery().getTermCount() == 0) return null;
+		if (parsedQuery.getSearchQuery().getTermCount() == 0) return null;
 
 		final List<ESQueryFactory> matchingQueryFactories = new ArrayList<>();
 		for (ConditionalQuery condAndQueryFactory : conditionalQueryBuilders) {

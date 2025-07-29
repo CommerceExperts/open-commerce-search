@@ -12,7 +12,7 @@ import lombok.experimental.Accessors;
 /**
  * A concept that consists of several tokens that have a specific meaning in their context.
  * The separate tokens/terms/words should not be used separately.
- * 
+ * <p>
  * Useful for languages that name things using several words,
  * i.e. "iron flat"(en), "fer à repasser"(fr), "plancha de ropa"(es)
  * 

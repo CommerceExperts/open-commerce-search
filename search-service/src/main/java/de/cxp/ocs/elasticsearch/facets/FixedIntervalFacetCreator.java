@@ -86,7 +86,7 @@ public abstract class FixedIntervalFacetCreator implements CustomFacetCreator {
 	private final List<NumericRange> fixedRanges;
 
 	public FixedIntervalFacetCreator(List<NumericRange> ranges) {
-		assert ranges.size() > 0;
+		assert !ranges.isEmpty();
 		fixedRanges = new ArrayList<>(ranges);
 	}
 
@@ -189,7 +189,6 @@ public abstract class FixedIntervalFacetCreator implements CustomFacetCreator {
 	@Override
 	public Optional<Facet> mergeFacets(Facet first, Facet second) {
 		if (first.getEntries().isEmpty() || first.absoluteFacetCoverage < second.absoluteFacetCoverage) return Optional.of(second);
-		if (second.getEntries().isEmpty() || first.absoluteFacetCoverage > second.absoluteFacetCoverage) return Optional.of(first);
 		// TODO: if there are range facets with different intervals and different counts from master & variant level,
 		// consider a proper merge logic.
 		return Optional.of(first);

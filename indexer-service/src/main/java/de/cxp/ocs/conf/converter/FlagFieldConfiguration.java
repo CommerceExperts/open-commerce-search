@@ -165,7 +165,7 @@ public class FlagFieldConfiguration implements Iterable<FlagFieldConfiguration.P
 		private final String		fieldName;
 		private final List<Pattern>	pattern;
 
-		private List<String> match;
+		private final List<String> match;
 
 		public PatternMatch(String fieldName, List<Pattern> pattern) {
 			this.fieldName = fieldName;

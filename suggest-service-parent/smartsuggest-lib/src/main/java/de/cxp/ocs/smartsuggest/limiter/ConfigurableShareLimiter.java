@@ -8,7 +8,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -210,8 +209,7 @@ public class ConfigurableShareLimiter implements Limiter {
 			}
 		}
 
-		HashMap<String, Double> nextShareConf = new HashMap<>();
-		nextShareConf.putAll(origShareConf);
+		HashMap<String, Double> nextShareConf = new HashMap<>(origShareConf);
 
 		// if we still have unknown keys, either the remaining share is split
 		// onto them or the minimum share is applied to them

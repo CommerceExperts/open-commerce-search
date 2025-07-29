@@ -50,9 +50,9 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode
 public class HeroProductHandler {
 
-	private static int MAX_IDS_ORDERED_BOOSTING = 1000;
+	private static final int    MAX_IDS_ORDERED_BOOSTING = 1000;
 	// used to identify products boosted by the hero-products query
-	public static String QUERY_NAME_PREFIX = "hero-product-set-";
+	public static final  String QUERY_NAME_PREFIX        = "hero-product-set-";
 
 	@NonNull
 	private final Map<ProductSetType, ProductSetResolver> resolvers;
@@ -130,11 +130,11 @@ public class HeroProductHandler {
 			 * A: 1000_000 * [1000 : 1] = 1000_000_000 : 1000_000
 			 * B: 1000 * [1000 : 1] = 1000_000 : 1000
 			 * C: 1 * [1000 : 1] = 1000 : 1
-			 * 
+			 * <p>
 			 * last product of set A has boost (1_000_000 * 1),
 			 * which must be greater than
 			 * the first product of set B that has boost (1000 * 1000)
-			 * 
+			 * <p>
 			 * Additional add factor 10 to ensure those IDs are returned prior to the "natural" result.
 			 */
 			float boost = 10f * (float) Math.pow(MAX_IDS_ORDERED_BOOSTING, productSets.length - 1);
@@ -168,7 +168,7 @@ public class HeroProductHandler {
 				}
 				boost /= MAX_IDS_ORDERED_BOOSTING;
 
-				if (variantBoostQueryString.length() > 0) {
+				if (!variantBoostQueryString.isEmpty()) {
 					variantBoostQuery = QueryBuilders.queryStringQuery(variantBoostQueryString.toString())
 							.defaultField(FieldConstants.VARIANTS + "." + FieldConstants.SEARCH_DATA + ".*")
 							.analyzer("whitespace");
@@ -186,7 +186,7 @@ public class HeroProductHandler {
 			idsOrderedBoostQuery
 					.append(id)
 					.append('^')
-					.append(String.valueOf(boost))
+					.append(boost)
 					.append(' ');
 			boost -= 1;
 		}
@@ -216,7 +216,7 @@ public class HeroProductHandler {
 	 */
 	public static Set<String> extractSlices(SearchResponse searchResponse, InternalSearchParams internalParams, SearchResult searchResult,
 			VariantPickingStrategy variantPickingStrategy) {
-		if (internalParams.getSortings().size() == 0) {
+		if (internalParams.getSortings().isEmpty()) {
 			StaticProductSet[] productSets = internalParams.heroProductSets;
 			Map<String, Integer> productSetAssignment = new HashMap<>();
 			for (int i = 0; i < productSets.length; i++) {

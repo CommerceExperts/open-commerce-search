@@ -20,7 +20,7 @@ public class MergingSuggestDataProviderTest {
 	@Test
 	public void withSingleProvider() throws IOException {
 		underTest = new MergingSuggestDataProvider(
-				Arrays.asList(
+				Collections.singletonList(
 						new TestDataProvider().putData("index1",
 								getSuggestData("keywords",
 										simpleSuggestRecord("test 1"),

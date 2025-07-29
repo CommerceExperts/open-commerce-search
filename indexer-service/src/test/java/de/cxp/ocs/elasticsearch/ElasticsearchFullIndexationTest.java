@@ -14,7 +14,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -33,16 +32,16 @@ import de.cxp.ocs.model.index.Document;
 
 public class ElasticsearchFullIndexationTest {
 
-	ElasticsearchIndexClient mockedIndexClient = mock(ElasticsearchIndexClient.class);
+	final ElasticsearchIndexClient mockedIndexClient = mock(ElasticsearchIndexClient.class);
 
-	ElasticsearchIndexer underTest = new ElasticsearchIndexer(
+	final ElasticsearchIndexer underTest = new ElasticsearchIndexer(
 			new FieldConfigIndex(getIndexConf().getFieldConfiguration()),
 			mockedIndexClient,
 			Collections.emptyList(),
 			Collections.emptyList());
 
 	@BeforeEach
-	public void setupDefaultEsIndexClient() throws IOException {
+	public void setupDefaultEsIndexClient() {
 		when(mockedIndexClient.getSettings(any())).thenReturn(Optional.empty());
 	}
 

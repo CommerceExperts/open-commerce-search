@@ -204,11 +204,11 @@ public class SearchController implements SearchService {
 	}
 
 	private void triggerFlushIfNecessary(String tenant, SearchResult result) {
-		if (result.getSlices().size() > 0 && result.getSlices().get(0).hits.size() > 0) {
+		if (!result.getSlices().isEmpty() && !result.getSlices().get(0).hits.isEmpty()) {
 			String indexName = result.getSlices().get(0).hits.get(0).index;
 			String prevIndexName = actualIndexPerTenant.put(tenant, indexName);
 			if (prevIndexName != null && !indexName.equals(prevIndexName)) {
-				log.info("flushing config for tenant {} because actual index changed from {} to {}", prevIndexName, indexName);
+				log.info("flushing config for tenant {} because actual index changed from {} to {}", tenant, prevIndexName, indexName);
 				CompletableFuture.runAsync(() -> flushConfig(tenant));
 			}
 		}
@@ -272,17 +272,16 @@ public class SearchController implements SearchService {
 			esBuilder.getRestHLClient().indices()
 					.getAlias(new GetAliasesRequest().indices("ocs-*"), RequestOptions.DEFAULT)
 					.getAliases().values().stream()
-					.filter(aliases -> aliases.size() > 0)
+					.filter(aliases -> !aliases.isEmpty())
 					.map(aliases -> aliases.iterator().next().alias())
 					.forEach(tenants::add);
-			;
 		}
 		catch (IOException e) {
 			log.warn("could not retrieve ES indices", e);
 		}
 		tenants.addAll(searchContexts.keySet());
 		tenants.addAll(plugins.getConfigurationProvider().getConfiguredTenants());
-		return tenants.toArray(new String[tenants.size()]);
+		return tenants.toArray(new String[0]);
 	}
 
 	private Searcher initializeSearcher(SearchContext searchContext) {

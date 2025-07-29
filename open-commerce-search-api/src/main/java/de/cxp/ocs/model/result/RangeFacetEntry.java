@@ -73,7 +73,7 @@ public class RangeFacetEntry extends FacetEntry {
 	 */
 	private static String getLabel(Number from, Number to) {
 		if (from == null || to == null) throw new IllegalArgumentException("Both lower bound and upper bound must be defined!");
-		return from.toString() + "-" + to.toString();
+		return from + "-" + to;
 	}
 
 }

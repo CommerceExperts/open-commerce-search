@@ -17,9 +17,9 @@ import java.util.regex.Pattern;
 
 public final class Util {
 
-	private Util() {};
+	private Util() {}
 
-	private static Pattern numPattern = Pattern.compile("-?\\d+(\\.\\d+)?(E-\\d+)?|(-?\\.\\d+)");
+	private static final Pattern numPattern = Pattern.compile("-?\\d+(\\.\\d+)?(E-\\d+)?|(-?\\.\\d+)");
 
 	public static Optional<Number> tryToParseAsNumber(final Object numVal) {
 		if (numVal == null) return Optional.empty();
@@ -52,12 +52,12 @@ public final class Util {
 	 * If both values are not null, this method creates a flat collection of
 	 * them. By default a HashSet is used as collection. If this is not wanted,
 	 * pass another collection type as value.
-	 * 
+	 * <p>
 	 * If one value is null, the other is returned and no collection is created.
-	 * 
+	 * <p>
 	 * The inner types of the collection are not checked, so it's possible to
 	 * merge different types into a collection.
-	 * 
+	 * <p>
 	 * If a given value is an array, it will be transformed into a collection.
 	 * Multidimensional arrays become a collection of array.
 	 * 
@@ -130,7 +130,7 @@ public final class Util {
 			Function<Object, T> convert) {
 		if (value == null) return Collections.emptyList();
 		if (targetType.isInstance(value)) {
-			return Arrays.asList(targetType.cast(value));
+			return List.of(targetType.cast(value));
 		}
 		else if (value instanceof Collection) {
 			List<T> newCollection = new ArrayList<>();
@@ -150,7 +150,7 @@ public final class Util {
 			return newCollection;
 		}
 		T converted = convert.apply(value);
-		return converted == null ? Collections.emptyList() : Arrays.asList(converted);
+		return converted == null ? Collections.emptyList() : List.of(converted);
 	}
 
 	public static Map<String, String> asMap(String... keyValues) {

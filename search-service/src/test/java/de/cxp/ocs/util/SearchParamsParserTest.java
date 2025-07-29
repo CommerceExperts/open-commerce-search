@@ -21,11 +21,11 @@ import de.cxp.ocs.model.result.SortOrder;
 
 public class SearchParamsParserTest {
 
-	private FieldConfiguration	fields		= new FieldConfiguration()
+	private final FieldConfiguration fields         = new FieldConfiguration()
 			.addField(new Field().setName("price").setType(FieldType.NUMBER).setUsage(FieldUsage.FACET, FieldUsage.SORT))
 			.addField(new Field().setName("brand").setUsage(FieldUsage.FACET))
 			.addField(new Field().setName("image").setUsage(FieldUsage.RESULT));
-	private FieldConfigIndex	fieldConfIndex	= new FieldConfigIndex(fields);
+	private final FieldConfigIndex   fieldConfIndex = new FieldConfigIndex(fields);
 
 	@Test
 	public void parseNormalNumericRangeFilter() {

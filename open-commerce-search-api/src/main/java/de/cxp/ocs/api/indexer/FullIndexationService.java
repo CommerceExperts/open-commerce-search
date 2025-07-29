@@ -19,7 +19,7 @@ import jakarta.ws.rs.Path;
 
 /**
  * Run a full import into a new index.
- * 
+ * <p>
  * If product and content data should be indexed, consider using different
  * indexes.
  * Otherwise make sure to use the same fields for the same content type,
@@ -147,8 +147,6 @@ public interface FullIndexationService {
 	 * @param session
 	 *        ImportSession that contains the information, which index should be
 	 *        dropped.
-	 * @throws Exception
-	 *         if import session is invalid
 	 */
 	@POST
 	@Path("cancel")
@@ -161,6 +159,6 @@ public interface FullIndexationService {
 					@ApiResponse(responseCode = "202"),
 					@ApiResponse(responseCode = "400", description = "indexation was already confirmed or import session is invalid")
 			})
-	void cancel(@RequestBody ImportSession session) throws Exception;
+	void cancel(@RequestBody ImportSession session);
 
 }

@@ -100,7 +100,7 @@ class QueryPredictor {
 				.getBuckets()) {
 			final PredictedQuery predictedQuery = new PredictedQuery();
 			final LinkedHashMap<String, QueryStringTerm> matchingTerms = getMatchingTerms(predictionWords, scoreBucket);
-			if (matchingTerms.size() == 0) continue;
+			if (matchingTerms.isEmpty()) continue;
 
 			// set term-frequency of single match terms
 			if (matchingTerms.size() == 1) {
@@ -124,13 +124,11 @@ class QueryPredictor {
 			if (predictedQuery.originalTermCount == 1) {
 				String matchedTerm = predictedQuery.getTermsUnique().keySet().iterator().next();
 				correctedWords.computeIfPresent(matchedTerm, (k, v) -> {
-					if (v instanceof AssociatedTerm) {
-						Iterator<QueryStringTerm> relatedWordIterator = v.getRelatedTerms().values().iterator();
-						while (relatedWordIterator.hasNext()) {
-							CountedTerm relWord = (CountedTerm) relatedWordIterator.next();
-							if (relWord.getTermFrequency() < predictedQuery.matchCount) {
-								relatedWordIterator.remove();
-							}
+					Iterator<QueryStringTerm> relatedWordIterator = v.getRelatedTerms().values().iterator();
+					while (relatedWordIterator.hasNext()) {
+						CountedTerm relWord = (CountedTerm) relatedWordIterator.next();
+						if (relWord.getTermFrequency() < predictedQuery.matchCount) {
+							relatedWordIterator.remove();
 						}
 					}
 					return v;
@@ -214,7 +212,7 @@ class QueryPredictor {
 
 	/**
 	 *
-	 * @param fieldWeights
+	 * @param searchFields
 	 *        fields to search
 	 * @param terms
 	 * @param excludeFilters
@@ -253,7 +251,7 @@ class QueryPredictor {
 				.minDocCount(1)
 				.script(new Script("_score"));
 
-		final SearchResponse searchResponse = restClient
+		return restClient
 				.search(new SearchRequest(indices)
 						.source(SearchSourceBuilder.searchSource()
 								.suggest(spellCheckQuery)
@@ -262,7 +260,6 @@ class QueryPredictor {
 								.size(0)
 								.timeout(TimeValue.timeValueMillis(20))),
 						RequestOptions.DEFAULT);
-		return searchResponse;
 	}
 
 	protected QueryBuilder buildTermQuery(final QueryStringTerm term, final Collection<String> searchFields) {
@@ -354,7 +351,7 @@ class QueryPredictor {
 				uniqueTokens.removeAll(shingle.getValue());
 			}
 		}
-		if (uniqueTokens.size() > 0 && uniqueTokens.size() < termsUnique.size()) {
+		if (!uniqueTokens.isEmpty() && uniqueTokens.size() < termsUnique.size()) {
 			return Optional.of(uniqueTokens);
 		}
 		else {
@@ -382,10 +379,10 @@ class QueryPredictor {
 	 * @return
 	 */
 	private boolean containsAny(final Set<String> haystack, final Collection<String> needles) {
-		if (haystack.size() == 0) {
+		if (haystack.isEmpty()) {
 			return false;
 		}
-		if (needles.size() == 0) {
+		if (needles.isEmpty()) {
 			return false;
 		}
 		if (haystack.size() == 1) {
