@@ -8,12 +8,12 @@ public interface SuggestConfigProvider {
 	 * Retrieve config for a given index. In case only some index specific values should be set, the default suggest
 	 * config can be used since it may contain global settings (if not null).
 	 * 
-	 * @param indexName
+	 * @param indexName name of the index that should be configured
 	 * @param defaultSuggestConfig
 	 *        copy of the suggest config that was set as default for the whole service.
 	 *        It can be modified and returned or a different config object can be returned.
 	 *        Returning null is considered equivalent to returning that default config.
-	 * @return
+	 * @return suggest configuration
 	 */
 	SuggestConfig getConfig(@NonNull String indexName, SuggestConfig defaultSuggestConfig);
 
