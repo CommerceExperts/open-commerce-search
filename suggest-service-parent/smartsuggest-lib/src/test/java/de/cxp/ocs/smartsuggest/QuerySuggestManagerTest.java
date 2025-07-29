@@ -227,7 +227,9 @@ class QuerySuggestManagerTest {
 	@Test
 	void testSuggesterIsInitializedByArchiveDataProviders(@TempDir Path baseDir) throws Exception {
 		LocalIndexArchiveProvider archiveProvider = new LocalIndexArchiveProvider();
-		LuceneSuggesterFactory factory = new LuceneSuggesterFactory(baseDir);
+		LuceneSuggesterFactory factory = new LuceneSuggesterFactory();
+		factory.init(baseDir);
+
 		try (
 				LuceneQuerySuggester suggester = factory.getSuggester(SuggestData.builder()
 						.modificationTime(System.currentTimeMillis()).type("keywords")

@@ -241,7 +241,7 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 	}
 
 	@Override
-	public SuggestConfig getConfig(String indexName, SuggestConfig modifiableConfig) {
+	public SuggestConfig getConfig(@NonNull String indexName, SuggestConfig modifiableConfig) {
 		Optional<String> safeIndexName = validateIndexName(indexName);
 		return safeIndexName.map(name -> loadSuggestConfig(modifiableConfig, name)).orElse(modifiableConfig);
 	}

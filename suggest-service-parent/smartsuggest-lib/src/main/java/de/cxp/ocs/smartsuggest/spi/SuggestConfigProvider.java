@@ -15,8 +15,7 @@ public interface SuggestConfigProvider {
 	 *        Returning null is considered equivalent to returning that default config.
 	 * @return
 	 */
-	SuggestConfig getConfig(@NonNull
-	String indexName, SuggestConfig defaultSuggestConfig);
+	SuggestConfig getConfig(@NonNull String indexName, SuggestConfig defaultSuggestConfig);
 
 	/**
 	 * Return priority when this config provider should be asked for the configuration. Providers with a low priority

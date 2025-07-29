@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -74,6 +75,8 @@ public class QuerySuggestManager implements AutoCloseable {
 
 	private final SuggestConfig defaultSuggestConfig;
 
+	private Supplier<SuggesterFactory<?>> customSuggesterFactory;
+
 	/**
 	 * This builder should be used to set up the QuerySuggestManager
 	 */
@@ -98,9 +101,11 @@ public class QuerySuggestManager implements AutoCloseable {
 
 		private final List<IndexArchiveProvider> injectedArchiveDataProviders = new ArrayList<>();
 
+		private Supplier<SuggesterFactory<?>> customSuggesterFactory = LuceneSuggesterFactory::new;
+
 		/**
 		 * Sets the root path where the indices for the different tenants
-		 * will be stored. Required for LUCENE engine.
+		 * will be stored. Required for default LuceneQuerySuggester.
 		 *
 		 * @param indexFolder
 		 * 		the root path where the indices for the different tenants
@@ -135,21 +140,6 @@ public class QuerySuggestManager implements AutoCloseable {
 		 */
 		QuerySuggestManagerBuilder setMinimalUpdateRate() {
 			updateRate = 1;
-			return this;
-		}
-
-		/**
-		 * Deprecated! Only Lucene suggester implemented at the moment!
-		 *
-		 * @param engine
-		 * 		engine to use
-		 * @return fluid builder
-		 * @deprecated only Lucene suggester implemented at the moment
-		 */
-		@Deprecated
-		public QuerySuggestManagerBuilder engine(SuggesterEngine engine) {
-			// only one engine supported at the moment, so no special handling here
-			assert engine == SuggesterEngine.LUCENE;
 			return this;
 		}
 
@@ -333,6 +323,16 @@ public class QuerySuggestManager implements AutoCloseable {
 		}
 
 		/**
+		 * Set supplier for custom suggester factory that will be fetched for every single index.
+		 * @param customSuggesterFactory supplier for SuggesterFactory
+		 * @return fluid builder
+		 */
+		public QuerySuggestManagerBuilder withCustomSuggesterFactory(@NonNull Supplier<SuggesterFactory<?>> customSuggesterFactory) {
+			this.customSuggesterFactory = customSuggesterFactory;
+			return this;
+		}
+
+		/**
 		 * Build QuerySuggestManager that can manage multiple query suggesters.
 		 *
 		 * @return the manager
@@ -346,6 +346,7 @@ public class QuerySuggestManager implements AutoCloseable {
 			querySuggestManager.updateRate = updateRate;
 			querySuggestManager.defaultLimiter = this.defaultLimiter != null ? this.defaultLimiter : new CutOffLimiter();
 			querySuggestManager.metricsRegistry = metricsRegistry;
+			querySuggestManager.customSuggesterFactory = customSuggesterFactory;
 			if (!preloadIndexes.isEmpty()) {
 				List<CompletableFuture<QuerySuggester>> futures = preloadIndexes.stream()
 						.map(indexName -> CompletableFuture.supplyAsync(() -> querySuggestManager.getQuerySuggester(indexName, true)))
@@ -684,7 +685,8 @@ public class QuerySuggestManager implements AutoCloseable {
 		suggesterProxy.instrument(metricsRegistry, tags);
 
 		Path tenantFolder = suggestIndexFolder.resolve(indexName + "_" + UUID.randomUUID());
-		SuggesterFactory<?> factory = new LuceneSuggesterFactory(tenantFolder);
+		SuggesterFactory<?> factory = customSuggesterFactory.get();
+		factory.init(tenantFolder);
 		factory.instrument(metricsRegistry, tags);
 
 		SuggestionsUpdater updateTask = SuggestionsUpdater.builder()

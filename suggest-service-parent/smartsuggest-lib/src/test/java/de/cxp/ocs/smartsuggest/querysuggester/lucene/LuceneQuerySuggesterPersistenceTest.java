@@ -62,7 +62,8 @@ public class LuceneQuerySuggesterPersistenceTest {
 
 	@Test
 	public void testStoreAndRecoveryWithFactory(@TempDir Path baseDir) throws Exception {
-		LuceneSuggesterFactory factory = new LuceneSuggesterFactory(baseDir);
+		LuceneSuggesterFactory factory = new LuceneSuggesterFactory();
+		factory.init(baseDir);
 		SuggestData suggestData = new SuggestData();
 		suggestData.setModificationTime(System.currentTimeMillis());
 		suggestData.setSuggestRecords(testRecords);
