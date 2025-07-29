@@ -5,7 +5,7 @@
     <parent>
         <groupId>de.cxp.ocs</groupId>
         <artifactId>ocs-parent</artifactId>
-        <version>0.71.2</version>
+        <version>0.72.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
