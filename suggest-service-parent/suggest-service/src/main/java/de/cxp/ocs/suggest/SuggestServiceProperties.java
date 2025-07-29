@@ -202,15 +202,13 @@ public class SuggestServiceProperties implements SuggestConfigProvider {
 				.ifPresent(
 						groupConfMap -> {
 							baseConfig.setUseRelativeShareLimit(true);
-							groupConfMap.entrySet().forEach(e -> baseConfig.addGroupConfig(e.getKey(), (int) (e.getValue() * 100)));
+							groupConfMap.forEach((key, value) -> baseConfig.addGroupConfig(key, (int) (value * 100)));
 						});
 
 		if (!baseConfig.isUseRelativeShareLimit()) {
 			getPropertyValue(PROPERTY_GROUP_CUTOFF_CONF, customPropertyInfix)
 					.map(rawConf -> toLinkedHashMap(rawConf, Integer::parseInt))
-					.ifPresent(
-							groupConfMap -> groupConfMap.entrySet().forEach(
-									e -> baseConfig.addGroupConfig(e.getKey(), e.getValue())));
+					.ifPresent(groupConfMap -> groupConfMap.forEach(baseConfig::addGroupConfig));
 		}
 
 		getPropertyValue(PROPERTY_GROUP_DEDUPLICATION_ORDER, customPropertyInfix)

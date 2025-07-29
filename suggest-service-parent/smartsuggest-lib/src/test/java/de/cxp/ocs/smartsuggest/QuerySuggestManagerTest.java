@@ -131,7 +131,7 @@ class QuerySuggestManagerTest {
 
 	// run this manually to test if the JVM is shutdown although the
 	// QueryMapperManager is not closed properly
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
 		new QuerySuggestManagerTest().testThrowAwayManager();
 	}
 
@@ -210,7 +210,7 @@ class QuerySuggestManagerTest {
 
 		List<Suggestion> suggestions1 = querySuggester1.suggest("text");
 		assertThat(suggestions1).size().isEqualTo(1);
-		assertThat(suggestions1).allMatch(s -> "query1".equals(s.getLabel())).as("query1 as label expected");
+		assertThat(suggestions1).as("query1 as label expected").allMatch(s -> "query1".equals(s.getLabel()));
 
 		// subtest 2: two data providers have data
 		dp1.updateSuggestions("index2", List.of(new SuggestRecord("query 1.2", "arbitrary matching text", null, null, 10L)));

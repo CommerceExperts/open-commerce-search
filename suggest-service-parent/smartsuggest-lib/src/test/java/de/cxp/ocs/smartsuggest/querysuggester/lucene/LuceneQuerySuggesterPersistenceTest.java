@@ -45,7 +45,7 @@ public class LuceneQuerySuggesterPersistenceTest {
 	public void testStoreAndRecovery(@TempDir Path indexFolder) throws Exception {
 		SuggestConfig suggestConfig = minimalSuggestConfig();
 
-		Long modTime = null;
+		long modTime;
 		try(var underTest = new LuceneQuerySuggester(indexFolder, suggestConfig, mock(ModifiedTermsService.class), getWordSet(Locale.ROOT), null)) {
 			underTest.index(testRecords, System.currentTimeMillis()).get();
 			assert underTest.isReady();

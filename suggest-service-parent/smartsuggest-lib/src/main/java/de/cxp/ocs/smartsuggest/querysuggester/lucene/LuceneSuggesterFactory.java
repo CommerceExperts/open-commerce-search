@@ -11,7 +11,6 @@ import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.FileUtils;
 import io.micrometer.core.instrument.Tag;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.analysis.CharArraySet;
