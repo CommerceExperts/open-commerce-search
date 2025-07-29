@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.71.1</version>
+		<version>0.71.2</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -38,12 +38,12 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-suggest-data-provider</artifactId>
-				<version>0.23.0</version>
+				<version>0.23.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>s3-suggest-archive-provider</artifactId>
-				<version>0.1.0</version>
+				<version>0.1.1</version>
 			</dependency>
 			
 			<dependency>
