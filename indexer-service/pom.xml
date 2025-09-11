@@ -5,12 +5,12 @@
     <parent>
         <groupId>de.cxp.ocs</groupId>
         <artifactId>ocs-parent</artifactId>
-        <version>0.72.0</version>
+        <version>0.73.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>indexer-service</artifactId>
-    <version>0.45.6</version>
+    <version>0.45.7</version>
     <packaging>jar</packaging>
 
     <!-- Import dependency management from Spring Boot -->
@@ -39,6 +39,11 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>9.8</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -103,11 +108,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-            <version>6.2.7</version>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-actuator</artifactId>
             <exclusions>
@@ -120,12 +120,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-tomcat</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
