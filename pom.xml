@@ -29,7 +29,7 @@
         <docker.tag>${project.version}</docker.tag>
 		<docker.latest.tag>latest</docker.latest.tag>
 
-		<elasticsearch.version>7.17.28</elasticsearch.version>
+		<elasticsearch.version>8.18.8</elasticsearch.version>
 		<spring-boot.version>3.5.5</spring-boot.version>
 		<spring-cloud.version>2025.0.0</spring-cloud.version>
 		<springdoc.version>1.8.0</springdoc.version>
