@@ -50,7 +50,7 @@
     "class-variance-authority": "^0.4.0",
     "clsx": "^1.2.1",
     "cmdk": "^0.2.0",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^4.1.1",
     "lodash": "^4.17.21",
     "lucide-react": "^0.363.0",
     "next": "^14.2.32",
