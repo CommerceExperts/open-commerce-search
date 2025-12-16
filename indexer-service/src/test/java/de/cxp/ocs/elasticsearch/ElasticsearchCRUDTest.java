@@ -17,11 +17,11 @@ import java.io.IOException;
 import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.junit.jupiter.api.AfterAll;
@@ -86,7 +86,7 @@ public class ElasticsearchCRUDTest {
 
 	@BeforeAll
 	public static void spinUpEs() {
-		container = ElasticsearchContainerUtil.spinUpEs("8.19.8");
+		container = ElasticsearchContainerUtil.spinUpEs(Optional.ofNullable(System.getenv("ES_CONTAINER_VERSION")).orElse(Version.CURRENT.toString()));
 		HTTP_TEST_PORT = container.getMappedPort(ElasticsearchContainerUtil.ES_PORT);
 	}
 

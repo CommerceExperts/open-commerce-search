@@ -3,6 +3,7 @@ package de.cxp.ocs;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -71,8 +72,11 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 				}
 			}
 			else {
-				elasticsearch = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:" + Version.CURRENT.toString());
+				String esVersion = Optional.ofNullable(System.getenv("ES_CONTAINER_VERSION")).orElse(Version.CURRENT.toString());
+				elasticsearch = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:" + esVersion);
 				elasticsearch.addEnv("discovery.type", "single-node");
+				elasticsearch.addEnv("xpack.security.enabled", "false");
+				elasticsearch.addEnv("xpack.security.http.ssl.enabled", "false");
 				elasticsearch.setExposedPorts(Collections.singletonList(ES_DEFAULT_PORT));
 				elasticsearch.withNetwork(Network.newNetwork());
 				elasticsearch.withNetworkAliases("elasticsearch");
