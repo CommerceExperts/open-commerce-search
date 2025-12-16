@@ -32,13 +32,13 @@ public class ITUpdateApi {
 	// no indexation, since we want to test if the update API creates the necessary index
 	@AfterEach
 	public void deleteIndexes() {
-		Request deleteRequest = new Request("DELETE", "ocs-*-" + indexName + "*");
+		Request deleteRequest = new Request("DELETE", "ocs-1-" + indexName + "-en");
 		try {
 			Response response = getElasticsearchClient().performRequest(deleteRequest);
 			log.info("deleting index {} responded with {}", indexName, response);
 		}
 		catch (IOException e) {
-			log.error("failed to delete index {} after test", indexName);
+			log.error("failed to delete index {} after test: {}:{}", indexName, e.getClass(), e.getMessage());
 		}
 	}
 
@@ -93,7 +93,7 @@ public class ITUpdateApi {
 	}
 
 	private void flushIndex() throws IOException {
-		getElasticsearchClient().performRequest(new Request("POST", indexName + "/_flush/synced"));
+		getElasticsearchClient().performRequest(new Request("POST", indexName + "/_flush?wait_if_ongoing=true"));
 	}
 
 }

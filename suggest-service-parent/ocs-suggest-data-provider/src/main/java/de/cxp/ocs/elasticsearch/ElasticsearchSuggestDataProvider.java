@@ -18,6 +18,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.RestHighLevelClientBuilder;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
@@ -62,7 +63,9 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 		ConnectionConfiguration connectionConf = settings.getConnectionConfig();
 		log.info("Connecting to Elasticsearch at {}", connectionConf.getHosts());
 		RestClientBuilder restClientBuilder = RestClientBuilderFactory.createRestClientBuilder(connectionConf);
-		client = new RestHighLevelClient(restClientBuilder);
+		client = new RestHighLevelClientBuilder(restClientBuilder.build())
+				.setApiCompatibilityMode(connectionConf.isUseCompatibilityMode())
+				.build();
 	}
 
 	@Override

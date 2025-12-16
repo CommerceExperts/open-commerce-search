@@ -3,6 +3,7 @@ package de.cxp.ocs;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -71,8 +72,11 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 				}
 			}
 			else {
-				elasticsearch = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:" + Version.CURRENT.toString());
+				String esVersion = Optional.ofNullable(System.getenv("ES_CONTAINER_VERSION")).orElse(Version.CURRENT.toString());
+				elasticsearch = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:" + esVersion);
 				elasticsearch.addEnv("discovery.type", "single-node");
+				elasticsearch.addEnv("xpack.security.enabled", "false");
+				elasticsearch.addEnv("xpack.security.http.ssl.enabled", "false");
 				elasticsearch.setExposedPorts(Collections.singletonList(ES_DEFAULT_PORT));
 				elasticsearch.withNetwork(Network.newNetwork());
 				elasticsearch.withNetworkAliases("elasticsearch");
@@ -105,7 +109,12 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 		else {
 			indexerService = new GenericContainer<>("commerceexperts/ocs-indexer-service:latest");
 			indexerService.addExposedPort(INDEXER_DEFAULT_PORT);
-			indexerService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,test");
+
+			String v8comp = "";
+			if (isWithEs8Compatibility()) {
+				v8comp = " -Docs.connection-configuration.use-compatibility-mode=true";
+			}
+			indexerService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,test" + v8comp);
 
 			bindFile(indexerService, "indexer.application-test.yml", "application-test.yml");
 
@@ -136,7 +145,11 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 			searchService.addExposedPort(SEARCH_DEFAULT_PORT);
 			// searchService.setCommand("-Dspring.cloud.config.enabled=false",
 			// "-Dspring.profiles.active=preset");
-			searchService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,trace-searches,test");
+			String v8comp = "";
+			if (isWithEs8Compatibility()) {
+				v8comp = " -Docs.connection-configuration.use-compatibility-mode=true";
+			}
+			searchService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,trace-searches,test" + v8comp);
 
 			bindFile(searchService, "searcher.application-test.yml", "application-test.yml");
 			bindFile(searchService, "querqy-test-rules.txt", "querqy-test-rules.txt");
@@ -176,7 +189,12 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 		else {
 			suggestService = new GenericContainer<>("commerceexperts/ocs-suggest-service:latest");
 			suggestService.addExposedPort(SUGGEST_DEFAULT_PORT);
-			suggestService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m");
+
+			String v8comp = "";
+			if (isWithEs8Compatibility()) {
+				v8comp = " -Delasticsearch.useCompatibilityMode=true";
+			}
+			suggestService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m" + v8comp);
 
 			String esAddr;
 			if (elasticsearch != null) {
@@ -200,6 +218,10 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 			});
 		}
 		return suggestServiceHost;
+	}
+
+	public static Boolean isWithEs8Compatibility() {
+		return Optional.ofNullable(System.getenv("ES_CONTAINER_VERSION")).map(v -> v.startsWith("8")).orElse(false);
 	}
 
 	public static RestClient getElasticsearchClient() {

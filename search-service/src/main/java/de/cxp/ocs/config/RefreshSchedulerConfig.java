@@ -16,11 +16,11 @@ import org.springframework.stereotype.Component;
  * <p>set property 'ocs.scheduler.enabled=false' to disable completely.</p>
  *
  * <p>
- * To enable refresh config, set the property 'ocs.scheduler.enabled.refresh-config=true'.
+ * To enable refresh config, set the property 'ocs.scheduler.refresh-config.enabled=true'.
  * The property 'ocs.scheduler.refresh-config-delay-ms' can be set to configure the fixed delay between each refresh (defaults to 60000 = 1 minute)
  * </p>
  * <p>
- * To enable context refreshing, set the property 'ocs.scheduler.enabled.refresh-context=true'.
+ * To enable context refreshing, set the property 'ocs.scheduler.refresh-context.enabled=true'.
  * The property 'ocs.scheduler.refresh-context-delay-ms' can be set to configure the fixed delay between each refresh (defaults to 60000 = 1 minute)
  * </p>
  * <p>

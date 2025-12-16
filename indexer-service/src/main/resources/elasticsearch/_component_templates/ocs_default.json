@@ -166,8 +166,7 @@
           "result_data": {
             "path_match": "*resultData.*",
             "mapping": {
-              "index": false,
-              "doc_values": false
+              "index": false
             }
           }
         },

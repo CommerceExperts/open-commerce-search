@@ -119,7 +119,7 @@ public class ITPartialUpdates {
 	}
 
 	private void flushIndex() throws IOException {
-		getElasticsearchClient().performRequest(new Request("POST", indexName + "/_flush/synced"));
+		getElasticsearchClient().performRequest(new Request("POST", indexName + "/_flush?wait_if_ongoing=true"));
 	}
 
 }

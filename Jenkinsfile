@@ -31,6 +31,11 @@ pipeline {
       steps {
         withMaven(mavenSettingsConfig: '67c40a88-505a-4f78-94a3-d879cc1a29f6') {
           sh "mvn $MAVEN_CLI_OPTS integration-test -pl integration-tests"
+
+          withEnv(["ES_CONTAINER_VERSION=8.19.8"]) {
+            // indexer-service also contains two "integration tests" with an elasticsearch container
+            sh "mvn $MAVEN_CLI_OPTS integration-test -pl indexer-service,integration-tests"
+          }
         }
       }
     } // end integration tests

@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.73.0</version>
+		<version>0.74.0</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<artifactId>search-service</artifactId>
-	<version>0.63.3</version>
+	<version>0.64.0</version>
 	<packaging>jar</packaging>
 
 	<!-- Import dependency management from Spring Boot -->
@@ -303,7 +303,7 @@
 				<dependency>
 					<groupId>io.searchhub</groupId>
 					<artifactId>ocs-smartquery-plugin</artifactId>
-					<version>2.3.1-ocs_spi_1.17.2</version>
+					<version>2.3.3-ocs_spi_1.17.3</version>
 				</dependency>
 			</dependencies>
 		</profile>

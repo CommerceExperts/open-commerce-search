@@ -17,10 +17,11 @@ import java.io.IOException;
 import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.junit.jupiter.api.AfterAll;
@@ -73,17 +74,19 @@ public class ElasticsearchCRUDTest {
 	static class TestConf extends Application {
 
 		@Bean
-		public RestClientBuilder getRestClientBuilder(ApplicationProperties properties) {
+		@Override
+		public RestClient getRestClient(ApplicationProperties properties) {
 			System.out.println("initializing ES client");
 			properties.getConnectionConfiguration().setHosts("127.0.0.1:" + HTTP_TEST_PORT);
-			return RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
+			properties.getConnectionConfiguration().setUseCompatibilityMode(true);
+			return RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration()).build();
 		}
 
 	}
 
 	@BeforeAll
 	public static void spinUpEs() {
-		container = ElasticsearchContainerUtil.spinUpEs();
+		container = ElasticsearchContainerUtil.spinUpEs(Optional.ofNullable(System.getenv("ES_CONTAINER_VERSION")).orElse(Version.CURRENT.toString()));
 		HTTP_TEST_PORT = container.getMappedPort(ElasticsearchContainerUtil.ES_PORT);
 	}
 
