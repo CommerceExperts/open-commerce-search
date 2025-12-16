@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetIndexRequest;
@@ -73,10 +74,12 @@ public class ElasticsearchCRUDTest {
 	static class TestConf extends Application {
 
 		@Bean
-		public RestClientBuilder getRestClientBuilder(ApplicationProperties properties) {
+		@Override
+		public RestClient getRestClient(ApplicationProperties properties) {
 			System.out.println("initializing ES client");
 			properties.getConnectionConfiguration().setHosts("127.0.0.1:" + HTTP_TEST_PORT);
-			return RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
+			properties.getConnectionConfiguration().setUseCompatibilityMode(true);
+			return RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration()).build();
 		}
 
 	}
