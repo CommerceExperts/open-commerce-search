@@ -77,6 +77,7 @@ public class SettingsProxy {
 			connectionConf = new ConnectionConfiguration();
 			connectionConf.setHosts(get("elasticsearch.hosts"));
 			connectionConf.setAuth(get("elasticsearch.auth"));
+			connectionConf.setUseCompatibilityMode(Boolean.parseBoolean(get("elasticsearch.useCompatibilityMode")));
 		}
 		return connectionConf;
 	}

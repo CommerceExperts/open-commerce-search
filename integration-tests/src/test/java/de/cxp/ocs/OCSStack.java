@@ -109,7 +109,12 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 		else {
 			indexerService = new GenericContainer<>("commerceexperts/ocs-indexer-service:latest");
 			indexerService.addExposedPort(INDEXER_DEFAULT_PORT);
-			indexerService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,test");
+
+			String v8comp = "";
+			if (Optional.ofNullable(System.getenv("ES_CONTAINER_VERSION")).map(v -> v.startsWith("8")).orElse(false)) {
+				v8comp = " -Docs.connection-configuration.use-compatibility-mode=true";
+			}
+			indexerService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,test" + v8comp);
 
 			bindFile(indexerService, "indexer.application-test.yml", "application-test.yml");
 
@@ -140,7 +145,11 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 			searchService.addExposedPort(SEARCH_DEFAULT_PORT);
 			// searchService.setCommand("-Dspring.cloud.config.enabled=false",
 			// "-Dspring.profiles.active=preset");
-			searchService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,trace-searches,test");
+			String v8comp = "";
+			if (Optional.ofNullable(System.getenv("ES_CONTAINER_VERSION")).map(v -> v.startsWith("8")).orElse(false)) {
+				v8comp = " -Docs.connection-configuration.use-compatibility-mode=true";
+			}
+			searchService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,trace-searches,test" + v8comp);
 
 			bindFile(searchService, "searcher.application-test.yml", "application-test.yml");
 			bindFile(searchService, "querqy-test-rules.txt", "querqy-test-rules.txt");
@@ -180,7 +189,12 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 		else {
 			suggestService = new GenericContainer<>("commerceexperts/ocs-suggest-service:latest");
 			suggestService.addExposedPort(SUGGEST_DEFAULT_PORT);
-			suggestService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m");
+
+			String v8comp = "";
+			if (Optional.ofNullable(System.getenv("ES_CONTAINER_VERSION")).map(v -> v.startsWith("8")).orElse(false)) {
+				v8comp = " -Delasticsearch.useCompatibilityMode=true";
+			}
+			suggestService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m" + v8comp);
 
 			String esAddr;
 			if (elasticsearch != null) {
