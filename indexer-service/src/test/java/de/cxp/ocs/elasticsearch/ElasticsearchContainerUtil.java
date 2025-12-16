@@ -19,13 +19,19 @@ public class ElasticsearchContainerUtil {
 	public static final int ES_PORT = 9200;
 
 	public static ElasticsearchContainer spinUpEs() {
+		return spinUpEs(Version.CURRENT.toString());
+	}
+
+	public static ElasticsearchContainer spinUpEs(String esVersion) {
 		log.info("starting Elasticsearch container..");
 		ElasticsearchContainer container = new ElasticsearchContainer(
 				DockerImageName
 						.parse("docker.elastic.co/elasticsearch/elasticsearch")
-						.withTag(Version.CURRENT.toString()));
+						.withTag(esVersion));
 		container.addEnv("discovery.type", "single-node");
 		container.addEnv("ES_JAVA_OPTS", "-Xms1024m -Xmx1024m");
+		container.addEnv("xpack.security.enabled", "false");
+		container.addEnv("xpack.security.http.ssl.enabled", "false");
 		container.setWaitStrategy(new HttpWaitStrategy().forPort(ES_PORT));
 		container.withStartupTimeout(Duration.ofSeconds(60));
 		container.start();

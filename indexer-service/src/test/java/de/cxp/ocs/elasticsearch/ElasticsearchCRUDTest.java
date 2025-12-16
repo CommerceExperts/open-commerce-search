@@ -86,7 +86,7 @@ public class ElasticsearchCRUDTest {
 
 	@BeforeAll
 	public static void spinUpEs() {
-		container = ElasticsearchContainerUtil.spinUpEs();
+		container = ElasticsearchContainerUtil.spinUpEs("8.19.8");
 		HTTP_TEST_PORT = container.getMappedPort(ElasticsearchContainerUtil.ES_PORT);
 	}
 
