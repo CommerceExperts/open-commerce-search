@@ -22,4 +22,10 @@ public class ConnectionConfiguration {
 	 * Example: "elastic:my$ecretPassw0rd"
 	 */
 	private String auth;
+
+	/**
+	 * If set to 'true' the rest-high-level-client version 7 can be used with elasticsearch version 8.
+	 * <a href="https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/java-rest-high-compatibility.html">see Compatibility with Elasticsearch 8.x</a>
+	 */
+	private boolean useCompatibilityMode = false;
 }
