@@ -79,7 +79,7 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-java-client</artifactId>
-				<version>0.22.0</version>
+				<version>0.21.2</version>
 			</dependency>
 
 			<!-- serialization -->
