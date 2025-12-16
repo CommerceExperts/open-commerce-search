@@ -111,7 +111,7 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 			indexerService.addExposedPort(INDEXER_DEFAULT_PORT);
 
 			String v8comp = "";
-			if (Optional.ofNullable(System.getenv("ES_CONTAINER_VERSION")).map(v -> v.startsWith("8")).orElse(false)) {
+			if (isWithEs8Compatibility()) {
 				v8comp = " -Docs.connection-configuration.use-compatibility-mode=true";
 			}
 			indexerService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,test" + v8comp);
@@ -146,7 +146,7 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 			// searchService.setCommand("-Dspring.cloud.config.enabled=false",
 			// "-Dspring.profiles.active=preset");
 			String v8comp = "";
-			if (Optional.ofNullable(System.getenv("ES_CONTAINER_VERSION")).map(v -> v.startsWith("8")).orElse(false)) {
+			if (isWithEs8Compatibility()) {
 				v8comp = " -Docs.connection-configuration.use-compatibility-mode=true";
 			}
 			searchService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m -Dspring.cloud.config.enabled=false -Dspring.profiles.active=default,preset,trace-searches,test" + v8comp);
@@ -191,7 +191,7 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 			suggestService.addExposedPort(SUGGEST_DEFAULT_PORT);
 
 			String v8comp = "";
-			if (Optional.ofNullable(System.getenv("ES_CONTAINER_VERSION")).map(v -> v.startsWith("8")).orElse(false)) {
+			if (isWithEs8Compatibility()) {
 				v8comp = " -Delasticsearch.useCompatibilityMode=true";
 			}
 			suggestService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m" + v8comp);
@@ -218,6 +218,10 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 			});
 		}
 		return suggestServiceHost;
+	}
+
+	public static Boolean isWithEs8Compatibility() {
+		return Optional.ofNullable(System.getenv("ES_CONTAINER_VERSION")).map(v -> v.startsWith("8")).orElse(false);
 	}
 
 	public static RestClient getElasticsearchClient() {
