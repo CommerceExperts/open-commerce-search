@@ -5,7 +5,7 @@
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.73.0</version>
+	<version>0.74.0</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -47,39 +47,39 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>open-commerce-search-api</artifactId>
-				<version>0.26.2</version>
+				<version>0.27.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-plugin-spi</artifactId>
-				<version>1.18.2</version>
+				<version>1.19.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-commons</artifactId>
-				<version>0.34.3</version>
+				<version>0.35.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>indexer-service</artifactId>
-				<version>0.45.7</version>
+				<version>0.46.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>search-service</artifactId>
-				<version>0.63.3</version>
+				<version>0.64.0</version>
 			</dependency>
 			<!-- only including the suggest-service directly, because it depends on 
 				the other suggest modules -->
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>suggest-service</artifactId>
-				<version>0.32.1</version>
+				<version>0.33.0</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-java-client</artifactId>
-				<version>0.21.2</version>
+				<version>0.22.0</version>
 			</dependency>
 
 			<!-- serialization -->
