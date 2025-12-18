@@ -190,11 +190,12 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 			suggestService = new GenericContainer<>("commerceexperts/ocs-suggest-service:latest");
 			suggestService.addExposedPort(SUGGEST_DEFAULT_PORT);
 
-			String v8comp = "";
-			if (isWithEs8Compatibility()) {
-				v8comp = " -Delasticsearch.useCompatibilityMode=true";
+			String javaToolOptions = "-Xms265m -Xmx1024m -Dsuggest.index.default.sourceFields=brand,category -Dsuggest.group.key=type "
+					+ "-Dde.cxp.ocs.smartsuggest.spi.SuggestDataProvider.enable=false"; // in case the searchHub SDP is in the image
+			//if (isWithEs8Compatibility())
+			{
+				javaToolOptions += " -Delasticsearch.useCompatibilityMode=true";
 			}
-			suggestService.addEnv("JAVA_TOOL_OPTIONS", "-Xms265m -Xmx1024m" + v8comp);
 
 			String esAddr;
 			if (elasticsearch != null) {
@@ -205,11 +206,9 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 				suggestService.setNetwork(Network.SHARED);
 				esAddr = esHost.get().toURI();
 			}
+			javaToolOptions += " -Delasticsearch.hosts=" + esAddr;
 
-			suggestService.addEnv("JAVA_TOOL_OPTIONS",
-							"-Delasticsearch.hosts=" + esAddr +
-							" -Dsuggest.index.default.sourceFields=brand,category" +
-							" -Dsuggest.group.key=type");
+			suggestService.addEnv("JAVA_TOOL_OPTIONS", javaToolOptions);
 
 			suggestServiceHost = CompletableFuture.supplyAsync(() -> {
 				suggestService.start();
