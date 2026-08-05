@@ -60,33 +60,62 @@ export async function search(
   Object.keys(_filters).forEach((key) => {
     const value = _filters[key]
     if (value) {
-      _filters[key] = Array.isArray(value) ? value.join(",") : _filters[key]
+      _filters[key] = Array.isArray(value) ? value.join(",") : value
     }
-  }, {})
+  })
 
-  const res = await fetch(
-    `${env.SEARCH_API_URL}/search-api/v1/search/arranged/${tenant}`,
-    {
-      method: "post",
-      headers: {
-        Authorization: `Basic ${env.SEARCH_API_AUTH}`,
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        q: query,
-        limit,
-        offset,
-        filters: _filters,
-        sort: sort ? sort : undefined,
-        arrangedProductSets:
-          heroProductIds && heroProductIds.length > 0
-            ? [{ type: "static", name: "hero-products", ids: heroProductIds }]
-            : undefined,
-      } as ArrangedSearchQuery),
-      cache: "no-store",
-    }
-  )
+  const headers = {
+    Authorization: `Basic ${env.SEARCH_API_AUTH}`,
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  }
+
+  let res: Response
+  if (env.SEARCH_API_METHOD === "get") {
+    const params = new URLSearchParams({
+      q: query,
+      limit: String(limit),
+      offset: String(offset),
+    })
+    if (sort) params.set("sort", sort)
+    if (env.SEARCH_API_AUTH) params.set("token", env.SEARCH_API_AUTH)
+    Object.entries(_filters).forEach(([key, value]) => {
+      if (value) params.set(key, value as string)
+    })
+
+    res = await fetch(
+      `${env.SEARCH_API_URL}/search-api/v1/search/${tenant}?${params.toString()}`,
+      { headers, cache: "no-store" }
+    )
+  } else {
+    res = await fetch(
+      `${env.SEARCH_API_URL}/search-api/v1/search/arranged/${tenant}`,
+      {
+        method: "post",
+        headers,
+        body: JSON.stringify({
+          q: query,
+          limit,
+          offset,
+          filters: _filters,
+          sort: sort ? sort : undefined,
+          arrangedProductSets:
+            heroProductIds && heroProductIds.length > 0
+              ? [{ type: "static", name: "hero-products", ids: heroProductIds }]
+              : undefined,
+        } as ArrangedSearchQuery),
+        cache: "no-store",
+      }
+    )
+  }
+
+  if (!res.ok) {
+    console.error(
+      `Search request failed: ${res.status} ${res.statusText} (tenant=${tenant}, q="${query}")`
+    )
+    return { hits, matchCount, sortOptions, filterOptions }
+  }
+
   const searchResult = (await res.json()) as SearchResult
 
   // Extracting meta data
@@ -122,7 +151,7 @@ export async function search(
 
     // Extracting product data fields
     productDataFields = Object.keys(
-      searchResult.slices?.[0].hits?.[0]?.document?.data ?? {}
+      searchResult.slices?.[0]?.hits?.[0]?.document?.data ?? {}
     )
   }
 

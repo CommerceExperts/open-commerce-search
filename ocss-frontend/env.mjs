@@ -8,6 +8,7 @@ export const env = createEnv({
 
     SEARCH_API_AUTH: z.optional(z.string()),
     SEARCH_API_URL: z.optional(z.string()),
+    SEARCH_API_METHOD: z.optional(z.enum(["get", "post"])).default("post"),
 
     ENABLE_SUGGEST_API: z.optional(z.string()).default("false"),
 
@@ -32,6 +33,7 @@ export const env = createEnv({
 
     SEARCH_API_AUTH: process.env.SEARCH_API_AUTH,
     SEARCH_API_URL: process.env.SEARCH_API_URL,
+    SEARCH_API_METHOD: process.env.SEARCH_API_METHOD,
 
     ENABLE_SUGGEST_API: process.env.ENABLE_SUGGEST_API,
 
