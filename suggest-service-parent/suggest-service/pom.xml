@@ -15,7 +15,7 @@
     <name>smartSuggest RESTful Service</name>
 
     <properties>
-        <searchhub.suggest-data-provider.version>0.16.0</searchhub.suggest-data-provider.version>
+        <searchhub.suggest-data-provider.version>1.5.0</searchhub.suggest-data-provider.version>
     </properties>
 
 
