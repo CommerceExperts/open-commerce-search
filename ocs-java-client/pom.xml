@@ -17,7 +17,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<feign.version>13.3</feign.version>
+		<feign.version>13.14</feign.version>
 	</properties>
 
 	<dependencies>
