@@ -37,15 +37,15 @@ public class SearchResult {
 	 * one slice could be the result for one part of the query
 	 * (e.g. "striped shirt") and the other could be for another part of the
 	 * query (e.g. "nike shirt").
-	 * 
+	 * <p>
 	 * This can also be used to deliver some special advertised products or to
 	 * split the result in different ranked slices (e.g. the first 3 results are
 	 * ranked by popularity, the next 3 are sorted by price and the rest is
 	 * ranked by 'default' relevance).
-	 * 
+	 * <p>
 	 * Each slice contains the {@link SearchQuery} encoded as URI that represent
 	 * that exact slice.
-	 * 
+	 * <p>
 	 * At least 1 slice should be expected. If there is no slice, no results
 	 * were found.
 	 */

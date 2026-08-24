@@ -17,7 +17,7 @@ import feign.httpclient.ApacheHttpClient;
 
 public class SearchClient implements SearchService {
 
-	private SearchApi target;
+	private final SearchApi target;
 
 	/**
 	 * With this constructor the Feign::Builder can be configured.
@@ -61,12 +61,12 @@ public class SearchClient implements SearchService {
 	}
 
 	@Override
-	public SearchResult arrangedSearch(String tenant, ArrangedSearchQuery searchQuery) throws Exception {
+	public SearchResult arrangedSearch(String tenant, ArrangedSearchQuery searchQuery) {
 		return target.arrangedSearch(tenant, searchQuery);
 	}
 
 	@Override
-	public Document getDocument(String tenant, String docId) throws Exception {
+	public Document getDocument(String tenant, String docId) {
 		return target.getDocument(tenant, docId);
 	}
 }

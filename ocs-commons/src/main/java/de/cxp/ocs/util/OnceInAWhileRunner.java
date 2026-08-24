@@ -69,7 +69,7 @@ public class OnceInAWhileRunner {
 	 */
 	private static class Timeout {
 
-		private Instant expires;
+		private final Instant expires;
 
 		/**
 		 * Creates a new instance.

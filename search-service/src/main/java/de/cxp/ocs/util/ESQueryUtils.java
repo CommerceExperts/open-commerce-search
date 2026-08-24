@@ -43,7 +43,7 @@ public class ESQueryUtils {
 	}
 
 	public static String getFuzzyTermLabel(AssociatedTerm correctedWord) {
-		if (correctedWord.getRelatedTerms().size() == 0) return correctedWord.getRawTerm();
+		if (correctedWord.getRelatedTerms().isEmpty()) return correctedWord.getRawTerm();
 		StringBuilder fuzzyTermNotation = new StringBuilder("~")
 				.append(correctedWord.getRawTerm())
 				.append("=(");
@@ -103,11 +103,11 @@ public class ESQueryUtils {
 		else if (q2 == null) {
 			return q1;
 		}
-		else if (q1 instanceof BoolQueryBuilder && ((BoolQueryBuilder) q1).must().size() > 0) {
+		else if (q1 instanceof BoolQueryBuilder && !((BoolQueryBuilder) q1).must().isEmpty()) {
 			((BoolQueryBuilder) q1).must(q2);
 			return q1;
 		}
-		else if (q2 instanceof BoolQueryBuilder && ((BoolQueryBuilder) q2).must().size() > 0) {
+		else if (q2 instanceof BoolQueryBuilder && !((BoolQueryBuilder) q2).must().isEmpty()) {
 			((BoolQueryBuilder) q2).must(q1);
 			return q2;
 		}

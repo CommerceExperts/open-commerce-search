@@ -152,7 +152,7 @@ public class DocumentPatcher {
 		}
 		// add all variants that didn't exist yet
 		allVariants.addAll(patchVariants.values());
-		_indexedDocument.variants = allVariants.toArray(new Document[allVariants.size()]);
+		_indexedDocument.variants = allVariants.toArray(new Document[0]);
 	}
 
 	private static String getVariantId(Document patchVariant, Field varIdField) {

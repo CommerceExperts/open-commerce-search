@@ -17,10 +17,11 @@ import java.io.IOException;
 import java.util.*;
 
 import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.Version;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.indices.GetIndexRequest;
 import org.junit.jupiter.api.AfterAll;
@@ -38,7 +39,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.cxp.ocs.Application;
@@ -74,17 +74,19 @@ public class ElasticsearchCRUDTest {
 	static class TestConf extends Application {
 
 		@Bean
-		public RestClientBuilder getRestClientBuilder(ApplicationProperties properties) {
+		@Override
+		public RestClient getRestClient(ApplicationProperties properties) {
 			System.out.println("initializing ES client");
 			properties.getConnectionConfiguration().setHosts("127.0.0.1:" + HTTP_TEST_PORT);
-			return RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
+			properties.getConnectionConfiguration().setUseCompatibilityMode(true);
+			return RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration()).build();
 		}
 
 	}
 
 	@BeforeAll
 	public static void spinUpEs() {
-		container = ElasticsearchContainerUtil.spinUpEs();
+		container = ElasticsearchContainerUtil.spinUpEs(Optional.ofNullable(System.getenv("ES_CONTAINER_VERSION")).orElse(Version.CURRENT.toString()));
 		HTTP_TEST_PORT = container.getMappedPort(ElasticsearchContainerUtil.ES_PORT);
 	}
 
@@ -321,11 +323,11 @@ public class ElasticsearchCRUDTest {
 						.string(objectMapper.writeValueAsString(Collections.singletonMap(doc.id, expectedResult))));
 	}
 
-	void deleteDocument(String indexName, String id) throws JsonProcessingException, Exception {
+	void deleteDocument(String indexName, String id) throws Exception {
 		deleteDocument(indexName, id, 200, Result.DELETED);
 	}
 
-	void deleteDocument(String indexName, String id, int expectedStatus, Result expectedResult) throws JsonProcessingException, Exception {
+	void deleteDocument(String indexName, String id, int expectedStatus, Result expectedResult) throws Exception {
 		mockMvc.perform(MockMvcRequestBuilders
 				.delete("/indexer-api/v1/update/" + indexName + "?id=" + id)
 				.contentType(MediaType.APPLICATION_JSON))
@@ -342,7 +344,7 @@ public class ElasticsearchCRUDTest {
 		Object variantsSources = source.get(VARIANTS);
 		IndexableItem indexedItem;
 
-		if (variantsSources != null && variantsSources instanceof List && ((List<?>) variantsSources).size() > 0) {
+		if (variantsSources != null && variantsSources instanceof List && !((List<?>) variantsSources).isEmpty()) {
 			MasterItem masterItem = new MasterItem(id);
 			for (Object variantSource : (List<?>) variantsSources) {
 				VariantItem variantItem = new VariantItem(masterItem);

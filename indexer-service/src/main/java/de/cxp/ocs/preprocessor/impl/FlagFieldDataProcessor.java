@@ -82,8 +82,7 @@ public class FlagFieldDataProcessor implements DocumentPreProcessor {
 							.groupingBy(entry -> {
 								String key = entry.getKey();
 								int ordinalIndexOfUnderscore = StringUtils.ordinalIndexOf(key, GROUP_SEPARATOR, 2);
-								final String groupName = key.substring(0, ordinalIndexOfUnderscore);
-								return groupName;
+								return key.substring(0, ordinalIndexOfUnderscore);
 							}, Collectors.groupingBy(entry -> {
 								String key = entry.getKey();
 								return StringUtils.countMatches(key, GROUP_SEPARATOR) == 2

@@ -8,7 +8,7 @@ import querqy.parser.QuerqyParser;
 
 public class TransformingWhitespaceQuerqyParser implements QuerqyParser {
 
-	public static enum TransformationFlags {
+	public enum TransformationFlags {
 		ASCIIFY, LOWERCASE
 	}
 	

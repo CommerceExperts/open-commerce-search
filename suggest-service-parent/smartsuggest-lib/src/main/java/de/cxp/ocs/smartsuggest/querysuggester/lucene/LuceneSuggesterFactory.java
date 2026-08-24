@@ -11,7 +11,7 @@ import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import de.cxp.ocs.smartsuggest.util.FileUtils;
 import io.micrometer.core.instrument.Tag;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.analysis.CharArraySet;
 
@@ -28,17 +28,19 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Slf4j
-@RequiredArgsConstructor
 public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySuggester> {
 
 	private static final String FILENAME_SUGGEST_DATA = "suggest_data.ser";
 
-	@NonNull
-	private final Path                    baseDirectory;
-	private       CompletableFuture<Void> persistJobFuture = null;
+	private Path                    baseDirectory;
+	private CompletableFuture<Void> persistJobFuture = null;
 
 	private MeterRegistryAdapter metricsRegistryAdapter = null;
 	private Iterable<Tag>        tags;
+
+	public void init(@NonNull Path baseDirectory) {
+		this.baseDirectory = baseDirectory;
+	}
 
 	@Override
 	public void instrument(MeterRegistryAdapter metricsRegistryAdapter, Iterable<Tag> tags) {
@@ -58,7 +60,10 @@ public class LuceneSuggesterFactory implements SuggesterFactory<LuceneQuerySugge
 		return luceneQuerySuggester;
 	}
 
+	@SneakyThrows
 	private Path prepareIndexFolder(Long modTime) {
+		// a missing base-directory should only happen within tests
+		if (baseDirectory == null) baseDirectory = Files.createTempDirectory("lucene-suggester");
 		Path indexFolder = baseDirectory.resolve(String.valueOf(modTime));
 		try {
 			Files.createDirectories(indexFolder);

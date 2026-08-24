@@ -36,11 +36,11 @@ class QuerySuggestManagerTest {
 
 	private static final int UPDATE_LATENCY = 2000;
 
-	private String testTenant1 = "test.1";
-	private String testTenant2 = "test.2";
+	private final String testTenant1 = "test.1";
+	private final String testTenant2 = "test.2";
 
-	private RemoteSuggestDataProviderSimulation serviceMock = new RemoteSuggestDataProviderSimulation();
-	private QuerySuggestManager                 querySuggestManager;
+	private final RemoteSuggestDataProviderSimulation serviceMock = new RemoteSuggestDataProviderSimulation();
+	private       QuerySuggestManager                 querySuggestManager;
 
 	@AfterEach
 	void afterEach() {
@@ -131,12 +131,12 @@ class QuerySuggestManagerTest {
 
 	// run this manually to test if the JVM is shutdown although the
 	// QueryMapperManager is not closed properly
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
 		new QuerySuggestManagerTest().testThrowAwayManager();
 	}
 
 	@Test
-	void testThrowAwayManager() throws Exception {
+	void testThrowAwayManager() {
 		var sdp = new RemoteSuggestDataProviderSimulation();
 		sdp.updateSuggestions("test.1", List.of(new SuggestRecord("query1", "matching text", null, null, 10L)));
 		QuerySuggester querySuggester = getQuerySuggester(sdp);
@@ -189,7 +189,7 @@ class QuerySuggestManagerTest {
 	}
 
 	@Test
-	void multipleDataProviders() throws Exception {
+	void multipleDataProviders() {
 		RemoteSuggestDataProviderSimulation dp1 = new RemoteSuggestDataProviderSimulation();
 		RemoteSuggestDataProviderSimulation dp2 = new RemoteSuggestDataProviderSimulation();
 		SuggestDataProvider mock = mock(SuggestDataProvider.class);
@@ -210,7 +210,7 @@ class QuerySuggestManagerTest {
 
 		List<Suggestion> suggestions1 = querySuggester1.suggest("text");
 		assertThat(suggestions1).size().isEqualTo(1);
-		assertThat(suggestions1).allMatch(s -> "query1".equals(s.getLabel())).as("query1 as label expected");
+		assertThat(suggestions1).as("query1 as label expected").allMatch(s -> "query1".equals(s.getLabel()));
 
 		// subtest 2: two data providers have data
 		dp1.updateSuggestions("index2", List.of(new SuggestRecord("query 1.2", "arbitrary matching text", null, null, 10L)));
@@ -227,7 +227,9 @@ class QuerySuggestManagerTest {
 	@Test
 	void testSuggesterIsInitializedByArchiveDataProviders(@TempDir Path baseDir) throws Exception {
 		LocalIndexArchiveProvider archiveProvider = new LocalIndexArchiveProvider();
-		LuceneSuggesterFactory factory = new LuceneSuggesterFactory(baseDir);
+		LuceneSuggesterFactory factory = new LuceneSuggesterFactory();
+		factory.init(baseDir);
+
 		try (
 				LuceneQuerySuggester suggester = factory.getSuggester(SuggestData.builder()
 						.modificationTime(System.currentTimeMillis()).type("keywords")

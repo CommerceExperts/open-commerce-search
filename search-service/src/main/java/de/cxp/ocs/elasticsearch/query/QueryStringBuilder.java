@@ -31,7 +31,7 @@ public class QueryStringBuilder implements QueryTermVisitor {
 
 	@Override
 	public void visitTerm(QueryStringTerm term) {
-		if (builder.length() > 0 && !_lastTermIsBoundaryToken) {
+		if (!builder.isEmpty() && !_lastTermIsBoundaryToken) {
 			builder.append(termJoinToken);
 			_lastTermIsBoundaryToken = true;
 		}
@@ -54,7 +54,7 @@ public class QueryStringBuilder implements QueryTermVisitor {
 
 	@Override
 	public void visitSubQuery(AnalyzedQuery query) {
-		if (builder.length() > 0 && !_lastTermIsBoundaryToken) {
+		if (!builder.isEmpty() && !_lastTermIsBoundaryToken) {
 			builder.append(queryJoinToken);
 		}
 		builder.append("(");

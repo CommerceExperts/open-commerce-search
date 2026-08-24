@@ -24,7 +24,7 @@ import de.cxp.ocs.util.DataIndexer;
 @ExtendWith({ OCSStack.class })
 public class HeroProductsTest {
 
-	static String indexName = "test_hero_products";
+	static final String indexName = "test_hero_products";
 
 	@BeforeAll
 	public static void setup() throws Exception {

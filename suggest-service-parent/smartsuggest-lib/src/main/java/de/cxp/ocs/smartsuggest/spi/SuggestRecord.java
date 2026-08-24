@@ -68,8 +68,8 @@ public class SuggestRecord {
 	 * [10,MAX], because values between -10 and 10 will be multiplied by 10
 	 * internally by Lucene.
 	 * </p>
-	 * 
-	 * @see https://issues.apache.org/jira/browse/LUCENE-8343
+	 *
+	 * @see <a href="https://issues.apache.org/jira/browse/LUCENE-8343">LUCENE-8343</a>
 	 */
 	long weight;
 

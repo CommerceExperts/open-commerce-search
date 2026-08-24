@@ -1,14 +1,11 @@
 package de.cxp.ocs.util;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * A set that only returns the min and the max value (based on natural ordering)
  * of all added values.
- * 
+ * <p>
  * If only one value is added, it is the min and the max value, however if
  * returned as iterator or array, the set will only contain that one value.
  */
@@ -30,9 +27,7 @@ public class MinMaxSet<E> implements Set<E> {
 	}
 
 	public MinMaxSet(E[] values) {
-		for (E val : values) {
-			add(val);
-		}
+		this.addAll(Arrays.asList(values));
 	}
 
 	@Override

@@ -15,7 +15,7 @@ public class NonAlphanumericStripPreprocessor implements UserQueryPreprocessor {
 		for (String word : split) {
 			word = StringUtils.strip(word, BIND_CHARS);
 			if (word.isEmpty()) continue;
-			if (joinedWords.length() > 0) {
+			if (!joinedWords.isEmpty()) {
 				joinedWords.append(' ');
 			}
 			joinedWords.append(word);

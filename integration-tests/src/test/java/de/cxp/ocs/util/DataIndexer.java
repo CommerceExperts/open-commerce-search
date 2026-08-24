@@ -116,7 +116,7 @@ public class DataIndexer {
 				}
 			}
 
-			if (bulkedDocs.size() > 0) {
+			if (!bulkedDocs.isEmpty()) {
 				addedDocuments += sendBulk(indexName, importSession, bulkedDocs);
 			}
 		}

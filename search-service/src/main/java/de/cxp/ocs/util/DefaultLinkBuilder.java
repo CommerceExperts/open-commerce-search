@@ -23,9 +23,9 @@ import de.cxp.ocs.model.result.SortOrder;
 
 public final class DefaultLinkBuilder implements LinkBuilder {
 
-	public static String VALUE_DELIMITER = ",";
-	public static String VALUE_DELIMITER_ENCODED = "%2C";
-	public static String SORT_DESC_PREFIX = "-";
+	public static final String VALUE_DELIMITER         = ",";
+	public static final String VALUE_DELIMITER_ENCODED = "%2C";
+	public static final String SORT_DESC_PREFIX        = "-";
 
 	private final static InternalSearchParams defaultParams = new InternalSearchParams();
 
@@ -132,15 +132,13 @@ public final class DefaultLinkBuilder implements LinkBuilder {
 			return escapeValueDelimiter(values[0]);
 
 		StringBuilder valuesString = new StringBuilder();
-		if (values != null) {
-			boolean appended = false;
-			for (String v : values) {
-				if (v != null) {
-					if (appended)
-						valuesString.append(',');
-					valuesString.append(escapeValueDelimiter(v));
-					appended = true;
-				}
+		boolean appended = false;
+		for (String v : values) {
+			if (v != null) {
+				if (appended)
+					valuesString.append(',');
+				valuesString.append(escapeValueDelimiter(v));
+				appended = true;
 			}
 		}
 		return valuesString.toString();
@@ -266,7 +264,7 @@ public final class DefaultLinkBuilder implements LinkBuilder {
 	private String withParameterAppended(String filterName, String filterValues) {
 		String newParam = filterName + "=" + urlEncodeValue(filterValues);
 		String query = searchQueryLink.getRawQuery();
-		if (query == null || query.length() == 0) {
+		if (query == null || query.isEmpty()) {
 			return newParam;
 		}
 		else {
@@ -334,7 +332,7 @@ public final class DefaultLinkBuilder implements LinkBuilder {
 
 	private String urlEncodeValue(String value) {
 		try {
-			return URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
+			return URLEncoder.encode(value, StandardCharsets.UTF_8);
 		} catch (Exception e) {
 			return value;
 		}

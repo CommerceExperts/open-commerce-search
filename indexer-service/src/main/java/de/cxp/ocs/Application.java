@@ -4,8 +4,10 @@ import java.util.Optional;
 
 import de.cxp.ocs.client.deserializer.DocumentDeserializer;
 import de.cxp.ocs.client.deserializer.ProductDeserializer;
-import org.elasticsearch.client.RestClientBuilder;
+import de.cxp.ocs.config.ConnectionConfiguration;
+import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.RestHighLevelClientBuilder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -45,19 +47,25 @@ public class Application {
 	}
 
 	@Bean
-	public RestClientBuilder getRestClientBuilder(ApplicationProperties properties) {
-		return RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
+	public RestClient getRestClient(ApplicationProperties properties) {
+		ConnectionConfiguration connectionConfig = properties.getConnectionConfiguration();
+		log.info("going to connect to Elasticsearch hosts {}", connectionConfig.getHosts());
+		return RestClientBuilderFactory.createRestClientBuilder(connectionConfig).build();
 	}
 
 	@Bean
 	@SuppressWarnings("deprecation")
-	public RestHighLevelClient getRestHighLevelClient(RestClientBuilder clientBuilder) {
-		return new RestHighLevelClient(clientBuilder);
+	public RestHighLevelClient getRestHighLevelClient(RestClient restClient, ApplicationProperties properties) {
+		ConnectionConfiguration connectionConfig = properties.getConnectionConfiguration();
+		return new RestHighLevelClientBuilder(restClient)
+				.setApiCompatibilityMode(connectionConfig.isUseCompatibilityMode())
+				.build();
 	}
 
 	@Bean
-	public ElasticSearchBuilder getESBuilder(RestClientBuilder restClientBuilder) {
-		return new ElasticSearchBuilder(restClientBuilder);
+	public ElasticSearchBuilder getESBuilder(RestClient restClient, ApplicationProperties properties) {
+		ConnectionConfiguration connectionConfig = properties.getConnectionConfiguration();
+		return new ElasticSearchBuilder(restClient, connectionConfig.isUseCompatibilityMode());
 	}
 
 	@Bean
@@ -67,7 +75,6 @@ public class Application {
 
 	@Bean
 	public IndexerConfigurationProvider configurationProvider(PluginManager pluginManager, ApplicationProperties properties) {
-		log.info("going to connect to Elasticsearch hosts {}", properties.getConnectionConfiguration().getHosts());
 		DefaultIndexerConfigurationProvider defaultConfigProvider = new DefaultIndexerConfigurationProvider(properties);
 		Optional<IndexerConfigurationProvider> indexerConfigurationProvider = pluginManager.loadPrefered(IndexerConfigurationProvider.class);
 		indexerConfigurationProvider.ifPresent(icp -> icp.setDefaultProvider(defaultConfigProvider));

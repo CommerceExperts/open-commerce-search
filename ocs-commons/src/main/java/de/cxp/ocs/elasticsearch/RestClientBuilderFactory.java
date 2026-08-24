@@ -38,7 +38,7 @@ public final class RestClientBuilderFactory {
 
 			}
 		}
-		RestClientBuilder restClientBuilder = RestClient.builder(hostsList.toArray(new HttpHost[hostsList.size()]));
+		RestClientBuilder restClientBuilder = RestClient.builder(hostsList.toArray(new HttpHost[0]));
 		if (connectionConf.getAuth() != null && !connectionConf.getAuth().isEmpty()) {
 			log.info("enabled authentication for elasticsearch client");
 			byte[] authEncoded = Base64.getEncoder().encode(connectionConf.getAuth().getBytes());

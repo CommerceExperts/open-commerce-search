@@ -40,14 +40,14 @@ public class SuggestServiceImpl implements SuggestService {
 				.build(new CacheLoader<String, Boolean>() {
 
 					@Override
-					public Boolean load(String key) throws Exception {
+					public Boolean load(String key) {
 						return Boolean.TRUE;
 					}
 				});
 	}
 
 	@Override
-	public List<Suggestion> suggest(String indexName, String userQuery, Integer limit, String filter) throws Exception {
+	public List<Suggestion> suggest(String indexName, String userQuery, Integer limit, String filter) {
 		deletionCache.getUnchecked(indexName);
 		QuerySuggester qm = querySuggestManager.getQuerySuggester(indexName, false);
 

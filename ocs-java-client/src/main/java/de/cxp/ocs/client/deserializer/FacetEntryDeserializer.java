@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.Optional;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -18,7 +17,7 @@ import de.cxp.ocs.model.result.RangeFacetEntry;
 public class FacetEntryDeserializer extends JsonDeserializer<FacetEntry> {
 
 	@Override
-	public FacetEntry deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+	public FacetEntry deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
 		TreeNode docNode = p.readValueAsTree();
 
 		TreeNode childrenNode = docNode.get("children");

@@ -45,10 +45,10 @@ class FacetCreatorInitializer {
 	private class ConfigCollector {
 
 		FieldType					relatedFieldType;
-		Map<String, FacetConfig>	configsByField	= new HashMap<>();
+		final Map<String, FacetConfig> configsByField = new HashMap<>();
 
-		FacetConfig putFacetConfig(String fieldName, FacetConfig facetConfig) {
-			return configsByField.put(fieldName, facetConfig);
+		void putFacetConfig(String fieldName, FacetConfig facetConfig) {
+			configsByField.put(fieldName, facetConfig);
 		}
 
 		public ConfigCollector setFieldType(FieldType type) {
@@ -206,8 +206,6 @@ class FacetCreatorInitializer {
 	 *        either the ones from master or variant level
 	 * @param rangeFacetConfigs
 	 *        either the ones from master or variant level
-	 * @param allIgnoredFields
-	 *        a set of all ignored facet-fields
 	 * @param defaultNumberFacetType
 	 *        the type of the default numeric facet
 	 * @param isVariantLevel
@@ -317,7 +315,7 @@ class FacetCreatorInitializer {
 			case HIERARCHICAL:
 				return new CategoryFacetCreator(explicitConfigs, null, true);
 			default:
-				log.warn("Not implemented: there is no support for explicit facet creation on type {} for facets ");
+				log.warn("Not implemented: there is no support for explicit facet creation on type {} for facets ", facetType);
 				return null;
 		}
 	}

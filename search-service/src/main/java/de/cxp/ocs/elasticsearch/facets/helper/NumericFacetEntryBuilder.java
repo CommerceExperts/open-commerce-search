@@ -162,7 +162,7 @@ public class NumericFacetEntryBuilder {
 				return format;
 			} catch (Exception e) {
 				if (!invalidLocaleLogged) {
-					log.warn("invalid locale '{}' found at facet config", langTag.toString());
+					log.warn("invalid locale '{}' found at facet config", langTag);
 					invalidLocaleLogged = true;
 				}
 			}

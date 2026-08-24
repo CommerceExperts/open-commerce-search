@@ -1,11 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-							 http://maven.apache.org/maven-v4_0_0.xsd">
+							 https://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>de.cxp.ocs</groupId>
 	<artifactId>ocs-parent</artifactId>
 	<packaging>pom</packaging>
-	<version>0.71.1</version>
+	<version>0.74.2</version>
 	<name>SearchHub Services - Parent</name>
 
 	<modules>
@@ -29,16 +29,17 @@
         <docker.tag>${project.version}</docker.tag>
 		<docker.latest.tag>latest</docker.latest.tag>
 
-		<elasticsearch.version>7.17.28</elasticsearch.version>
-		<spring-boot.version>3.5.0</spring-boot.version>
+		<elasticsearch.version>7.17.29</elasticsearch.version>
+		<spring-boot.version>3.5.5</spring-boot.version>
 		<spring-cloud.version>2025.0.0</spring-cloud.version>
 		<springdoc.version>1.8.0</springdoc.version>
 		
-		<slf4j.version>2.0.15</slf4j.version>
-		<logback.version>1.5.13</logback.version>
-		<jackson.version>2.18.3</jackson.version>
-		<junit.jupiter.version>5.7.0</junit.jupiter.version>
-		<snakeyaml.version>2.4</snakeyaml.version>
+		<slf4j.version>2.1.0-alpha1</slf4j.version>
+		<logback.version>1.6.3</logback.version>
+		<jackson.version>2.22.2</jackson.version>
+		<jackson-annotations.version>2.22</jackson-annotations.version>
+		<junit.jupiter.version>5.13.4</junit.jupiter.version>
+		<snakeyaml.version>2.6</snakeyaml.version>
 	</properties>
 
 	<dependencyManagement>
@@ -47,39 +48,39 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>open-commerce-search-api</artifactId>
-				<version>0.26.0</version>
+				<version>0.26.3</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-plugin-spi</artifactId>
-				<version>1.18.0</version>
+				<version>1.19.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-commons</artifactId>
-				<version>0.34.1</version>
+				<version>0.35.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>indexer-service</artifactId>
-				<version>0.45.5</version>
+				<version>0.46.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>search-service</artifactId>
-				<version>0.63.1</version>
+				<version>0.64.1</version>
 			</dependency>
 			<!-- only including the suggest-service directly, because it depends on 
 				the other suggest modules -->
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>suggest-service</artifactId>
-				<version>0.31.0</version>
+				<version>0.33.2</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-java-client</artifactId>
-				<version>0.21.0</version>
+				<version>0.21.3</version>
 			</dependency>
 
 			<!-- serialization -->
@@ -96,7 +97,7 @@
 			<dependency>
 				<groupId>com.fasterxml.jackson.core</groupId>
 				<artifactId>jackson-annotations</artifactId>
-				<version>${jackson.version}</version>
+				<version>${jackson-annotations.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.fasterxml.jackson.module</groupId>
@@ -136,7 +137,12 @@
 			<dependency>
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-lang3</artifactId>
-				<version>3.18.0</version>
+				<version>3.20.0</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.commons</groupId>
+				<artifactId>commons-text</artifactId>
+				<version>1.15.0</version>
 			</dependency>
 
             <!-- transitive dependencies fixup -->
@@ -169,11 +175,6 @@
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>4.5.13</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-text</artifactId>
-                <version>1.10.0</version>
             </dependency>
             <dependency>
                 <groupId>net.minidev</groupId>
@@ -245,13 +246,13 @@
 			<dependency>
 				<groupId>org.mockito</groupId>
 				<artifactId>mockito-junit-jupiter</artifactId>
-				<version>3.7.7</version>
+				<version>5.21.0</version>
 				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.assertj</groupId>
 				<artifactId>assertj-core</artifactId>
-				<version>3.13.1</version>
+				<version>3.27.7</version>
 				<scope>test</scope>
 			</dependency>
 		</dependencies>

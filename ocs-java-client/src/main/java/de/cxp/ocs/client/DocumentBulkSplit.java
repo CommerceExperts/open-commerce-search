@@ -14,8 +14,8 @@ import de.cxp.ocs.model.index.Product;
  */
 class DocumentBulkSplit {
 
-	List<Product>	products	= new ArrayList<>();
-	List<Document>	documents	= new ArrayList<>();
+	final List<Product>  products  = new ArrayList<>();
+	final List<Document> documents = new ArrayList<>();
 
 	public DocumentBulkSplit(List<Document> docs) {
 		for (Document d : docs) {

@@ -39,16 +39,16 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 	public final static String	DO_ASCIIFY_RULES_PROPERTY_NAME		= "do_asciiy_rules";
 	public final static String	DO_LOWERCASE_RULES_PROPERTY_NAME	= "do_lowercase_rules";
 
-	private WhiteSpaceQuerqyParser	defaultParser			= new WhiteSpaceQuerqyParser();
-	private QuerqyParser			parser					= defaultParser;
+	private final WhiteSpaceQuerqyParser defaultParser = new WhiteSpaceQuerqyParser();
+	private       QuerqyParser           parser        = defaultParser;
 	private RewriteChain			rewriteChain			= null;
 	private boolean					loggedMissingRewriter	= false;
 
 	@Override
 	public void initialize(Map<String, String> settings) {
 		String commonRulesLocation = settings == null ? null : settings.get(RULES_URL_PROPERTY_NAME);
-		Boolean isAsciifyRules = Boolean.parseBoolean(settings.get(DO_ASCIIFY_RULES_PROPERTY_NAME));
-		Boolean isLowercaseRules = Boolean.parseBoolean(settings.get(DO_LOWERCASE_RULES_PROPERTY_NAME));
+		boolean isAsciifyRules = Boolean.parseBoolean(settings.get(DO_ASCIIFY_RULES_PROPERTY_NAME));
+		boolean isLowercaseRules = Boolean.parseBoolean(settings.get(DO_LOWERCASE_RULES_PROPERTY_NAME));
 		try {
 			if (commonRulesLocation == null) {
 				log.error("no 'common_rules_url' provided! Won't enrich queries with querqy.");
@@ -188,7 +188,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			searchQuery = termFetcher.getExtractedWords();
 		}
 		else if (expandedQuery.getUserQuery() != null) {
-			log.error("not expected userquery of type" + expandedQuery.getUserQuery().getClass().getCanonicalName());
+			log.error("not expected userquery of type{}", expandedQuery.getUserQuery().getClass().getCanonicalName());
 			TermFetcher termFetcher = new TermFetcher();
 			expandedQuery.getUserQuery().accept(termFetcher);
 			searchQuery = termFetcher.getExtractedWords();
@@ -237,9 +237,9 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 	@NoArgsConstructor
 	static class TermCollector {
 
-		private List<QueryStringTerm> inputTerms = new ArrayList<>();
+		private final List<QueryStringTerm> inputTerms = new ArrayList<>();
 
-		private Set<QueryStringTerm> associations = new LinkedHashSet<>();
+		private final Set<QueryStringTerm> associations = new LinkedHashSet<>();
 
 		public TermCollector(QueryStringTerm inpuTerm) {
 			addInputTerm(inpuTerm);
@@ -254,7 +254,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 		}
 
 		List<QueryStringTerm> build() {
-			if (associations.size() > 0) {
+			if (!associations.isEmpty()) {
 				List<QueryStringTerm> inputQueryTerms = inputTerms.stream().map(input -> extractTermInput(input)).collect(Collectors.toList());
 				QueryStringTerm inputQuery = inputQueryTerms.size() == 1 ? inputQueryTerms.get(0) : new ConceptTerm(inputTerms);
 				return Collections.singletonList(new AssociatedTerm(inputQuery, associations));
@@ -299,9 +299,9 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 
 		private QueryStringTerm initialTerm;
 
-		Map<String, TermCollector>		termAssociationCollectors	= new LinkedHashMap<>();
-		Map<String, List<String>>		inputTermCollectorRelations	= new HashMap<>();
-		Map<String, QueryStringTerm>	inputTerms					= new LinkedHashMap<>();
+		final Map<String, TermCollector> termAssociationCollectors   = new LinkedHashMap<>();
+		final Map<String, List<String>>  inputTermCollectorRelations = new HashMap<>();
+		final Map<String, QueryStringTerm> inputTerms                  = new LinkedHashMap<>();
 
 		private Occur occur;
 
@@ -450,7 +450,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 			for (BooleanClause clause : booleanQuery.getClauses()) {
 				Optional<WeightedTerm> weightedWord = extractSingleTerm(clause).map(this::toWeightedWord);
 				if (weightedWord.isPresent()) {
-					if (text.length() > 0) {
+					if (!text.isEmpty()) {
 						text.append(' ');
 						isPhrase = true;
 					}
@@ -475,7 +475,7 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 
 		private Optional<Term> extractSingleTerm(BooleanClause clause) {
 			if (!(clause instanceof DisjunctionMaxQuery)) {
-				log.warn("Cannot handle boolean clause of type {}: {}", clause.getClass().getSimpleName(), clause.toString());
+				log.warn("Cannot handle boolean clause of type {}: {}", clause.getClass().getSimpleName(), clause);
 				return Optional.empty();
 			}
 
@@ -519,8 +519,8 @@ public class QuerqyQueryExpander implements UserQueryAnalyzer, ConfigurableExten
 
 	static class FilterFetcher extends AbstractNodeVisitor<Node> {
 
-		List<QueryStringTerm>								extractedWords	= new ArrayList<>();
-		private de.cxp.ocs.elasticsearch.model.term.Occur	occur;
+		final   List<QueryStringTerm>                     extractedWords = new ArrayList<>();
+		private de.cxp.ocs.elasticsearch.model.term.Occur occur;
 
 		@Override
 		public Node visit(DisjunctionMaxQuery disjunctionMaxQuery) {

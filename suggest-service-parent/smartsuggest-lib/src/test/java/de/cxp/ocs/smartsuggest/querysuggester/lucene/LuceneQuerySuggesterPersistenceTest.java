@@ -45,8 +45,8 @@ public class LuceneQuerySuggesterPersistenceTest {
 	public void testStoreAndRecovery(@TempDir Path indexFolder) throws Exception {
 		SuggestConfig suggestConfig = minimalSuggestConfig();
 
-		Long modTime = null;
-		try(var underTest = new LuceneQuerySuggester(indexFolder, suggestConfig, mock(ModifiedTermsService.class), getWordSet(Locale.ROOT), modTime)) {
+		long modTime;
+		try(var underTest = new LuceneQuerySuggester(indexFolder, suggestConfig, mock(ModifiedTermsService.class), getWordSet(Locale.ROOT), null)) {
 			underTest.index(testRecords, System.currentTimeMillis()).get();
 			assert underTest.isReady();
 			assertAllFunctionsWork(underTest);
@@ -62,7 +62,8 @@ public class LuceneQuerySuggesterPersistenceTest {
 
 	@Test
 	public void testStoreAndRecoveryWithFactory(@TempDir Path baseDir) throws Exception {
-		LuceneSuggesterFactory factory = new LuceneSuggesterFactory(baseDir);
+		LuceneSuggesterFactory factory = new LuceneSuggesterFactory();
+		factory.init(baseDir);
 		SuggestData suggestData = new SuggestData();
 		suggestData.setModificationTime(System.currentTimeMillis());
 		suggestData.setSuggestRecords(testRecords);

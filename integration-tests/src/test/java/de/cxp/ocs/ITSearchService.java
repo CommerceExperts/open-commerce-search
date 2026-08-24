@@ -46,7 +46,7 @@ public class ITSearchService {
 				.anyMatch(f -> f.getFieldName().equals("category"))
 				.anyMatch(f -> f.getFieldName().equals("category") && f.getEntries().get(0).key.equals("Sport"))
 				.anyMatch(f -> f.getFieldName().equals("category") && f.getEntries().get(0) instanceof HierarchialFacetEntry
-						&& ((HierarchialFacetEntry) f.getEntries().get(0)).children.size() > 0);
+						&& !((HierarchialFacetEntry) f.getEntries().get(0)).children.isEmpty());
 
 		assertThat(mainSlice.hits)
 				.anyMatch(hit -> hit.getDocument().id.equals("001"))

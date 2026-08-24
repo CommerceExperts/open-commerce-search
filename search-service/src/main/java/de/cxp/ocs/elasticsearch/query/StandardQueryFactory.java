@@ -44,7 +44,7 @@ public class StandardQueryFactory {
 	private final Map<String, Float>				fieldWeights;
 	private final FieldConfigAccess					fieldConfig;
 
-	private String defaultAnalyzer = "whitespace";
+	private final String defaultAnalyzer = "whitespace";
 
 	public SearchQueryWrapper create(ExtendedQuery parsedQuery) {
 		String defaultOperator = querySettings.getOrDefault(operator, "OR");
@@ -127,7 +127,7 @@ public class StandardQueryFactory {
 			attachQueryTermsAsShingles(parsedQuery.getInputTerms(), finalQueryBuilder);
 		}
 
-		if (parsedQuery.getFilters().size() > 0) {
+		if (!parsedQuery.getFilters().isEmpty()) {
 			finalQueryBuilder
 					.append(' ')
 					.append(QueryStringUtil.buildQueryString(parsedQuery.getFilters(), " "));

@@ -21,7 +21,7 @@ import de.cxp.ocs.elasticsearch.query.analyzer.QuerqyQueryExpanderBuilder;
 
 public class StandardQueryFactoryTest {
 
-	QuerqyQueryExpanderBuilder qqBuilder = new QuerqyQueryExpanderBuilder();
+	final QuerqyQueryExpanderBuilder qqBuilder = new QuerqyQueryExpanderBuilder();
 
 	@Test
 	public void testMultiTermSynonyms() {

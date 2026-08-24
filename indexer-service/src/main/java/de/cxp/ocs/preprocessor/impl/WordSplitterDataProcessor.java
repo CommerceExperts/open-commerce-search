@@ -61,7 +61,7 @@ public class WordSplitterDataProcessor implements DocumentPreProcessor {
 				if (this.fields.contains(k))
 					Arrays.stream(v.toString().split(SIMPLE_TOKENIZER_REGEX)).forEach(cw -> {
 						if (!cw.isEmpty()) {
-							splitter.splitWord(cw.toString()).forEach(words::add);
+							words.addAll(splitter.splitWord(cw));
 						}
 					});
 			});

@@ -1,6 +1,5 @@
 package de.cxp.ocs;
 
-import java.io.InputStream;
 import java.io.Serial;
 import java.util.Arrays;
 import java.util.Collections;
@@ -77,7 +76,7 @@ public class Application {
 					private static final long serialVersionUID = 1L;
 
 					@Override
-					public Object execute(Req req) throws Exception {
+					public Object execute(Req req) {
 						long start = System.currentTimeMillis();
 
 						req.response().header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");

@@ -79,7 +79,7 @@ public class ReplacePatternInValuesDataProcessor extends
 					}
 				});
 				if (!cleandValues.isEmpty()) {
-					doc.set(pc.getDestinationFieldName(), cleandValues.toArray(new String[cleandValues.size()]));
+					doc.set(pc.getDestinationFieldName(), cleandValues.toArray(new String[0]));
 				}
 			}
 			else if (value != null) {

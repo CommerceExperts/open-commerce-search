@@ -26,12 +26,12 @@ public class IndexerCache {
 	@Autowired
 	private IndexerConfigurationProvider configProvider;
 
-	private LoadingCache<String, AbstractIndexer> actualIndexers = CacheBuilder.newBuilder()
+	private final LoadingCache<String, AbstractIndexer> actualIndexers = CacheBuilder.newBuilder()
 			.expireAfterAccess(15, TimeUnit.MINUTES)
 			.build(new CacheLoader<String, AbstractIndexer>() {
 
 				@Override
-				public AbstractIndexer load(String indexName) throws Exception {
+				public AbstractIndexer load(String indexName) {
 					IndexConfiguration indexConfig = new IndexConfiguration();
 					configProvider.getDataProcessorConfiguration(indexName).ifPresent(indexConfig::setDataProcessorConfiguration);
 					indexConfig.setFieldConfiguration(configProvider.getFieldConfiguration(indexName));

@@ -94,7 +94,7 @@ public class RemoveValuesDataProcessor extends ConfigureableDataprocessor<Patter
 					}
 				});
 				if (!cleandValues.isEmpty()) {
-					sourceData.set(pc.getDestinationFieldName(), cleandValues.toArray(new String[cleandValues.size()]));
+					sourceData.set(pc.getDestinationFieldName(), cleandValues.toArray(new String[0]));
 				}
 			}
 			else {
@@ -113,7 +113,7 @@ public class RemoveValuesDataProcessor extends ConfigureableDataprocessor<Patter
 				output.add(token);
 			}
 		}
-		return output.toArray(new String[output.size()]);
+		return output.toArray(new String[0]);
 	}
 
 }

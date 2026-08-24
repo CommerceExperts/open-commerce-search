@@ -73,7 +73,7 @@ public class SortingHandler {
 	 * definitions
 	 * and return them as list.
 	 * 
-	 * @param parameters
+	 * @param sortings
 	 * @param searchSourceBuilder
 	 * @return a list of potential variant sorts
 	 */
@@ -164,8 +164,7 @@ public class SortingHandler {
 	/**
 	 * Extract variant sort definitions and return them as list.
 	 * 
-	 * @param parameters
-	 * @param searchSourceBuilder
+	 * @param sortings
 	 * @return a list of potential variant sorts
 	 */
 	List<SortBuilder<?>> getVariantSortings(List<SortInstruction> sortings) {

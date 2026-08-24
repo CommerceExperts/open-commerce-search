@@ -76,7 +76,7 @@ public class FacetEntrySorter {
 				.build(new CacheLoader<String, Integer>() {
 
 					@Override
-					public Integer load(String value) throws Exception {
+					public Integer load(String value) {
 						if (value == null || value.isBlank()) {
 							return defaultOrderValue;
 						}

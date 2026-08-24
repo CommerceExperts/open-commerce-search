@@ -42,7 +42,7 @@ public class ExtendedQuery implements AnalyzedQuery {
 		boostings = Collections.emptyList();
 	}
 	public boolean isEmpty() {
-		return searchQuery.getTermCount() == 0 && filters.size() == 0;
+		return searchQuery.getTermCount() == 0 && filters.isEmpty();
 	}
 
 	@Override
@@ -54,7 +54,7 @@ public class ExtendedQuery implements AnalyzedQuery {
 	public String toQueryString() {
 		StringBuilder queryStringBuilder = new StringBuilder();
 		queryStringBuilder.append(searchQuery.toQueryString());
-		if (filters.size() > 0) {
+		if (!filters.isEmpty()) {
 			queryStringBuilder.append(' ').append(QueryStringUtil.buildQueryString(filters, " "));
 		}
 		return queryStringBuilder.toString();

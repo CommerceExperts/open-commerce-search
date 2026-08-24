@@ -9,10 +9,16 @@ import de.cxp.ocs.smartsuggest.spi.SuggestData;
 import de.cxp.ocs.smartsuggest.spi.SuggestRecord;
 import io.micrometer.core.instrument.Tag;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
 public class FakeSuggesterFactory implements SuggesterFactory<FakeSuggester> {
+
+	@Override
+	public void init(Path baseDirectory) {
+		// ignore
+	}
 
 	@Override
 	public FakeSuggester getSuggester(SuggestData suggestData, SuggestConfig config) {

@@ -21,7 +21,7 @@ public class IndexationExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler({ ExecutionException.class, RuntimeException.class, ClassNotFoundException.class })
 	public ResponseEntity<String> handleInternalErrors(Exception e) {
 		final String errorId = UUID.randomUUID().toString();
-		log.error("Internal Server Error " + errorId, e);
+		log.error("Internal Server Error {}", errorId, e);
 		return new ResponseEntity<>("Something went wrong. Error reference: " + errorId,
 				HttpStatus.INTERNAL_SERVER_ERROR);
 	}
@@ -29,7 +29,7 @@ public class IndexationExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler({ IOException.class, UncheckedIOException.class })
 	public ResponseEntity<String> handleIOException(Exception e) {
 		final String errorId = UUID.randomUUID().toString();
-		log.error("Internal Server Error " + errorId, e);
+		log.error("Internal Server Error {}", errorId, e);
 		return new ResponseEntity<>("IOException during request. Error reference: " + errorId,
 				HttpStatus.BAD_GATEWAY);
 	}

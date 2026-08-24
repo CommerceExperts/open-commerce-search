@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -17,7 +16,7 @@ import de.cxp.ocs.model.index.Product;
 public class ProductDeserializer extends JsonDeserializer<Product> {
 
 	@Override
-	public Product deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+	public Product deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
 		TreeNode docNode = p.readValueAsTree();
 
 		Product product = new Product();
@@ -34,7 +33,7 @@ public class ProductDeserializer extends JsonDeserializer<Product> {
 					variants.add(extractedDocument);
 				}
 			}
-			product.setVariants(variants.toArray(new Document[variants.size()]));
+			product.setVariants(variants.toArray(new Document[0]));
 		}
 
 		return product;

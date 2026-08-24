@@ -26,8 +26,8 @@ public class EscapeUtilTest {
 	@Test
 	public void singleEscapableCharInString() {
 		for (char c : EscapeUtil.charsToEscape) {
-			assertEquals("foo \\" + Character.toString(c) + " bar",
-					escapeReservedESCharacters("foo " + Character.toString(c) + " bar"));
+			assertEquals("foo \\" + c + " bar",
+					escapeReservedESCharacters("foo " + c + " bar"));
 		}
 	}
 

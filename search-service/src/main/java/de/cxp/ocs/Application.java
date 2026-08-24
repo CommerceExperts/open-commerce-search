@@ -2,8 +2,11 @@ package de.cxp.ocs;
 
 import java.util.Optional;
 
+import de.cxp.ocs.config.ConnectionConfiguration;
 import de.cxp.ocs.model.params.*;
-import org.elasticsearch.client.RestClientBuilder;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.RestHighLevelClientBuilder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -37,14 +40,25 @@ public class Application {
 	}
 
 	@Bean
-	public ElasticSearchBuilder getESBuilder(RestClientBuilder restClientBuilder) {
-		return new ElasticSearchBuilder(restClientBuilder);
+	public RestClient getRestClient(ApplicationProperties properties) {
+		ConnectionConfiguration connectionConfig = properties.getConnectionConfiguration();
+		log.info("going to connect to Elasticsearch hosts {}", connectionConfig.getHosts());
+		return RestClientBuilderFactory.createRestClientBuilder(connectionConfig).build();
 	}
 
 	@Bean
-	public RestClientBuilder getRestClientBuilder(ApplicationProperties properties) {
-		log.info("going to connect to Elasticsearch hosts {}", properties.getConnectionConfiguration().getHosts());
-		return RestClientBuilderFactory.createRestClientBuilder(properties.getConnectionConfiguration());
+	@SuppressWarnings("deprecation")
+	public RestHighLevelClient getRestHighLevelClient(RestClient restClient, ApplicationProperties properties) {
+		ConnectionConfiguration connectionConfig = properties.getConnectionConfiguration();
+		return new RestHighLevelClientBuilder(restClient)
+				.setApiCompatibilityMode(connectionConfig.isUseCompatibilityMode())
+				.build();
+	}
+
+	@Bean
+	public ElasticSearchBuilder getESBuilder(RestClient restClient, ApplicationProperties properties) {
+		ConnectionConfiguration connectionConfig = properties.getConnectionConfiguration();
+		return new ElasticSearchBuilder(restClient, connectionConfig.isUseCompatibilityMode());
 	}
 
 	@Bean

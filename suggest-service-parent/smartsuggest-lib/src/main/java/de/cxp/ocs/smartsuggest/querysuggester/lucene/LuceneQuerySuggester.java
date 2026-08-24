@@ -320,7 +320,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults
 					&& contexts == null) {
 				final int itemsToFetchOneEdit = maxResults - uniqueQueries.size();
-				int resultCount = collectFuzzySuggestions(term, contexts, fuzzySuggesterOneEdit, itemsToFetchOneEdit, uniqueQueries,
+				int resultCount = collectFuzzySuggestions(term, null, fuzzySuggesterOneEdit, itemsToFetchOneEdit, uniqueQueries,
 						FUZZY_MATCHES_ONE_EDIT_GROUP_NAME, results);
 				perfResult.addStep("fuzzy1Matches", resultCount);
 			}
@@ -329,7 +329,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			if (term.length() >= DEFAULT_MIN_FUZZY_LENGTH && (suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults
 					&& contexts == null) {
 				final int itemsToFetchTwoEdits = maxResults - uniqueQueries.size();
-				int resultCount = collectFuzzySuggestions(term, contexts, fuzzySuggesterTwoEdits, itemsToFetchTwoEdits, uniqueQueries,
+				int resultCount = collectFuzzySuggestions(term, null, fuzzySuggesterTwoEdits, itemsToFetchTwoEdits, uniqueQueries,
 						FUZZY_MATCHES_TWO_EDITS_GROUP_NAME, results);
 				perfResult.addStep("fuzzy2Matches", resultCount);
 			}
@@ -337,7 +337,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 			// lookup with shingles
 			if ((suggestConfig.isAlwaysDoFuzzy() || uniqueQueries.isEmpty()) && uniqueQueries.size() < maxResults && contexts == null) {
 				final int itemsToFetchShingles = maxResults - uniqueQueries.size();
-				int resultCount = collectSuggestions(term, contexts, shingleSuggester, itemsToFetchShingles, uniqueQueries, itemsToFetchShingles, SHINGLE_MATCHES_GROUP_NAME,
+				int resultCount = collectSuggestions(term, null, shingleSuggester, itemsToFetchShingles, uniqueQueries, itemsToFetchShingles, SHINGLE_MATCHES_GROUP_NAME,
 						results);
 				perfResult.addStep("shingleMatches", resultCount);
 			}
@@ -579,7 +579,7 @@ public class LuceneQuerySuggester implements QuerySuggester, QueryIndexer, Accou
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close() {
 		isClosed = true;
 		for (Closeable closeable : closeables) {
 			try {

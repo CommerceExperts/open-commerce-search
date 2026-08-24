@@ -18,6 +18,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.RestHighLevelClientBuilder;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
@@ -62,7 +63,9 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 		ConnectionConfiguration connectionConf = settings.getConnectionConfig();
 		log.info("Connecting to Elasticsearch at {}", connectionConf.getHosts());
 		RestClientBuilder restClientBuilder = RestClientBuilderFactory.createRestClientBuilder(connectionConf);
-		client = new RestHighLevelClient(restClientBuilder);
+		client = new RestHighLevelClientBuilder(restClientBuilder.build())
+				.setApiCompatibilityMode(connectionConf.isUseCompatibilityMode())
+				.build();
 	}
 
 	@Override
@@ -86,7 +89,7 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 	}
 
 	@Override
-	public long getLastDataModTime(String indexName) throws IOException {
+	public long getLastDataModTime(String indexName) {
 		long lastModTime = -1;
 		try {
 			GetSettingsResponse settingsResponse = client.indices()
@@ -249,10 +252,9 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 		SearchSourceBuilder cardinalityReq = new SearchSourceBuilder().size(0)
 				.aggregation(subordinateAggregations(aggBuilders));
 		SearchResponse cardinalityResp = execSearch(indexName, cardinalityReq);
-		long cardinality = ((Cardinality) extractSubAggregation(
+		return ((Cardinality) extractSubAggregation(
 				cardinalityResp.getAggregations(),
 				aggBuilders.stream().map(AggregationBuilder::getName).collect(Collectors.toList()))).getValue();
-		return cardinality;
 	}
 
 	private Collection<SuggestRecord> fetchTermsFromResultData(String indexName, Field field, Optional<BloomFilter<CharSequence>> dedupFilter) throws IOException {
@@ -323,7 +325,7 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 		SuggestRecord suggestRecord = toSuggestRecord(b.getKeyAsString(), (int) b.getDocCount(), field);
 		if (idFieldPresent) {
 			Terms idsAggResult = b.getAggregations().get(_IDS);
-			if (idsAggResult != null && idsAggResult.getBuckets().size() > 0) {
+			if (idsAggResult != null && !idsAggResult.getBuckets().isEmpty()) {
 				suggestRecord.getPayload().put("id", idsAggResult.getBuckets().get(0).getKeyAsString());
 			}
 		}
@@ -361,7 +363,6 @@ public class ElasticsearchSuggestDataProvider implements SuggestDataProvider {
 	 * a subaggregation of a1, and a3 will be a subaggregation of a2!
 	 * </p>
 	 *
-	 * @param firstAgg
 	 * @param subAggs
 	 * @return
 	 */

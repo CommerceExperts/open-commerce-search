@@ -150,7 +150,7 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 
 			// check how many unmatched queries are matched
 			int consideredUnmatchedQueries = 0;
-			if (unmatchedTerms.size() > 0) {
+			if (!unmatchedTerms.isEmpty()) {
 				consideredUnmatchedQueries = unmatchedTerms.size();
 				pQuery.getTermsUnique().keySet().forEach(unmatchedTerms::remove);
 				consideredUnmatchedQueries -= unmatchedTerms.size();
@@ -183,7 +183,7 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 
 		// in case we have some terms that are not matched by any query, use
 		// them with the fallback query builder to boost matching records.
-		if (unmatchedTerms.size() > 0 && fallbackQueryBuilder != null) {
+		if (!unmatchedTerms.isEmpty() && fallbackQueryBuilder != null) {
 			TextMatchQuery<QueryBuilder> boostQuery = fallbackQueryBuilder.createQuery(new ExtendedQuery(new MultiTermQuery(unmatchedTerms.keySet(), unmatchedTerms.values())));
 			String queryName = "boost(" + ESQueryUtils.getQueryLabel(unmatchedTerms.values()) + ")";
 			mainQuery = QueryBuilders.boolQuery()
@@ -196,7 +196,7 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 		for (QueryStringTerm term : parsedQuery.getFilters()) {
 			if (term.getOccur().equals(Occur.MUST_NOT)) {
 				mainQuery = ESQueryUtils.mapToBoolQueryBuilder(mainQuery).mustNot(exactMatchQuery(term.getRawTerm()));
-				queryDescription.append(" must_not:" + term.getRawTerm()).append(" ");
+				queryDescription.append(" must_not:").append(term.getRawTerm()).append(" ");
 			}
 		}
 
@@ -208,16 +208,16 @@ public class PredictionQueryFactory implements ESQueryFactory, FallbackConsumer 
 		/**
 		 * We have copied all searchable variant-level data to master level and
 		 * skip searching on variant level in the first step.
-		 *
+		 * <p>
 		 * Now prefer variants with more matching terms
 		 */
 		QueryBuilder variantScoreQuery = variantQueryFactory.createMatchAnyTermQuery(parsedQuery);
 
-		return new TextMatchQuery<>(mainQuery, variantScoreQuery, true, unmatchedTerms.size() == 0, queryDescription.toString());
+		return new TextMatchQuery<>(mainQuery, variantScoreQuery, true, unmatchedTerms.isEmpty(), queryDescription.toString());
 	}
 
 	private boolean termHasMatches(QueryStringTerm unknownTerm) {
-		if (unknownTerm instanceof AssociatedTerm) return ((AssociatedTerm) unknownTerm).getRelatedTerms().size() > 0;
+		if (unknownTerm instanceof AssociatedTerm) return !((AssociatedTerm) unknownTerm).getRelatedTerms().isEmpty();
 		if (unknownTerm instanceof CountedTerm) return ((CountedTerm) unknownTerm).getTermFrequency() > 0;
 		else return false;
 	}
