@@ -1,8 +1,8 @@
 "use client"
 
 import { useSearchParams } from "next/navigation"
+import { useAtom } from "jotai"
 import _ from "lodash"
-import { useRecoilState } from "recoil"
 
 import { Facet, FieldUsage } from "@/types/config"
 import { SearchParamsMap } from "@/types/searchParams"
@@ -18,13 +18,13 @@ import MaxFacetsConfiguration from "@/components/configuration/max-facets-config
 import Loader from "@/components/misc/loader"
 
 export default function FacetConfigurationSearchSettings() {
-  const [isConfigurationLoaded, setIsConfigurationLoadedState] = useRecoilState(
+  const [isConfigurationLoaded, setIsConfigurationLoadedState] = useAtom(
     isConfigurationLoadedState
   )
-  const [searchConfiguration, setSearchConfiguration] = useRecoilState(
+  const [searchConfiguration, setSearchConfiguration] = useAtom(
     searchConfigurationState
   )
-  const [indexerConfiguration, setIndexerConfiguration] = useRecoilState(
+  const [indexerConfiguration, setIndexerConfiguration] = useAtom(
     indexerConfigurationState
   )
 
@@ -157,7 +157,7 @@ export default function FacetConfigurationSearchSettings() {
                   ],
                   [...facets, newFacet].map(
                     (facet, i) =>
-                      ({ ...facet, order: i + 1 } as unknown as Facet)
+                      ({ ...facet, order: i + 1 }) as unknown as Facet
                   )
                 )
               } else {
@@ -179,7 +179,7 @@ export default function FacetConfigurationSearchSettings() {
                   ],
                   [...facets, newFacet].map(
                     (facet, i) =>
-                      ({ ...facet, order: i + 1 } as unknown as Facet)
+                      ({ ...facet, order: i + 1 }) as unknown as Facet
                   )
                 )
               }
@@ -199,7 +199,7 @@ export default function FacetConfigurationSearchSettings() {
                   ]!["facets"].filter((_facet, _index) => index !== _index)
                   .map(
                     (facet, i) =>
-                      ({ ...facet, order: i + 1 } as unknown as Facet)
+                      ({ ...facet, order: i + 1 }) as unknown as Facet
                   )
               } else {
                 updatedSearchConfiguration.ocs!["default-tenant-config"][
@@ -210,7 +210,7 @@ export default function FacetConfigurationSearchSettings() {
                   ].filter((_facet, _index) => index !== _index)
                   .map(
                     (facet, i) =>
-                      ({ ...facet, order: i + 1 } as unknown as Facet)
+                      ({ ...facet, order: i + 1 }) as unknown as Facet
                   )
               }
 
@@ -268,9 +268,9 @@ export default function FacetConfigurationSearchSettings() {
             }}
             facets={
               (configParam
-                ? searchConfiguration.ocs?.["tenant-config"]?.[configParam]?.[
+                ? (searchConfiguration.ocs?.["tenant-config"]?.[configParam]?.[
                     "facet-configuration"
-                  ]?.facets ?? []
+                  ]?.facets ?? [])
                 : searchConfiguration.ocs?.["default-tenant-config"]?.[
                     "facet-configuration"
                   ]?.facets) ?? []

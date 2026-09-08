@@ -7,13 +7,18 @@ import ConfigurationTargetSelect from "@/components/configuration/configuration-
 
 type ConfiguratorPageProps = {
   children: React.ReactNode
-  params: { repo: string; owner: string }
+  params: Promise<{ repo: string; owner: string }>
 }
 
-export default async function ConfigurationLayout({
-  params: { repo, owner },
-  children,
-}: ConfiguratorPageProps) {
+export default async function ConfigurationLayout(
+  props: ConfiguratorPageProps
+) {
+  const params = await props.params
+
+  const { repo, owner } = params
+
+  const { children } = props
+
   return (
     <>
       <ConfigurationStateInitialization

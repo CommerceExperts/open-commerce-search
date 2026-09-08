@@ -71,7 +71,7 @@ export function SaveConfigurationForm({
           )}
         />
         <Button type="submit" className="flex gap-2 font-bold">
-          <UploadCloud className="h-4 w-4" />
+          <UploadCloud className="size-4" />
           Save & commit
         </Button>
       </form>

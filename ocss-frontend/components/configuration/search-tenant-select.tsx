@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useAtom } from "jotai"
 import _ from "lodash"
 import { Check, ChevronsUpDown, Plus, Trash2 } from "lucide-react"
-import { useRecoilState } from "recoil"
 
 import { SearchParamsMap } from "@/types/searchParams"
 import { searchConfigurationState } from "@/lib/global-state"
@@ -37,7 +37,7 @@ import { IndexConfigForm } from "./index-config-form"
 
 export function SearchTenantSelect() {
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [searchConfiguration, setSearchConfiguration] = useRecoilState(
+  const [searchConfiguration, setSearchConfiguration] = useAtom(
     searchConfigurationState
   )
   const tenants = useMemo(
@@ -60,7 +60,7 @@ export function SearchTenantSelect() {
           className="w-full max-w-xs justify-between"
         >
           <p className="truncate">{configParam || "Default tenant"}</p>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0">
@@ -84,22 +84,22 @@ export function SearchTenantSelect() {
                                     [SearchParamsMap.config, tenant],
                                   ])
                                 : tenant === configParam && commitParam
-                                ? new URLSearchParams([
-                                    [SearchParamsMap.commit, commitParam],
-                                  ])
-                                : tenant !== configParam && commitParam
-                                ? new URLSearchParams([
-                                    [SearchParamsMap.commit, commitParam],
-                                    [SearchParamsMap.config, tenant],
-                                  ])
-                                : ""))
+                                  ? new URLSearchParams([
+                                      [SearchParamsMap.commit, commitParam],
+                                    ])
+                                  : tenant !== configParam && commitParam
+                                    ? new URLSearchParams([
+                                        [SearchParamsMap.commit, commitParam],
+                                        [SearchParamsMap.config, tenant],
+                                      ])
+                                    : ""))
                       )
                     }}
                     key={tenant}
                     className="flex justify-between"
                   >
                     <div className="flex items-center gap-1">
-                      {tenant == configParam && <Check className="h-4 w-4" />}
+                      {tenant == configParam && <Check className="size-4" />}
                       <p className="max-w-[130px] truncate">{tenant}</p>
                     </div>
                     <Trash2
@@ -127,7 +127,7 @@ export function SearchTenantSelect() {
 
                         setSearchConfiguration(updatedSearchConfiguration)
                       }}
-                      className="h-4 w-4 cursor-pointer text-red-600"
+                      className="size-4 cursor-pointer text-red-600"
                     />
                   </CommandItem>
                 ))}
@@ -143,7 +143,7 @@ export function SearchTenantSelect() {
               )}
             >
               {" "}
-              <Plus className="h-4 w-4" />
+              <Plus className="size-4" />
               Create new tenant
             </DialogTrigger>
             <DialogContent>
@@ -167,7 +167,7 @@ export function SearchTenantSelect() {
                     _.set(
                       updatedSearchConfiguration,
                       ["ocs", "tenant-config", values.name],
-                      duplicatedSearchConfiguration ?? {}
+                      _.cloneDeep(duplicatedSearchConfiguration) ?? {}
                     )
 
                     setSearchConfiguration(updatedSearchConfiguration)

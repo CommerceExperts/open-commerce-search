@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useAtom } from "jotai"
 import _ from "lodash"
 import { Check, ChevronsUpDown, Plus, Trash2 } from "lucide-react"
-import { useRecoilState } from "recoil"
 
 import { SearchParamsMap } from "@/types/searchParams"
 import { indexerConfigurationState } from "@/lib/global-state"
@@ -37,7 +37,7 @@ import { IndexConfigForm } from "./index-config-form"
 
 export function IndexConfigSelect() {
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [indexerConfiguration, setIndexerConfiguration] = useRecoilState(
+  const [indexerConfiguration, setIndexerConfiguration] = useAtom(
     indexerConfigurationState
   )
   const indexConfigs = useMemo(
@@ -60,7 +60,7 @@ export function IndexConfigSelect() {
           className="w-full max-w-xs justify-between"
         >
           <p className="truncate">{configParam || "Default index config"}</p>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0">
@@ -84,15 +84,15 @@ export function IndexConfigSelect() {
                                     [SearchParamsMap.config, indexConfig],
                                   ])
                                 : indexConfig === configParam && commitParam
-                                ? new URLSearchParams([
-                                    [SearchParamsMap.commit, commitParam],
-                                  ])
-                                : indexConfig !== configParam && commitParam
-                                ? new URLSearchParams([
-                                    [SearchParamsMap.commit, commitParam],
-                                    [SearchParamsMap.config, indexConfig],
-                                  ])
-                                : ""))
+                                  ? new URLSearchParams([
+                                      [SearchParamsMap.commit, commitParam],
+                                    ])
+                                  : indexConfig !== configParam && commitParam
+                                    ? new URLSearchParams([
+                                        [SearchParamsMap.commit, commitParam],
+                                        [SearchParamsMap.config, indexConfig],
+                                      ])
+                                    : ""))
                       )
                     }}
                     key={indexConfig}
@@ -100,7 +100,7 @@ export function IndexConfigSelect() {
                   >
                     <div className="flex items-center gap-1">
                       {indexConfig == configParam && (
-                        <Check className="h-4 w-4" />
+                        <Check className="size-4" />
                       )}
                       <p className="max-w-[130px] truncate">{indexConfig}</p>
                     </div>
@@ -129,7 +129,7 @@ export function IndexConfigSelect() {
 
                         setIndexerConfiguration(updatedIndexerConfiguration)
                       }}
-                      className="h-4 w-4 cursor-pointer text-red-600"
+                      className="size-4 cursor-pointer text-red-600"
                     />
                   </CommandItem>
                 ))}
@@ -144,7 +144,7 @@ export function IndexConfigSelect() {
               )}
             >
               {" "}
-              <Plus className="h-4 w-4" />
+              <Plus className="size-4" />
               Create new config
             </DialogTrigger>
             <DialogContent>
@@ -168,7 +168,7 @@ export function IndexConfigSelect() {
                     _.set(
                       updatedIndexerConfiguration,
                       ["ocs", "index-config", values.name],
-                      duplicatedIndexerConfiguration ?? {}
+                      _.cloneDeep(duplicatedIndexerConfiguration) ?? {}
                     )
 
                     setIndexerConfiguration(updatedIndexerConfiguration)

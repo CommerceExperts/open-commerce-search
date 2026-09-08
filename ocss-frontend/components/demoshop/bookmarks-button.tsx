@@ -3,8 +3,7 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
-import { Bookmark as BookmarkIcon } from "lucide-react"
-import { MoreHorizontal } from "lucide-react"
+import { Bookmark as BookmarkIcon, MoreHorizontal } from "lucide-react"
 
 import { components } from "@/types/productsetservice"
 import { SearchParamsMap } from "@/types/searchParams"
@@ -15,6 +14,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
+  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
 import {
@@ -71,9 +71,9 @@ export default function BookmarksButton({
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild disabled={isPending}>
-              <Button variant="ghost" className="h-8 w-8 p-0">
+              <Button variant="ghost" className="size-8 p-0">
                 <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
+                <MoreHorizontal className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -123,26 +123,33 @@ export default function BookmarksButton({
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger>
-        <div className={cn(buttonVariants(), "h-10 w-10 p-1")}>
-          <BookmarkIcon className="h-4 w-4" />
+        <div className={cn(buttonVariants(), "size-10 p-1")}>
+          <BookmarkIcon className="size-4" />
         </div>
       </DialogTrigger>
       <DialogContent className="max-h-screen overflow-y-scroll lg:max-w-screen-lg">
         <DialogHeader>
-          <DialogDescription className="space-y-4">
-            <div className="space-y-2">
-              <h3 className="text-lg font-bold text-primary">Bookmarks</h3>
-              <DataTable columns={columns} data={bookmarks} />
-            </div>
-
-            <div className="space-y-2">
-              <h3 className="text-lg font-bold text-primary">
-                Create new bookmark
-              </h3>
-              <CreateBookmarkForm tenant={tenant} />
-            </div>
+          <DialogTitle>Bookmarks</DialogTitle>
+          {/* DialogDescription renders a <p>, so it holds text only. The table
+              and the form are siblings, not children. */}
+          <DialogDescription>
+            Saved product sets for this tenant.
           </DialogDescription>
         </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <h3 className="text-lg font-bold text-primary">Bookmarks</h3>
+            <DataTable columns={columns} data={bookmarks} />
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-lg font-bold text-primary">
+              Create new bookmark
+            </h3>
+            <CreateBookmarkForm tenant={tenant} />
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   )

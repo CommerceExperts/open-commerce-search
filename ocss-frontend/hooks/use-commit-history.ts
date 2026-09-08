@@ -1,6 +1,6 @@
 import { useParams } from "next/navigation"
+import { useAtom } from "jotai"
 import { useSession } from "next-auth/react"
-import { useRecoilState } from "recoil"
 
 import { fetchCommits } from "@/lib/github"
 import { commitsPageState, commitsState } from "@/lib/global-state"
@@ -14,8 +14,8 @@ export default function useCommitHistory({
   indexerConfigFilePath,
   searchConfigFilePath,
 }: useCommitHistoryProps) {
-  const [commits, setCommits] = useRecoilState(commitsState)
-  const [commitsPage, setCommitsPage] = useRecoilState(commitsPageState)
+  const [commits, setCommits] = useAtom(commitsState)
+  const [commitsPage, setCommitsPage] = useAtom(commitsPageState)
   const params = useParams()
   const session = useSession()
   const repo = params.repo
@@ -36,8 +36,8 @@ export default function useCommitHistory({
       selectedService === "indexer"
         ? indexerConfigFilePath
         : selectedService === "search"
-        ? searchConfigFilePath
-        : undefined
+          ? searchConfigFilePath
+          : undefined
     )
 
     setCommitsPage((previousCommitsPage) => previousCommitsPage + 1)
@@ -64,8 +64,8 @@ export default function useCommitHistory({
       selectedService === "indexer"
         ? indexerConfigFilePath
         : selectedService === "search"
-        ? searchConfigFilePath
-        : undefined
+          ? searchConfigFilePath
+          : undefined
     )
 
     if (commits) {

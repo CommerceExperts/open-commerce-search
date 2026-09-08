@@ -42,7 +42,7 @@ export default function TenantSelectButton({
         className={cn(buttonVariants({ variant: "outline" }), "cursor-pointer")}
       >
         <span className="flex flex-row gap-2">
-          <Server className="h-4 w-4" />
+          <Server className="size-4" />
           Change tenant
         </span>
       </PopoverTrigger>
@@ -68,7 +68,7 @@ export default function TenantSelectButton({
                   key={tenant}
                 >
                   {tenant == tenantParam && (
-                    <Icons.check className="mr-2 h-4 w-4" />
+                    <Icons.check className="mr-2 size-4" />
                   )}
                   {tenant}
                 </CommandItem>

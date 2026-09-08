@@ -71,7 +71,6 @@ export default async function SearchResults({
 
   return (
     <section className="container grid max-w-[1600px] items-center gap-6 pb-8 pt-6 md:py-10">
-      {/* @ts-ignore Async server component */}
       <ProductDataFieldConfigurationInitialization />
       <SmartQueryRedirect meta={meta ?? {}} />
 
@@ -107,9 +106,9 @@ export default async function SearchResults({
               <SortSelect sortOptions={sortOptions} selectedSortOption={sort} />
               <ProductCardEditorButton
                 productDataFields={productDataFields ?? []}
-                className="h-10 w-10 p-1"
+                className="size-10 p-1"
               >
-                <Pen className="h-4 w-4" />
+                <Pen className="size-4" />
               </ProductCardEditorButton>
               {showBookmarkButton && (
                 <BookmarksButton bookmarks={bookmarks} tenant={tenant} />

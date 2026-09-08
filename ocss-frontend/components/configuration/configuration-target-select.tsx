@@ -2,7 +2,7 @@
 
 import { ComponentProps, useMemo } from "react"
 import { usePathname, useRouter } from "next/navigation"
-import { useRecoilValue } from "recoil"
+import { useAtomValue } from "jotai"
 
 import {
   isIndexerConfigurationDirtyState,
@@ -28,14 +28,14 @@ export default function ConfigurationTargetSelect({
       pathname.includes("/indexer")
         ? "indexer"
         : pathname.includes("/search")
-        ? "search"
-        : undefined,
+          ? "search"
+          : undefined,
     [pathname]
   )
-  const isSearchConfigurationDirty = useRecoilValue(
+  const isSearchConfigurationDirty = useAtomValue(
     isSearchConfigurationDirtyState
   )
-  const isIndexerConfigurationDirty = useRecoilValue(
+  const isIndexerConfigurationDirty = useAtomValue(
     isIndexerConfigurationDirtyState
   )
 

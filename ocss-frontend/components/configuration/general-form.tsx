@@ -3,9 +3,9 @@
 import { useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useAtom } from "jotai"
 import _ from "lodash"
 import { useForm } from "react-hook-form"
-import { useRecoilState } from "recoil"
 import * as z from "zod"
 
 import { SearchParamsMap } from "@/types/searchParams"
@@ -71,7 +71,7 @@ type GeneralFormProps = {
 }
 
 export function GeneralForm({ indexConfig }: GeneralFormProps) {
-  const [indexerConfiguration, setIndexerConfiguration] = useRecoilState(
+  const [indexerConfiguration, setIndexerConfiguration] = useAtom(
     indexerConfigurationState
   )
   const searchParams = useSearchParams()
@@ -166,26 +166,30 @@ export function GeneralForm({ indexConfig }: GeneralFormProps) {
 
   useEffect(() => {
     const subscription = form.watch((value) => {
-      const updatedIndexerConfiguration = _.cloneDeep(indexerConfiguration)
-
-      if (configParam) {
-        _.set(
-          updatedIndexerConfiguration,
-          ["ocs", "index-config", configParam, "indexer-settings"],
-          formSchema.parse(value)
+      setIndexerConfiguration((previousIndexerConfiguration) => {
+        const updatedIndexerConfiguration = _.cloneDeep(
+          previousIndexerConfiguration
         )
-      } else {
-        _.set(
-          updatedIndexerConfiguration,
-          ["ocs", "default-index-config", "indexer-settings"],
-          formSchema.parse(value)
-        )
-      }
 
-      setIndexerConfiguration(updatedIndexerConfiguration)
+        if (configParam) {
+          _.set(
+            updatedIndexerConfiguration,
+            ["ocs", "index-config", configParam, "indexer-settings"],
+            formSchema.parse(value)
+          )
+        } else {
+          _.set(
+            updatedIndexerConfiguration,
+            ["ocs", "default-index-config", "indexer-settings"],
+            formSchema.parse(value)
+          )
+        }
+
+        return updatedIndexerConfiguration
+      })
     })
     return () => subscription.unsubscribe()
-  }, [form, configParam])
+  }, [form, configParam, setIndexerConfiguration])
 
   return (
     <Form {...form}>

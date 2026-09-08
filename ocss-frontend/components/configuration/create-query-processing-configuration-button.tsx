@@ -7,10 +7,10 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 
 import {
-  PluginConfigurationValues,
-  QueryProcessingConfigurationItem,
-  pluginConfigurationValues,
   pluginConfigurations,
+  PluginConfigurationValues,
+  pluginConfigurationValues,
+  QueryProcessingConfigurationItem,
 } from "@/types/config"
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -109,7 +109,7 @@ export default function CreateQueryProcessingConfigurationButton({
           "flex w-full gap-2"
         )}
       >
-        <Plus className="h-4 w-4" />
+        <Plus className="size-4" />
         Create query processing configuration
       </DialogTrigger>
       <DialogContent className="max-h-screen overflow-y-scroll lg:max-w-screen-sm">
@@ -257,7 +257,7 @@ export default function CreateQueryProcessingConfigurationButton({
                                 )
                               }}
                             />
-                            <MoveHorizontal className="h-8 w-8" />
+                            <MoveHorizontal className="size-8" />
                             <Input
                               placeholder="Enter lower bound (character)"
                               {...field}
@@ -301,7 +301,7 @@ export default function CreateQueryProcessingConfigurationButton({
                                 )
                               }}
                             />
-                            <MoveHorizontal className="h-8 w-8" />
+                            <MoveHorizontal className="size-8" />
                             <Input
                               placeholder="Enter upper bound (character)"
                               {...field}

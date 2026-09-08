@@ -29,8 +29,11 @@ export function FieldConfiguration({
       <h1 className="text-md font-medium">{heading}</h1>
       <ul className="space-y-2">
         {fields.map((field, index) => (
+          // Dynamic fields come from a plain array where duplicate names are
+          // valid, and every mutation below addresses a row by its index, so
+          // the index is this row's identity. There is no id on Field.
           <li
-            key={field.name}
+            key={index}
             className={cn(
               buttonVariants({ variant: "outline" }),
               "grid w-full grid-cols-[92%,1fr]"

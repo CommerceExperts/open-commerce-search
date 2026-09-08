@@ -4,14 +4,12 @@ import { env } from "@/env.mjs"
 import SignInButton from "@/components/configuration/sign-in-button"
 
 export default function SignIn() {
-  if (
-    !(
-      env.GITHUB_OAUTH_ID &&
-      env.GITHUB_OAUTH_SECRET &&
-      env.NEXTAUTH_URL &&
-      env.NEXTAUTH_SECRET
-    )
-  ) {
+  if (!(
+    env.GITHUB_OAUTH_ID &&
+    env.GITHUB_OAUTH_SECRET &&
+    env.NEXTAUTH_URL &&
+    env.NEXTAUTH_SECRET
+  )) {
     notFound()
   }
 

@@ -58,11 +58,7 @@ export function ConfigSortableItem<T>({
         )}
       >
         <div className="flex items-center gap-2">
-          <GripVertical
-            className="h-6 w-6 p-1"
-            {...attributes}
-            {...listeners}
-          />
+          <GripVertical className="size-6 p-1" {...attributes} {...listeners} />
           <p className="mr-4 flex items-center gap-2 overflow-hidden text-left">
             {label}
           </p>

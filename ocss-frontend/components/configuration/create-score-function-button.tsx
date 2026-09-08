@@ -10,8 +10,8 @@ import {
   Field,
   ScoreFunction,
   ScoreFunctionModifier,
-  ScoreFunctionType,
   scoreFunctionModifiers,
+  ScoreFunctionType,
   scoreFunctionTypes,
 } from "@/types/config"
 import { cn } from "@/lib/utils"
@@ -159,7 +159,7 @@ export default function CreateScoreFunctionButton({
           "flex w-full gap-2"
         )}
       >
-        <Plus className="h-4 w-4" />
+        <Plus className="size-4" />
         Create score function
       </DialogTrigger>
       <DialogContent className="max-h-screen overflow-y-scroll lg:max-w-screen-sm">

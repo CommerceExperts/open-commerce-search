@@ -37,7 +37,7 @@ export default function DemoshopButton({ tenants }: DemoshopButtonProps) {
         <Popover>
           <PopoverTrigger asChild className="cursor-pointer">
             <p className="text-md flex items-center gap-2 font-semibold text-muted-foreground sm:text-sm">
-              <Server className="h-5 w-5 sm:h-4 sm:w-4" />
+              <Server className="size-5 sm:size-4" />
               <span className="hidden sm:block">
                 {tenantParam || "Select tenant"}
               </span>
@@ -64,7 +64,7 @@ export default function DemoshopButton({ tenants }: DemoshopButtonProps) {
                       key={tenant}
                     >
                       {tenant == tenantParam && (
-                        <Icons.check className="mr-2 h-4 w-4" />
+                        <Icons.check className="mr-2 size-4" />
                       )}
                       {tenant}
                     </CommandItem>
@@ -76,7 +76,7 @@ export default function DemoshopButton({ tenants }: DemoshopButtonProps) {
       ) : (
         <Link href="/">
           <p className="text-md flex items-center gap-2 font-semibold text-muted-foreground sm:text-sm">
-            <ShoppingCart className="h-5 w-5 sm:h-4 sm:w-4" />
+            <ShoppingCart className="size-5 sm:size-4" />
             <span className="hidden sm:block">Demoshop</span>
           </p>
         </Link>

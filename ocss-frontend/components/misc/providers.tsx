@@ -1,6 +1,6 @@
 "use client"
 
-import { RecoilRoot } from "recoil"
+import { Provider as JotaiProvider } from "jotai"
 
 import { NextAuthProvider } from "./next-auth-provider"
 import { ThemeProvider } from "./theme-provider"
@@ -13,7 +13,7 @@ export default function Providers({ children }: ProvidersProps) {
   return (
     <NextAuthProvider>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <RecoilRoot>{children}</RecoilRoot>
+        <JotaiProvider>{children}</JotaiProvider>
       </ThemeProvider>
     </NextAuthProvider>
   )

@@ -10,8 +10,8 @@ import {
   Field,
   SortOption,
   SortOptionMissing,
-  SortOptionOrder,
   sortOptionMissings,
+  SortOptionOrder,
   sortOptionOrders,
 } from "@/types/config"
 import { cn } from "@/lib/utils"
@@ -78,7 +78,7 @@ export default function CreateSortOptionButton({
           "flex w-full gap-2"
         )}
       >
-        <Plus className="h-4 w-4" />
+        <Plus className="size-4" />
         Create sort option
       </DialogTrigger>
       <DialogContent className="max-h-screen overflow-y-scroll lg:max-w-screen-sm">
@@ -136,9 +136,15 @@ export default function CreateSortOptionButton({
                         <SelectValue placeholder="Field" />
                       </SelectTrigger>
                       <SelectContent>
-                        {fields.map((field) => (
-                          <SelectItem key={field.name} value={field.name ?? ""}>
-                            {field.name}
+                        {/* fields concatenates the named fields with the
+                            dynamic-fields array, so a name can repeat. The
+                            Select's value is the name, so duplicate entries
+                            are indistinguishable - list each name once. */}
+                        {Array.from(
+                          new Set(fields.map((f) => f.name).filter(Boolean))
+                        ).map((name) => (
+                          <SelectItem key={name} value={name}>
+                            {name}
                           </SelectItem>
                         ))}
                       </SelectContent>

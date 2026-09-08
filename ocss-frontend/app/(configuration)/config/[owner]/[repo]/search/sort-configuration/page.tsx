@@ -1,8 +1,8 @@
 "use client"
 
 import { useSearchParams } from "next/navigation"
+import { useAtom } from "jotai"
 import _ from "lodash"
-import { useRecoilState } from "recoil"
 
 import { SearchParamsMap } from "@/types/searchParams"
 import {
@@ -16,13 +16,13 @@ import { SortConfiguration } from "@/components/configuration/sort-configuration
 import Loader from "@/components/misc/loader"
 
 export default function SortConfigurationSearchSettings() {
-  const [isConfigurationLoaded, setIsConfigurationLoadedState] = useRecoilState(
+  const [isConfigurationLoaded, setIsConfigurationLoadedState] = useAtom(
     isConfigurationLoadedState
   )
-  const [searchConfiguration, setSearchConfiguration] = useRecoilState(
+  const [searchConfiguration, setSearchConfiguration] = useAtom(
     searchConfigurationState
   )
-  const [indexerConfiguration, setIndexerConfiguration] = useRecoilState(
+  const [indexerConfiguration, setIndexerConfiguration] = useAtom(
     indexerConfigurationState
   )
   const searchParams = useSearchParams()
@@ -143,9 +143,9 @@ export default function SortConfigurationSearchSettings() {
             }}
             sortOptions={
               (configParam
-                ? searchConfiguration.ocs?.["tenant-config"]?.[configParam]?.[
+                ? (searchConfiguration.ocs?.["tenant-config"]?.[configParam]?.[
                     "sort-configuration"
-                  ] ?? []
+                  ] ?? [])
                 : searchConfiguration.ocs?.["default-tenant-config"]?.[
                     "sort-configuration"
                   ]) ?? []

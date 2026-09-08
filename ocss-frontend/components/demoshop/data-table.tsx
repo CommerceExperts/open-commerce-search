@@ -4,14 +4,12 @@ import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table"
-import {
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  useReactTable,
 } from "@tanstack/react-table"
 
 import { cn } from "@/lib/utils"

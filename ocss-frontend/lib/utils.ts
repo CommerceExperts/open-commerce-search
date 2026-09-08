@@ -138,23 +138,26 @@ export function extractSort(sortParam: SearchParam) {
 }
 
 export function extractFilters(searchParams: SearchParams) {
-  const filters = Object.keys(searchParams).reduce((obj, key) => {
-    for (const searchParam in SearchParamsMap) {
-      if (key === searchParam) {
-        return obj
+  const filters = Object.keys(searchParams).reduce(
+    (obj, key) => {
+      for (const searchParam in SearchParamsMap) {
+        if (key === searchParam) {
+          return obj
+        }
       }
-    }
 
-    if (Array.isArray(searchParams[key])) {
-      obj[key] = (searchParams[key] as string[]).map((item) =>
-        (item as string).replace(/,/g, "%2C")
-      )
-    } else {
-      obj[key] = (searchParams[key] as string).replace(/,/g, "%2C")
-    }
+      if (Array.isArray(searchParams[key])) {
+        obj[key] = (searchParams[key] as string[]).map((item) =>
+          (item as string).replace(/,/g, "%2C")
+        )
+      } else {
+        obj[key] = (searchParams[key] as string).replace(/,/g, "%2C")
+      }
 
-    return obj
-  }, {} as { [key: string]: string | string[] | undefined })
+      return obj
+    },
+    {} as { [key: string]: string | string[] | undefined }
+  )
 
   return filters
 }

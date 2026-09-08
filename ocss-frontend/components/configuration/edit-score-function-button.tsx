@@ -10,8 +10,8 @@ import {
   Field,
   ScoreFunction,
   ScoreFunctionModifier,
-  ScoreFunctionType,
   scoreFunctionModifiers,
+  ScoreFunctionType,
   scoreFunctionTypes,
 } from "@/types/config"
 import { Button } from "@/components/ui/button"
@@ -341,7 +341,7 @@ export default function EditScoreFunctionButton({
                           </SelectTrigger>
                           <SelectContent>
                             {scoreFunctionModifiers.map((modifier) => (
-                              <SelectItem value={modifier}>
+                              <SelectItem key={modifier} value={modifier}>
                                 {modifier}
                               </SelectItem>
                             ))}

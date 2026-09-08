@@ -2,9 +2,9 @@
 
 import { useState } from "react"
 import { usePathname } from "next/navigation"
+import { useAtom, useAtomValue } from "jotai"
 import { UploadCloud } from "lucide-react"
 import { SessionContextValue, useSession } from "next-auth/react"
-import { useRecoilState, useRecoilValue } from "recoil"
 
 import { saveIndexerConfiguration, saveSearchConfiguration } from "@/lib/github"
 import {
@@ -43,16 +43,16 @@ export default function SaveConfigurationButton({
   searchConfigFilePath,
 }: SaveConfigurationButtonProps) {
   const session = useSession()
-  const [indexerConfiguration, setIndexerConfiguration] = useRecoilState(
+  const [indexerConfiguration, setIndexerConfiguration] = useAtom(
     indexerConfigurationState
   )
-  const isSearchConfigurationDirty = useRecoilValue(
+  const isSearchConfigurationDirty = useAtomValue(
     isSearchConfigurationDirtyState
   )
-  const isIndexerConfigurationDirty = useRecoilValue(
+  const isIndexerConfigurationDirty = useAtomValue(
     isIndexerConfigurationDirtyState
   )
-  const [searchConfiguration, setSearchConfiguration] = useRecoilState(
+  const [searchConfiguration, setSearchConfiguration] = useAtom(
     searchConfigurationState
   )
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -61,18 +61,20 @@ export default function SaveConfigurationButton({
     indexerConfigFilePath,
     searchConfigFilePath,
   })
-  const [searchConfigurationUpdates, setSearchConfigurationUpdates] =
-    useRecoilState(searchConfigurationUpdatesState)
-  const [indexerConfigurationUpdates, setIndexerConfigurationUpdates] =
-    useRecoilState(indexerConfigurationUpdatesState)
+  const [searchConfigurationUpdates, setSearchConfigurationUpdates] = useAtom(
+    searchConfigurationUpdatesState
+  )
+  const [indexerConfigurationUpdates, setIndexerConfigurationUpdates] = useAtom(
+    indexerConfigurationUpdatesState
+  )
 
   let selectedService: "indexer" | "search" | undefined = pathname.includes(
     "/indexer"
   )
     ? "indexer"
     : pathname.includes("/search")
-    ? "search"
-    : undefined
+      ? "search"
+      : undefined
 
   if (!session) {
     return <></>
@@ -96,7 +98,7 @@ export default function SaveConfigurationButton({
           "flex gap-2 font-bold"
         )}
       >
-        <UploadCloud className="h-4 w-4" />
+        <UploadCloud className="size-4" />
         Save & commit
       </DialogTrigger>
       <DialogContent className="max-h-screen overflow-y-scroll lg:max-w-screen-sm">

@@ -12,7 +12,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 
-import { Checkbox } from "../ui/checkbox"
+import { CheckboxDisplay } from "../ui/checkbox"
 import { Label } from "../ui/label"
 
 function HierarchicalEntry({ entry, filterOption }: HierarchicalEntryProps) {
@@ -57,45 +57,51 @@ function HierarchicalEntry({ entry, filterOption }: HierarchicalEntryProps) {
           ])
         ))
 
+  // The filter link and the expand/collapse control are siblings, never nested.
+  // Radix renders both CollapsibleTrigger and Checkbox as <button>, so putting
+  // this row inside the trigger produced invalid <button><a><button> markup and
+  // a hydration error.
+  const entryRow = (
+    <div className="flex items-center gap-2">
+      <Link href={href} className="flex items-center space-x-2">
+        <CheckboxDisplay checked={entry.selected} />
+        <Label className="break-all text-left">{entry.key}</Label>
+      </Link>
+      <p className="text-xs">{entry.docCount}</p>
+    </div>
+  )
+
   return (
     <>
       {(entry as any)["children"] && (entry as any)["children"].length > 0 ? (
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-          <CollapsibleTrigger className="flex w-full items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Link href={href} className="flex items-center space-x-2">
-                <Checkbox id={entry.key} checked={entry.selected} />
-                <Label className="break-all text-left" htmlFor={entry.key}>
-                  {entry.key}
-                </Label>
-              </Link>
-              <p className="text-xs">{entry.docCount}</p>
-            </div>
+          <div className="flex w-full items-center justify-between">
+            {entryRow}
 
-            {isOpen ? (
-              <Minus onClick={() => setIsOpen(false)} className="h-4 w-4" />
-            ) : (
-              <Plus onClick={() => setIsOpen(true)} className="h-4 w-4" />
-            )}
-          </CollapsibleTrigger>
+            <CollapsibleTrigger
+              aria-label={`${isOpen ? "Collapse" : "Expand"} ${entry.key}`}
+            >
+              {isOpen ? (
+                <Minus className="size-4" />
+              ) : (
+                <Plus className="size-4" />
+              )}
+            </CollapsibleTrigger>
+          </div>
           <CollapsibleContent className="pl-5 pt-2">
             <ul className="flex flex-col gap-2">
               {(entry as any)["children"].map((_entry: FacetEntry) => (
-                <HierarchicalEntry entry={_entry} filterOption={filterOption} />
+                <HierarchicalEntry
+                  key={_entry.key}
+                  entry={_entry}
+                  filterOption={filterOption}
+                />
               ))}
             </ul>
           </CollapsibleContent>
         </Collapsible>
       ) : (
-        <div className="flex items-center gap-2">
-          <Link href={href} className="flex items-center space-x-2">
-            <Checkbox id={entry.key} checked={entry.selected} />
-            <Label className="break-all text-left" htmlFor={entry.key}>
-              {entry.key}
-            </Label>
-          </Link>
-          <p className="text-xs">{entry.docCount}</p>
-        </div>
+        entryRow
       )}
     </>
   )

@@ -7,7 +7,7 @@ import { Check, ChevronsUpDown, CircleHelp, Edit, Trash2 } from "lucide-react"
 import { useFieldArray, useForm } from "react-hook-form"
 import * as z from "zod"
 
-import { Facet, Field, facetTypes, facetValueOrders } from "@/types/config"
+import { Facet, facetTypes, facetValueOrders, Field } from "@/types/config"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -252,7 +252,7 @@ export default function EditFacetButton({
                           )}
                         >
                           {field.value ?? "Select source field"}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
@@ -293,7 +293,7 @@ export default function EditFacetButton({
                             >
                               <Check
                                 className={cn(
-                                  "mr-2 h-4 w-4",
+                                  "mr-2 size-4",
                                   field.value === _field.name
                                     ? "opacity-100"
                                     : "opacity-0"
@@ -537,7 +537,7 @@ export default function EditFacetButton({
                           target="_blank"
                           href="https://commerceexperts.github.io/open-commerce-search/apidocs/de/cxp/ocs/config/FacetConfiguration.FacetConfig.html#setFilterDependencies(java.lang.String...)"
                         >
-                          <CircleHelp className="h-4 w-4" />
+                          <CircleHelp className="size-4" />
                         </Link>
                       </FormLabel>
                       <FormDescription className={cn(index !== 0 && "sr-only")}>
@@ -550,7 +550,7 @@ export default function EditFacetButton({
                             onClick={() => filterDependenciesRemove(index)}
                             variant="outline"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="size-4" />
                           </Button>
                         </div>
                       </FormControl>

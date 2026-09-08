@@ -68,8 +68,8 @@ export default function Pagination({ page, total }: PaginationProps) {
               ? page < 5
                 ? 5
                 : page < total - 3
-                ? page + 1
-                : total - 1
+                  ? page + 1
+                  : total - 1
               : total - 1
           ).map((i) => (
             <Link
