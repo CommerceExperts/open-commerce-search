@@ -63,7 +63,7 @@
     "react-hook-form": "^7.48.2",
     "recoil": "^0.7.7",
     "server-only": "^0.0.1",
-    "sharp": "^0.33.3",
+    "sharp": "^0.35.4",
     "sonner": "^1.4.41",
     "tailwind-merge": "^1.13.2",
     "tailwindcss-animate": "^1.0.6",
