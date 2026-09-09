@@ -8,9 +8,9 @@ import * as z from "zod"
 
 import {
   Field,
-  FieldUsage,
   fieldLevels,
   fieldTypes,
+  FieldUsage,
   fieldUsages,
 } from "@/types/config"
 import { cn } from "@/lib/utils"
@@ -111,7 +111,7 @@ export default function CreateFieldButton({
           "flex w-full gap-2"
         )}
       >
-        <Plus className="h-4 w-4" />
+        <Plus className="size-4" />
         Create field
       </DialogTrigger>
       <DialogContent className="max-h-screen overflow-y-scroll lg:max-w-screen-sm">
@@ -257,7 +257,7 @@ export default function CreateFieldButton({
                             onClick={() => usageRemove(index)}
                             variant="outline"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="size-4" />
                           </Button>
                         </div>
                       </FormControl>
@@ -297,7 +297,7 @@ export default function CreateFieldButton({
                             onClick={() => sourceNamesRemove(index)}
                             variant="outline"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="size-4" />
                           </Button>
                         </div>
                       </FormControl>

@@ -39,35 +39,31 @@ export default async function RepoSelection() {
       <div className="mx-auto">
         <div className="my-4 space-y-4">
           <ul className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {repositories
-              .filter((repository) =>
-                repository.name.startsWith(OCSS_CONFIG_REPO_PREFIX)
-              )
-              .map((repository) => (
-                <li key={repository.id}>
-                  <Link
-                    href={`/config/${repository.owner.login}/${repository.name}`}
-                  >
-                    <Card>
-                      <CardHeader className="flex flex-row items-center gap-4">
-                        <Avatar>
-                          <AvatarImage src={repository.owner.avatar_url} />
-                          <AvatarFallback>CN</AvatarFallback>
-                        </Avatar>
+            {repositories.map((repository) => (
+              <li key={repository.id}>
+                <Link
+                  href={`/config/${repository.owner.login}/${repository.name}`}
+                >
+                  <Card>
+                    <CardHeader className="flex flex-row items-center gap-4">
+                      <Avatar>
+                        <AvatarImage src={repository.owner.avatar_url} />
+                        <AvatarFallback>CN</AvatarFallback>
+                      </Avatar>
 
-                        <div>
-                          <CardTitle className="max-w-[200px] truncate text-lg">
-                            {repository.name}
-                          </CardTitle>
-                          <CardDescription className="max-w-[200px] truncate">
-                            {repository.owner.login}
-                          </CardDescription>
-                        </div>
-                      </CardHeader>
-                    </Card>
-                  </Link>
-                </li>
-              ))}
+                      <div>
+                        <CardTitle className="max-w-[200px] truncate text-lg">
+                          {repository.name}
+                        </CardTitle>
+                        <CardDescription className="max-w-[200px] truncate">
+                          {repository.owner.login}
+                        </CardDescription>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                </Link>
+              </li>
+            ))}
           </ul>
           <Separator />
           <SignOutButton className="mx-auto max-w-sm" />

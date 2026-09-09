@@ -1,8 +1,8 @@
 "use client"
 
 import { useSearchParams } from "next/navigation"
+import { useAtom } from "jotai"
 import _ from "lodash"
-import { useRecoilState } from "recoil"
 
 import { QueryProcessingConfigurationItem } from "@/types/config"
 import { SearchParamsMap } from "@/types/searchParams"
@@ -15,10 +15,10 @@ import { QueryProcessingConfiguration } from "@/components/configuration/query-p
 import Loader from "@/components/misc/loader"
 
 export default function QueryProcessingConfigurationSearchSettings() {
-  const [isConfigurationLoaded, setIsConfigurationLoadedState] = useRecoilState(
+  const [isConfigurationLoaded, setIsConfigurationLoadedState] = useAtom(
     isConfigurationLoadedState
   )
-  const [searchConfiguration, setSearchConfiguration] = useRecoilState(
+  const [searchConfiguration, setSearchConfiguration] = useAtom(
     searchConfigurationState
   )
   const searchParams = useSearchParams()
@@ -181,7 +181,7 @@ export default function QueryProcessingConfigurationSearchSettings() {
                       ({
                         type: key.slice(1, key.length - 1),
                         options: value,
-                      } as QueryProcessingConfigurationItem)
+                      }) as QueryProcessingConfigurationItem
                   )
                 : Object.entries(
                     searchConfiguration?.ocs?.["default-tenant-config"]?.[
@@ -192,7 +192,7 @@ export default function QueryProcessingConfigurationSearchSettings() {
                       ({
                         type: key.slice(1, key.length - 1),
                         options: value,
-                      } as QueryProcessingConfigurationItem)
+                      }) as QueryProcessingConfigurationItem
                   )
             }
             setItems={(items) => {

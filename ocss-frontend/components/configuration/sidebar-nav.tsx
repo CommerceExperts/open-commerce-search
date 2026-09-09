@@ -43,10 +43,14 @@ export function SidebarNav({ className, items, ...props }: SidebarNavProps) {
                       [SearchParamsMap.commit, commitParam],
                     ])
                   : configParam && !commitParam
-                  ? new URLSearchParams([[SearchParamsMap.config, configParam]])
-                  : !configParam && commitParam
-                  ? new URLSearchParams([[SearchParamsMap.commit, commitParam]])
-                  : ""))
+                    ? new URLSearchParams([
+                        [SearchParamsMap.config, configParam],
+                      ])
+                    : !configParam && commitParam
+                      ? new URLSearchParams([
+                          [SearchParamsMap.commit, commitParam],
+                        ])
+                      : ""))
           }
           className={cn(
             buttonVariants({ variant: "ghost" }),

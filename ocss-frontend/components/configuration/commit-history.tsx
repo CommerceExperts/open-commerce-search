@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useAtom, useAtomValue } from "jotai"
 import { ExternalLink, Plus, RefreshCw } from "lucide-react"
-import { useRecoilState, useRecoilValue } from "recoil"
 
 import { SearchParamsMap } from "@/types/searchParams"
 import {
@@ -26,7 +26,7 @@ export default function CommitHistory({
   indexerConfigFilePath,
   searchConfigFilePath,
 }: CommitHistoryProps) {
-  const [commits, setCommits] = useRecoilState(commitsState)
+  const [commits, setCommits] = useAtom(commitsState)
   const searchParams = useSearchParams()
   const commitParam = searchParams.get(SearchParamsMap.commit)
   const configParam = searchParams.get(SearchParamsMap.config)
@@ -36,10 +36,10 @@ export default function CommitHistory({
     searchConfigFilePath,
   })
   const router = useRouter()
-  const isSearchConfigurationDirty = useRecoilValue(
+  const isSearchConfigurationDirty = useAtomValue(
     isSearchConfigurationDirtyState
   )
-  const isIndexerConfigurationDirty = useRecoilValue(
+  const isIndexerConfigurationDirty = useAtomValue(
     isIndexerConfigurationDirtyState
   )
 
@@ -48,8 +48,8 @@ export default function CommitHistory({
   )
     ? "indexer"
     : pathname.includes("/search")
-    ? "search"
-    : undefined
+      ? "search"
+      : undefined
 
   return (
     <div className="w-full space-y-2">
@@ -61,7 +61,7 @@ export default function CommitHistory({
             Commit history{" "}
             <RefreshCw
               onClick={() => resetCommits(selectedService)}
-              className="h-4 w-4 cursor-pointer transition-transform hover:rotate-90"
+              className="size-4 cursor-pointer transition-transform hover:rotate-90"
             />
           </h4>
           <ul className="flex flex-col gap-2">
@@ -79,7 +79,7 @@ export default function CommitHistory({
                     href={commit?.committer?.html_url ?? ""}
                     target="_blank"
                   >
-                    <Avatar className="h-6 w-6">
+                    <Avatar className="size-6">
                       <AvatarImage src={commit?.committer?.avatar_url} />
                       <AvatarFallback>?</AvatarFallback>
                     </Avatar>
@@ -145,7 +145,7 @@ export default function CommitHistory({
                   href={commit.html_url + "?w=1" /* w=1 to ignore whitespace */}
                   target="_blank"
                 >
-                  <ExternalLink className="h-4 w-4" />
+                  <ExternalLink className="size-4" />
                 </Link>
               </li>
             ))}
@@ -158,7 +158,7 @@ export default function CommitHistory({
                   variant="outline"
                   className="h-9 w-full justify-center gap-2"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="size-4" />
                   <p>Load more</p>
                 </Button>
               </li>

@@ -51,16 +51,16 @@ export default function SearchResultsFallback({
                 sortOptions={[defaultSortOption]}
                 selectedSortOption={defaultSortOption.field}
               />
-              <Button disabled={true} className="h-10 w-10 p-1">
-                <Pen className="h-4 w-4" />
+              <Button disabled={true} className="size-10 p-1">
+                <Pen className="size-4" />
               </Button>
               {!!env.PRODUCTSETSERVICE_BASEURL && (
-                <Button disabled={true} className="h-10 w-10 p-1">
-                  <Bookmark className="h-4 w-4" />
+                <Button disabled={true} className="size-10 p-1">
+                  <Bookmark className="size-4" />
                 </Button>
               )}
-              <Button disabled={true} className="h-10 w-10 p-1">
-                <Info className="h-4 w-4" />
+              <Button disabled={true} className="size-10 p-1">
+                <Info className="size-4" />
               </Button>
             </div>
           </div>

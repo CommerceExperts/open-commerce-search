@@ -7,13 +7,18 @@ import { SidebarNav } from "@/components/configuration/sidebar-nav"
 
 type IndexerConfigurationLayoutProps = {
   children: React.ReactNode
-  params: { repo: string; owner: string }
+  params: Promise<{ repo: string; owner: string }>
 }
 
-export default function IndexerConfigurationLayout({
-  params: { repo, owner },
-  children,
-}: IndexerConfigurationLayoutProps) {
+export default async function IndexerConfigurationLayout(
+  props: IndexerConfigurationLayoutProps
+) {
+  const params = await props.params
+
+  const { repo, owner } = params
+
+  const { children } = props
+
   const sidebarNavItems = [
     {
       title: "Query Processing",

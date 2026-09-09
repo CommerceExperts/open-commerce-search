@@ -8,7 +8,7 @@ import { InternalCookies } from "@/types/cookies"
 export async function setProductDataFieldConfigurationCookie(
   items: ProductDataFieldConfiguration[]
 ) {
-  cookies().set(
+  ;(await cookies()).set(
     InternalCookies.productDataFieldConfiguration,
     JSON.stringify(items)
   )
@@ -16,6 +16,7 @@ export async function setProductDataFieldConfigurationCookie(
 
 export async function getProductDataFieldConfigurationFromCookie() {
   return JSON.parse(
-    cookies().get(InternalCookies.productDataFieldConfiguration)?.value ?? "[]"
+    (await cookies()).get(InternalCookies.productDataFieldConfiguration)
+      ?.value ?? "[]"
   ) as ProductDataFieldConfiguration[]
 }

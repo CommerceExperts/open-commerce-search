@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidateTag } from "next/cache"
+import { updateTag } from "next/cache"
 import { env } from "@/env.mjs"
 import createClient from "openapi-fetch"
 import { paths } from "types/productsetservice"
@@ -40,7 +40,7 @@ export async function deleteProductSet(id: number) {
     throw new Error("Something went wrong while deleting a product set")
   }
 
-  revalidateTag("productset")
+  updateTag("productset")
 }
 
 export async function createProductSet(
@@ -62,5 +62,5 @@ export async function createProductSet(
     throw new Error("Something went wrong while creating a product set")
   }
 
-  revalidateTag("productset")
+  updateTag("productset")
 }

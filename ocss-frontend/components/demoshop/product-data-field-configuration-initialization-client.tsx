@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
-import { useRecoilState } from "recoil"
+import { useAtom } from "jotai"
 
 import { ProductDataFieldConfiguration } from "@/types/config"
 import { productDataFieldConfigurationState } from "@/lib/global-state"
@@ -14,7 +14,7 @@ export default function ProductDataFieldConfigurationInitializationClient({
   initialProductDataFieldConfiguration,
 }: ProductDataFieldConfigurationInitializationClientProps) {
   const [productDataFieldConfiguration, setProductDataFieldConfiguration] =
-    useRecoilState(productDataFieldConfigurationState)
+    useAtom(productDataFieldConfigurationState)
 
   useEffect(() => {
     setProductDataFieldConfiguration(initialProductDataFieldConfiguration)

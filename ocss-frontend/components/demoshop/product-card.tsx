@@ -1,5 +1,6 @@
 "use client"
 
+import { Fragment } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
@@ -20,6 +21,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
+  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
 import {
@@ -65,19 +67,17 @@ export function ProductCard({
         <CardContent className="mt-4">
           <Link href={url}>
             {productDataFieldConfiguration?.map((item) => (
-              <>
+              <Fragment key={item.sourceField}>
                 {item.type === "image" ? (
                   urlPattern.test(
                     (hit.document?.data[item.sourceField] as unknown as
-                      | string
-                      | undefined) ?? ""
+                      string | undefined) ?? ""
                   ) ? (
                     <div className="my-4 h-[220px]">
                       <Image
                         src={
                           (hit.document?.data[item.sourceField] as unknown as
-                            | string
-                            | undefined) ?? ""
+                            string | undefined) ?? ""
                         }
                         width={1000}
                         height={1000}
@@ -97,13 +97,12 @@ export function ProductCard({
                       item.style == "bold"
                         ? "font-bold"
                         : item.style === "small"
-                        ? "text-sm"
-                        : ""
+                          ? "text-sm"
+                          : ""
                     )}
                   >
                     {(hit.document?.data[item.sourceField] as unknown as
-                      | string
-                      | undefined) ?? ""}
+                      string | undefined) ?? ""}
                   </p>
                 ) : (
                   <p
@@ -112,20 +111,19 @@ export function ProductCard({
                       item.style == "bold"
                         ? "font-bold"
                         : item.style === "small"
-                        ? "text-sm"
-                        : ""
+                          ? "text-sm"
+                          : ""
                     )}
                   >
                     {`${(
                       parseFloat(
                         (hit.document?.data[item.sourceField] as unknown as
-                          | string
-                          | undefined) ?? ""
+                          string | undefined) ?? ""
                       ) / (item.divisor ?? 1)
                     ).toFixed(2)} ${item.currency ?? ""}`}
                   </p>
                 )}
-              </>
+              </Fragment>
             ))}
           </Link>
 
@@ -161,13 +159,13 @@ export function ProductCard({
               }
               className={cn(
                 buttonVariants(),
-                "flex h-9 w-9 gap-2 rounded-full p-2",
+                "flex size-9 gap-2 rounded-full p-2",
                 isHeroProduct
                   ? "bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 hover:from-yellow-200 hover:via-yellow-300 hover:to-yellow-400"
                   : ""
               )}
             >
-              <Crown className="h-5 w-5" />
+              <Crown className="size-5" />
             </Link>
 
             <Dialog>
@@ -175,68 +173,77 @@ export function ProductCard({
                 <div
                   className={cn(
                     buttonVariants(),
-                    "flex h-9 w-9 gap-2 rounded-full p-2",
+                    "flex size-9 gap-2 rounded-full p-2",
                     isHeroProduct
                       ? "bg-gradient-to-r from-yellow-300 via-yellow-400 to-yellow-500 hover:from-yellow-200 hover:via-yellow-300 hover:to-yellow-400"
                       : ""
                   )}
                 >
-                  <Info className="h-5 w-5" />
+                  <Info className="size-5" />
                 </div>
               </DialogTrigger>
               <DialogContent className="max-h-screen overflow-y-scroll lg:max-w-screen-sm">
                 <DialogHeader>
+                  <DialogTitle>Product details</DialogTitle>
+                  {/* DialogDescription renders a <p>, so it holds text only.
+                      Tables and lists are siblings, not children. */}
                   <DialogDescription>
-                    {hit.metaData && (
-                      <>
-                        <h3 className="text-lg font-bold text-primary">
-                          Metadata
-                        </h3>
-
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-[100px]">Field</TableHead>
-                              <TableHead>Data</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {Object.keys(hit.metaData).map((key) => (
-                              <TableRow>
-                                <TableCell className="font-medium">
-                                  {key}
-                                </TableCell>
-                                <TableCell className="break-all">
-                                  {JSON.stringify(hit.metaData[key] as any)}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </>
-                    )}
-                    {hit.matchedQueries && (
-                      <>
-                        <h3 className="text-lg font-bold text-primary">
-                          Matched queries
-                        </h3>
-
-                        <ul className="ml-4 list-disc break-all">
-                          {hit.matchedQueries.map((matchQuery) => (
-                            <li>{matchQuery}</li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
-
-                    <h3 className="mt-4 text-lg font-bold text-primary">
-                      Raw response
-                    </h3>
-                    <Textarea className="h-[250px]" readOnly>
-                      {JSON.stringify(hit, null, 2)}
-                    </Textarea>
+                    Metadata and the raw response for this hit.
                   </DialogDescription>
                 </DialogHeader>
+
+                <div className="space-y-2">
+                  {hit.metaData && (
+                    <>
+                      <h3 className="text-lg font-bold text-primary">
+                        Metadata
+                      </h3>
+
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[100px]">Field</TableHead>
+                            <TableHead>Data</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {Object.keys(hit.metaData).map((key) => (
+                            <TableRow key={key}>
+                              <TableCell className="font-medium">
+                                {key}
+                              </TableCell>
+                              <TableCell className="break-all">
+                                {JSON.stringify(hit.metaData[key] as any)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </>
+                  )}
+                  {hit.matchedQueries && (
+                    <>
+                      <h3 className="text-lg font-bold text-primary">
+                        Matched queries
+                      </h3>
+
+                      <ul className="ml-4 list-disc break-all">
+                        {hit.matchedQueries.map((matchQuery) => (
+                          <li key={matchQuery}>{matchQuery}</li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+
+                  <h3 className="mt-4 text-lg font-bold text-primary">
+                    Raw response
+                  </h3>
+                  <Textarea
+                    className="h-[250px]"
+                    readOnly
+                    value={JSON.stringify(hit, null, 2)}
+                  />
+                </div>
               </DialogContent>
             </Dialog>
           </div>

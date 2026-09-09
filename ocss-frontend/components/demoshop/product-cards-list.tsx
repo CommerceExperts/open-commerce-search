@@ -1,6 +1,6 @@
 "use client"
 
-import { useRecoilState } from "recoil"
+import { useAtom } from "jotai"
 
 import { ResultHit } from "@/types/api"
 import { SearchParamsMap } from "@/types/searchParams"
@@ -22,7 +22,7 @@ export default function ProductCardsList({
   productType = "product",
 }: ProductCardsListProps) {
   const [productDataFieldConfiguration, setProductDataFieldConfiguration] =
-    useRecoilState(productDataFieldConfigurationState)
+    useAtom(productDataFieldConfigurationState)
 
   return (
     <ul className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

@@ -1,8 +1,8 @@
 "use client"
 
 import Image from "next/image"
+import { useAtom } from "jotai"
 import { ShoppingCart } from "lucide-react"
-import { useRecoilState } from "recoil"
 
 import { Product } from "@/types/api"
 import { productDataFieldConfigurationState } from "@/lib/global-state"
@@ -16,7 +16,7 @@ type ProductBannerProps = {
 
 export default function ProductBanner({ product }: ProductBannerProps) {
   const [productDataFieldConfiguration, setProductDataFieldConfiguration] =
-    useRecoilState(productDataFieldConfigurationState)
+    useAtom(productDataFieldConfigurationState)
 
   return (
     <div className="gap-12 lg:flex ">
@@ -25,15 +25,16 @@ export default function ProductBanner({ product }: ProductBannerProps) {
         .map((item) =>
           urlPattern.test(
             (product?.data[item.sourceField] as unknown as
-              | string
-              | undefined) ?? ""
+              string | undefined) ?? ""
           ) ? (
-            <div className="flex  h-[300px] w-full justify-center">
+            <div
+              key={item.sourceField}
+              className="flex  h-[300px] w-full justify-center"
+            >
               <Image
                 src={
                   (product?.data[item.sourceField] as unknown as
-                    | string
-                    | undefined) ?? ""
+                    string | undefined) ?? ""
                 }
                 width={500}
                 height={500}
@@ -42,7 +43,7 @@ export default function ProductBanner({ product }: ProductBannerProps) {
               />
             </div>
           ) : (
-            <p className="text-destructive">
+            <p key={item.sourceField} className="text-destructive">
               {item.sourceField} is not a image
             </p>
           )
@@ -53,41 +54,39 @@ export default function ProductBanner({ product }: ProductBannerProps) {
           .map((item) =>
             item.type === "string" ? (
               <p
+                key={item.sourceField}
                 className={cn(
                   "break-all",
                   item.style == "bold"
                     ? "text-2xl font-bold"
                     : item.style === "small"
-                    ? ""
-                    : "text-lg"
+                      ? ""
+                      : "text-lg"
                 )}
               >
                 {(product?.data[item.sourceField] as unknown as
-                  | string
-                  | undefined) ?? ""}
+                  string | undefined) ?? ""}
               </p>
             ) : item.type === "price" ? (
               <p
+                key={item.sourceField}
                 className={cn(
                   "break-all",
                   item.style == "bold"
                     ? "text-2xl font-bold"
                     : item.style === "small"
-                    ? ""
-                    : "text-lg"
+                      ? ""
+                      : "text-lg"
                 )}
               >
                 {`${(
                   parseFloat(
                     (product?.data[item.sourceField] as unknown as
-                      | string
-                      | undefined) ?? ""
+                      string | undefined) ?? ""
                   ) / (item.divisor ?? 1)
                 ).toFixed(2)} ${item.currency ?? ""}`}
               </p>
-            ) : (
-              <></>
-            )
+            ) : null
           )}
 
         <Button

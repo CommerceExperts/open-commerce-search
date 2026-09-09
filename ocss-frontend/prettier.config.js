@@ -6,6 +6,7 @@ module.exports = {
   tabWidth: 2,
   trailingComma: "es5",
   importOrder: [
+    "<BUILTIN_MODULES>",
     "^(react/(.*)$)|^(react$)",
     "^(next/(.*)$)|^(next$)",
     "<THIRD_PARTY_MODULES>",
@@ -22,11 +23,6 @@ module.exports = {
     "",
     "^[./]",
   ],
-  importOrderSeparation: false,
-  importOrderSortSpecifiers: true,
-  importOrderBuiltinModulesToTop: true,
   importOrderParserPlugins: ["typescript", "jsx", "decorators-legacy"],
-  importOrderMergeDuplicateimports: true,
-  importOrderCombineTypeAndValueimports: true,
   plugins: ["@ianvs/prettier-plugin-sort-imports"],
 }

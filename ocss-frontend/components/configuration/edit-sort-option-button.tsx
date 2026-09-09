@@ -10,8 +10,8 @@ import {
   Field,
   SortOption,
   SortOptionMissing,
-  SortOptionOrder,
   sortOptionMissings,
+  SortOptionOrder,
   sortOptionOrders,
 } from "@/types/config"
 import { Button } from "@/components/ui/button"
@@ -137,9 +137,15 @@ export default function EditSortOptionButton({
                         <SelectValue placeholder="Field" />
                       </SelectTrigger>
                       <SelectContent>
-                        {fields.map((field) => (
-                          <SelectItem key={field.name} value={field.name ?? ""}>
-                            {field.name}
+                        {/* fields concatenates the named fields with the
+                            dynamic-fields array, so a name can repeat. The
+                            Select's value is the name, so duplicate entries
+                            are indistinguishable - list each name once. */}
+                        {Array.from(
+                          new Set(fields.map((f) => f.name).filter(Boolean))
+                        ).map((name) => (
+                          <SelectItem key={name} value={name}>
+                            {name}
                           </SelectItem>
                         ))}
                       </SelectContent>

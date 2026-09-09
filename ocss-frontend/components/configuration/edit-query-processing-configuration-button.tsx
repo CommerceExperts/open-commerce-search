@@ -7,10 +7,10 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 
 import {
-  PluginConfigurationValues,
-  QueryProcessingConfigurationItem,
-  pluginConfigurationValues,
   pluginConfigurations,
+  PluginConfigurationValues,
+  pluginConfigurationValues,
+  QueryProcessingConfigurationItem,
 } from "@/types/config"
 import { Button } from "@/components/ui/button"
 import {
@@ -177,7 +177,7 @@ export default function EditQueryProcessingConfigurationButton({
                               )
                             }}
                           />
-                          <MoveHorizontal className="h-8 w-8" />
+                          <MoveHorizontal className="size-8" />
                           <Input
                             placeholder="Enter lower bound (character)"
                             {...field}
@@ -221,7 +221,7 @@ export default function EditQueryProcessingConfigurationButton({
                               )
                             }}
                           />
-                          <MoveHorizontal className="h-8 w-8" />
+                          <MoveHorizontal className="size-8" />
                           <Input
                             placeholder="Enter upper bound (character)"
                             {...field}

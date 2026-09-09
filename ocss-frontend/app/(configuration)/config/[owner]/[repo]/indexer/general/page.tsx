@@ -1,7 +1,7 @@
 "use client"
 
 import { useSearchParams } from "next/navigation"
-import { useRecoilState } from "recoil"
+import { useAtom } from "jotai"
 
 import { SearchParamsMap } from "@/types/searchParams"
 import { isConfigurationLoadedState } from "@/lib/global-state"
@@ -10,7 +10,7 @@ import { GeneralForm } from "@/components/configuration/general-form"
 import Loader from "@/components/misc/loader"
 
 export default function GeneralIndexerSettings() {
-  const [isConfigurationLoaded, setIsConfigurationLoadedState] = useRecoilState(
+  const [isConfigurationLoaded, setIsConfigurationLoadedState] = useAtom(
     isConfigurationLoadedState
   )
   const searchParams = useSearchParams()

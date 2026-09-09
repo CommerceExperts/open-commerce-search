@@ -99,7 +99,7 @@ export function IndexConfigForm({
           )}
         />
         <Button type="submit" className="flex gap-2">
-          <Plus className="h-4 w-4" />
+          <Plus className="size-4" />
           Create new configuration
         </Button>
       </form>

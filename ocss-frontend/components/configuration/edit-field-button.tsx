@@ -8,9 +8,9 @@ import * as z from "zod"
 
 import {
   Field,
-  FieldUsage,
   fieldLevels,
   fieldTypes,
+  FieldUsage,
   fieldUsages,
 } from "@/types/config"
 import { cn } from "@/lib/utils"
@@ -106,7 +106,10 @@ export default function EditFieldButton({
       "source-names",
       field?.["source-names"]?.map((_usage) => ({ value: _usage }))!
     )
-    form.setValue("usage", field?.usage?.map((_usage) => ({ value: _usage }))!)
+    form.setValue(
+      "usage",
+      field?.usage?.map((_usage) => ({ value: _usage }))!
+    )
   }, [dialogOpen, form, field])
 
   return (
@@ -248,7 +251,7 @@ export default function EditFieldButton({
                               usages[index] = { value }
                               form.setValue("usage", usages)
                             }}
-                            value={field.value.toLowerCase()}
+                            value={field.value?.toLowerCase()}
                           >
                             <SelectTrigger className="w-[180px]">
                               <SelectValue placeholder="Type" />
@@ -266,7 +269,7 @@ export default function EditFieldButton({
                             onClick={() => usageRemove(index)}
                             variant="outline"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="size-4" />
                           </Button>
                         </div>
                       </FormControl>
@@ -306,7 +309,7 @@ export default function EditFieldButton({
                             onClick={() => sourceNamesRemove(index)}
                             variant="outline"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="size-4" />
                           </Button>
                         </div>
                       </FormControl>

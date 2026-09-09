@@ -16,10 +16,11 @@ import SearchResultsFallback from "@/components/demoshop/search-results-fallback
 const searchResultsPerPage = 16
 
 type IndexPageProps = {
-  searchParams: SearchParams
+  searchParams: Promise<SearchParams>
 }
 
-export default async function IndexPage({ searchParams }: IndexPageProps) {
+export default async function IndexPage(props: IndexPageProps) {
+  const searchParams = await props.searchParams
   const tenant = searchParams?.tenant
     ? extractSearchParam(searchParams.tenant, 0)
     : env.DEFAULT_TENANT
@@ -43,7 +44,6 @@ export default async function IndexPage({ searchParams }: IndexPageProps) {
           <SearchResultsFallback searchResultsPerPage={searchResultsPerPage} />
         }
       >
-        {/* @ts-expect-error Async server component */}
         <SearchResults
           tenant={tenant}
           query={query}

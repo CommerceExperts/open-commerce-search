@@ -9,7 +9,7 @@ import {
   mergeURLSearchParams,
 } from "@/lib/utils"
 
-import { Checkbox } from "../ui/checkbox"
+import { CheckboxDisplay } from "../ui/checkbox"
 import { Label } from "../ui/label"
 
 export default function CheckboxFilter({ filterOption }: CheckboxFilterProps) {
@@ -18,7 +18,7 @@ export default function CheckboxFilter({ filterOption }: CheckboxFilterProps) {
   return (
     <div className="flex flex-col gap-2 pb-2">
       {filterOption.entries?.map((entry) => (
-        <div key={entry.id} className="flex items-center gap-2">
+        <div key={entry.key} className="flex items-center gap-2">
           <Link
             href={
               "/?" +
@@ -42,8 +42,8 @@ export default function CheckboxFilter({ filterOption }: CheckboxFilterProps) {
             }
             className="flex items-center space-x-2"
           >
-            <Checkbox id={entry.key} checked={entry.selected} />
-            <Label htmlFor={entry.key}>{entry.key}</Label>
+            <CheckboxDisplay checked={entry.selected} />
+            <Label>{entry.key}</Label>
           </Link>
           <p className="text-xs">{entry.docCount}</p>
         </div>

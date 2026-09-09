@@ -6,12 +6,6 @@ const nextConfig = {
   output: "standalone",
   basePath: process.env.BASEPATH,
   images: {
-    // remotePatterns: [
-    //   {
-    //     protocol: "https",
-    //     hostname: "**",
-    //   },
-    // ],
     unoptimized: true,
   },
 }

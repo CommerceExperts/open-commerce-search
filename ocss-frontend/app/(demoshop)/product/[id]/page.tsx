@@ -11,19 +11,17 @@ import ProductDataTables from "@/components/demoshop/product-data-tables"
 import Searchbar from "@/components/demoshop/search-bar"
 
 type ProductPageProps = {
-  params: {
+  params: Promise<{
     id: string
-  }
-  searchParams: Pick<
-    SearchParams,
-    SearchParamsMap.tenant | SearchParamsMap.query
+  }>
+  searchParams: Promise<
+    Pick<SearchParams, SearchParamsMap.tenant | SearchParamsMap.query>
   >
 }
 
-export default async function ProductPage({
-  params,
-  searchParams,
-}: ProductPageProps) {
+export default async function ProductPage(props: ProductPageProps) {
+  const searchParams = await props.searchParams
+  const params = await props.params
   const tenant = extractSearchParam(searchParams?.tenant, 0)
   const product = await getProduct(tenant, params.id)
   const query = extractSearchParam(searchParams?.query, 0)
@@ -35,7 +33,6 @@ export default async function ProductPage({
 
   return (
     <>
-      {/* @ts-ignore Async server component */}
       <ProductDataFieldConfigurationInitialization />
 
       <Searchbar

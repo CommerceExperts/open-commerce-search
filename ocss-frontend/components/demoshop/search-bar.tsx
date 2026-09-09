@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { getHotkeyHandler, useDebouncedValue } from "@mantine/hooks"
 
 import { Suggestion } from "@/types/api"
 import { SearchParamsMap } from "@/types/searchParams"
+import { getHotkeyHandler } from "@/lib/hotkeys"
 import { suggest } from "@/lib/suggest-api"
 import { cn } from "@/lib/utils"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 
 import { Icons } from "../misc/icons"
 import { buttonVariants } from "../ui/button"
@@ -122,7 +123,7 @@ export default function Searchbar({
             e.stopPropagation()
             search()
           }}
-          className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 cursor-pointer"
+          className="absolute left-3 top-1/2 size-5 -translate-y-1/2 cursor-pointer"
         />
 
         <form

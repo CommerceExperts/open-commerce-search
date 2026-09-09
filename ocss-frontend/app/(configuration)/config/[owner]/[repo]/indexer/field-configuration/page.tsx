@@ -1,8 +1,8 @@
 "use client"
 
 import { useSearchParams } from "next/navigation"
+import { useAtom } from "jotai"
 import _ from "lodash"
-import { useRecoilState } from "recoil"
 
 import { SearchParamsMap } from "@/types/searchParams"
 import {
@@ -14,10 +14,10 @@ import { FieldConfiguration } from "@/components/configuration/field-configurati
 import Loader from "@/components/misc/loader"
 
 export default function FieldConfigurationIndexerSettings() {
-  const [isConfigurationLoaded, setIsConfigurationLoadedState] = useRecoilState(
+  const [isConfigurationLoaded, setIsConfigurationLoadedState] = useAtom(
     isConfigurationLoadedState
   )
-  const [indexerConfiguration, setIndexerConfiguration] = useRecoilState(
+  const [indexerConfiguration, setIndexerConfiguration] = useAtom(
     indexerConfigurationState
   )
   const searchParams = useSearchParams()

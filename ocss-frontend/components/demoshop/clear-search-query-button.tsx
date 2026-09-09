@@ -31,7 +31,7 @@ export default function ClearSearchQueryButton({
       variant="outline"
       className="flex gap-2"
     >
-      <Eraser className="h-4 w-4" />
+      <Eraser className="size-4" />
       Clear search query
     </Button>
   )

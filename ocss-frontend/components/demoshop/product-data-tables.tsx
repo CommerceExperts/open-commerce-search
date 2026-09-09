@@ -1,3 +1,5 @@
+import { Fragment } from "react"
+
 import { Product } from "@/types/api"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -27,7 +29,7 @@ export default function ProductDataTables({ product }: ProductDataTablesProps) {
         </TableHeader>
         <TableBody>
           {Object.keys(product.data).map((key) => (
-            <TableRow>
+            <TableRow key={key}>
               <TableCell className="font-medium">{key}</TableCell>
               <TableCell className="break-all">
                 {JSON.stringify(product.data[key])}
@@ -40,7 +42,7 @@ export default function ProductDataTables({ product }: ProductDataTablesProps) {
 
       {product.variants &&
         product.variants.map((variant, i) => (
-          <>
+          <Fragment key={variant.id ?? i}>
             <h2 className="text-lg font-bold">
               {i + 1}. Variant data ({variant.id})
             </h2>
@@ -53,7 +55,7 @@ export default function ProductDataTables({ product }: ProductDataTablesProps) {
               </TableHeader>
               <TableBody>
                 {Object.keys(variant.data).map((key) => (
-                  <TableRow>
+                  <TableRow key={key}>
                     <TableCell className="font-medium">{key}</TableCell>
                     <TableCell className="break-all">
                       {JSON.stringify(variant.data[key] as any)}
@@ -63,7 +65,7 @@ export default function ProductDataTables({ product }: ProductDataTablesProps) {
               </TableBody>
             </Table>
             <Separator />
-          </>
+          </Fragment>
         ))}
     </>
   )

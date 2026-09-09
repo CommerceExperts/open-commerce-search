@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
+import { useAtom, useAtomValue } from "jotai"
 import { useSession } from "next-auth/react"
-import { useRecoilState, useRecoilValue } from "recoil"
 import * as YAML from "yaml"
 
 import { SearchParamsMap } from "@/types/searchParams"
@@ -46,23 +46,25 @@ export default function ConfigurationStateInitialization({
     string | undefined
   >()
 
-  const [isConfigurationLoaded, setIsConfigurationLoadedState] = useRecoilState(
+  const [isConfigurationLoaded, setIsConfigurationLoadedState] = useAtom(
     isConfigurationLoadedState
   )
-  const [indexerConfiguration, setIndexerConfiguration] = useRecoilState(
+  const [indexerConfiguration, setIndexerConfiguration] = useAtom(
     indexerConfigurationState
   )
-  const [searchConfiguration, setSearchConfiguration] = useRecoilState(
+  const [searchConfiguration, setSearchConfiguration] = useAtom(
     searchConfigurationState
   )
-  const [searchConfigurationUpdates, setSearchConfigurationUpdates] =
-    useRecoilState(searchConfigurationUpdatesState)
-  const [indexerConfigurationUpdates, setIndexerConfigurationUpdates] =
-    useRecoilState(indexerConfigurationUpdatesState)
-  const isSearchConfigurationDirty = useRecoilValue(
+  const [searchConfigurationUpdates, setSearchConfigurationUpdates] = useAtom(
+    searchConfigurationUpdatesState
+  )
+  const [indexerConfigurationUpdates, setIndexerConfigurationUpdates] = useAtom(
+    indexerConfigurationUpdatesState
+  )
+  const isSearchConfigurationDirty = useAtomValue(
     isSearchConfigurationDirtyState
   )
-  const isIndexerConfigurationDirty = useRecoilValue(
+  const isIndexerConfigurationDirty = useAtomValue(
     isIndexerConfigurationDirtyState
   )
 
@@ -78,8 +80,8 @@ export default function ConfigurationStateInitialization({
     pathname.includes("/indexer")
       ? "indexer"
       : pathname.includes("/search")
-      ? "search"
-      : undefined
+        ? "search"
+        : undefined
   )
 
   useEffect(() => {
@@ -88,8 +90,8 @@ export default function ConfigurationStateInitialization({
       pathname.includes("/indexer")
         ? "indexer"
         : pathname.includes("/search")
-        ? "search"
-        : undefined
+          ? "search"
+          : undefined
     setSelectedService(newSelectedService)
 
     // Check if selected service was changed

@@ -1,8 +1,8 @@
 "use client"
 
 import { useSearchParams } from "next/navigation"
+import { useAtom } from "jotai"
 import _ from "lodash"
-import { useRecoilState } from "recoil"
 
 import { SearchParamsMap } from "@/types/searchParams"
 import {
@@ -18,13 +18,13 @@ import { ScoringConfiguration } from "@/components/configuration/scoring-configu
 import Loader from "@/components/misc/loader"
 
 export default function ScoringConfigurationSearchSettings() {
-  const [isConfigurationLoaded, setIsConfigurationLoadedState] = useRecoilState(
+  const [isConfigurationLoaded, setIsConfigurationLoadedState] = useAtom(
     isConfigurationLoadedState
   )
-  const [searchConfiguration, setSearchConfiguration] = useRecoilState(
+  const [searchConfiguration, setSearchConfiguration] = useAtom(
     searchConfigurationState
   )
-  const [indexerConfiguration, setIndexerConfiguration] = useRecoilState(
+  const [indexerConfiguration, setIndexerConfiguration] = useAtom(
     indexerConfigurationState
   )
   const searchParams = useSearchParams()

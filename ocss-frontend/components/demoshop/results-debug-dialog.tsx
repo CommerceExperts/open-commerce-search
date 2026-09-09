@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
+  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
 import {
@@ -35,42 +36,49 @@ export default function ResultsDebugDialogButton({
   return (
     <Dialog>
       <DialogTrigger>
-        <div className={cn(buttonVariants(), "h-10 w-10 p-1", className)}>
-          <Info className="h-4 w-4" />
+        <div className={cn(buttonVariants(), "size-10 p-1", className)}>
+          <Info className="size-4" />
         </div>
       </DialogTrigger>
       <DialogContent className="max-h-screen overflow-y-scroll lg:max-w-screen-sm">
         <DialogHeader>
+          <DialogTitle>Search result details</DialogTitle>
+          {/* DialogDescription renders a <p>, so it holds text only. Tables and
+              headings are siblings, not children. */}
           <DialogDescription>
-            <h3 className="text-lg font-bold text-primary">Meta</h3>
-
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[100px]">Field</TableHead>
-                  <TableHead>Data</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Object.keys(meta).map((key) => (
-                  <TableRow>
-                    <TableCell className="font-medium">{key}</TableCell>
-                    <TableCell className="break-all">
-                      {JSON.stringify(meta[key] as any)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            <h3 className="mt-4 text-lg font-bold text-primary">
-              Raw response
-            </h3>
-            <Textarea className="h-[250px]" readOnly>
-              {JSON.stringify(searchResult, null, 2)}
-            </Textarea>
+            Metadata and the raw response for this search.
           </DialogDescription>
         </DialogHeader>
+
+        <div className="space-y-2">
+          <h3 className="text-lg font-bold text-primary">Meta</h3>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[100px]">Field</TableHead>
+                <TableHead>Data</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Object.keys(meta).map((key) => (
+                <TableRow key={key}>
+                  <TableCell className="font-medium">{key}</TableCell>
+                  <TableCell className="break-all">
+                    {JSON.stringify(meta[key] as any)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          <h3 className="mt-4 text-lg font-bold text-primary">Raw response</h3>
+          <Textarea
+            className="h-[250px]"
+            readOnly
+            value={JSON.stringify(searchResult, null, 2)}
+          />
+        </div>
       </DialogContent>
     </Dialog>
   )

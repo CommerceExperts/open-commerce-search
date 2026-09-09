@@ -33,8 +33,11 @@ export function SortConfiguration({
       <h1 className="text-md font-medium">Sort options</h1>
       <ul className="space-y-2">
         {sortOptions.map((sortOption, index) => (
+          // Sort options are a plain array with no unique field, and edit and
+          // delete below address a row by its index, so the index is the row's
+          // identity. Labels are not guaranteed unique.
           <li
-            key={sortOption.label}
+            key={index}
             className={cn(
               buttonVariants({ variant: "outline" }),
               "grid w-full grid-cols-[92%,1fr]"
@@ -43,9 +46,9 @@ export function SortConfiguration({
             <p className="mr-4 flex items-center gap-2 overflow-hidden text-left">
               {sortOption.label} ({sortOption.field})
               {sortOption.order === "DESC" ? (
-                <ArrowDownWideNarrow className="h-4 w-4" />
+                <ArrowDownWideNarrow className="size-4" />
               ) : (
-                <ArrowUpNarrowWide className="h-4 w-4" />
+                <ArrowUpNarrowWide className="size-4" />
               )}
             </p>
             <div className="flex gap-4">

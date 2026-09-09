@@ -2,27 +2,27 @@
 
 import { useEffect, useState, useTransition } from "react"
 import {
+  closestCenter,
   DndContext,
   KeyboardSensor,
   PointerSensor,
-  closestCenter,
   useSensor,
   useSensors,
 } from "@dnd-kit/core"
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
 import {
-  SortableContext,
   arrayMove,
+  SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
+import { useAtom } from "jotai"
 import { Save, Trash2 } from "lucide-react"
-import { useRecoilState } from "recoil"
 
 import {
   ProductDataFieldConfiguration,
-  ProductDataFieldConfigurationCurrency,
   productDataFieldConfigurationCurrencies,
+  ProductDataFieldConfigurationCurrency,
   productDataFieldConfigurationStyles,
   productDataFieldConfigurationTypes,
 } from "@/types/config"
@@ -76,7 +76,7 @@ export default function ProductCardEditorButton({
   )
   const [selectedItem, setSelectedItem] = useState<number | null>(null)
   const [productDataFieldConfiguration, setProductDataFieldConfiguration] =
-    useRecoilState(productDataFieldConfigurationState)
+    useAtom(productDataFieldConfigurationState)
   const [isPending, startTransition] = useTransition()
 
   function handleDragEnd(event: any) {
@@ -148,8 +148,8 @@ export default function ProductCardEditorButton({
                                 item.style == "bold"
                                   ? "font-bold"
                                   : item.style === "small"
-                                  ? "text-sm"
-                                  : ""
+                                    ? "text-sm"
+                                    : ""
                               )}
                             >
                               {item.sourceField}
@@ -336,7 +336,7 @@ export default function ProductCardEditorButton({
                   variant="destructive"
                   className="flex items-center gap-2 font-bold"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="size-4" />
                 </Button>
               </div>
             </div>
@@ -351,7 +351,7 @@ export default function ProductCardEditorButton({
             }}
             className="flex max-w-[200px] gap-2 font-bold"
           >
-            Save configuration <Save className="h-4 w-4" />
+            Save configuration <Save className="size-4" />
           </Button>
         </DialogHeader>
       </DialogContent>

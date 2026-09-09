@@ -16,7 +16,7 @@ export default function ConfigButton() {
         env.NEXTAUTH_SECRET && (
           <Link href={href}>
             <p className="text-md flex items-center gap-2 font-semibold text-muted-foreground sm:text-sm">
-              <Settings className="h-5 w-5 sm:h-4 sm:w-4" />
+              <Settings className="size-5 sm:size-4" />
               <span className="hidden sm:block">Config</span>
             </p>
           </Link>
