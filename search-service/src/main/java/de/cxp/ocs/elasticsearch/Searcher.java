@@ -647,7 +647,7 @@ public class Searcher {
 			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).should(variantQuery);
 			variantShouldClauses++;
 		}
-		if (variantShouldClauses > 0) ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).minimumShouldMatch(variantShouldClauses);
+		if (variantShouldClauses > 1) ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).minimumShouldMatch(variantShouldClauses);
 
 		return masterLevelQuery;
 	}
