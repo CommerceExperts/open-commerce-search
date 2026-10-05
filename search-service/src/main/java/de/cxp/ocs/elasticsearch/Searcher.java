@@ -609,11 +609,13 @@ public class Searcher {
 		// because they may contain optional matchers and post filters
 		// only exception: if the variants are only filtered
 		boolean isRetrieveVariantInnerHits = false;
+		int variantShouldClauses = 0;
 		if (variantsMatchQuery != null && !variantsOnlyFiltered) {
 			NestedQueryBuilder variantQuery = QueryBuilders.nestedQuery(FieldConstants.VARIANTS, variantsMatchQuery, ScoreMode.Avg)
 					.innerHit(getVariantInnerHits(queryContext.variantSortings));
 			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).should(variantQuery);
 			isRetrieveVariantInnerHits = true;
+			variantShouldClauses++;
 		}
 
 		// add hero products without the impact of the "natural query"
@@ -637,12 +639,15 @@ public class Searcher {
 
 		if (variantPickingStrategy.isAllVariantHitCountRequired() && isRetrieveVariantInnerHits) {
 			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).should(getAllVariantInnerHits());
+			variantShouldClauses++;
 		}
 		else if (VariantPickingStrategy.pickAlways.equals(variantPickingStrategy) && !isRetrieveVariantInnerHits) {
 			NestedQueryBuilder variantQuery = QueryBuilders.nestedQuery(FieldConstants.VARIANTS, QueryBuilders.matchAllQuery(), ScoreMode.None)
 					.innerHit(getVariantInnerHits(queryContext.variantSortings));
 			masterLevelQuery = ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).should(variantQuery);
+			variantShouldClauses++;
 		}
+		if (variantShouldClauses > 0) ESQueryUtils.mapToBoolQueryBuilder(masterLevelQuery).minimumShouldMatch(variantShouldClauses);
 
 		return masterLevelQuery;
 	}
