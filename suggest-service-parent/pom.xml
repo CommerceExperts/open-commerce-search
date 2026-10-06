@@ -17,8 +17,8 @@
 
 	<properties>
 		<!-- don't upgrade unless compatible with used elasticsearch-rest-high-level-client -->
-		<lucene.version>8.11.3</lucene.version>
-		<micrometer.version>1.14.4</micrometer.version>
+		<lucene.version>8.11.4</lucene.version>
+		<micrometer.version>1.18.0-M2</micrometer.version>
 	</properties>
 
 	<modules>

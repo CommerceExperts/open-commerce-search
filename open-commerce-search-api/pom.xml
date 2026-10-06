@@ -23,7 +23,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<swagger.version>2.2.28</swagger.version>
+		<swagger.version>2.2.55</swagger.version>
 	</properties>
     
 	<dependencies>
