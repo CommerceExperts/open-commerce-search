@@ -66,7 +66,7 @@ pipeline {
         withMaven(mavenSettingsConfig: '67c40a88-505a-4f78-94a3-d879cc1a29f6') {
           // regenerate java docs
           sh "mvn $MAVEN_CLI_OPTS javadoc:aggregate"
-          sh "rm -rf docs/apidocs && mv -v target/site/apidocs docs/"
+          sh "rm -rf docs/apidocs && mv -v target/reports/apidocs docs/"
 
           // stopped 'regenerate openapi docs' because the output are partially broken markdown files
           // instead the same steps can be done to do a manual update picking the relevant changes only 
