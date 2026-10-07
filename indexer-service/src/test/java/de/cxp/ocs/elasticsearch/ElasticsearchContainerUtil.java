@@ -5,6 +5,7 @@ import java.time.Duration;
 import org.elasticsearch.Version;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.RestHighLevelClientBuilder;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -43,7 +44,9 @@ public class ElasticsearchContainerUtil {
 		ConnectionConfiguration connectionConf = new ConnectionConfiguration();
 		connectionConf.setHosts("localhost:" + container.getMappedPort(ES_PORT));
 		RestClientBuilder restClientBuilder = RestClientBuilderFactory.createRestClientBuilder(connectionConf);
-		return new RestHighLevelClient(restClientBuilder);
+		return new RestHighLevelClientBuilder(restClientBuilder.build())
+				.setApiCompatibilityMode(container.getDockerImageName().contains("elasticsearch:8"))
+				.build();
 	}
 
 }
