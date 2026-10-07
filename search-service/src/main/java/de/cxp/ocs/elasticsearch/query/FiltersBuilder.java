@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import de.cxp.ocs.config.Field;
 import de.cxp.ocs.util.InternalSearchParams;
 import org.apache.lucene.search.join.ScoreMode;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -22,11 +23,11 @@ import de.cxp.ocs.elasticsearch.query.filter.*;
 
 public class FiltersBuilder {
 
-	private final Set<String>      postFilterFacets	= new HashSet<>();
+	private final Set<String>      postFilterFacets = new HashSet<>();
 	private final FieldConfigIndex indexedFieldConfig;
 
-
 	private static final Map<Class<? extends InternalResultFilter>, InternalResultFilterAdapter<? extends InternalResultFilter>> filterAdapters = new HashMap<>(3);
+
 	static {
 		filterAdapters.put(NumberResultFilter.class, new NumberResultFilterAdapter());
 		filterAdapters.put(TermResultFilter.class, new TermResultFilterAdapter());
@@ -61,13 +62,13 @@ public class FiltersBuilder {
 		TextMatchQuery<QueryBuilder> postFilterQuery = buildFilters(filterCollector.postFilterQueries);
 		QueryBuilder joinedPostFilters = mergeQueries(postFilterQuery.getMasterLevelQuery(), postFilterQuery
 				.getVariantLevelQuery());
-		
+
 		QueryBuilder innerHitsFilter = null;
 		for (QueryBuilder filter : filterCollector.variantInnerHitsFilters.values()) {
 			if (innerHitsFilter == null) innerHitsFilter = filter;
 			else innerHitsFilter = mergeQueries(innerHitsFilter, filter);
 		}
-		
+
 		return new FilterContext(
 				filtersByName,
 				Collections.unmodifiableMap(filterCollector.postFilterQueries),
@@ -115,7 +116,7 @@ public class FiltersBuilder {
 					}
 					else {
 						filterQuery = QueryBuilders.boolQuery()
-							.should(filterQuery)
+								.should(filterQuery)
 								.should(variantQuery);
 					}
 				}
@@ -123,12 +124,12 @@ public class FiltersBuilder {
 
 			if (filter.isNegated() && !negationHandeled) {
 				filterQuery = QueryBuilders.boolQuery().mustNot(filterQuery);
-				negationHandeled = true;
 			}
 
 			if (filter.isNegated() || addAllFiltersAsBasicFilters || isBasicQuery(filter.getField().getName())) {
 				filterCollector.addBasicFilterQuery(filter.getField().getName(), filterQuery);
-			} else {
+			}
+			else {
 				filterCollector.addPostFilterQuery(filter.getField().getName(), filterQuery);
 			}
 		}
@@ -157,7 +158,7 @@ public class FiltersBuilder {
 		QueryBuilder variantFilters = null;
 		QueryBuilder masterFilters = null;
 		for (Entry<String, QueryBuilder> nestedFieldFilters : filterQueries.entrySet()) {
-			if (isOnlyVariantField(nestedFieldFilters.getKey())) {
+			if (isVariantField(nestedFieldFilters.getKey())) {
 				variantFilters = mergeQueries(variantFilters, nestedFieldFilters.getValue());
 			}
 			else {
@@ -168,8 +169,8 @@ public class FiltersBuilder {
 		return new TextMatchQuery<>(masterFilters, variantFilters, false, true);
 	}
 
-	private boolean isOnlyVariantField(String field) {
-		return indexedFieldConfig.getField(field).map(f -> f.isVariantLevel() && !f.isBothLevel()).orElse(false);
+	private boolean isVariantField(String field) {
+		return indexedFieldConfig.getField(field).map(Field::isVariantLevel).orElse(false);
 	}
 
 	private static class FilterCollector {
@@ -177,7 +178,7 @@ public class FiltersBuilder {
 		private final Map<String, QueryBuilder> basicFilterQueries = new HashMap<>();
 
 		private final Map<String, QueryBuilder> postFilterQueries = new HashMap<>();
-		
+
 		private final Map<String, QueryBuilder> variantInnerHitsFilters = new HashMap<>();
 
 		public FilterCollector addBasicFilterQuery(String fieldName, QueryBuilder filterQuery) {

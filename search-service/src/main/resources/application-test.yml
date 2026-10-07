@@ -1,0 +1,52 @@
+ocs:
+  tenant-config:
+    searcher_test:
+      use-default-query-config: true
+      maxFacets: 12
+      index-name: searcher_test
+      variantPickingStrategy: "pickIfDrilledDown"
+      facet-configuration:
+        facets:
+        - source-field: category
+          label: Category
+          order: 1
+          excludeFromFacetLimit: true
+        - source-field: brand
+          label: Brand
+          order: 2
+          multi-select: true
+          excludeFromFacetLimit: true
+        - source-field: color
+          label: Color
+          multi-select: true
+          minValueCount: 1
+          removeOnSingleFullCoverageFacetElement: true
+    searcher_test_2:
+      use-default-query-config: true
+      index-name: searcher_test
+      variantPickingStrategy: "pickAlways"
+      facet-configuration:
+        facets:
+        - source-field: color
+          label: Color
+          multi-select: true
+    test_campaign_indexing:
+      use-default-query-config: true
+      facet-configuration:
+        facets:
+        - source-field: campaign
+          label: _campaign
+          type: RANGE
+          isFilterSensitive: true
+        - source-field: price
+          label: _price
+          type: RANGE
+    querqy_rules_test:
+      use-default-query-config: true
+      # don't use scoring, to test the effect of the rules isolated
+      use-default-scoring-config: false
+      query-processing:
+        user-query-analyzer: "de.cxp.ocs.elasticsearch.query.analyzer.QuerqyQueryExpander"
+      plugin-configuration:
+        "[de.cxp.ocs.elasticsearch.query.analyzer.QuerqyQueryExpander]":
+          "common_rules_url": "querqy-test-rules.txt"

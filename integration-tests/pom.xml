@@ -7,18 +7,13 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.73.0</version>
-		<relativePath>../</relativePath>
+		<version>0.74.2</version>
 	</parent>
 
 	<artifactId>integration-tests</artifactId>
 	<packaging>jar</packaging>
 
 	<description>Integration test of all OCS Services</description>
-
-	<properties>
-		<testcontainers.version>1.15.3</testcontainers.version>
-	</properties>
 
 	<dependencies>
 		<dependency>
@@ -74,19 +69,16 @@
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>testcontainers</artifactId>
-			<version>${testcontainers.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>junit-jupiter</artifactId>
-			<version>${testcontainers.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>elasticsearch</artifactId>
-			<version>${testcontainers.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

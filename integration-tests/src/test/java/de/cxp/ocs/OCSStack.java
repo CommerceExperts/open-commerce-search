@@ -101,7 +101,7 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 		}
 	}
 
-	private CompletableFuture<String> startIndexerService(CompletableFuture<HttpHost> esHost) throws InterruptedException, ExecutionException {
+	private CompletableFuture<String> startIndexerService(CompletableFuture<HttpHost> esHostFuture) throws InterruptedException, ExecutionException {
 		CompletableFuture<String> indexerHost;
 		if (System.getenv("INDEXER_DEBUG_HOST") != null) {
 			indexerHost = CompletableFuture.completedFuture(System.getenv("INDEXER_DEBUG_HOST"));
@@ -123,10 +123,10 @@ public class OCSStack implements BeforeAllCallback, TestExecutionExceptionHandle
 				indexerService.addEnv("ES_HOSTS", "http://elasticsearch:9200");
 			}
 			else {
-				indexerService.addEnv("ES_HOSTS", esHost.get().toURI());
+				indexerService.addEnv("ES_HOSTS", esHostFuture.get().toURI());
 			}
 
-			indexerHost = CompletableFuture.supplyAsync(() -> {
+			indexerHost = esHostFuture.thenApplyAsync(esHost -> {
 				indexerService.start();
 				indexerService.followOutput(new Slf4jLogConsumer(log).withPrefix("ocs_indexer"));
 				return "http://localhost:" + indexerService.getMappedPort(INDEXER_DEFAULT_PORT);
