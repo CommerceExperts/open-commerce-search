@@ -30,8 +30,8 @@
 		<docker.latest.tag>latest</docker.latest.tag>
 
 		<elasticsearch.version>7.17.29</elasticsearch.version>
-		<spring-boot.version>3.5.5</spring-boot.version>
-		<spring-cloud.version>2025.0.0</spring-cloud.version>
+		<spring-boot.version>3.5.16</spring-boot.version>
+		<spring-cloud.version>2025.0.3</spring-cloud.version>
 		<springdoc.version>1.8.0</springdoc.version>
 
 		<testcontainers.version>1.21.4</testcontainers.version>
@@ -49,12 +49,12 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>open-commerce-search-api</artifactId>
-				<version>0.26.2</version>
+				<version>0.26.3</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-plugin-spi</artifactId>
-				<version>1.19.0</version>
+				<version>1.19.1</version>
 			</dependency>
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
@@ -81,7 +81,7 @@
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-java-client</artifactId>
-				<version>0.21.2</version>
+				<version>0.21.3</version>
 			</dependency>
 
 			<!-- serialization -->
@@ -166,9 +166,20 @@
 				<version>4.5.14</version>
 			</dependency>
 			<dependency>
+				<groupId>org.apache.httpcomponents.client5</groupId>
+				<artifactId>httpclient5</artifactId>
+				<version>5.6.4</version>
+				<scope>compile</scope>
+			</dependency>
+			<dependency>
 				<groupId>commons-logging</groupId>
 				<artifactId>commons-logging</artifactId>
 				<version>1.4.0</version>
+			</dependency>
+			<dependency>
+				<groupId>net.java.dev.jna</groupId>
+				<artifactId>jna</artifactId>
+				<version>5.13.0</version>
 			</dependency>
 
 			<!-- swagger -->

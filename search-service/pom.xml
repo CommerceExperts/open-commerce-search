@@ -6,17 +6,15 @@
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
 		<version>0.74.2</version>
-		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<artifactId>search-service</artifactId>
 	<version>0.64.1</version>
 	<packaging>jar</packaging>
 
-	<!-- Import dependency management from Spring Boot -->
 	<dependencyManagement>
 		<dependencies>
-			<!-- necessary, because they are not automatically inherited -->
+			<!-- necessary, because they are not automatically inherited when declaring our own dependencyManagement -->
 			<dependency>
 				<groupId>de.cxp.ocs</groupId>
 				<artifactId>ocs-parent</artifactId>
@@ -24,6 +22,7 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
+			<!-- Import dependency management from Spring Boot -->
 			<dependency>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-dependencies</artifactId>
@@ -75,18 +74,6 @@
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-config</artifactId>
-			<exclusions>
-				<exclusion>
-					<artifactId>httpclient5</artifactId>
-					<groupId>org.apache.httpcomponents.client5</groupId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.httpcomponents.client5</groupId>
-			<artifactId>httpclient5</artifactId>
-			<version>5.6.3</version>
-			<scope>compile</scope>
 		</dependency>
 
 		<dependency>
@@ -96,16 +83,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-actuator</artifactId>
-			<exclusions>
-				<exclusion>
-					<groupId>org.springframework</groupId>
-					<artifactId>spring-context</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-context</artifactId>
 		</dependency>
 
 		<dependency>
