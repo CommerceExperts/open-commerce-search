@@ -37,6 +37,7 @@ public enum VariantPickingStrategy implements BiFunction<SearchHits, Integer, Se
 
 		@Override
 		public SearchHit pick(SearchHits variantHits, Integer allVariantHitCount) {
+			assert variantHits.getTotalHits() != null;
 			return (int) variantHits.getTotalHits().value < allVariantHitCount || variantHits.getHits().length == 1 ? variantHits.getAt(0) : null;
 		}
 

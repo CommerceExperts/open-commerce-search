@@ -53,16 +53,14 @@ public class VariantFacetCreator implements FacetCreator {
 		NestedAggregationBuilder variantNestedAggBuilder = AggregationBuilders.nested("_variants", FieldConstants.VARIANTS);
 
 		AggregationBuilder finalNestedAggBuilder;
-		if (filterContext.getVariantInnerHitFilter() != null) {
+		if (filterContext != null && filterContext.getVariantInnerHitFilter() != null) {
 			FilterAggregationBuilder variantsFiltered = AggregationBuilders.filter("_variants_filtered", filterContext.getVariantInnerHitFilter());
 			variantNestedAggBuilder.subAggregation(variantsFiltered);
 			finalNestedAggBuilder = variantsFiltered;
 		} else {
 			finalNestedAggBuilder = variantNestedAggBuilder;
 		}
-		innerCreators.forEach(creator -> {
-			finalNestedAggBuilder.subAggregation(subAggCreatorCall.apply(creator));
-		});
+		innerCreators.forEach(creator -> finalNestedAggBuilder.subAggregation(subAggCreatorCall.apply(creator)));
 		return variantNestedAggBuilder;
 	}
 

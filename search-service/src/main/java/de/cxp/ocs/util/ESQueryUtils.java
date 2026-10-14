@@ -1,10 +1,7 @@
 package de.cxp.ocs.util;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -116,6 +113,16 @@ public class ESQueryUtils {
 					.must(q1)
 					.must(q2);
 		}
+	}
+
+	public static QueryBuilder mergeQueries(Collection<QueryBuilder> queries) {
+		if (queries == null || queries.isEmpty()) return null;
+		Iterator<QueryBuilder> queriesIterator = queries.iterator();
+		QueryBuilder query = queriesIterator.next();
+		while (queriesIterator.hasNext()) {
+			query = mergeQueries(query, queriesIterator.next());
+		}
+		return query;
 	}
 
 	public static Map<String, Float> validateSearchFields(Map<String, Float> weightedFields, FieldConfigAccess fieldConfig, Predicate<Field> additionalPredicate) {
