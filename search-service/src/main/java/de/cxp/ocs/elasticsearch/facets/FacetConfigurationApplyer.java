@@ -25,8 +25,6 @@ import de.cxp.ocs.elasticsearch.query.filter.FilterContext;
 import de.cxp.ocs.model.result.Facet;
 import de.cxp.ocs.spi.search.CustomFacetCreator;
 import de.cxp.ocs.util.DefaultLinkBuilder;
-import lombok.NonNull;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -51,10 +49,6 @@ public class FacetConfigurationApplyer {
 	private final int maxFacets;
 
 	private final List<FacetFilter> facetFilters = new ArrayList<>();
-
-	@Setter
-	@NonNull
-	private Set<String> excludeFields = Collections.emptySet();
 
 	public FacetConfigurationApplyer(SearchContext context, Set<Supplier<? extends CustomFacetCreator>> customFacetCreatorSupplier) {
 		FacetConfiguration facetConfiguration = context.config.getFacetConfiguration();
@@ -125,7 +119,7 @@ public class FacetConfigurationApplyer {
 				continue;
 			}
 
-			if (!sourceField.isPresent()) {
+			if (sourceField.isEmpty()) {
 				log.warn("facet {} configured for field {}, but that field does not exist. Facet won't be created",
 						facetConfig.getLabel(), facetConfig.getSourceField());
 				continue;
@@ -278,7 +272,7 @@ public class FacetConfigurationApplyer {
 			Map<String, QueryBuilder> postFilters = filterContext.getPostFilterQueries();
 			for (String postFilterName : postFilters.keySet()) {
 				InternalResultFilter internalFilter = filterContext.getInternalFilters().get(postFilterName);
-				QueryBuilder exclusiveFilterQuery = getExclusivePostFilterQuery(postFilterName, internalFilter, postFilters);
+				QueryBuilder exclusiveFilterQuery = getExclusivePostFilterQuery(postFilterName, postFilters);
 
 				FilterAggregationBuilder filterAgg = AggregationBuilders.filter(EXCLUSIVE_AGG_PREFIX + postFilterName, exclusiveFilterQuery);
 
@@ -307,7 +301,7 @@ public class FacetConfigurationApplyer {
 		return aggregators;
 	}
 
-	private QueryBuilder getExclusivePostFilterQuery(String postFilterName, InternalResultFilter internalFilter, Map<String, QueryBuilder> postFilters) {
+	private QueryBuilder getExclusivePostFilterQuery(String postFilterName, Map<String, QueryBuilder> postFilters) {
 		// and combines that with all other post filters
 		return FilterContext.joinAllButOne(postFilterName, postFilters)
 				.orElse(QueryBuilders.matchAllQuery());
@@ -317,6 +311,7 @@ public class FacetConfigurationApplyer {
 		Field facetField = internalFilter.getField();
 		FacetConfig facetConfig = facetsBySourceField.get(facetField.getName());
 
+		boolean isMandatory = facetConfig != null && facetConfig.isMandatoryFacet();
 		String facetType = facetConfig != null ? facetConfig.getType() : null;
 		if (facetType == null) {
 			facetType = getDefaultFacetType(facetField.getType()).name();
@@ -325,13 +320,13 @@ public class FacetConfigurationApplyer {
 		// handle facets that need to be created on master and variant level
 		List<FacetCreator> facetCreators = new ArrayList<>(facetField.isBothLevel() ? 2 : 1);
 		if (facetField.isVariantLevel()) {
-			FacetCreator facetCreator = facetCreatorsByTypes.get(new FacetCreatorClassifier(true, facetType, facetConfig.isMandatoryFacet()));
+			FacetCreator facetCreator = facetCreatorsByTypes.get(new FacetCreatorClassifier(true, facetType, isMandatory));
 			if (facetCreator != null) {
 				facetCreators.add(facetCreator);
 			}
 		}
 		if (facetField.isMasterLevel()) {
-			FacetCreator facetCreator = facetCreatorsByTypes.get(new FacetCreatorClassifier(false, facetType, facetConfig.isMandatoryFacet()));
+			FacetCreator facetCreator = facetCreatorsByTypes.get(new FacetCreatorClassifier(false, facetType, isMandatory));
 			if (facetCreator != null) {
 				facetCreators.add(facetCreator);
 			}
@@ -357,23 +352,18 @@ public class FacetConfigurationApplyer {
 		filterFacets(facets, filterContext, matchCount);
 
 		// sort by order and facet coverage
-		facets.sort(new Comparator<Facet>() {
-
-			@Override
-			public int compare(Facet o1, Facet o2) {
-				// prio 1: configured order
-				int compare = Integer.compare(FacetFactory.getOrder(o1), FacetFactory.getOrder(o2));
-				// prio 2: prefer facets with filtered value
-				if (compare == 0) {
-					compare = Boolean.compare(o2.isFiltered(), o1.isFiltered());
-				}
-				// prio 3: prefer higher facet coverage (reverse natural order)
-				if (compare == 0) {
-					compare = Long.compare(o2.getAbsoluteFacetCoverage(), o1.getAbsoluteFacetCoverage());
-				}
-				return compare;
+		facets.sort((o1, o2) -> {
+			// prio 1: configured order
+			int compare = Integer.compare(FacetFactory.getOrder(o1), FacetFactory.getOrder(o2));
+			// prio 2: prefer facets with filtered value
+			if (compare == 0) {
+				compare = Boolean.compare(o2.isFiltered(), o1.isFiltered());
 			}
-
+			// prio 3: prefer higher facet coverage (reverse natural order)
+			if (compare == 0) {
+				compare = Long.compare(o2.getAbsoluteFacetCoverage(), o1.getAbsoluteFacetCoverage());
+			}
+			return compare;
 		});
 
 		int actualMaxFacets = maxFacets + (int) facets.stream()
@@ -449,7 +439,7 @@ public class FacetConfigurationApplyer {
 
 				if (previousFacet != null) {
 					Optional<Facet> mergedFacet = fc.mergeFacets(previousFacet, f);
-					if (!mergedFacet.isPresent()) {
+					if (mergedFacet.isEmpty()) {
 						log.warn("Not able to merge duplicate facet of label {}! Will drop the one of type {} from field {}",
 								getLabel(f), f.type, f.fieldName);
 						continue;

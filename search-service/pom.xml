@@ -5,11 +5,11 @@
 	<parent>
 		<groupId>de.cxp.ocs</groupId>
 		<artifactId>ocs-parent</artifactId>
-		<version>0.74.2</version>
+		<version>0.74.3</version>
 	</parent>
 
 	<artifactId>search-service</artifactId>
-	<version>0.64.1</version>
+	<version>0.64.2</version>
 	<packaging>jar</packaging>
 
 	<dependencyManagement>

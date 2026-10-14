@@ -8,8 +8,10 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import de.cxp.ocs.config.Field;
+import de.cxp.ocs.util.ESQueryUtils;
 import de.cxp.ocs.util.InternalSearchParams;
 import org.apache.lucene.search.join.ScoreMode;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 
@@ -53,37 +55,25 @@ public class FiltersBuilder {
 							a.appendFilter(b);
 							return a;
 						}));
-		FilterCollector filterCollector = new FilterCollector();
 
 		// collect filter queries on master and variant level
+		FilterCollector filterCollector = new FilterCollector();
 		buildFilterQueries(filters, filterCollector, !withFacets);
 		buildFilterQueries(querqyFilters, filterCollector, true);
 
-		TextMatchQuery<QueryBuilder> postFilterQuery = buildFilters(filterCollector.postFilterQueries);
-		QueryBuilder joinedPostFilters = mergeQueries(postFilterQuery.getMasterLevelQuery(), postFilterQuery
-				.getVariantLevelQuery());
-
-		QueryBuilder innerHitsFilter = null;
-		for (QueryBuilder filter : filterCollector.variantInnerHitsFilters.values()) {
-			if (innerHitsFilter == null) innerHitsFilter = filter;
-			else innerHitsFilter = mergeQueries(innerHitsFilter, filter);
-		}
+		QueryBuilder joinedBasicFilters = filterCollector.buildJoinedBaseFilter();
+		QueryBuilder joinedPostFilters = filterCollector.buildJoinedPostFilter();
+		QueryBuilder innerHitsFilter = mergeQueries(filterCollector.variantInnerHitsFilters.values());
 
 		return new FilterContext(
 				filtersByName,
 				Collections.unmodifiableMap(filterCollector.postFilterQueries),
-				buildFilters(filterCollector.basicFilterQueries),
+				joinedBasicFilters,
 				joinedPostFilters,
 				innerHitsFilter,
 				parameters.customParams);
 	}
 
-	/**
-	 *
-	 * @param filters
-	 * @param filterCollector
-	 * @param addAllFiltersAsBasicFilters - if externally defined filters are used, they have to be treated as a basic filter
-	 */
 	private void buildFilterQueries(List<InternalResultFilter> filters, FilterCollector filterCollector, boolean addAllFiltersAsBasicFilters) {
 		for (InternalResultFilter filter : filters) {
 			@SuppressWarnings("unchecked")
@@ -91,46 +81,35 @@ public class FiltersBuilder {
 					.get(filter.getClass());
 			String fieldPrefix = filter.getFieldPrefix();
 
-			boolean negationHandeled = false;
-			QueryBuilder filterQuery = null;
+			QueryBuilder masterFilterQuery = null;
 			if (filter.getField().isMasterLevel()) {
-				filterQuery = toFilterQuery(filter, fieldPrefix, filterAdapter);
+				masterFilterQuery = toFilterQuery(filter, fieldPrefix, filterAdapter);
 			}
 
+			QueryBuilder variantFilterQuery = null;
 			if (filter.getField().isVariantLevel()) {
 				fieldPrefix = VARIANTS + "." + fieldPrefix;
-				QueryBuilder variantQuery = toFilterQuery(filter, fieldPrefix, filterAdapter);
-				filterCollector.addVariantInnerHitsFilter(filter.getField().getName(), variantQuery);
-				if (filterQuery == null) {
-					filterQuery = variantQuery;
+				variantFilterQuery = toFilterQuery(filter, fieldPrefix, filterAdapter);
+				filterCollector.addVariantInnerHitsFilter(filter, filter.isNegated() ? QueryBuilders.boolQuery().mustNot(variantFilterQuery) : variantFilterQuery);
+			}
+
+			if (masterFilterQuery != null && variantFilterQuery != null) {
+				// filter applies to both levels
+				if (filter.isNegated() || addAllFiltersAsBasicFilters || isBasicQuery(filter.getField().getName())) {
+					filterCollector.addDualBasicFilterQuery(filter, masterFilterQuery, variantFilterQuery);
 				}
 				else {
-					// if a filter applies to both levels, then build a
-					// SHOULD query (both field matches are wanted) for "include" filters
-					// and a MUST_NOT query for negated/exclude filters.
-					if (filter.isNegated()) {
-						filterQuery = QueryBuilders.boolQuery()
-								.mustNot(filterQuery)
-								.mustNot(variantQuery);
-						negationHandeled = true;
-					}
-					else {
-						filterQuery = QueryBuilders.boolQuery()
-								.should(filterQuery)
-								.should(variantQuery);
-					}
+					filterCollector.addDualPostFilterQuery(filter, masterFilterQuery, variantFilterQuery);
 				}
 			}
-
-			if (filter.isNegated() && !negationHandeled) {
-				filterQuery = QueryBuilders.boolQuery().mustNot(filterQuery);
-			}
-
-			if (filter.isNegated() || addAllFiltersAsBasicFilters || isBasicQuery(filter.getField().getName())) {
-				filterCollector.addBasicFilterQuery(filter.getField().getName(), filterQuery);
-			}
 			else {
-				filterCollector.addPostFilterQuery(filter.getField().getName(), filterQuery);
+				var singleFilter = variantFilterQuery == null ? masterFilterQuery : variantFilterQuery;
+				if (filter.isNegated() || addAllFiltersAsBasicFilters || isBasicQuery(filter.getField().getName())) {
+					filterCollector.addBasicFilterQuery(filter, singleFilter);
+				}
+				else {
+					filterCollector.addPostFilterQuery(filter, singleFilter);
+				}
 			}
 		}
 	}
@@ -153,54 +132,110 @@ public class FiltersBuilder {
 		return !postFilterFacets.contains(fieldName);
 	}
 
-	private TextMatchQuery<QueryBuilder> buildFilters(Map<String, QueryBuilder> filterQueries) {
-		// collect filters and combine into master and variant filters
-		QueryBuilder variantFilters = null;
-		QueryBuilder masterFilters = null;
-		for (Entry<String, QueryBuilder> nestedFieldFilters : filterQueries.entrySet()) {
-			if (isVariantField(nestedFieldFilters.getKey())) {
-				variantFilters = mergeQueries(variantFilters, nestedFieldFilters.getValue());
+	private class FilterCollector {
+
+		final Map<String, QueryBuilder> basicFilterQueries       = new HashMap<>();
+		final BoolQueryBuilder          dualMasterFilterQueries  = QueryBuilders.boolQuery();
+		final BoolQueryBuilder          dualVariantFilterQueries = QueryBuilders.boolQuery();
+
+		final Map<String, QueryBuilder> postFilterQueries        = new HashMap<>();
+		final Map<String, QueryBuilder> postFilterMasterQueries  = new HashMap<>();
+		final Map<String, QueryBuilder> postFilterVariantQueries = new HashMap<>();
+
+		final Map<String, QueryBuilder> variantInnerHitsFilters = new HashMap<>();
+
+		void addBasicFilterQuery(InternalResultFilter filter, QueryBuilder filterQuery) {
+			if (filter.isNegated()) filterQuery = QueryBuilders.boolQuery().mustNot(filterQuery);
+			addFilterQuery(basicFilterQueries, filter.getField().getName(), filterQuery);
+		}
+
+		void addDualBasicFilterQuery(InternalResultFilter filter, QueryBuilder masterFilter, QueryBuilder variantFilter) {
+			if (filter.isNegated()) {
+				dualMasterFilterQueries.mustNot(masterFilter);
+				dualVariantFilterQueries.mustNot(variantFilter);
 			}
 			else {
-				masterFilters = mergeQueries(masterFilters, nestedFieldFilters.getValue());
+				dualMasterFilterQueries.must(masterFilter);
+				dualVariantFilterQueries.must(variantFilter);
 			}
 		}
 
-		return new TextMatchQuery<>(masterFilters, variantFilters, false, true);
-	}
-
-	private boolean isVariantField(String field) {
-		return indexedFieldConfig.getField(field).map(Field::isVariantLevel).orElse(false);
-	}
-
-	private static class FilterCollector {
-
-		private final Map<String, QueryBuilder> basicFilterQueries = new HashMap<>();
-
-		private final Map<String, QueryBuilder> postFilterQueries = new HashMap<>();
-
-		private final Map<String, QueryBuilder> variantInnerHitsFilters = new HashMap<>();
-
-		public FilterCollector addBasicFilterQuery(String fieldName, QueryBuilder filterQuery) {
-			addFilterQuery(basicFilterQueries, fieldName, filterQuery);
-			return this;
+		void addPostFilterQuery(InternalResultFilter filter, QueryBuilder filterQuery) {
+			// no need to handle negated filter - those are always applied as basic filters
+			addFilterQuery(postFilterQueries, filter.getField().getName(), filterQuery);
 		}
 
-		public FilterCollector addPostFilterQuery(String fieldName, QueryBuilder filterQuery) {
-			addFilterQuery(postFilterQueries, fieldName, filterQuery);
-			return this;
+		void addDualPostFilterQuery(InternalResultFilter filter, QueryBuilder masterFilter, QueryBuilder variantFilter) {
+			// no need to handle negated filter - those are always applied as basic filters
+			addFilterQuery(postFilterMasterQueries, filter.getField().getName(), masterFilter);
+			addFilterQuery(postFilterVariantQueries, filter.getField().getName(), variantFilter);
 		}
 
-		public FilterCollector addVariantInnerHitsFilter(String fieldName, QueryBuilder filterQuery) {
-			addFilterQuery(variantInnerHitsFilters, fieldName, filterQuery);
-			return this;
+		void addVariantInnerHitsFilter(InternalResultFilter filter, QueryBuilder filterQuery) {
+			addFilterQuery(variantInnerHitsFilters, filter.getField().getName(), filterQuery);
 		}
 
-		private static void addFilterQuery(Map<String, QueryBuilder> targetMap, String fieldName, QueryBuilder filterQuery) {
+		static void addFilterQuery(Map<String, QueryBuilder> targetMap, String fieldName, QueryBuilder filterQuery) {
 			QueryBuilder conflictingFilter = targetMap.put(fieldName, filterQuery);
 			if (conflictingFilter != null) {
 				targetMap.put(fieldName, mergeQueries(conflictingFilter, filterQuery));
 			}
+		}
+
+		QueryBuilder buildJoinedBaseFilter() {
+			QueryBuilder joinedFilter = joinFilters(basicFilterQueries);
+
+			// both levels have same amount of filters. They are attached as xor filter (a should clause with min-should-match = 1)
+			if (dualMasterFilterQueries.hasClauses()) {
+				BoolQueryBuilder dualFilterQuery = QueryBuilders.boolQuery()
+						.should(dualMasterFilterQueries)
+						.should(QueryBuilders.nestedQuery(VARIANTS, dualVariantFilterQueries, ScoreMode.None))
+						.minimumShouldMatch(1);
+				joinedFilter = joinedFilter == null ? dualFilterQuery : ESQueryUtils.mapToBoolQueryBuilder(joinedFilter).filter(dualFilterQuery);
+			}
+			return joinedFilter;
+		}
+
+		QueryBuilder buildJoinedPostFilter() {
+			QueryBuilder joinedPostFilter = joinFilters(postFilterQueries);
+
+			// both levels have same amount of filters. They are attached as xor filter (a should clause with min-should-match = 1)
+			if (!postFilterVariantQueries.isEmpty()) {
+				// add variant filters to post-filter, because this is how to make sure, that a single variant meets all criterion
+				// otherwise it would match a product that has one variant with the non-post-filters and another variant with the post-filters
+				variantInnerHitsFilters.forEach((name, filterQuery) -> {
+					if (!postFilterVariantQueries.containsKey(name)) {
+						postFilterVariantQueries.put(name, filterQuery);
+					}
+				});
+				BoolQueryBuilder dualFilterQuery = QueryBuilders.boolQuery()
+						.should(mergeQueries(postFilterMasterQueries.values()))
+						.should(QueryBuilders.nestedQuery(VARIANTS, mergeQueries(postFilterVariantQueries.values()), ScoreMode.None))
+						.minimumShouldMatch(1);
+				joinedPostFilter = joinedPostFilter == null ? dualFilterQuery : ESQueryUtils.mapToBoolQueryBuilder(joinedPostFilter).filter(dualFilterQuery);
+			}
+			return joinedPostFilter;
+		}
+
+		QueryBuilder joinFilters(Map<String, QueryBuilder> filterQueries) {
+			// collect filters and combine into master and variant filters
+			QueryBuilder variantFilters = null;
+			QueryBuilder masterFilters = null;
+			for (Entry<String, QueryBuilder> nestedFieldFilters : filterQueries.entrySet()) {
+				if (isVariantField(nestedFieldFilters.getKey())) {
+					variantFilters = mergeQueries(variantFilters, nestedFieldFilters.getValue());
+				}
+				else {
+					masterFilters = mergeQueries(masterFilters, nestedFieldFilters.getValue());
+				}
+			}
+			if (variantFilters != null) variantFilters = QueryBuilders.nestedQuery(VARIANTS, variantFilters, ScoreMode.None);
+
+			return mergeQueries(masterFilters, variantFilters);
+		}
+
+		private boolean isVariantField(String field) {
+			return indexedFieldConfig.getField(field).map(Field::isVariantLevel).orElse(false);
 		}
 
 	}

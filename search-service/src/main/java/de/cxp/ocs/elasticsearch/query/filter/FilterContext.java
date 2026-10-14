@@ -10,9 +10,10 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 
 import de.cxp.ocs.elasticsearch.model.filter.InternalResultFilter;
-import de.cxp.ocs.elasticsearch.query.TextMatchQuery;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+
+import javax.swing.*;
 
 @Getter
 @AllArgsConstructor
@@ -20,13 +21,11 @@ public class FilterContext {
 
 	private final static Map<String, QueryBuilder> NO_FILTER = Collections.emptyMap();
 
-	private final static TextMatchQuery<QueryBuilder> NO_QUERY = new TextMatchQuery<>(null, null, false, true);
-
 	private final Map<String, InternalResultFilter> internalFilters;
 
 	private final Map<String, QueryBuilder> postFilterQueries;
 
-	private final TextMatchQuery<QueryBuilder> joinedBasicFilters;
+	private final QueryBuilder joinedBasicFilters;
 
 	private final QueryBuilder joinedPostFilters;
 
@@ -35,7 +34,7 @@ public class FilterContext {
 	private final Map<String, String> customParameters;
 
 	public FilterContext(Map<String, InternalResultFilter> internalFilters, Map<String, String> customParameters) {
-		this(internalFilters, NO_FILTER, NO_QUERY, null, null, customParameters);
+		this(internalFilters, NO_FILTER, null, null, null, customParameters);
 	}
 
 	/**
@@ -61,7 +60,7 @@ public class FilterContext {
 			finalQuery = filterQueries.entrySet().stream()
 					.filter(entry -> !exclude.equals(entry.getKey()))
 					.findFirst()
-					.get().getValue();
+					.map(Entry::getValue).orElse(null);
 		}
 		else {
 			finalQuery = QueryBuilders.boolQuery();
@@ -70,6 +69,6 @@ public class FilterContext {
 				((BoolQueryBuilder) finalQuery).must(fq.getValue());
 			}
 		}
-		return Optional.of(finalQuery);
+		return Optional.ofNullable(finalQuery);
 	}
 }

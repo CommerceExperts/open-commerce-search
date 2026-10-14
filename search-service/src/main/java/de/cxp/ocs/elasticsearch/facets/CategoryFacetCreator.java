@@ -3,6 +3,7 @@ package de.cxp.ocs.elasticsearch.facets;
 import static de.cxp.ocs.elasticsearch.query.filter.PathResultFilter.PATH_SEPARATOR;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
@@ -31,7 +32,7 @@ public class CategoryFacetCreator extends NestedFacetCreator {
 
 	@Setter
 	private int maxFacetValues = 250;
-	private final Map<String, FacetEntrySorter>	facetSorters	= new HashMap<>();
+	private final Map<String, FacetEntrySorter>	facetSorters	= new ConcurrentHashMap<>();
 	private final boolean						isExplicitFacetCreator;
 
 	public CategoryFacetCreator(Map<String, FacetConfig> facetConfigs, Function<String, FacetConfig> defaultFacetConfigProvider) {

@@ -3,9 +3,12 @@ package de.cxp.ocs.elasticsearch.facets;
 import java.util.*;
 import java.util.function.Function;
 
+import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.bucket.filter.FilterAggregationBuilder;
+import org.elasticsearch.search.aggregations.bucket.filter.ParsedFilter;
 import org.elasticsearch.search.aggregations.bucket.nested.Nested;
 import org.elasticsearch.search.aggregations.bucket.nested.NestedAggregationBuilder;
 
@@ -33,32 +36,44 @@ public class VariantFacetCreator implements FacetCreator {
 
 	@Override
 	public AggregationBuilder buildAggregation(FilterContext filterContext) {
-		return _buildAggregation(creator -> creator.buildAggregation(filterContext));
+		return _buildAggregation(filterContext, creator -> creator.buildAggregation(filterContext));
 	}
 
 	public AggregationBuilder buildIncludeFilteredAggregation(FilterContext filterContext, Set<String> includeNames) {
-		return _buildAggregation(creator -> creator.buildIncludeFilteredAggregation(filterContext, includeNames));
+		return _buildAggregation(filterContext, creator -> creator.buildIncludeFilteredAggregation(filterContext, includeNames));
 	}
 
 	public AggregationBuilder buildExcludeFilteredAggregation(FilterContext filterContext, Set<String> excludeNames) {
-		return _buildAggregation(creator -> creator.buildExcludeFilteredAggregation(filterContext, excludeNames));
+		return _buildAggregation(filterContext, creator -> creator.buildExcludeFilteredAggregation(filterContext, excludeNames));
 	}
 
-	public AggregationBuilder _buildAggregation(Function<FacetCreator, AggregationBuilder> subAggCreatorCall) {
+	public AggregationBuilder _buildAggregation(FilterContext filterContext, Function<FacetCreator, AggregationBuilder> subAggCreatorCall) {
 		if (innerCreators.isEmpty()) return null;
-		NestedAggregationBuilder nestedAggBuilder = AggregationBuilders.nested("_variants", FieldConstants.VARIANTS);
-		innerCreators.forEach(creator -> {
-			nestedAggBuilder.subAggregation(subAggCreatorCall.apply(creator));
-		});
-		return nestedAggBuilder;
+
+		NestedAggregationBuilder variantNestedAggBuilder = AggregationBuilders.nested("_variants", FieldConstants.VARIANTS);
+
+		AggregationBuilder finalNestedAggBuilder;
+		if (filterContext != null && filterContext.getVariantInnerHitFilter() != null) {
+			FilterAggregationBuilder variantsFiltered = AggregationBuilders.filter("_variants_filtered", filterContext.getVariantInnerHitFilter());
+			variantNestedAggBuilder.subAggregation(variantsFiltered);
+			finalNestedAggBuilder = variantsFiltered;
+		} else {
+			finalNestedAggBuilder = variantNestedAggBuilder;
+		}
+		innerCreators.forEach(creator -> finalNestedAggBuilder.subAggregation(subAggCreatorCall.apply(creator)));
+		return variantNestedAggBuilder;
 	}
 
 	@Override
 	public Collection<Facet> createFacets(Aggregations aggResult, FilterContext filterContext, DefaultLinkBuilder linkBuilder) {
 		List<Facet> facets = new ArrayList<>();
-		Nested nestedAgg = (Nested) aggResult.get("_variants");
+		Nested nestedAgg = aggResult.get("_variants");
+		Aggregations variantAggregations = nestedAgg.getAggregations();
+		Aggregation filteredVariantAgg = variantAggregations.get("_variants_filtered");
+		if (filteredVariantAgg != null) variantAggregations = ((ParsedFilter) filteredVariantAgg).getAggregations();
+
 		for (FacetCreator creator : innerCreators) {
-			facets.addAll(creator.createFacets(nestedAgg.getAggregations(), filterContext, linkBuilder));
+			facets.addAll(creator.createFacets(variantAggregations, filterContext, linkBuilder));
 		}
 		return facets;
 	}

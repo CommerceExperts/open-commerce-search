@@ -90,6 +90,19 @@ public class ITSearchService {
 	}
 
 	@Test
+	public void testDualLevelFacets() throws Exception {
+		SearchResult searchResult1 = getSearchClient().search(indexName, new SearchQuery(), Map.of("brand", "Fluffy Unicorn", "price", "0-20"));
+		assertThat(searchResult1.slices.getFirst().hits)
+				.anyMatch(hit -> hit.getDocument().id.equals("005"))
+				.anyMatch(hit -> hit.getDocument().id.equals("008"));
+
+		Optional<Facet> colorFacet = searchResult1.slices.getFirst().facets.stream().filter(f -> f.getFieldName().equals("color")).findFirst();
+		assertTrue(colorFacet.isPresent());
+		assertThat(colorFacet.get().getEntries())
+				.noneMatch(e -> e.getKey().equals("gold"), "there is no variant with 'color=gold' in the filtered price range");
+	}
+
+	@Test
 	public void testVariantPicking() throws Exception {
 		SearchResult searchResult1 = getSearchClient().search(indexName, new SearchQuery().setQ("striped"), Collections.singletonMap("color", "black and yellow"));
 

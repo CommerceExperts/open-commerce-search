@@ -3,9 +3,9 @@ package de.cxp.ocs.indexer;
 import static java.util.function.Predicate.isEqual;
 import static java.util.function.Predicate.not;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -14,10 +14,7 @@ import de.cxp.ocs.config.Field;
 import de.cxp.ocs.config.FieldConfigIndex;
 import de.cxp.ocs.config.FieldType;
 import de.cxp.ocs.config.FieldUsage;
-import de.cxp.ocs.indexer.model.DataItem;
-import de.cxp.ocs.indexer.model.IndexableItem;
-import de.cxp.ocs.indexer.model.MasterItem;
-import de.cxp.ocs.indexer.model.VariantItem;
+import de.cxp.ocs.indexer.model.*;
 import de.cxp.ocs.model.index.Attribute;
 import de.cxp.ocs.model.index.Document;
 import de.cxp.ocs.model.index.Product;
@@ -33,10 +30,10 @@ import lombok.extern.slf4j.Slf4j;
 public class IndexItemConverter {
 
 	@NonNull
-	private final FieldConfigIndex					fieldConfigIndex;
+	private final FieldConfigIndex fieldConfigIndex;
 
 	@NonNull
-	private final List<DocumentPostProcessor>	postProcessors;
+	private final List<DocumentPostProcessor> postProcessors;
 
 	public IndexItemConverter(FieldConfigIndex fieldConfigIndex) {
 		this(fieldConfigIndex, Collections.emptyList());
@@ -64,9 +61,9 @@ public class IndexItemConverter {
 	/**
 	 * Converts a Document coming in via the REST API into the Indexable Item
 	 * for Elasticsearch.
-	 * 
+	 *
 	 * @param doc
-	 *        document to be transformed
+	 * 		document to be transformed
 	 * @return indexable item
 	 */
 	public IndexableItem toIndexableItem(Document doc) {
@@ -76,9 +73,8 @@ public class IndexItemConverter {
 		}
 		else {
 			indexableItem = new IndexableItem(doc.getId());
+			extractSourceValues(doc, indexableItem);
 		}
-
-		extractSourceValues(doc, indexableItem);
 
 		for (DocumentPostProcessor postProcessor : postProcessors) {
 			postProcessor.process(doc, indexableItem, fieldConfigIndex);
@@ -89,11 +85,24 @@ public class IndexItemConverter {
 
 	private MasterItem toMasterVariantItem(Product doc) {
 		MasterItem targetMaster = new MasterItem(doc.getId());
+		extractSourceValues(doc, targetMaster);
+		Set<String> masterFacetFields = new HashSet<>();
+		targetMaster.getNumberFacetData().forEach(numberFacetData -> masterFacetFields.add(numberFacetData.getName()));
+		targetMaster.getTermFacetData().forEach(numberFacetData -> masterFacetFields.add(numberFacetData.getName()));
 
+		Set<String> overlappingFacetNames = new HashSet<>();
 		for (final Document variantDocument : doc.getVariants()) {
 			final VariantItem targetVariant = new VariantItem(targetMaster);
 			extractSourceValues(variantDocument, targetVariant);
 			targetMaster.getVariants().add(targetVariant);
+
+			targetVariant.getNumberFacetData().stream().map(FacetEntry::getName).filter(masterFacetFields::contains).forEach(overlappingFacetNames::add);
+			targetVariant.getTermFacetData().stream().map(FacetEntry::getName).filter(masterFacetFields::contains).forEach(overlappingFacetNames::add);
+		}
+
+		if (!overlappingFacetNames.isEmpty()) {
+			passDownMainAttributes(overlappingFacetNames, targetMaster, DataItem::getNumberFacetData);
+			passDownMainAttributes(overlappingFacetNames, targetMaster, DataItem::getTermFacetData);
 		}
 		return targetMaster;
 	}
@@ -122,6 +131,22 @@ public class IndexItemConverter {
 		}
 
 		fieldConfigIndex.getPrimaryCategoryField().ifPresent(f -> FieldUsageApplier.applyAll(targetItem, f, sourceDoc.getCategories()));
+	}
+
+	private static <T> void passDownMainAttributes(Set<String> overlappingFacetNames, DataItem indexableItem, Function<DataItem, List<FacetEntry<T>>> facetDataGetter) {
+		Iterator<FacetEntry<T>> mainFacetIterator = facetDataGetter.apply(indexableItem).iterator();
+		while (mainFacetIterator.hasNext()) {
+			FacetEntry<T> facetEntry = mainFacetIterator.next();
+			if (overlappingFacetNames.contains(facetEntry.getName())) {
+				mainFacetIterator.remove();
+				((MasterItem) indexableItem).getVariants().forEach(variant -> {
+					List<FacetEntry<T>> facetEntries = facetDataGetter.apply(variant);
+					if (facetEntries.stream().noneMatch(f -> f.getName().equals(facetEntry.getName()))) {
+						facetEntries.add(facetEntry);
+					}
+				});
+			}
+		}
 	}
 
 	private boolean isFieldAtVariantLevel(Field field) {
