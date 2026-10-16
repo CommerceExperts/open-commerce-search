@@ -27,9 +27,27 @@ function HierarchicalEntry({ entry, filterOption }: HierarchicalEntryProps) {
   const pathDelimiter = "/"
   const path = (entry as any)["path"]?.split(pathDelimiter)
 
+  // Multi-select facets: the server computes the complete new value list
+  // (siblings are added, a selected entry is removed, parent/child replace);
+  // take its values over, keep every other current param, drop the page.
+  const field = filterOption.fieldName ?? ""
+  const serverLink = (filterOption.meta as any)?.multiSelect
+    ? new URLSearchParams((entry as any)["link"] ?? "").get(field)
+    : undefined
+  const multiParams = new URLSearchParams(
+    deleteURLSearchParams(new URLSearchParams(searchParams), [
+      field,
+      SearchParamsMap.page,
+    ])
+  )
+  // the shop URL carries one param per value; the server joins them with ","
+  serverLink?.split(",").forEach((v) => multiParams.append(field, v))
+
   const href =
     "/?" +
-    (entry.selected
+    ((filterOption.meta as any)?.multiSelect
+      ? multiParams
+      : entry.selected
       ? path.length > 1
         ? mergeURLSearchParams(
             deleteURLSearchParams(new URLSearchParams(searchParams), [
