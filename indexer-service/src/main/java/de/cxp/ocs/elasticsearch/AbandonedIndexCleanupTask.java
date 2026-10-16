@@ -56,7 +56,8 @@ public class AbandonedIndexCleanupTask implements Runnable {
 			if (!alias.getValue().isEmpty()) continue;
 
 			Instant indexCreationDate = indexClient.getSettings(alias.getKey())
-					.map(s -> Instant.ofEpochMilli(s.getAsLong("index.creation_date", 0L)))
+					.map(s -> s.getAsLong("index.creation_date", null))
+					.map(Instant::ofEpochMilli)
 					.orElse(Instant.MAX);
 
 			Duration activeImportAge = Duration.between(indexCreationDate, taskRunTime);
