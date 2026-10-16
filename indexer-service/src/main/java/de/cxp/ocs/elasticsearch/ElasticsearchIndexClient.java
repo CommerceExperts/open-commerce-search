@@ -93,13 +93,13 @@ class ElasticsearchIndexClient {
 		aliasRequest.addAliasAction(AliasActions.add().alias(aliasName).index(newIndexName));
 
 		try {
-			AcknowledgedResponse updateAliases = highLevelClient.indices()
-					.updateAliases(aliasRequest, RequestOptions.DEFAULT);
+			highLevelClient.indices().updateAliases(aliasRequest, RequestOptions.DEFAULT);
 		}
 		catch (IOException e) {
 			log.error("updating alias {} from old index {} to new index {} failed because of {}: {}",
 					aliasName, oldIndexName, newIndexName,
 					e.getClass().getSimpleName(), e.getMessage());
+			throw new UncheckedIOException(e);
 		}
 	}
 
@@ -118,6 +118,7 @@ class ElasticsearchIndexClient {
 		}
 		catch (IOException e) {
 			log.error("creating index {} failed: {}", indexName, e.getMessage());
+			throw new UncheckedIOException(e);
 		}
 	}
 
