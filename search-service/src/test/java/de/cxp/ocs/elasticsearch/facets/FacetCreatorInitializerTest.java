@@ -130,6 +130,33 @@ public class FacetCreatorInitializerTest {
 	}
 
 	@Test
+	public void testExplicitFacetCreatorsWithNonUpperCaseType() {
+		for (String type : new String[] { "hierarchical", "Hierarchical" }) {
+			assertExplicitCreatorForConfiguredType(type, FacetType.HIERARCHICAL, FieldType.CATEGORY, CategoryFacetCreator.class);
+		}
+		for (String type : new String[] { "term", "Term" }) {
+			assertExplicitCreatorForConfiguredType(type, FacetType.TERM, FieldType.STRING, TermFacetCreator.class);
+		}
+		for (String type : new String[] { "range", "Range" }) {
+			assertExplicitCreatorForConfiguredType(type, FacetType.RANGE, FieldType.NUMBER, RangeFacetCreator.class);
+		}
+		for (String type : new String[] { "interval", "Interval" }) {
+			assertExplicitCreatorForConfiguredType(type, FacetType.INTERVAL, FieldType.NUMBER, IntervalFacetCreator.class);
+		}
+	}
+
+	private <T extends NestedFacetCreator> void assertExplicitCreatorForConfiguredType(String configuredType, FacetType facetType, FieldType fieldType, Class<T> expectedCreatorClass) {
+		FacetCreatorInitializer underTest = new FacetCreatorInitializer(noCustomFacetCreators, defaultTermFacetProvider, defaultNumberFacetProvider, Locale.ROOT, 12);
+		FacetConfig mandatoryFacetConfig = new FacetConfig("Mandatory", "m").setType(configuredType).setMinFacetCoverage(0).setExcludeFromFacetLimit(true);
+		underTest.addFacet(new Field("m").setType(fieldType).setFieldLevel(FieldLevel.MASTER), mandatoryFacetConfig);
+
+		Map<FacetCreatorClassifier, FacetCreator> facetCreators = underTest.init();
+		assertInstanceOfAndGet(facetCreators.get(new FacetCreatorClassifier(false, facetType.name(), true)), expectedCreatorClass);
+		// the lookup at search time uses the (normalized) type of the shared config object
+		assertEquals(facetType.name(), mandatoryFacetConfig.getType());
+	}
+
+	@Test
 	public void testCustomConfig() {
 		Map<String, Supplier<? extends CustomFacetCreator>> customFacetCreators = new HashMap<>();
 		final String CUSTOM_FACET_TYPE = "SignificantTerms";

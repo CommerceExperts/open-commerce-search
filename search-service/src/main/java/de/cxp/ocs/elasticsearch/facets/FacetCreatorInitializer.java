@@ -124,6 +124,8 @@ class FacetCreatorInitializer {
 					log.warn("Facet {} for field {} with type {} does not work on variant level! Ignorning it.", facetConfig.getLabel(), facetConfig.getSourceField(), facetConfig.getType());
 				}
 				else {
+					// normalize, since the creator classifiers and lookups use the upper case enum name
+					facetConfig.setType(facetType.name());
 					addValidatedFacet(field, facetConfig);
 				}
 			}
